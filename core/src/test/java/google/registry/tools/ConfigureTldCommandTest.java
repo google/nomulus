@@ -68,10 +68,10 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
 
   @BeforeEach
   void beforeEach() {
+    command.clock = fakeClock;
     command.mapper = objectMapper;
     premiumList = persistPremiumList("test", USD, "silver,USD 50", "gold,USD 80");
     command.validDnsWriterNames = ImmutableSet.of("VoidDnsWriter", "FooDnsWriter");
-    command.clock = fakeClock;
     logger.addHandler(logHandler);
   }
 

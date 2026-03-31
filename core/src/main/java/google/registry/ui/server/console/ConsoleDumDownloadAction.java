@@ -16,7 +16,6 @@ package google.registry.ui.server.console;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -35,7 +34,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import org.joda.time.DateTime;
 
 @Action(
     service = Service.CONSOLE,
@@ -86,7 +84,7 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
         .setHeader("Cache-Control", "max-age=86400"); // 86400 seconds = 1 day
     consoleApiParams
         .response()
-        .setDateHeader("Expires", DateTime.now(UTC).withTimeAtStartOfDay().plusDays(1));
+        .setDateHeader("Expires", clock.nowUtc().withTimeAtStartOfDay().plusDays(1));
 
     try (var writer = consoleApiParams.response().getWriter()) {
       CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);

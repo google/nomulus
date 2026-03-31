@@ -98,7 +98,6 @@ class UpdateReservedListCommandTest
     Files.asCharSink(reservedTermsFile, UTF_8).write(reservedTermsCsv);
     reservedTermsPath = reservedTermsFile.getPath();
     // create a command instance and assign its input
-    UpdateReservedListCommand command = new UpdateReservedListCommand();
     command.input = Paths.get(reservedTermsPath);
     // run again with terms from example_reserved_terms.csv
     command.init();
@@ -110,7 +109,6 @@ class UpdateReservedListCommandTest
   void testSuccess_withChanges() throws Exception {
     // changes come from example_reserved_terms.csv, which are populated in @BeforeEach of
     // CreateOrUpdateReservedListCommandTestCases.java
-    UpdateReservedListCommand command = new UpdateReservedListCommand();
     command.input = Paths.get(reservedTermsPath);
     command.init();
 

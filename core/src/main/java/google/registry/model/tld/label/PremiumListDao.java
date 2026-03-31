@@ -129,34 +129,31 @@ public final class PremiumListDao {
 
   public static PremiumList save(String name, CurrencyUnit currencyUnit, List<String> inputData) {
     checkArgument(!inputData.isEmpty(), "New premium list data cannot be empty");
-    return save(PremiumListUtils.parseToPremiumList(name, currencyUnit, inputData));
+    tm().assertInTransaction();
+    return save(
+        PremiumListUtils.parseToPremiumList(
+            name, currencyUnit, inputData, tm().getTransactionTime()));
   }
 
   /** Saves the given premium list (and its premium list entries) to Cloud SQL. */
   public static PremiumList save(PremiumList premiumListToPersist) {
-    PremiumList persisted =
-        tm().transact(
-                () -> {
-                  // Make a new copy in each attempt to insert. See javadoc of the insert method for
-                  // more information.
-                  PremiumList premiumList = premiumListToPersist.asBuilder().build();
-                  tm().insert(premiumList);
-                  tm().getEntityManager().flush(); // This populates the revisionId.
-                  long revisionId = premiumList.getRevisionId();
+    tm().assertInTransaction();
+    // Make a new copy in each attempt to insert. See javadoc of the insert method for
+    // more information.
+    PremiumList premiumList = premiumListToPersist.asBuilder().build();
+    tm().insert(premiumList);
+    tm().getEntityManager().flush(); // This populates the revisionId.
+    long revisionId = premiumList.getRevisionId();
 
-                  if (!isNullOrEmpty(premiumList.getLabelsToPrices())) {
-                    ImmutableSet.Builder<PremiumEntry> entries = new ImmutableSet.Builder<>();
-                    premiumList
-                        .getLabelsToPrices()
-                        .forEach(
-                            (key, value) ->
-                                entries.add(PremiumEntry.create(revisionId, value, key)));
-                    tm().insertAll(entries.build());
-                  }
-                  return premiumList;
-                });
-    premiumListCache.invalidate(persisted.getName());
-    return persisted;
+    if (!isNullOrEmpty(premiumList.getLabelsToPrices())) {
+      ImmutableSet.Builder<PremiumEntry> entries = new ImmutableSet.Builder<>();
+      premiumList
+          .getLabelsToPrices()
+          .forEach((key, value) -> entries.add(PremiumEntry.create(revisionId, value, key)));
+      tm().insertAll(entries.build());
+    }
+    premiumListCache.invalidate(premiumList.getName());
+    return premiumList;
   }
 
   public static void delete(PremiumList premiumList) {

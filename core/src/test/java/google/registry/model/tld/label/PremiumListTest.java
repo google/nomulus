@@ -16,6 +16,7 @@ package google.registry.model.tld.label;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
@@ -101,7 +102,8 @@ public class PremiumListTest {
 
   @Test
   void testParse_canIncludeOrNotIncludeCurrencyUnit() {
-    PremiumListDao.save("tld", USD, ImmutableList.of("rofl,USD 90", "paper, 80"));
+    tm().transact(
+            () -> PremiumListDao.save("tld", USD, ImmutableList.of("rofl,USD 90", "paper, 80")));
     assertThat(PremiumListDao.getPremiumPrice("tld", "rofl")).hasValue(Money.of(USD, 90));
     assertThat(PremiumListDao.getPremiumPrice("tld", "paper")).hasValue(Money.of(USD, 80));
   }

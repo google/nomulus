@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.Test;
 
@@ -199,7 +200,11 @@ class PosixTarHeaderTest {
   @Test
   void testBadChecksum() {
     PosixTarHeader header =
-        new PosixTarHeader.Builder().setName("(◕‿◕).txt").setSize(31337).build();
+        new PosixTarHeader.Builder()
+            .setName("(◕‿◕).txt")
+            .setSize(31337)
+            .setMtime(DateTime.now(DateTimeZone.UTC))
+            .build();
     byte[] bytes = header.getBytes();
     bytes[150] = '0';
     bytes[151] = '0';
@@ -234,6 +239,7 @@ class PosixTarHeaderTest {
             new PosixTarHeader.Builder()
                 .setName("(•︵•).txt") // Awwwww! It looks so sad...
                 .setSize(123)
+                .setMtime(DateTime.now(DateTimeZone.UTC))
                 .build())
         .testEquals();
   }

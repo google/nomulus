@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.message.EppRequestMessage;
 import google.registry.monitoring.blackbox.message.OutboundMessageType;
+import google.registry.util.Clock;
 import io.netty.channel.Channel;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -33,6 +34,7 @@ public abstract class EppToken extends Token {
   private static AtomicInteger clientIdSuffix = new AtomicInteger();
 
   protected final String tld;
+  protected final Clock clock;
   private String host;
   private String currentDomainName;
 
@@ -40,15 +42,16 @@ public abstract class EppToken extends Token {
    * Always the constructor used to provide any {@link EppToken}, with {@code tld} and {@code host}
    * specified by Dagger.
    */
-  protected EppToken(String tld, String host) {
+  protected EppToken(String tld, String host, Clock clock) {
     this.tld = tld;
     this.host = host;
+    this.clock = clock;
     currentDomainName = newDomainName(getNewTRID());
   }
 
   /** Constructor used when passing on same {@link Channel} to next {@link Token}. */
-  protected EppToken(String tld, String host, Channel channel) {
-    this(tld, host);
+  protected EppToken(String tld, String host, Clock clock, Channel channel) {
+    this(tld, host, clock);
     setChannel(channel);
   }
 
@@ -79,7 +82,7 @@ public abstract class EppToken extends Token {
   private String getNewTRID() {
     return String.format(
         "prober-%s-%d-%d",
-        "localhost", System.currentTimeMillis(), clientIdSuffix.incrementAndGet());
+        "localhost", clock.nowUtc().getMillis(), clientIdSuffix.incrementAndGet());
   }
 
   /** Return a fully qualified domain label to use, derived from the client transaction ID. */
@@ -103,13 +106,13 @@ public abstract class EppToken extends Token {
   public static class Transient extends EppToken {
 
     @Inject
-    public Transient(@Named("eppTld") String tld, @Named("eppHost") String host) {
-      super(tld, host);
+    public Transient(@Named("eppTld") String tld, @Named("eppHost") String host, Clock clock) {
+      super(tld, host, clock);
     }
 
     @Override
     public Token next() {
-      return new Transient(tld, host());
+      return new Transient(tld, host(), clock);
     }
   }
 
@@ -121,18 +124,18 @@ public abstract class EppToken extends Token {
   public static class Persistent extends EppToken {
 
     @Inject
-    public Persistent(@Named("eppTld") String tld, @Named("eppHost") String host) {
-      super(tld, host);
+    public Persistent(@Named("eppTld") String tld, @Named("eppHost") String host, Clock clock) {
+      super(tld, host, clock);
     }
 
     /** Constructor used on call to {@code next} to preserve channel. */
-    private Persistent(String tld, String host, Channel channel) {
-      super(tld, host, channel);
+    private Persistent(String tld, String host, Clock clock, Channel channel) {
+      super(tld, host, clock, channel);
     }
 
     @Override
     public Token next() {
-      return new Persistent(tld, host(), channel());
+      return new Persistent(tld, host(), clock, channel());
     }
   }
 }

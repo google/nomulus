@@ -346,7 +346,7 @@ public final class DatabaseHelper {
     // increasing sequence, if we don't pad out the ID here, we would have to renumber hundreds of
     // unit tests.
     tm().reTransact(tm()::allocateId);
-    PremiumListDao.save(premiumList);
+    tm().transact(() -> PremiumListDao.save(premiumList));
     maybeAdvanceClock();
     return premiumList;
   }

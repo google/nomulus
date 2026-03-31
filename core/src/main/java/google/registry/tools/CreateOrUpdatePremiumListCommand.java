@@ -14,10 +14,14 @@
 
 package google.registry.tools;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+
 import com.beust.jcommander.Parameter;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.tools.params.PathParameter;
+import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.nio.file.Path;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -28,6 +32,8 @@ import org.joda.money.CurrencyUnit;
  * lists.
  */
 abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand {
+
+  @Inject Clock clock;
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   protected List<String> inputData;
@@ -54,7 +60,7 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand {
         String.format("Saved premium list %s with %d entries.", name, inputData.size());
     try {
       logger.atInfo().log("Saving premium list for TLD %s.", name);
-      PremiumListDao.save(name, currency, inputData);
+      tm().transact(() -> PremiumListDao.save(name, currency, inputData));
       logger.atInfo().log(message);
     } catch (Throwable e) {
       message = "Unexpected error saving premium list from nomulus tool command.";

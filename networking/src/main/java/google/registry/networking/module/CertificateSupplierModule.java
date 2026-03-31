@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.util.Clock;
 import google.registry.util.SelfSignedCaCertificate;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
@@ -156,9 +157,9 @@ public final class CertificateSupplierModule {
 
   @Singleton
   @Provides
-  static SelfSignedCaCertificate provideSelfSignedCertificate() {
+  static SelfSignedCaCertificate provideSelfSignedCertificate(Clock clock) {
     try {
-      return SelfSignedCaCertificate.create();
+      return SelfSignedCaCertificate.create(clock);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

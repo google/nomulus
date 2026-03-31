@@ -37,8 +37,6 @@ import google.registry.model.host.Host;
 import google.registry.tools.params.NameserversParameter;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
-import google.registry.util.Clock;
-import jakarta.inject.Inject;
 import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -121,8 +119,6 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
   /** Set of status values to remove. */
   ImmutableSet<String> removeStatuses;
-
-  @Inject Clock clock;
 
   @Override
   protected void initMutatingEppToolCommand()

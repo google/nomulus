@@ -45,6 +45,7 @@ abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdate
 
   @BeforeEach
   void beforeEachCreateOrUpdatePremiumListCommandTestCase() throws IOException {
+    command.clock = fakeClock;
     // initial set up for both CreatePremiumListCommand and UpdatePremiumListCommand test cases;
     initialPremiumListData = "doge,USD 9090";
     File premiumTermsFile = tmpDir.resolve(TLD_TEST + ".txt").toFile();

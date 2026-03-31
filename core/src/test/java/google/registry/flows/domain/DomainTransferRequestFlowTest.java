@@ -1160,12 +1160,14 @@ class DomainTransferRequestFlowTest
       throws Exception {
     setupDomain("example", "tld");
     PremiumList pl =
-        PremiumListDao.save(
-            new PremiumList.Builder()
-                .setCurrency(USD)
-                .setName("tld")
-                .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
-                .build());
+        tm().transact(
+                () ->
+                    PremiumListDao.save(
+                        new PremiumList.Builder()
+                            .setCurrency(USD)
+                            .setName("tld")
+                            .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
+                            .build()));
     persistResource(Tld.get("tld").asBuilder().setPremiumList(pl).build());
     domain = loadByEntity(domain);
     persistResource(
@@ -1214,12 +1216,14 @@ class DomainTransferRequestFlowTest
       throws Exception {
     setupDomain("example", "tld");
     PremiumList pl =
-        PremiumListDao.save(
-            new PremiumList.Builder()
-                .setCurrency(USD)
-                .setName("tld")
-                .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
-                .build());
+        tm().transact(
+                () ->
+                    PremiumListDao.save(
+                        new PremiumList.Builder()
+                            .setCurrency(USD)
+                            .setName("tld")
+                            .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
+                            .build()));
     persistResource(Tld.get("tld").asBuilder().setPremiumList(pl).build());
     domain = loadByEntity(domain);
     persistResource(

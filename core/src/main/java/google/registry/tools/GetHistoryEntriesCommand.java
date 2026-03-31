@@ -17,7 +17,6 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -26,7 +25,9 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
 import google.registry.tools.CommandUtilities.ResourceType;
+import google.registry.util.Clock;
 import google.registry.xml.XmlTransformer;
+import jakarta.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Command to show history entries. */
@@ -34,6 +35,8 @@ import org.joda.time.DateTime;
     separators = " =",
     commandDescription = "Show history entries that occurred in a given time range")
 final class GetHistoryEntriesCommand implements Command {
+
+  @Inject Clock clock;
 
   @Parameter(
       names = {"-a", "--after"},
@@ -58,7 +61,7 @@ final class GetHistoryEntriesCommand implements Command {
       checkArgument(
           type != null && uniqueId != null,
           "If either of 'type' or 'id' are set then both must be");
-      VKey<? extends EppResource> parentKey = type.getKey(uniqueId, DateTime.now(UTC));
+      VKey<? extends EppResource> parentKey = type.getKey(uniqueId, clock.nowUtc());
       historyEntries = HistoryEntryDao.loadHistoryObjectsForResource(parentKey, after, before);
     } else {
       historyEntries = HistoryEntryDao.loadAllHistoryObjects(after, before);

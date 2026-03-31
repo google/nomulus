@@ -24,6 +24,7 @@ import static google.registry.model.reporting.DomainTransactionRecord.Transactio
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.deleteTestDomain;
@@ -512,12 +513,14 @@ class DomainTransferApproveFlowTest
   @Test
   void testSuccess_nonpremiumPriceRenewalBehavior_carriesOver() throws Exception {
     PremiumList pl =
-        PremiumListDao.save(
-            new PremiumList.Builder()
-                .setCurrency(USD)
-                .setName("tld")
-                .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
-                .build());
+        tm().transact(
+                () ->
+                    PremiumListDao.save(
+                        new PremiumList.Builder()
+                            .setCurrency(USD)
+                            .setName("tld")
+                            .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
+                            .build()));
     persistResource(Tld.get("tld").asBuilder().setPremiumList(pl).build());
     domain = loadByEntity(domain);
     persistResource(
@@ -558,12 +561,14 @@ class DomainTransferApproveFlowTest
   @Test
   void testSuccess_specifiedPriceRenewalBehavior_carriesOver() throws Exception {
     PremiumList pl =
-        PremiumListDao.save(
-            new PremiumList.Builder()
-                .setCurrency(USD)
-                .setName("tld")
-                .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
-                .build());
+        tm().transact(
+                () ->
+                    PremiumListDao.save(
+                        new PremiumList.Builder()
+                            .setCurrency(USD)
+                            .setName("tld")
+                            .setLabelsToPrices(ImmutableMap.of("example", new BigDecimal("67.89")))
+                            .build()));
     persistResource(Tld.get("tld").asBuilder().setPremiumList(pl).build());
     domain = loadByEntity(domain);
     persistResource(

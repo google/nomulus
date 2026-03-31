@@ -17,6 +17,7 @@ package google.registry.export;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.ExportPremiumTermsAction.EXPORT_MIME_TYPE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.deleteTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -75,7 +76,7 @@ public class ExportPremiumTermsActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     createTld("tld");
-    PremiumList pl = PremiumListDao.save("pl-name", USD, PREMIUM_NAMES);
+    PremiumList pl = tm().transact(() -> PremiumListDao.save("pl-name", USD, PREMIUM_NAMES));
     persistResource(
         Tld.get("tld").asBuilder().setPremiumList(pl).setDriveFolderId("folder_id").build());
     when(driveConnection.createOrUpdateFile(

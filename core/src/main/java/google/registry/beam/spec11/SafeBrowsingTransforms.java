@@ -21,6 +21,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.CharStreams;
+import google.registry.util.Clock;
+import google.registry.util.DateTimeUtils;
 import google.registry.util.Retrier;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -40,7 +42,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HTTP;
-import org.joda.time.Instant;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -74,6 +75,8 @@ public class SafeBrowsingTransforms {
     /** Provides the SafeBrowsing API key at runtime. */
     private final String apiKey;
 
+    private final Clock clock;
+
     /**
      * Maps a domain name's {@code domainName} to its corresponding {@link DomainNameInfo} to
      * facilitate batching SafeBrowsing API requests.
@@ -101,9 +104,10 @@ public class SafeBrowsingTransforms {
      * HttpClients#createDefault()}.
      */
     @SuppressWarnings("unchecked")
-    EvaluateSafeBrowsingFn(String apiKey, Retrier retrier) {
+    EvaluateSafeBrowsingFn(String apiKey, Retrier retrier, Clock clock) {
       this.apiKey = apiKey;
       this.retrier = retrier;
+      this.clock = clock;
       closeableHttpClientSupplier = (Supplier & Serializable) HttpClients::createDefault;
     }
 
@@ -115,9 +119,10 @@ public class SafeBrowsingTransforms {
      */
     @VisibleForTesting
     EvaluateSafeBrowsingFn(
-        String apiKey, Retrier retrier, Supplier<CloseableHttpClient> clientSupplier) {
+        String apiKey, Retrier retrier, Clock clock, Supplier<CloseableHttpClient> clientSupplier) {
       this.apiKey = apiKey;
       this.retrier = retrier;
+      this.clock = clock;
       closeableHttpClientSupplier = clientSupplier;
     }
 
@@ -126,7 +131,10 @@ public class SafeBrowsingTransforms {
     public void finishBundle(FinishBundleContext context) {
       if (!domainNameInfoBuffer.isEmpty()) {
         ImmutableSet<KV<DomainNameInfo, ThreatMatch>> results = evaluateAndFlush();
-        results.forEach((kv) -> context.output(kv, Instant.now(), GlobalWindow.INSTANCE));
+        results.forEach(
+            (kv) ->
+                context.output(
+                    kv, DateTimeUtils.toJodaInstant(clock.now()), GlobalWindow.INSTANCE));
       }
     }
 
