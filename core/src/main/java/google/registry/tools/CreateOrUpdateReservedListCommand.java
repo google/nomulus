@@ -19,6 +19,8 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedListDao;
 import google.registry.tools.params.PathParameter;
+import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -28,6 +30,8 @@ import javax.annotation.Nullable;
  * lists.
  */
 public abstract class CreateOrUpdateReservedListCommand extends ConfirmingCommand {
+
+  @Inject Clock clock;
 
   static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

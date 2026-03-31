@@ -38,6 +38,8 @@ import com.google.template.soy.data.SoyRecord;
 import com.google.template.soy.parseinfo.SoyFileInfo;
 import com.google.template.soy.parseinfo.SoyTemplateInfo;
 import google.registry.model.registrar.Registrar;
+import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -48,6 +50,8 @@ import java.util.Objects;
 
 /** A command to execute an epp command. */
 abstract class EppToolCommand extends ConfirmingCommand implements CommandWithConnection {
+
+  @Inject Clock clock;
 
   @Parameter(
       names = {"-u", "--superuser"},

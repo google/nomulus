@@ -32,6 +32,7 @@ import com.google.common.io.BaseEncoding;
 import google.registry.proxy.TestUtils;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.proxy.metric.FrontendMetrics;
+import google.registry.testing.FakeClock;
 import google.registry.util.ProxyHttpHeaders;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.buffer.ByteBuf;
@@ -114,7 +115,7 @@ class EppServiceHandlerTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    clientCertificate = SelfSignedCaCertificate.create().cert();
+    clientCertificate = SelfSignedCaCertificate.create(new FakeClock()).cert();
     channel = setUpNewChannel(eppServiceHandler);
   }
 
@@ -171,7 +172,7 @@ class EppServiceHandlerTest {
         new EppServiceHandler(
             RELAY_HOST, RELAY_PATH, false, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
     EmbeddedChannel channel2 = setUpNewChannel(eppServiceHandler2);
-    X509Certificate clientCertificate2 = SelfSignedCaCertificate.create().cert();
+    X509Certificate clientCertificate2 = SelfSignedCaCertificate.create(new FakeClock()).cert();
     setHandshakeSuccess(channel2, clientCertificate2);
     String certHash2 = getCertificateHash(clientCertificate2);
 

@@ -30,8 +30,8 @@ class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
 
   @BeforeEach
   void beforeEach() {
-    createTld("tld");
     command.clock = fakeClock;
+    createTld("tld");
   }
 
   @Test

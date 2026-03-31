@@ -44,6 +44,7 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
 
   @BeforeEach
   void beforeEachCreateOrUpdateReservedListCommandTestCase() throws IOException {
+    command.clock = fakeClock;
     File reservedTermsFile = tmpDir.resolve("xn--q9jyb4c_common-reserved.txt").toFile();
     File invalidReservedTermsFile = tmpDir.resolve("reserved-terms-wontparse.csv").toFile();
     String reservedTermsCsv =

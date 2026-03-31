@@ -24,10 +24,10 @@ import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Splitter;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -47,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /**
  * A list of reserved domain labels that are blocked from being registered for various reasons.
@@ -234,7 +233,7 @@ public final class ReservedList
    */
   private static ImmutableSet<ReservedListEntry> getReservedListEntries(
       String label, String tldStr) {
-    DateTime startTime = DateTime.now(UTC);
+    Stopwatch stopwatch = Stopwatch.createStarted();
     Tld tld = Tld.get(checkNotNull(tldStr, "tld must not be null"));
     ImmutableSet.Builder<ReservedListEntry> entriesBuilder = new ImmutableSet.Builder<>();
     ImmutableSet.Builder<MetricsReservedListMatch> metricMatchesBuilder =
@@ -251,9 +250,7 @@ public final class ReservedList
     }
     ImmutableSet<ReservedListEntry> entries = entriesBuilder.build();
     DomainLabelMetrics.recordReservedListCheckOutcome(
-        tldStr,
-        metricMatchesBuilder.build(),
-        DateTime.now(UTC).getMillis() - startTime.getMillis());
+        tldStr, metricMatchesBuilder.build(), stopwatch.elapsed().toMillis());
     return entries;
   }
 

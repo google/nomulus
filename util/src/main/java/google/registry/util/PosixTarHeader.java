@@ -324,12 +324,12 @@ public final class PosixTarHeader {
     private final byte[] header = new byte[HEADER_LENGTH];
     private boolean hasName = false;
     private boolean hasSize = false;
+    private boolean hasMtime = false;
 
     public Builder() {
       setMode(DEFAULT_MODE);
       setUid(DEFAULT_UID);
       setGid(DEFAULT_GID);
-      setMtime(DateTime.now(UTC));
       setType(DEFAULT_TYPE);
       setMagic();
       setVersion();
@@ -418,6 +418,7 @@ public final class PosixTarHeader {
     public Builder setMtime(DateTime mtime) {
       checkNotNull(mtime, "mtime");
       setField("mtime", 136, 12, String.format("%011o", mtime.getMillis() / MILLIS_PER_SECOND));
+      hasMtime = true;
       return this;
     }
 
@@ -483,8 +484,10 @@ public final class PosixTarHeader {
     public PosixTarHeader build() {
       checkState(hasName, "name not set");
       checkState(hasSize, "size not set");
+      checkState(hasMtime, "mtime not set");
       hasName = false;
       hasSize = false;
+      hasMtime = false;
       setChksum();  // Calculate the checksum last.
       return new PosixTarHeader(header.clone());
     }
