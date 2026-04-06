@@ -51,8 +51,8 @@ import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.model.tld.label.ReservationType.NAME_COLLISION;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.leapSafeAddYears;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.plusYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -331,7 +331,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     validateFeeChallenge(feeCreate, feesAndCredits, defaultTokenUsed);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
-    DateTime registrationExpirationTime = leapSafeAddYears(now, years);
+    DateTime registrationExpirationTime = plusYears(now, years);
     String repoId = createDomainRepoId(tm().allocateId(), tld.getTldStr());
     long historyRevisionId = tm().allocateId();
     HistoryEntryId domainHistoryId = new HistoryEntryId(repoId, historyRevisionId);
@@ -630,7 +630,7 @@ public final class DomainCreateFlow implements MutatingFlow {
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
         .setEventTime(registrationExpirationTime)
-        .setRecurrenceEndTime(END_OF_TIME)
+        .setRecurrenceEndTime(END_INSTANT)
         .setDomainHistoryId(domainHistoryId)
         .setRenewalPriceBehavior(renewalPriceBehavior)
         .setRenewalPrice(allocationToken.flatMap(AllocationToken::getRenewalPrice).orElse(null))

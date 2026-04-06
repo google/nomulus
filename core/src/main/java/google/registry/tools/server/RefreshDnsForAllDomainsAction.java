@@ -24,6 +24,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.RequestParameters.PARAM_BATCH_SIZE;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -133,7 +134,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                     + " :activeOrDeletedSince",
                 Long.class)
             .setParameter("tlds", tlds)
-            .setParameter("activeOrDeletedSince", activeOrDeletedSince)
+            .setParameter("activeOrDeletedSince", toInstant(activeOrDeletedSince))
             .getSingleResult();
     Duration smear = Duration.standardSeconds(Math.max(activeDomains / refreshQps, 1));
     logger.atInfo().log("Smearing %d domain DNS refresh tasks across %s.", activeDomains, smear);
@@ -149,7 +150,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     TypedQuery<String> query =
         tm().query(sql, String.class)
             .setParameter("tlds", tlds)
-            .setParameter("activeOrDeletedSince", activeOrDeletedSince);
+            .setParameter("activeOrDeletedSince", toInstant(activeOrDeletedSince));
     lastInPreviousBatch.ifPresent(l -> query.setParameter("lastInPreviousBatch", l));
     return query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
   }

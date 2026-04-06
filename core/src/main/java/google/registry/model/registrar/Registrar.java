@@ -31,7 +31,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
 import static google.registry.util.PasswordUtils.hashPassword;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -81,6 +83,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.security.cert.CertificateParsingException;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -399,21 +402,21 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   // Metadata.
 
   /** The time when this registrar was created. */
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create((Instant) null);
 
   /** The time that the certificate was last updated. */
-  DateTime lastCertificateUpdateTime;
+  Instant lastCertificateUpdateTime;
 
   /** The time that an expiring certificate notification email was sent to the registrar. */
-  DateTime lastExpiringCertNotificationSentDate = START_OF_TIME;
+  Instant lastExpiringCertNotificationSentDate = START_INSTANT;
 
   /**
    * The time that an expiring failover certificate notification email was sent to the registrar.
    */
-  DateTime lastExpiringFailoverCertNotificationSentDate = START_OF_TIME;
+  Instant lastExpiringFailoverCertNotificationSentDate = START_INSTANT;
 
   /** The time that the POCs have been reviewed last. */
-  @Expose DateTime lastPocVerificationDate = START_OF_TIME;
+  @Expose Instant lastPocVerificationDate = START_INSTANT;
 
   /** Telephone support passcode (5-digit numeric) */
   String phonePasscode;
@@ -434,8 +437,17 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return registrarId;
   }
 
-  public DateTime getCreationTime() {
+  public Instant getCreationTime() {
     return creationTime.getTimestamp();
+  }
+
+  /**
+   * @deprecated Use {@link #getCreationTime()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getCreationDateTime() {
+    return toDateTime(creationTime.getTimestamp());
   }
 
   @Nullable
@@ -453,19 +465,55 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
         : ImmutableSortedMap.copyOf(billingAccountMap);
   }
 
+  /**
+   * @deprecated Use {@link #getLastUpdateTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastUpdateTime() {
+    return getUpdateTimestamp().getTimestampDateTime();
+  }
+
+  public Instant getLastUpdateTimeInstant() {
     return getUpdateTimestamp().getTimestamp();
   }
 
+  /**
+   * @deprecated Use {@link #getLastCertificateUpdateTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastCertificateUpdateTime() {
+    return toDateTime(lastCertificateUpdateTime);
+  }
+
+  public Instant getLastCertificateUpdateTimeInstant() {
     return lastCertificateUpdateTime;
   }
 
+  /**
+   * @deprecated Use {@link #getLastExpiringCertNotificationSentDateInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastExpiringCertNotificationSentDate() {
+    return toDateTime(lastExpiringCertNotificationSentDate);
+  }
+
+  public Instant getLastExpiringCertNotificationSentDateInstant() {
     return lastExpiringCertNotificationSentDate;
   }
 
+  /**
+   * @deprecated Use {@link #getLastExpiringFailoverCertNotificationSentDateInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastExpiringFailoverCertNotificationSentDate() {
+    return toDateTime(lastExpiringFailoverCertNotificationSentDate);
+  }
+
+  public Instant getLastExpiringFailoverCertNotificationSentDateInstant() {
     return lastExpiringFailoverCertNotificationSentDate;
   }
 
@@ -473,7 +521,16 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return registrarName;
   }
 
+  /**
+   * @deprecated Use {@link #getLastPocVerificationDateInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastPocVerificationDate() {
+    return toDateTime(lastPocVerificationDate);
+  }
+
+  public Instant getLastPocVerificationDateInstant() {
     return lastPocVerificationDate;
   }
 
@@ -793,7 +850,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       return this;
     }
 
-    public Builder setClientCertificate(String clientCertificate, DateTime now) {
+    public Builder setClientCertificate(String clientCertificate, Instant now) {
       clientCertificate = emptyToNull(clientCertificate);
       String clientCertificateHash = calculateHash(clientCertificate);
       if (!Objects.equals(clientCertificate, getInstance().clientCertificate)
@@ -805,20 +862,47 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       return this;
     }
 
-    public Builder setLastExpiringCertNotificationSentDate(DateTime now) {
+    /**
+     * @deprecated Use {@link #setClientCertificate(String, Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public Builder setClientCertificate(String clientCertificate, DateTime now) {
+      return setClientCertificate(clientCertificate, toInstant(now));
+    }
+
+    public Builder setLastExpiringCertNotificationSentDate(Instant now) {
       checkArgumentNotNull(now, "Registrar lastExpiringCertNotificationSentDate cannot be null");
       getInstance().lastExpiringCertNotificationSentDate = now;
       return this;
     }
 
-    public Builder setLastExpiringFailoverCertNotificationSentDate(DateTime now) {
+    /**
+     * @deprecated Use {@link #setLastExpiringCertNotificationSentDate(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public Builder setLastExpiringCertNotificationSentDate(DateTime now) {
+      return setLastExpiringCertNotificationSentDate(toInstant(now));
+    }
+
+    public Builder setLastExpiringFailoverCertNotificationSentDate(Instant now) {
       checkArgumentNotNull(
           now, "Registrar lastExpiringFailoverCertNotificationSentDate cannot be null");
       getInstance().lastExpiringFailoverCertNotificationSentDate = now;
       return this;
     }
 
-    public Builder setFailoverClientCertificate(String clientCertificate, DateTime now) {
+    /**
+     * @deprecated Use {@link #setLastExpiringFailoverCertNotificationSentDate(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public Builder setLastExpiringFailoverCertNotificationSentDate(DateTime now) {
+      return setLastExpiringFailoverCertNotificationSentDate(toInstant(now));
+    }
+
+    public Builder setFailoverClientCertificate(String clientCertificate, Instant now) {
       clientCertificate = emptyToNull(clientCertificate);
       String clientCertificateHash = calculateHash(clientCertificate);
       if (!Objects.equals(clientCertificate, getInstance().failoverClientCertificate)
@@ -830,10 +914,28 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       return this;
     }
 
-    public Builder setLastPocVerificationDate(DateTime now) {
+    /**
+     * @deprecated Use {@link #setFailoverClientCertificate(String, Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public Builder setFailoverClientCertificate(String clientCertificate, DateTime now) {
+      return setFailoverClientCertificate(clientCertificate, toInstant(now));
+    }
+
+    public Builder setLastPocVerificationDate(Instant now) {
       checkArgumentNotNull(now, "Registrar lastPocVerificationDate cannot be null");
       getInstance().lastPocVerificationDate = now;
       return this;
+    }
+
+    /**
+     * @deprecated Use {@link #setLastPocVerificationDate(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public Builder setLastPocVerificationDate(DateTime now) {
+      return setLastPocVerificationDate(toInstant(now));
     }
 
     private static String calculateHash(String clientCertificate) {
@@ -968,9 +1070,19 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
      * and breaks the verification that an object has not been updated since it was copied.
      */
     @VisibleForTesting
-    public Builder setLastUpdateTime(DateTime timestamp) {
+    public Builder setLastUpdateTime(Instant timestamp) {
       getInstance().setUpdateTimestamp(UpdateAutoTimestamp.create(timestamp));
       return this;
+    }
+
+    /**
+     * @deprecated Use {@link #setLastUpdateTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    @VisibleForTesting
+    public Builder setLastUpdateTime(DateTime timestamp) {
+      return setLastUpdateTime(toInstant(timestamp));
     }
 
     /** Build the registrar, nullifying empty fields. */

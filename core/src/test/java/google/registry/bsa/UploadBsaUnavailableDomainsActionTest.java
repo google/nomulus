@@ -127,7 +127,7 @@ public class UploadBsaUnavailableDomainsActionTest {
     persistDeletedDomain("not-blocked.tld", clock.nowUtc().minusDays(1));
     action.run();
     BlobId existingFile =
-        BlobId.of(BUCKET, String.format("unavailable_domains_%s.txt", clock.nowUtc()));
+        BlobId.of(BUCKET, String.format("unavailable_domains_%s.txt", clock.now()));
     String blockList = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
     assertThat(blockList).isEqualTo("ace.tld\nflagrant.tld\nfoobar.tld\njimmy.tld\ntine.tld\n");
     assertThat(blockList).doesNotContain("not-blocked.tld");

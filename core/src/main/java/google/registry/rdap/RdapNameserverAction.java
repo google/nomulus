@@ -17,7 +17,7 @@ package google.registry.rdap;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import google.registry.flows.EppException;
 import google.registry.model.ForeignKeyUtils;
@@ -65,7 +65,7 @@ public class RdapNameserverAction extends RdapActionBase {
         ForeignKeyUtils.loadResourceByCache(
             Host.class,
             pathSearchString,
-            shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
+            shouldIncludeDeleted() ? START_INSTANT : getRequestTime());
     if (host.isEmpty() || !isAuthorized(host.get())) {
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
       // query, it MUST reply with 404 response code.

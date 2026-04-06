@@ -73,6 +73,7 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.xml.ValidationMode;
+import java.time.Instant;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
@@ -336,8 +337,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             .setCreationRegistrarId("NewRegistrar")
             .setCreationTimeForTest(DateTime.parse("2003-11-26T22:00:00.0Z"))
             .setRegistrationExpirationTime(DateTime.parse("2005-11-26T22:00:00.0Z"))
-            .setLastTransferTime(null)
-            .setLastEppUpdateTime(null)
+            .setLastTransferTime((Instant) null)
+            .setLastEppUpdateTime((Instant) null)
             .setLastEppUpdateRegistrarId(null)
             .build());
     doSuccessfulTest("domain_info_response_addperiod.xml", false);

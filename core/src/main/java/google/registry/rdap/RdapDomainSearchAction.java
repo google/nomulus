@@ -18,8 +18,8 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -52,12 +52,12 @@ import jakarta.inject.Inject;
 import jakarta.persistence.Query;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import java.net.InetAddress;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.hibernate.Hibernate;
-import org.joda.time.DateTime;
 
 /**
  * RDAP action for domain search requests.
@@ -332,7 +332,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   /** Assembles a list of {@link Host} keys by name when the pattern has no wildcard. */
   private ImmutableList<VKey<Host>> getNameserverRefsByLdhNameWithoutWildcard(
       final RdapSearchPattern partialStringQuery) {
-    DateTime timeToQuery = shouldIncludeDeleted() ? START_OF_TIME : getRequestTime();
+    Instant timeToQuery = shouldIncludeDeleted() ? START_INSTANT : getRequestTime();
     // If we need to check the sponsoring registrar, we need to load the resource rather than just
     // the key.
     Optional<String> desiredRegistrar = getDesiredRegistrar();
@@ -354,7 +354,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   /** Assembles a list of {@link Host} keys by name using a superordinate domain suffix. */
   private ImmutableList<VKey<Host>> getNameserverRefsByLdhNameWithSuffix(
       RdapSearchPattern partialStringQuery) {
-    DateTime timeToQuery = shouldIncludeDeleted() ? START_OF_TIME : getRequestTime();
+    Instant timeToQuery = shouldIncludeDeleted() ? START_INSTANT : getRequestTime();
     // The suffix must be a domain that we manage. That way, we can look up the domain and search
     // through the subordinate hosts. This is more efficient, and lets us permit wildcard searches
     // with no initial string.
@@ -410,17 +410,17 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   private DomainSearchResponse searchByNameserverIp(final InetAddress inetAddress) {
     Optional<String> desiredRegistrar = getDesiredRegistrar();
     ImmutableSet<VKey<Host>> hostKeys;
-      // Hibernate does not allow us to query @Converted array fields directly, either
-      // in the CriteriaQuery or the raw text format. However, Postgres does -- so we
-      // use native queries to find hosts where any of the inetAddresses match.
-      StringBuilder queryBuilder =
-          new StringBuilder(
-              "SELECT h.repo_id FROM \"Host\" h WHERE :address = ANY(h.inet_addresses) AND "
-                  + "h.deletion_time = CAST(:endOfTime AS timestamptz)");
-      ImmutableMap.Builder<String, String> parameters =
-          new ImmutableMap.Builder<String, String>()
-              .put("address", InetAddresses.toAddrString(inetAddress))
-              .put("endOfTime", END_OF_TIME.toString());
+    // Hibernate does not allow us to query @Converted array fields directly, either
+    // in the CriteriaQuery or the raw text format. However, Postgres does -- so we
+    // use native queries to find hosts where any of the inetAddresses match.
+    StringBuilder queryBuilder =
+        new StringBuilder(
+            "SELECT h.repo_id FROM \"Host\" h WHERE :address = ANY(h.inet_addresses) AND "
+                + "h.deletion_time = :endOfTime");
+    ImmutableMap.Builder<String, Object> parameters =
+        new ImmutableMap.Builder<String, Object>()
+            .put("address", InetAddresses.toAddrString(inetAddress))
+            .put("endOfTime", END_INSTANT);
       if (desiredRegistrar.isPresent()) {
         queryBuilder.append(" AND h.current_sponsor_registrar_id = :desiredRegistrar");
         parameters.put("desiredRegistrar", desiredRegistrar.get());

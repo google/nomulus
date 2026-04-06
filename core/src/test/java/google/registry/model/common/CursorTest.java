@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import google.registry.model.EntityTestCase;
 import google.registry.model.tld.Tld;
 import google.registry.util.SerializeUtils;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,7 +117,7 @@ public class CursorTest extends EntityTestCase {
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
-            () -> Cursor.createScoped(RDE_UPLOAD, null, Tld.get("tld")));
+            () -> Cursor.createScoped(RDE_UPLOAD, (Instant) null, Tld.get("tld")));
     assertThat(thrown).hasMessageThat().contains("Cursor time cannot be null");
   }
 }

@@ -31,6 +31,7 @@ import google.registry.model.poll.PendingActionNotificationResponse.HostPendingA
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
+import google.registry.util.DateTimeUtils;
 import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,7 @@ public class PollMessageTest extends EntityTestCase {
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
             .setHistoryEntry(historyEntry)
-            .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+            .setAutorenewEndTime(DateTimeUtils.plusYears(fakeClock.nowUtc(), 1))
             .setTargetId("foobar.foo")
             .build();
   }
@@ -158,7 +159,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
-                .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+                .setAutorenewEndTime(DateTimeUtils.plusYears(fakeClock.nowUtc(), 1))
                 .setTargetId("foobar.foo")
                 .build());
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
@@ -173,7 +174,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
-                .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+                .setAutorenewEndTime(DateTimeUtils.plusYears(fakeClock.nowUtc(), 1))
                 .setTargetId("foobar.foo")
                 .build());
     PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));

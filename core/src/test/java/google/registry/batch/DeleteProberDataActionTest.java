@@ -27,7 +27,8 @@ import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -63,7 +64,7 @@ class DeleteProberDataActionTest {
 
   private static final DateTime DELETION_TIME = DateTime.parse("2010-01-01T00:00:00.000Z");
 
-  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
+  private final FakeClock clock = new FakeClock(Instant.parse("2021-01-01T00:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -204,13 +205,13 @@ class DeleteProberDataActionTest {
         persistResource(
             DatabaseHelper.newDomain("blah.ib-any.test")
                 .asBuilder()
-                .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
+                .setCreationTimeForTest(minusYears(clock.now(), 1))
                 .build());
     action.run();
-    Instant timeAfterDeletion = Instant.now();
+    Instant timeAfterDeletion = clock.now();
     assertThat(ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", timeAfterDeletion))
         .isEmpty();
-    assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
+    assertThat(loadByEntity(domain).getDeletionTime()).isAtMost(timeAfterDeletion);
     assertDomainDnsRequests("blah.ib-any.test");
   }
 
@@ -220,15 +221,15 @@ class DeleteProberDataActionTest {
         persistResource(
             DatabaseHelper.newDomain("blah.ib-any.test")
                 .asBuilder()
-                .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
+                .setCreationTimeForTest(minusYears(clock.now(), 1))
                 .build());
     action.run();
-    Instant timeAfterDeletion = Instant.now();
+    Instant timeAfterDeletion = clock.now();
     resetAction();
     action.run();
     assertThat(ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", timeAfterDeletion))
         .isEmpty();
-    assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
+    assertThat(loadByEntity(domain).getDeletionTime()).isAtMost(timeAfterDeletion);
     assertDomainDnsRequests("blah.ib-any.test");
   }
 
@@ -237,11 +238,11 @@ class DeleteProberDataActionTest {
     persistResource(
         DatabaseHelper.newDomain("blah.ib-any.test")
             .asBuilder()
-            .setCreationTimeForTest(DateTime.now(UTC).minusSeconds(1))
+            .setCreationTimeForTest(clock.now().minus(java.time.Duration.ofSeconds(1)))
             .build());
     action.run();
     Optional<Domain> domain =
-        ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", DateTime.now(UTC));
+        ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", clock.now());
     assertThat(domain).isPresent();
     assertThat(domain.get().getDeletionTime()).isEqualTo(END_INSTANT);
   }
@@ -252,7 +253,7 @@ class DeleteProberDataActionTest {
         persistResource(
             DatabaseHelper.newDomain("blah.ib-any.test")
                 .asBuilder()
-                .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
+                .setCreationTimeForTest(minusYears(clock.now(), 1))
                 .build());
     action.isDryRun = true;
     action.run();
@@ -263,14 +264,14 @@ class DeleteProberDataActionTest {
   void test_domainWithSubordinateHosts_isSkipped() throws Exception {
     persistActiveHost("ns1.blah.ib-any.test");
     Domain nakedDomain =
-        persistDeletedDomain("todelete.ib-any.test", DateTime.now(UTC).minusYears(1));
+        persistDeletedDomain("todelete.ib-any.test", toDateTime(minusYears(clock.now(), 1)));
     Domain domainWithSubord =
         persistDomainAsDeleted(
             DatabaseHelper.newDomain("blah.ib-any.test")
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.blah.ib-any.test"))
                 .build(),
-            DateTime.now(UTC).minusYears(1));
+            toDateTime(minusYears(clock.now(), 1)));
     action.run();
 
     assertAllExist(ImmutableSet.of(domainWithSubord));
@@ -282,7 +283,7 @@ class DeleteProberDataActionTest {
     persistResource(
         DatabaseHelper.newDomain("blah.ib-any.test")
             .asBuilder()
-            .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
+            .setCreationTimeForTest(minusYears(clock.now(), 1))
             .build());
     action.registryAdminRegistrarId = null;
     IllegalStateException thrown = assertThrows(IllegalStateException.class, action::run);

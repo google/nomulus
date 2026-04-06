@@ -32,6 +32,7 @@ import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomain
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMultimap;
@@ -175,7 +176,8 @@ public final class HostUpdateFlow implements MutatingFlow {
     // have just completed.  This is only critical for updates that rename a host away from its
     // current superordinate domain, where we must "freeze" the last transfer time, but it's easiest
     // to just update it unconditionally.
-    DateTime lastTransferTime = existingHost.computeLastTransferTime(oldSuperordinateDomain);
+    DateTime lastTransferTime =
+        toDateTime(existingHost.computeLastTransferTime(oldSuperordinateDomain));
     // Copy the clientId onto the host. This is only really needed when the host will be external,
     // since external hosts store their own clientId. For subordinate hosts the canonical clientId
     // comes from the superordinate domain, but we might as well update the persisted value. For

@@ -15,6 +15,7 @@
 package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.net.InetAddresses;
 import google.registry.model.domain.Domain;
@@ -51,7 +52,7 @@ final class HostToXjcConverter {
         convertHostCommon(
             model,
             superordinateDomain.getCurrentSponsorRegistrarId(),
-            model.computeLastTransferTime(superordinateDomain));
+            toDateTime(model.computeLastTransferTime(superordinateDomain)));
     if (superordinateDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       bean.getStatuses().add(convertStatusValue(StatusValue.PENDING_TRANSFER));
     }
