@@ -21,7 +21,7 @@ import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractLongParameter;
 import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
-import static google.registry.request.RequestParameters.extractOptionalDatetimeParameter;
+import static google.registry.request.RequestParameters.extractOptionalInstantParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredDatetimeParameter;
@@ -41,6 +41,7 @@ import google.registry.request.OptionalJsonPayload;
 import google.registry.request.Parameter;
 import jakarta.inject.Named;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -121,14 +122,14 @@ public class BatchModule {
 
   @Provides
   @Parameter(ExpandBillingRecurrencesAction.PARAM_START_TIME)
-  static Optional<DateTime> provideStartTime(HttpServletRequest req) {
-    return extractOptionalDatetimeParameter(req, ExpandBillingRecurrencesAction.PARAM_START_TIME);
+  static Optional<Instant> provideStartTime(HttpServletRequest req) {
+    return extractOptionalInstantParameter(req, ExpandBillingRecurrencesAction.PARAM_START_TIME);
   }
 
   @Provides
   @Parameter(ExpandBillingRecurrencesAction.PARAM_END_TIME)
-  static Optional<DateTime> provideEndTime(HttpServletRequest req) {
-    return extractOptionalDatetimeParameter(req, ExpandBillingRecurrencesAction.PARAM_END_TIME);
+  static Optional<Instant> provideEndTime(HttpServletRequest req) {
+    return extractOptionalInstantParameter(req, ExpandBillingRecurrencesAction.PARAM_END_TIME);
   }
 
   @Provides

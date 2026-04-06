@@ -14,13 +14,19 @@
 
 package google.registry.model.transfer;
 
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
+
 import google.registry.model.EppResource;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
+import google.registry.xml.UtcInstantAdapter;
 import jakarta.persistence.Embeddable;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.time.Instant;
 import org.joda.time.DateTime;
 
 /**
@@ -58,9 +64,19 @@ public class TransferResponse extends BaseTransferObject implements ResponseData
      * will only be set on pending or approved transfers, not on cancelled or rejected ones.
      */
     @XmlElement(name = "exDate")
-    DateTime extendedRegistrationExpirationTime;
+    @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+    Instant extendedRegistrationExpirationTime;
 
-    public DateTime getExtendedRegistrationExpirationTime() {
+    /**
+     * @deprecated Use {@link #getExtendedRegistrationExpirationTime()}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public DateTime getExtendedRegistrationExpirationDateTime() {
+      return toDateTime(extendedRegistrationExpirationTime);
+    }
+
+    public Instant getExtendedRegistrationExpirationTime() {
       return extendedRegistrationExpirationTime;
     }
 
@@ -74,9 +90,19 @@ public class TransferResponse extends BaseTransferObject implements ResponseData
 
       /** Set the registration expiration time that will take effect if this transfer completes. */
       public Builder setExtendedRegistrationExpirationTime(
-          DateTime extendedRegistrationExpirationTime) {
+          Instant extendedRegistrationExpirationTime) {
         getInstance().extendedRegistrationExpirationTime = extendedRegistrationExpirationTime;
         return this;
+      }
+
+      /**
+       * @deprecated Use {@link #setExtendedRegistrationExpirationTime(Instant)}
+       */
+      @Deprecated
+      @SuppressWarnings("InlineMeSuggester")
+      public Builder setExtendedRegistrationExpirationTime(
+          DateTime extendedRegistrationExpirationTime) {
+        return setExtendedRegistrationExpirationTime(toInstant(extendedRegistrationExpirationTime));
       }
     }
   }

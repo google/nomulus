@@ -17,7 +17,6 @@ package google.registry.rdap;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static google.registry.request.Actions.getPathForAction;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -52,8 +51,8 @@ import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * Base RDAP action for all requests.
@@ -242,7 +241,7 @@ public abstract class RdapActionBase implements Runnable {
    * is authorized to do so.
    */
   boolean isAuthorized(EppResource eppResource) {
-    return toInstant(getRequestTime()).isBefore(eppResource.getDeletionTime())
+    return getRequestTime().isBefore(eppResource.getDeletionTime())
         || (shouldIncludeDeleted()
             && rdapAuthorization.isAuthorizedForRegistrar(
                 eppResource.getPersistedCurrentSponsorRegistrarId()));
@@ -268,8 +267,8 @@ public abstract class RdapActionBase implements Runnable {
     return name;
   }
 
-  /** Returns the DateTime this request took place. */
-  DateTime getRequestTime() {
+  /** Returns the Instant this request took place. */
+  Instant getRequestTime() {
     return rdapJsonFormatter.getRequestTime();
   }
 

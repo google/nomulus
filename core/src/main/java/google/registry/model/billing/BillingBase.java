@@ -17,6 +17,8 @@ package google.registry.model.billing;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
@@ -33,6 +35,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import java.time.Instant;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -143,7 +146,7 @@ public abstract class BillingBase extends ImmutableObject
 
   /** When this event was created. For recurrence events, this is also the recurrence start time. */
   @Column(nullable = false)
-  DateTime eventTime;
+  Instant eventTime;
 
   /** The reason for the bill. */
   @Enumerated(EnumType.STRING)
@@ -170,7 +173,16 @@ public abstract class BillingBase extends ImmutableObject
     return domainRepoId;
   }
 
+  /**
+   * @deprecated Use {@link #getEventTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getEventTime() {
+    return toDateTime(eventTime);
+  }
+
+  public Instant getEventTimeInstant() {
     return eventTime;
   }
 
@@ -226,7 +238,16 @@ public abstract class BillingBase extends ImmutableObject
       return thisCastToDerived();
     }
 
+    /**
+     * @deprecated Use {@link #setEventTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public B setEventTime(DateTime eventTime) {
+      return setEventTime(toInstant(eventTime));
+    }
+
+    public B setEventTime(Instant eventTime) {
       getInstance().eventTime = eventTime;
       return thisCastToDerived();
     }

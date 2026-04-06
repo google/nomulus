@@ -46,7 +46,7 @@ public class PasswordResetRequestTest extends EntityTestCase {
     PasswordResetRequest fromDatabase =
         DatabaseHelper.loadByKey(VKey.create(PasswordResetRequest.class, verificationCode));
     assertAboutImmutableObjects().that(fromDatabase).isEqualExceptFields(request, "requestTime");
-    assertThat(fromDatabase.getRequestTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(fromDatabase.getRequestTime()).isEqualTo(fakeClock.now());
   }
 
   @Test

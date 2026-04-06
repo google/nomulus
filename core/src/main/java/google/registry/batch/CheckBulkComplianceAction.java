@@ -15,7 +15,8 @@ package google.registry.batch;
 
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.minusYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -110,7 +111,8 @@ public class CheckBulkComplianceAction implements Runnable {
                       + " 'DOMAIN_CREATE'",
                   Long.class)
               .setParameter("token", bulkPricingPackage.getToken())
-              .setParameter("lastBilling", bulkPricingPackage.getNextBillingDate().minusYears(1))
+              .setParameter(
+                  "lastBilling", minusYears(bulkPricingPackage.getNextBillingDateInstant(), 1))
               .getSingleResult();
       if (creates > bulkPricingPackage.getMaxCreates()) {
         long overage = creates - bulkPricingPackage.getMaxCreates();
@@ -127,7 +129,7 @@ public class CheckBulkComplianceAction implements Runnable {
                       + " AND deletionTime = :endOfTime",
                   Long.class)
               .setParameter("token", bulkPricingPackage.getToken())
-              .setParameter("endOfTime", END_OF_TIME)
+              .setParameter("endOfTime", END_INSTANT)
               .getSingleResult();
       if (activeDomains > bulkPricingPackage.getMaxDomains()) {
         int overage = Ints.saturatedCast(activeDomains) - bulkPricingPackage.getMaxDomains();

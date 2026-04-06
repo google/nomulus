@@ -45,12 +45,12 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.hibernate.CacheMode;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
@@ -117,15 +117,16 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   public Map<String, Object> handleJsonRequest(Map<String, ?> json) {
     @SuppressWarnings("unchecked")
     ImmutableSet<String> tlds = ImmutableSet.copyOf((List<String>) json.get("tlds"));
-    final DateTime exportTime = DateTime.parse(json.get("exportTime").toString());
+    final Instant exportTime = Instant.parse(json.get("exportTime").toString());
     // We disallow exporting within the past 2 minutes because there might be outstanding writes.
     // We can only reliably call loadAtPointInTime at times that are UTC midnight and >
     // databaseRetention ago in the past.
-    DateTime now = clock.nowUtc();
-    if (exportTime.isAfter(now.minusMinutes(2))) {
+    Instant now = clock.now();
+    if (exportTime.isAfter(now.minus(java.time.Duration.ofMinutes(2)))) {
       throw new BadRequestException("Invalid export time: must be > 2 minutes ago");
     }
-    if (exportTime.isBefore(now.minus(databaseRetention))) {
+    if (exportTime.isBefore(
+        now.minus(java.time.Duration.ofMillis(databaseRetention.getMillis())))) {
       throw new BadRequestException(
           String.format(
               "Invalid export time: must be < %d days ago", databaseRetention.getStandardDays()));
@@ -142,7 +143,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
         "filenames", filenames);
   }
 
-  private void generateForTld(String tld, DateTime exportTime) {
+  private void generateForTld(String tld, Instant exportTime) {
     ImmutableList<String> stanzas = tm().transact(() -> getStanzasForTld(tld, exportTime));
     BlobId outputBlobId = BlobId.of(bucket, String.format(FILENAME_FORMAT, tld, exportTime));
     try (OutputStream gcsOutput = gcsUtils.openOutputStream(outputBlobId);
@@ -156,7 +157,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     }
   }
 
-  private ImmutableList<String> getStanzasForTld(String tld, DateTime exportTime) {
+  private ImmutableList<String> getStanzasForTld(String tld, Instant exportTime) {
     ImmutableList.Builder<String> result = new ImmutableList.Builder<>();
     ScrollableResults<Domain> scrollableResults =
         tm().query("FROM Domain WHERE tld = :tld AND deletionTime > :exportTime", Domain.class)
@@ -177,7 +178,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   }
 
   private void populateStanzasForDomain(
-      Domain domain, DateTime exportTime, ImmutableList.Builder<String> result) {
+      Domain domain, Instant exportTime, ImmutableList.Builder<String> result) {
     domain = loadAtPointInTime(domain, exportTime);
     // A null means the domain was deleted (or not created) at this time.
     if (domain == null || !domain.shouldPublishToDns()) {
@@ -191,7 +192,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   }
 
   private void populateStanzasForSubordinateHosts(
-      Domain domain, DateTime exportTime, ImmutableList.Builder<String> result) {
+      Domain domain, Instant exportTime, ImmutableList.Builder<String> result) {
     ImmutableSet<String> subordinateHosts = domain.getSubordinateHosts();
     if (!subordinateHosts.isEmpty()) {
       for (Host unprojectedHost : tm().loadByKeys(domain.getNameservers()).values()) {
@@ -227,7 +228,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
    * }
    * </pre>
    */
-  private String domainStanza(Domain domain, DateTime exportTime) {
+  private String domainStanza(Domain domain, Instant exportTime) {
     StringBuilder result = new StringBuilder();
     String domainLabel = stripTld(domain.getDomainName(), domain.getTld());
     Tld tld = Tld.get(domain.getTld());

@@ -19,8 +19,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
 import google.registry.rdap.AbstractJsonableObject.RestrictJsonNames;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Data Structures defined in RFC 9083 section 4. */
 final class RdapDataStructures {
@@ -238,13 +238,18 @@ final class RdapDataStructures {
    */
   private abstract static class EventBase extends AbstractJsonableObject {
     @JsonableElement abstract EventAction eventAction();
-    @JsonableElement abstract DateTime eventDate();
+
+    @JsonableElement
+    abstract Instant eventDate();
+
     @JsonableElement abstract ImmutableList<Link> links();
 
 
     abstract static class Builder<B extends Builder<?>> {
       abstract B setEventAction(EventAction eventAction);
-      abstract B setEventDate(DateTime eventDate);
+
+      abstract B setEventDate(Instant eventDate);
+
       abstract ImmutableList.Builder<Link> linksBuilder();
 
       @SuppressWarnings("unchecked")

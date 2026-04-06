@@ -17,6 +17,7 @@ package google.registry.bsa.persistence;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.bsa.DownloadStage.DONE;
 import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
+import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
@@ -37,8 +38,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Locale;
-import org.joda.time.DateTime;
 
 /** Records of ongoing and completed download jobs. */
 @Entity
@@ -53,10 +54,10 @@ class BsaDownload {
   Long jobId;
 
   @Column(nullable = false)
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create((Instant) null);
 
   @Column(nullable = false)
-  UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create(null);
+  UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create((Instant) null);
 
   @Column(nullable = false)
   String blockListChecksums = "";
@@ -71,7 +72,7 @@ class BsaDownload {
     return jobId;
   }
 
-  DateTime getCreationTime() {
+  Instant getCreationTime() {
     return creationTime.getTimestamp();
   }
 
@@ -83,7 +84,7 @@ class BsaDownload {
    */
   String getJobName() {
     // Return a value based on job start time, which is unique.
-    return getCreationTime().toString().toLowerCase(Locale.ROOT).replace(":", "");
+    return ISO_8601_FORMATTER.format(getCreationTime()).toLowerCase(Locale.ROOT).replace(":", "");
   }
 
   boolean isDone() {

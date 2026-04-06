@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import google.registry.privileges.secretmanager.SecretManagerClient;
+import google.registry.util.DateTimeUtils;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -32,7 +33,6 @@ import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -156,8 +156,8 @@ public class MosApiModuleTest {
     this.generatedPrivateKey = keyPair.getPrivate();
     DateTimeFormatter formatter =
         DateTimeFormatter.ofPattern("yyyyMMddHHmmss'Z'").withZone(ZoneId.of("UTC"));
-    Instant now = Instant.now();
-    Instant end = now.plus(Duration.ofDays(365));
+    Instant now = Instant.parse("2021-01-01T00:00:00Z");
+    Instant end = DateTimeUtils.plusYears(now, 1);
     // Convert string to Bouncy Castle Time objects
     Time notBefore = new Time(new ASN1GeneralizedTime(formatter.format(now)));
     Time notAfter = new Time(new ASN1GeneralizedTime(formatter.format(end)));

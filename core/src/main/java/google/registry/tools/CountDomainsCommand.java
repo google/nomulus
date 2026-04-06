@@ -23,8 +23,8 @@ import com.beust.jcommander.Parameters;
 import google.registry.model.domain.Domain;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
 
 /** Command to show the count of active domains on a given TLD. */
 @Parameters(separators = " =", commandDescription = "Show count of domains on TLD")
@@ -40,12 +40,12 @@ final class CountDomainsCommand implements Command {
 
   @Override
   public void run() {
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     assertTldsExist(tlds)
         .forEach(tld -> System.out.printf("%s,%d\n", tld, getCountForTld(tld, now)));
   }
 
-  private long getCountForTld(String tld, DateTime now) {
+  private long getCountForTld(String tld, Instant now) {
     return tm().transact(
             () ->
                 tm().createQueryComposer(Domain.class)

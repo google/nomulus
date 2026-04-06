@@ -19,7 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import google.registry.bsa.RefreshStage;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * Information needed when handling a domain refresh.
@@ -28,10 +28,10 @@ import org.joda.time.DateTime;
  */
 public record RefreshSchedule(
     long jobId,
-    DateTime jobCreationTime,
+    Instant jobCreationTime,
     String jobName,
     RefreshStage stage,
-    DateTime prevRefreshTime) {
+    Instant prevRefreshTime) {
 
   /** Updates the current job to the new stage. */
   @CanIgnoreReturnValue
@@ -50,7 +50,7 @@ public record RefreshSchedule(
             });
   }
 
-  static RefreshSchedule create(BsaDomainRefresh job, DateTime prevJobCreationTime) {
+  static RefreshSchedule create(BsaDomainRefresh job, Instant prevJobCreationTime) {
     return new RefreshSchedule(
         job.getJobId(),
         job.getCreationTime(),
