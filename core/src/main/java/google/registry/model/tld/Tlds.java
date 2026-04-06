@@ -36,6 +36,7 @@ import com.google.common.net.InternetDomainName;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.util.DomainNameUtils;
 import jakarta.persistence.EntityManager;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -154,7 +155,16 @@ public final class Tlds {
   }
 
   /** Returns true if at least one TLD is enrolled {@code now}. */
-  public static boolean hasActiveBsaEnrollment(DateTime now) {
+  public static boolean hasActiveBsaEnrollment(Instant now) {
     return getTldEntitiesOfType(TldType.REAL).stream().anyMatch(tld -> isEnrolledWithBsa(tld, now));
+  }
+
+  /**
+   * @deprecated Use {@link #hasActiveBsaEnrollment(Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static boolean hasActiveBsaEnrollment(DateTime now) {
+    return hasActiveBsaEnrollment(google.registry.util.DateTimeUtils.toInstant(now));
   }
 }

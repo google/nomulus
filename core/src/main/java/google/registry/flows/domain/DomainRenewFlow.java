@@ -34,7 +34,7 @@ import static google.registry.flows.domain.token.AllocationTokenFlowUtils.maybeA
 import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verifyBulkTokenAllowedOnDomain;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.leapSafeAddYears;
+import static google.registry.util.DateTimeUtils.plusYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -191,7 +191,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     existingDomain = maybeApplyBulkPricingRemovalToken(existingDomain, allocationToken);
 
     DateTime newExpirationTime =
-        leapSafeAddYears(existingDomain.getRegistrationExpirationDateTime(), years); // Uncapped
+        plusYears(existingDomain.getRegistrationExpirationDateTime(), years); // Uncapped
     validateRegistrationPeriod(now, newExpirationTime);
     Optional<FeeRenewCommandExtension> feeRenew =
         eppInput.getSingleExtension(FeeRenewCommandExtension.class);

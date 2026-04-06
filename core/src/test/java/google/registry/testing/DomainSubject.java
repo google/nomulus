@@ -17,6 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Fact.simpleFact;
 import static com.google.common.truth.Truth.assertAbout;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
@@ -28,6 +29,7 @@ import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.testing.TruthChainer.And;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
+import java.time.Instant;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -77,17 +79,30 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
   }
 
   public And<DomainSubject> hasRegistrationExpirationTime(DateTime expiration) {
+    return hasRegistrationExpirationTime(toInstant(expiration));
+  }
+
+  public And<DomainSubject> hasRegistrationExpirationTime(Instant expiration) {
     return hasValue(
-        expiration, actual.getRegistrationExpirationDateTime(), "getRegistrationExpirationTime()");
+        expiration, actual.getRegistrationExpirationTime(), "getRegistrationExpirationTime()");
   }
 
   public And<DomainSubject> hasLastTransferTime(DateTime lastTransferTime) {
-    return hasValue(lastTransferTime, actual.getLastTransferTime(), "getLastTransferTime()");
+    return hasLastTransferTime(toInstant(lastTransferTime));
+  }
+
+  public And<DomainSubject> hasLastTransferTime(Instant lastTransferTime) {
+    return hasValue(
+        lastTransferTime, toInstant(actual.getLastTransferTime()), "getLastTransferTime()");
   }
 
   public And<DomainSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
+    return hasLastTransferTimeNotEqualTo(toInstant(lastTransferTime));
+  }
+
+  public And<DomainSubject> hasLastTransferTimeNotEqualTo(Instant lastTransferTime) {
     return doesNotHaveValue(
-        lastTransferTime, actual.getLastTransferTime(), "getLastTransferTime()");
+        lastTransferTime, toInstant(actual.getLastTransferTime()), "getLastTransferTime()");
   }
 
   public And<DomainSubject> hasDeletePollMessage() {
@@ -109,12 +124,21 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
   }
 
   public And<DomainSubject> hasAutorenewEndTime(DateTime autorenewEndTime) {
+    return hasAutorenewEndTime(toInstant(autorenewEndTime));
+  }
+
+  public And<DomainSubject> hasAutorenewEndTime(Instant autorenewEndTime) {
     checkArgumentNotNull(autorenewEndTime, "Use hasNoAutorenewEndTime() instead");
-    return hasValue(autorenewEndTime, actual.getAutorenewEndTime(), "getAutorenewEndTime()");
+    return hasValue(
+        autorenewEndTime,
+        toInstant(actual.getAutorenewEndTime().orElse(null)),
+        "getAutorenewEndTime()");
   }
 
   public And<DomainSubject> hasNoAutorenewEndTime() {
-    return hasNoValue(actual.getAutorenewEndTime(), "getAutorenewEndTime()");
+    return hasNoValue(
+        actual.getAutorenewEndTime().map(google.registry.util.DateTimeUtils::toInstant),
+        "getAutorenewEndTime()");
   }
 
   public static SimpleSubjectBuilder<DomainSubject, Domain> assertAboutDomains() {

@@ -86,7 +86,7 @@ class LabelDiffUpdatesTest {
   void applyLabelDiffs_delete() {
     tm().transact(
             () -> {
-              tm().insert(new BsaLabel("label", fakeClock.nowUtc()));
+              tm().insert(new BsaLabel("label", fakeClock.now()));
               tm().insert(new BsaUnblockableDomain("label", "app", Reason.REGISTERED));
             });
     when(idnChecker.getSupportingTlds(any())).thenReturn(ImmutableSet.of(app));
@@ -108,7 +108,7 @@ class LabelDiffUpdatesTest {
   void applyLabelDiffs_newAssociationOfLabelToOrder() {
     tm().transact(
             () -> {
-              tm().insert(new BsaLabel("label", fakeClock.nowUtc()));
+              tm().insert(new BsaLabel("label", fakeClock.now()));
               tm().insert(new BsaUnblockableDomain("label", "app", Reason.REGISTERED));
             });
     when(idnChecker.getSupportingTlds(any())).thenReturn(ImmutableSet.of(app));
@@ -141,7 +141,7 @@ class LabelDiffUpdatesTest {
     when(idnChecker.getForbiddingTlds(any()))
         .thenReturn(Sets.difference(ImmutableSet.of(dev), ImmutableSet.of()).immutableCopy());
     when(idnChecker.getSupportingTlds(any())).thenReturn(ImmutableSet.of(app, page));
-    when(schedule.jobCreationTime()).thenReturn(fakeClock.nowUtc());
+    when(schedule.jobCreationTime()).thenReturn(fakeClock.now());
 
     ImmutableList<UnblockableDomain> unblockableDomains =
         applyLabelDiff(

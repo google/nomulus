@@ -19,7 +19,7 @@ import google.registry.persistence.VKey;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * Specifies a second-level TLD name that should be blocked from registration in all TLDs except by
@@ -41,12 +41,12 @@ final class BsaLabel {
    */
   @SuppressWarnings("unused")
   @Column(nullable = false)
-  DateTime creationTime;
+  Instant creationTime;
 
   // For Hibernate.
   private BsaLabel() {}
 
-  BsaLabel(String label, DateTime creationTime) {
+  BsaLabel(String label, Instant creationTime) {
     this.label = label;
     this.creationTime = creationTime;
   }

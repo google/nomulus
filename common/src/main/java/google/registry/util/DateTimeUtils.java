@@ -22,6 +22,7 @@ import com.google.common.collect.Ordering;
 import java.sql.Date;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -55,6 +56,34 @@ public abstract class DateTimeUtils {
    */
   public static final Instant END_INSTANT = Instant.ofEpochMilli(Long.MAX_VALUE / 1000);
 
+  /**
+   * Standard ISO 8601 formatter with millisecond precision in UTC.
+   *
+   * <p>Example: {@code 2024-03-27T10:15:30.105Z}
+   *
+   * <p>Uses the 'u' symbol for year to support large/negative years in a way compatible with ISO
+   * 8601.
+   */
+  public static final DateTimeFormatter ISO_8601_FORMATTER =
+      DateTimeFormatter.ofPattern("u-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
+
+  /**
+   * Parses an ISO-8601 string to an {@link Instant}.
+   *
+   * <p>This method is lenient and supports both strings with and without millisecond precision
+   * (e.g. {@code 2024-03-27T10:15:30Z} and {@code 2024-03-27T10:15:30.105Z}). It also supports
+   * large years (e.g. {@code 294247-01-10T04:00:54.775Z}).
+   */
+  public static Instant parseInstant(String timestamp) {
+    try {
+      // Try the standard millisecond precision format first.
+      return Instant.from(ISO_8601_FORMATTER.parse(timestamp));
+    } catch (java.time.format.DateTimeParseException e) {
+      // Fall back to the standard ISO instant parser which handles varied precision.
+      return Instant.parse(timestamp);
+    }
+  }
+
   /** Returns the earliest of a number of given {@link DateTime} instances. */
   public static DateTime earliestOf(DateTime first, DateTime... rest) {
     return earliestDateTimeOf(Lists.asList(first, rest));
@@ -79,13 +108,24 @@ public abstract class DateTimeUtils {
 
   /** Returns the latest of a number of given {@link DateTime} instances. */
   public static DateTime latestOf(DateTime first, DateTime... rest) {
+    return latestDateTimeOf(Lists.asList(first, rest));
+  }
+
+  /** Returns the latest of a number of given {@link Instant} instances. */
+  public static Instant latestOf(Instant first, Instant... rest) {
     return latestOf(Lists.asList(first, rest));
   }
 
   /** Returns the latest element in a {@link DateTime} iterable. */
-  public static DateTime latestOf(Iterable<DateTime> dates) {
+  public static DateTime latestDateTimeOf(Iterable<DateTime> dates) {
     checkArgument(!Iterables.isEmpty(dates));
     return Ordering.<DateTime>natural().max(dates);
+  }
+
+  /** Returns the latest element in a {@link Instant} iterable. */
+  public static Instant latestOf(Iterable<Instant> instants) {
+    checkArgument(!Iterables.isEmpty(instants));
+    return Ordering.<Instant>natural().max(instants);
   }
 
   /** Returns whether the first {@link DateTime} is equal to or earlier than the second. */
@@ -112,8 +152,7 @@ public abstract class DateTimeUtils {
    * Adds years to a date, in the {@code Duration} sense of semantic years. Use this instead of
    * {@link DateTime#plusYears} to ensure that we never end up on February 29.
    */
-  @Deprecated
-  public static DateTime leapSafeAddYears(DateTime now, int years) {
+  public static DateTime plusYears(DateTime now, int years) {
     checkArgument(years >= 0);
     return years == 0 ? now : now.plusYears(1).plusYears(years - 1);
   }
@@ -122,7 +161,7 @@ public abstract class DateTimeUtils {
    * Adds years to a date, in the {@code Duration} sense of semantic years. Use this instead of
    * {@link java.time.ZonedDateTime#plusYears} to ensure that we never end up on February 29.
    */
-  public static Instant leapSafeAddYears(Instant now, long years) {
+  public static Instant plusYears(Instant now, long years) {
     checkArgument(years >= 0);
     return (years == 0)
         ? now
@@ -133,8 +172,7 @@ public abstract class DateTimeUtils {
    * Subtracts years from a date, in the {@code Duration} sense of semantic years. Use this instead
    * of {@link DateTime#minusYears} to ensure that we never end up on February 29.
    */
-  @Deprecated
-  public static DateTime leapSafeSubtractYears(DateTime now, int years) {
+  public static DateTime minusYears(DateTime now, int years) {
     checkArgument(years >= 0);
     return years == 0 ? now : now.minusYears(1).minusYears(years - 1);
   }
@@ -143,11 +181,47 @@ public abstract class DateTimeUtils {
    * Subtracts years from a date, in the {@code Duration} sense of semantic years. Use this instead
    * of {@link java.time.ZonedDateTime#minusYears} to ensure that we never end up on February 29.
    */
-  public static Instant leapSafeSubtractYears(Instant now, int years) {
+  public static Instant minusYears(Instant now, long years) {
     checkArgument(years >= 0);
     return (years == 0)
         ? now
         : now.atZone(ZoneOffset.UTC).minusYears(1).minusYears(years - 1).toInstant();
+  }
+
+  /**
+   * @deprecated Use {@link #plusYears(DateTime, int)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static DateTime leapSafeAddYears(DateTime now, int years) {
+    return plusYears(now, years);
+  }
+
+  /**
+   * @deprecated Use {@link #plusYears(Instant, long)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static Instant leapSafeAddYears(Instant now, long years) {
+    return plusYears(now, years);
+  }
+
+  /**
+   * @deprecated Use {@link #minusYears(DateTime, int)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static DateTime leapSafeSubtractYears(DateTime now, int years) {
+    return minusYears(now, years);
+  }
+
+  /**
+   * @deprecated Use {@link #minusYears(Instant, long)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static Instant leapSafeSubtractYears(Instant now, int years) {
+    return minusYears(now, (long) years);
   }
 
   public static Date toSqlDate(LocalDate localDate) {
@@ -174,10 +248,6 @@ public abstract class DateTimeUtils {
   @Nullable
   public static org.joda.time.Instant toJodaInstant(@Nullable java.time.Instant instant) {
     return (instant == null) ? null : org.joda.time.Instant.ofEpochMilli(instant.toEpochMilli());
-  }
-
-  public static Instant plusYears(Instant instant, int years) {
-    return instant.atZone(ZoneOffset.UTC).plusYears(years).toInstant();
   }
 
   public static Instant plusDays(Instant instant, int days) {

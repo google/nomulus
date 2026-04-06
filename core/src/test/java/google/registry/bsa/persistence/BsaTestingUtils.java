@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableList;
 import google.registry.bsa.DownloadStage;
 import google.registry.bsa.api.UnblockableDomain;
 import google.registry.util.Clock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.joda.time.Duration;
 
 /** Exposes BSA persistence entities and tools to test classes. */
@@ -31,7 +31,7 @@ public final class BsaTestingUtils {
   public static final Duration DEFAULT_NOP_INTERVAL = Duration.standardDays(1);
 
   /** An arbitrary point of time used as BsaLabels' creation time. */
-  public static final DateTime BSA_LABEL_CREATION_TIME = DateTime.parse("2023-12-31T00:00:00Z");
+  public static final Instant BSA_LABEL_CREATION_TIME = Instant.parse("2023-12-31T00:00:00Z");
 
   private BsaTestingUtils() {}
 

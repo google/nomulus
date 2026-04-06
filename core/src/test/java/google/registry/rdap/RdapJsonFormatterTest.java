@@ -48,6 +48,7 @@ import google.registry.rdap.RdapObjectClasses.BoilerplateType;
 import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -150,7 +151,7 @@ class RdapJsonFormatterTest {
             makeDomain("fish.みんな", null, null, registrar)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc())
-                .setLastEppUpdateTime(null)
+                .setLastEppUpdateTime((java.time.Instant) null)
                 .build());
 
     // history entries
@@ -330,7 +331,7 @@ class RdapJsonFormatterTest {
                 RdapJsonFormatter.getLastHistoryByType(domainFull),
                 RdapJsonFormatter.HistoryTimeAndRegistrar::modificationTime))
         .containsExactlyEntriesIn(
-            ImmutableMap.of(TRANSFER, DateTime.parse("1999-12-01T00:00:00.000Z")));
+            ImmutableMap.of(TRANSFER, Instant.parse("1999-12-01T00:00:00.000Z")));
   }
 
   @Test

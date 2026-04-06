@@ -61,6 +61,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -69,7 +70,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /** Command to generate and persist {@link AllocationToken}s. */
 @Parameters(
@@ -168,7 +168,7 @@ class GenerateAllocationTokensCommand implements Command {
       description =
           "Comma-delimited list of token status transitions effective on specific dates, of the"
               + " form <time>=<status>[,<time>=<status>]* where each status represents the status.")
-  private ImmutableSortedMap<DateTime, TokenStatus> tokenStatusTransitions;
+  private ImmutableSortedMap<Instant, TokenStatus> tokenStatusTransitions;
 
   @Parameter(
       names = {"--renewal_price_behavior"},
@@ -252,7 +252,7 @@ class GenerateAllocationTokensCommand implements Command {
                     Optional.ofNullable(discountPrice).ifPresent(token::setDiscountPrice);
                     Optional.ofNullable(discountYears).ifPresent(token::setDiscountYears);
                     Optional.ofNullable(tokenStatusTransitions)
-                        .ifPresent(token::setTokenStatusTransitions);
+                        .ifPresent(token::setTokenStatusTransitionsInstant);
                     Optional.ofNullable(renewalPrice).ifPresent(token::setRenewalPrice);
                     Optional.ofNullable(domainNames)
                         .ifPresent(d -> token.setDomainName(d.removeFirst()));

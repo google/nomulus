@@ -16,6 +16,7 @@ package google.registry.model;
 
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Maps.transformValues;
+import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.stream.Collectors.toCollection;
@@ -29,6 +30,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -138,7 +140,11 @@ public abstract class ImmutableObject implements Cloneable {
   public String toString() {
     NavigableMap<String, Object> sortedFields = new TreeMap<>();
     for (Entry<Field, Object> entry : getSignificantFields().entrySet()) {
-      sortedFields.put(entry.getKey().getName(), entry.getValue());
+      Object value = entry.getValue();
+      if (value instanceof Instant) {
+        value = ISO_8601_FORMATTER.format((Instant) value);
+      }
+      sortedFields.put(entry.getKey().getName(), value);
     }
     return toStringHelper(sortedFields);
   }
@@ -149,9 +155,14 @@ public abstract class ImmutableObject implements Cloneable {
     NavigableMap<String, Object> sortedFields = new TreeMap<>();
     for (Entry<Field, Object> entry : getSignificantFields().entrySet()) {
       Field field = entry.getKey();
-      Object value = entry.getValue();
-      sortedFields.put(
-          field.getName(), field.isAnnotationPresent(DoNotHydrate.class) ? value : hydrate(value));
+      Object value =
+          field.isAnnotationPresent(DoNotHydrate.class)
+              ? entry.getValue()
+              : hydrate(entry.getValue());
+      if (value instanceof Instant) {
+        value = ISO_8601_FORMATTER.format((Instant) value);
+      }
+      sortedFields.put(field.getName(), value);
     }
     return toStringHelper(sortedFields);
   }
@@ -173,6 +184,9 @@ public abstract class ImmutableObject implements Cloneable {
     }
     if (value instanceof ImmutableObject) {
       return ((ImmutableObject) value).toHydratedString();
+    }
+    if (value instanceof Instant) {
+      return ISO_8601_FORMATTER.format((Instant) value);
     }
     return value;
   }
@@ -211,6 +225,8 @@ public abstract class ImmutableObject implements Cloneable {
           // We can't use toImmutableList here, because values can be null (especially since the
           // original ImmutableObject might have been the result of a cloneEmptyToNull call).
           .collect(toList());
+    } else if (o instanceof Instant) {
+      return ISO_8601_FORMATTER.format((Instant) o);
     } else if (o instanceof Number || o instanceof Boolean) {
       return o;
     } else {

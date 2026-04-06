@@ -16,6 +16,7 @@ package google.registry.beam.resave;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static org.apache.beam.sdk.values.TypeDescriptors.integers;
 
 import com.google.common.collect.ImmutableList;
@@ -30,7 +31,6 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.Host;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
-import google.registry.util.DateTimeUtils;
 import java.io.Serializable;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
@@ -74,7 +74,7 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
       "SELECT repoId FROM Domain d WHERE (d.transferData.transferStatus = 'PENDING' AND"
           + " d.transferData.pendingTransferExpirationTime < current_timestamp()) OR"
           + " (d.registrationExpirationTime < current_timestamp() AND d.deletionTime ="
-          + " (:END_OF_TIME)) OR (EXISTS (SELECT 1 FROM GracePeriod gp WHERE gp.domainRepoId ="
+          + " (:END_INSTANT)) OR (EXISTS (SELECT 1 FROM GracePeriod gp WHERE gp.domainRepoId ="
           + " d.repoId AND gp.expirationTime < current_timestamp()))";
 
   private final ResaveAllEppResourcesPipelineOptions options;
@@ -108,7 +108,7 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
     Read<String, String> repoIdRead =
         RegistryJpaIO.read(
                 DOMAINS_TO_PROJECT_QUERY,
-                ImmutableMap.of("END_OF_TIME", DateTimeUtils.END_OF_TIME),
+                ImmutableMap.of("END_INSTANT", END_INSTANT),
                 String.class,
                 r -> r)
             .withCoder(StringUtf8Coder.of());
