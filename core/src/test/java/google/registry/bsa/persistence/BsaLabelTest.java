@@ -16,19 +16,18 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link BsaLabel}. */
 public class BsaLabelTest {
 
-  FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  FakeClock fakeClock = new FakeClock(Instant.parse("2024-01-01T00:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -36,10 +35,10 @@ public class BsaLabelTest {
 
   @Test
   void persist() {
-    tm().transact(() -> tm().put(new BsaLabel("label", fakeClock.nowUtc())));
+    tm().transact(() -> tm().put(new BsaLabel("label", fakeClock.now())));
     BsaLabel persisted = tm().transact(() -> tm().loadByKey(BsaLabel.vKey("label")));
     assertThat(persisted.getLabel()).isEqualTo("label");
-    assertThat(persisted.creationTime).isEqualTo(fakeClock.nowUtc());
+    assertThat(persisted.creationTime).isEqualTo(fakeClock.now());
   }
 
   @Test
@@ -49,7 +48,7 @@ public class BsaLabelTest {
 
   @Test
   void isLabelBlocked_yes() {
-    tm().transact(() -> tm().put(new BsaLabel("abc", fakeClock.nowUtc())));
+    tm().transact(() -> tm().put(new BsaLabel("abc", fakeClock.now())));
     assertThat(tm().transact(() -> BsaLabelUtils.isLabelBlocked("abc"))).isTrue();
   }
 }

@@ -16,6 +16,7 @@ package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -31,9 +32,9 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -42,8 +43,8 @@ import org.mockito.ArgumentCaptor;
 /** Unit tests for {@link ExpandBillingRecurrencesAction}. */
 public class ExpandBillingRecurrencesActionTest extends BeamActionTestBase {
 
-  private final DateTime cursorTime = DateTime.parse("2020-02-01T00:00:00Z");
-  private final DateTime now = DateTime.parse("2020-02-02T00:00:00Z");
+  private final Instant cursorTime = Instant.parse("2020-02-01T00:00:00Z");
+  private final Instant now = Instant.parse("2020-02-02T00:00:00Z");
 
   private final FakeClock clock = new FakeClock(now);
   private final ExpandBillingRecurrencesAction action = new ExpandBillingRecurrencesAction();
@@ -69,11 +70,14 @@ public class ExpandBillingRecurrencesActionTest extends BeamActionTestBase {
     action.dataflow = dataflow;
     action.response = response;
     expectedParameters.put("registryEnvironment", "UNITTEST");
-    expectedParameters.put("startTime", "2020-02-01T00:00:00.000Z");
-    expectedParameters.put("endTime", "2020-02-02T00:00:00.000Z");
+    expectedParameters.put("startTime", "2020-02-01T00:00:00Z");
+    expectedParameters.put("endTime", "2020-02-02T00:00:00Z");
     expectedParameters.put("isDryRun", "false");
     expectedParameters.put("advanceCursor", "true");
-    tm().transact(() -> tm().put(Cursor.createGlobal(CursorType.RECURRING_BILLING, cursorTime)));
+    tm().transact(
+            () ->
+                tm().put(
+                        Cursor.createGlobal(CursorType.RECURRING_BILLING, toDateTime(cursorTime))));
   }
 
   @Test
@@ -89,7 +93,7 @@ public class ExpandBillingRecurrencesActionTest extends BeamActionTestBase {
 
   @Test
   void testSuccess_provideEndTime() throws Exception {
-    action.endTimeParam = Optional.of(DateTime.parse("2020-02-01T12:00:00.001Z"));
+    action.endTimeParam = Optional.of(Instant.parse("2020-02-01T12:00:00.001Z"));
     expectedParameters.put("endTime", "2020-02-01T12:00:00.001Z");
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -102,7 +106,7 @@ public class ExpandBillingRecurrencesActionTest extends BeamActionTestBase {
 
   @Test
   void testSuccess_provideStartTime() throws Exception {
-    action.startTimeParam = Optional.of(DateTime.parse("2020-01-01T12:00:00.001Z"));
+    action.startTimeParam = Optional.of(Instant.parse("2020-01-01T12:00:00.001Z"));
     expectedParameters.put("startTime", "2020-01-01T12:00:00.001Z");
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -143,7 +147,7 @@ public class ExpandBillingRecurrencesActionTest extends BeamActionTestBase {
 
   @Test
   void testFailure_endTimeAfterNow() throws Exception {
-    action.endTimeParam = Optional.of(DateTime.parse("2020-02-03T00:00:00Z"));
+    action.endTimeParam = Optional.of(Instant.parse("2020-02-03T00:00:00Z"));
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> action.run());
     assertThat(thrown.getMessage()).contains("must be at or before now");
@@ -152,7 +156,7 @@ public class ExpandBillingRecurrencesActionTest extends BeamActionTestBase {
 
   @Test
   void testFailure_startTimeAfterEndTime() throws Exception {
-    action.startTimeParam = Optional.of(DateTime.parse("2020-02-03T00:00:00Z"));
+    action.startTimeParam = Optional.of(Instant.parse("2020-02-03T00:00:00Z"));
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> action.run());
     assertThat(thrown.getMessage()).contains("must be before end time");

@@ -24,8 +24,8 @@ import google.registry.bsa.RefreshStage;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -33,7 +33,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link RefreshScheduler}. */
 public class RefreshSchedulerTest {
 
-  FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
+  FakeClock fakeClock = new FakeClock(Instant.parse("2023-11-09T02:08:57.880Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -62,14 +62,14 @@ public class RefreshSchedulerTest {
   @Test
   void schedule_NoPreviousRefresh_withCompletedPrevDownload() {
     tm().transact(() -> tm().insert(new BsaDownload().setStage(DownloadStage.DONE)));
-    DateTime downloadTime = fakeClock.nowUtc();
+    Instant downloadTime = fakeClock.now();
     fakeClock.advanceOneMilli();
 
     Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
     assertThat(scheduleOptional).isPresent();
     RefreshSchedule schedule = scheduleOptional.get();
 
-    assertThat(schedule.jobCreationTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(schedule.jobCreationTime()).isEqualTo(fakeClock.now());
     assertThat(schedule.stage()).isEqualTo(RefreshStage.CHECK_FOR_CHANGES);
     assertThat(schedule.prevRefreshTime()).isEqualTo(downloadTime);
   }
@@ -77,11 +77,11 @@ public class RefreshSchedulerTest {
   @Test
   void schedule_firstRefreshOngoing() {
     tm().transact(() -> tm().insert(new BsaDownload().setStage(DownloadStage.DONE)));
-    DateTime downloadTime = fakeClock.nowUtc();
+    Instant downloadTime = fakeClock.now();
     fakeClock.advanceOneMilli();
 
     tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(APPLY_CHANGES)));
-    DateTime refreshStartTime = fakeClock.nowUtc();
+    Instant refreshStartTime = fakeClock.now();
     fakeClock.advanceOneMilli();
 
     Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
@@ -96,14 +96,14 @@ public class RefreshSchedulerTest {
   @Test
   void schedule_firstRefreshDone() {
     tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(DONE)));
-    DateTime prevRefreshStartTime = fakeClock.nowUtc();
+    Instant prevRefreshStartTime = fakeClock.now();
     fakeClock.advanceOneMilli();
 
     Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
     assertThat(scheduleOptional).isPresent();
     RefreshSchedule schedule = scheduleOptional.get();
 
-    assertThat(schedule.jobCreationTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(schedule.jobCreationTime()).isEqualTo(fakeClock.now());
     assertThat(schedule.stage()).isEqualTo(RefreshStage.CHECK_FOR_CHANGES);
     assertThat(schedule.prevRefreshTime()).isEqualTo(prevRefreshStartTime);
   }
@@ -111,10 +111,10 @@ public class RefreshSchedulerTest {
   @Test
   void schedule_ongoingRefreshWithPrevCompletion() {
     tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(DONE)));
-    DateTime prevRefreshStartTime = fakeClock.nowUtc();
+    Instant prevRefreshStartTime = fakeClock.now();
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(APPLY_CHANGES)));
-    DateTime ongoingRefreshStartTime = fakeClock.nowUtc();
+    Instant ongoingRefreshStartTime = fakeClock.now();
     fakeClock.advanceOneMilli();
 
     Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();

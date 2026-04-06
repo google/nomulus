@@ -17,7 +17,7 @@ package google.registry.tools.javascrap;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -30,8 +30,8 @@ import google.registry.model.domain.Domain;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.tools.ConfirmingCommand;
+import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
 
 /**
  * Command to recreate closed {@link BillingRecurrence}s for domains.
@@ -91,17 +91,17 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
 
   private ImmutableList<BillingRecurrence> convertRecurrencesWithoutSaving(
       ImmutableList<BillingRecurrence> existingRecurrences) {
+    Instant now = tm().getTxTime();
     return existingRecurrences.stream()
         .map(
             existingRecurrence -> {
               TimeOfYear timeOfYear = existingRecurrence.getRecurrenceTimeOfYear();
-              DateTime newLastExpansion =
-                  timeOfYear.getLastInstanceBeforeOrAt(tm().getTransactionTime());
+              Instant newLastExpansion = timeOfYear.getLastInstanceBeforeOrAtInstant(now);
               // event time should be the next date of billing in the future
-              DateTime eventTime = timeOfYear.getNextInstanceAtOrAfter(tm().getTransactionTime());
+              Instant eventTime = timeOfYear.getNextInstanceAtOrAfterInstant(now);
               return existingRecurrence
                   .asBuilder()
-                  .setRecurrenceEndTime(END_OF_TIME)
+                  .setRecurrenceEndTime(END_INSTANT)
                   .setRecurrenceLastExpansion(newLastExpansion)
                   .setEventTime(eventTime)
                   .setId(0)
@@ -112,7 +112,7 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
 
   private ImmutableList<BillingRecurrence> loadRecurrences() {
     ImmutableList.Builder<BillingRecurrence> result = new ImmutableList.Builder<>();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     for (String domainName : mainParameters) {
       Domain domain =
           ForeignKeyUtils.loadResource(Domain.class, domainName, now)
@@ -123,7 +123,7 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
                               "Domain %s does not exist or has been deleted", domainName)));
       BillingRecurrence billingRecurrence = tm().loadByKey(domain.getAutorenewBillingEvent());
       checkArgument(
-          !billingRecurrence.getRecurrenceEndTime().equals(END_OF_TIME),
+          !billingRecurrence.getRecurrenceEndTimeInstant().equals(END_INSTANT),
           "Domain %s's recurrence's end date is already END_OF_TIME",
           domainName);
       // Double-check that there are no non-linked BillingRecurrences that have an END_OF_TIME end.
@@ -135,7 +135,7 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
       allRecurrencesForDomain.forEach(
           recurrence ->
               checkArgument(
-                  !recurrence.getRecurrenceEndTime().equals(END_OF_TIME),
+                  !recurrence.getRecurrenceEndTimeInstant().equals(END_INSTANT),
                   "There exists a recurrence with id %s for domain %s with an end date of"
                       + " END_OF_TIME",
                   recurrence.getId(),

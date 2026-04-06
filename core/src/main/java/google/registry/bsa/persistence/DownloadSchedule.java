@@ -24,8 +24,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.bsa.BlockListType;
 import google.registry.bsa.DownloadStage;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * Information needed when handling a download from BSA.
@@ -36,7 +36,7 @@ import org.joda.time.DateTime;
  */
 public record DownloadSchedule(
     long jobId,
-    DateTime jobCreationTime,
+    Instant jobCreationTime,
     String jobName,
     DownloadStage stage,
     Optional<CompletedJob> latestCompleted,

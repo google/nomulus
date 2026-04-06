@@ -21,9 +21,9 @@ import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureName;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.tools.params.TransitionListParameter.FeatureStatusTransitions;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Command for creating and updating {@link FeatureFlag} objects. */
 @Parameters(separators = " =", commandDescription = "Create or update a feature flag.")
@@ -41,14 +41,17 @@ public class ConfigureFeatureFlagCommand extends MutatingCommand {
               + " form <time>=<status>[,<time>=<status>]* where each status represents the status"
               + " of the feature flag.",
       required = true)
-  private ImmutableSortedMap<DateTime, FeatureStatus> featureStatusTransitions;
+  private ImmutableSortedMap<Instant, FeatureStatus> featureStatusTransitions;
 
   @Override
   protected void init() throws Exception {
     for (FeatureName name : mainParameters) {
       Optional<FeatureFlag> oldFlag = FeatureFlag.getUncached(name);
       FeatureFlag.Builder newFlagBuilder =
-          new FeatureFlag().asBuilder().setFeatureName(name).setStatusMap(featureStatusTransitions);
+          new FeatureFlag()
+              .asBuilder()
+              .setFeatureName(name)
+              .setStatusMapInstant(featureStatusTransitions);
       stageEntityChange(oldFlag.orElse(null), newFlagBuilder.build());
     }
   }

@@ -22,14 +22,14 @@ import com.google.common.collect.Ordering;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.tld.Tld.TldState;
+import java.time.Instant;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /** Combined converter and validator class for transition list JCommander argument strings. */
 // TODO(b/19031334): Investigate making this complex generic type work with the factory.
-public abstract class TransitionListParameter<V> extends KeyValueMapParameter<DateTime, V> {
+public abstract class TransitionListParameter<V> extends KeyValueMapParameter<Instant, V> {
 
-  private static final DateTimeParameter DATE_TIME_CONVERTER = new DateTimeParameter();
+  private static final InstantParameter DATE_TIME_CONVERTER = new InstantParameter();
 
   public TransitionListParameter() {
     // This is not sentence-capitalized like most exception messages because it is appended to the
@@ -38,12 +38,12 @@ public abstract class TransitionListParameter<V> extends KeyValueMapParameter<Da
   }
 
   @Override
-  protected final DateTime parseKey(String rawKey) {
+  protected final Instant parseKey(String rawKey) {
     return DATE_TIME_CONVERTER.convert(rawKey);
   }
 
   @Override
-  protected final ImmutableSortedMap<DateTime, V> processMap(ImmutableMap<DateTime, V> map) {
+  protected final ImmutableSortedMap<Instant, V> processMap(ImmutableMap<Instant, V> map) {
     checkArgument(Ordering.natural().isOrdered(map.keySet()), "Transition times out of order");
     return ImmutableSortedMap.copyOf(map);
   }

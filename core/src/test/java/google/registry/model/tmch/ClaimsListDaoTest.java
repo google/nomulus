@@ -48,17 +48,17 @@ public class ClaimsListDaoTest {
   @Test
   void save_insertsClaimsListSuccessfully() {
     ClaimsList claimsList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+        ClaimsList.create(fakeClock.now(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     claimsList = ClaimsListDao.save(claimsList);
     ClaimsList insertedClaimsList = ClaimsListDao.get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
-    assertThat(insertedClaimsList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(insertedClaimsList.getCreationTime()).isEqualTo(fakeClock.now());
   }
 
   @Test
   void save_insertsClaimsListSuccessfully_withRetries() {
     ClaimsList claimsList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+        ClaimsList.create(fakeClock.now(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     AtomicBoolean isFirstAttempt = new AtomicBoolean(true);
     tm().transact(
             () -> {
@@ -69,15 +69,15 @@ public class ClaimsListDaoTest {
               }
             });
     ClaimsList insertedClaimsList = ClaimsListDao.get();
-    assertThat(insertedClaimsList.getTmdbGenerationTime())
-        .isEqualTo(claimsList.getTmdbGenerationTime());
+    assertThat(insertedClaimsList.getTmdbGenerationTimeInstant())
+        .isEqualTo(claimsList.getTmdbGenerationTimeInstant());
     assertThat(insertedClaimsList.getLabelsToKeys()).isEqualTo(claimsList.getLabelsToKeys());
-    assertThat(insertedClaimsList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(insertedClaimsList.getCreationTime()).isEqualTo(fakeClock.now());
   }
 
   @Test
   void save_claimsListWithNoEntries() {
-    ClaimsList claimsList = ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of());
+    ClaimsList claimsList = ClaimsList.create(fakeClock.now(), ImmutableMap.of());
     claimsList = ClaimsListDao.save(claimsList);
     ClaimsList insertedClaimsList = ClaimsListDao.get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
@@ -92,9 +92,9 @@ public class ClaimsListDaoTest {
   @Test
   void getCurrent_returnsLatestClaims() {
     ClaimsList oldClaimsList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+        ClaimsList.create(fakeClock.now(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsList newClaimsList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label3", "key3", "label4", "key4"));
+        ClaimsList.create(fakeClock.now(), ImmutableMap.of("label3", "key3", "label4", "key4"));
     oldClaimsList = ClaimsListDao.save(oldClaimsList);
     newClaimsList = ClaimsListDao.save(newClaimsList);
     assertClaimsListEquals(newClaimsList, ClaimsListDao.get());
@@ -104,11 +104,11 @@ public class ClaimsListDaoTest {
   void testDaoCaching_savesAndUpdates() {
     assertThat(ClaimsListDao.CACHE.getIfPresent(ClaimsListDao.class)).isNull();
     ClaimsList oldList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+        ClaimsList.create(fakeClock.now(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     oldList = ClaimsListDao.save(oldList);
     assertThat(ClaimsListDao.CACHE.getIfPresent(ClaimsListDao.class)).isEqualTo(oldList);
     ClaimsList newList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label3", "key3", "label4", "key4"));
+        ClaimsList.create(fakeClock.now(), ImmutableMap.of("label3", "key3", "label4", "key4"));
     newList = ClaimsListDao.save(newList);
     assertThat(ClaimsListDao.CACHE.getIfPresent(ClaimsListDao.class)).isEqualTo(newList);
   }
@@ -116,7 +116,7 @@ public class ClaimsListDaoTest {
   @Test
   void testEntryCaching_savesAndUpdates() {
     ClaimsList claimsList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+        ClaimsList.create(fakeClock.now(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     // Bypass the DAO to avoid the cache
     tm().transact(() -> tm().insert(claimsList));
     ClaimsList fromDatabase = ClaimsListDao.get();
@@ -140,7 +140,7 @@ public class ClaimsListDaoTest {
 
   private void assertClaimsListEquals(ClaimsList left, ClaimsList right) {
     assertThat(left.getRevisionId()).isEqualTo(right.getRevisionId());
-    assertThat(left.getTmdbGenerationTime()).isEqualTo(right.getTmdbGenerationTime());
+    assertThat(left.getTmdbGenerationTimeInstant()).isEqualTo(right.getTmdbGenerationTimeInstant());
     assertThat(left.getLabelsToKeys()).isEqualTo(right.getLabelsToKeys());
   }
 }

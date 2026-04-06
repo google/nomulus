@@ -16,7 +16,9 @@ package google.registry.model.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -31,6 +33,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -123,7 +126,7 @@ public class Cursor extends UpdateAutoTimestampEntity {
   String scope;
 
   @Column(nullable = false)
-  DateTime cursorTime = START_OF_TIME;
+  Instant cursorTime = START_INSTANT;
 
   @Override
   public VKey<Cursor> createVKey() {
@@ -143,10 +146,18 @@ public class Cursor extends UpdateAutoTimestampEntity {
     return VKey.create(Cursor.class, new CursorId(type, scope));
   }
 
-  public DateTime getLastUpdateTime() {
+  public Instant getLastUpdateTime() {
     return getUpdateTimestamp().getTimestamp();
   }
 
+  /**
+   * @deprecated Use {@link #getLastUpdateTime()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getLastUpdateDateTime() {
+    return toDateTime(getUpdateTimestamp().getTimestamp());
+  }
 
   public String getScope() {
     return scope;
@@ -168,21 +179,39 @@ public class Cursor extends UpdateAutoTimestampEntity {
   }
 
   /** Creates a new global cursor instance. */
-  public static Cursor createGlobal(CursorType cursorType, DateTime cursorTime) {
+  public static Cursor createGlobal(CursorType cursorType, Instant cursorTime) {
     return create(cursorType, cursorTime, GLOBAL);
   }
 
+  /**
+   * @deprecated Use {@link #createGlobal(CursorType, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static Cursor createGlobal(CursorType cursorType, DateTime cursorTime) {
+    return createGlobal(cursorType, toInstant(cursorTime));
+  }
+
   /** Creates a new cursor instance with a given {@link Tld} scope. */
-  public static Cursor createScoped(CursorType cursorType, DateTime cursorTime, Tld scope) {
+  public static Cursor createScoped(CursorType cursorType, Instant cursorTime, Tld scope) {
     checkNotNull(scope, "Cursor scope cannot be null");
     return create(cursorType, cursorTime, scope.getTldStr());
+  }
+
+  /**
+   * @deprecated Use {@link #createScoped(CursorType, Instant, Tld)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static Cursor createScoped(CursorType cursorType, DateTime cursorTime, Tld scope) {
+    return createScoped(cursorType, toInstant(cursorTime), scope);
   }
 
   /**
    * Creates a new cursor instance with a given TLD scope, or global if the scope is {@link
    * #GLOBAL}.
    */
-  private static Cursor create(CursorType cursorType, DateTime cursorTime, String scope) {
+  private static Cursor create(CursorType cursorType, Instant cursorTime, String scope) {
     checkNotNull(cursorTime, "Cursor time cannot be null");
     checkValidCursorTypeForScope(cursorType, scope);
     Cursor instance = new Cursor();
@@ -193,13 +222,31 @@ public class Cursor extends UpdateAutoTimestampEntity {
   }
 
   /**
-   * Returns the current time for a given cursor, or {@code START_OF_TIME} if the cursor is null.
+   * Returns the current time for a given cursor, or {@code START_INSTANT} if the cursor is null.
    */
-  public static DateTime getCursorTimeOrStartOfTime(Optional<Cursor> cursor) {
-    return cursor.map(Cursor::getCursorTime).orElse(START_OF_TIME);
+  public static Instant getCursorTimeOrStartOfTimeInstant(Optional<Cursor> cursor) {
+    return cursor.map(Cursor::getCursorTimeInstant).orElse(START_INSTANT);
   }
 
+  /**
+   * @deprecated Use {@link #getCursorTimeOrStartOfTimeInstant(Optional)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static DateTime getCursorTimeOrStartOfTime(Optional<Cursor> cursor) {
+    return toDateTime(getCursorTimeOrStartOfTimeInstant(cursor));
+  }
+
+  /**
+   * @deprecated Use {@link #getCursorTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getCursorTime() {
+    return toDateTime(cursorTime);
+  }
+
+  public Instant getCursorTimeInstant() {
     return cursorTime;
   }
 

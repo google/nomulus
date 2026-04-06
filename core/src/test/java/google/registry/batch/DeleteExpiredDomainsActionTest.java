@@ -137,7 +137,7 @@ class DeleteExpiredDomainsActionTest {
                   () ->
                       tm()
                           .createQueryComposer(Domain.class)
-                          .where("autorenewEndTime", Comparator.LTE, clock.nowUtc())
+                          .where("autorenewEndTime", Comparator.LTE, clock.now())
                           .stream()
                           .map(Domain::getDomainName)
                           .collect(toImmutableSet()));

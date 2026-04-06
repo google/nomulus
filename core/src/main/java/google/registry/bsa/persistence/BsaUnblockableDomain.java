@@ -31,6 +31,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import java.io.Serializable;
+import java.time.Instant;
 
 /** A domain matching a BSA label but is in use (registered or reserved), so cannot be blocked. */
 @Entity
@@ -52,7 +53,7 @@ class BsaUnblockableDomain {
    */
   @SuppressWarnings("unused")
   @Column(nullable = false)
-  CreateAutoTimestamp createTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp createTime = CreateAutoTimestamp.create((Instant) null);
 
   // For Hibernate
   BsaUnblockableDomain() {}
