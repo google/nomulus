@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullToEmpty;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
@@ -113,7 +114,7 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
    */
   // TODO(b/36405140): backfill this field for existing domains to which it should apply.
   @Column(name = "transfer_registration_expiration_time")
-  DateTime transferredRegistrationExpirationTime;
+  Instant transferredRegistrationExpirationTime;
 
   @Column(name = "transfer_billing_cancellation_id")
   @Convert(converter = VKeyConverter_BillingCancellation.class)
@@ -171,13 +172,14 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
 
   @Nullable
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getTransferredRegistrationExpirationDateTime() {
-    return transferredRegistrationExpirationTime;
+    return toDateTime(transferredRegistrationExpirationTime);
   }
 
   @Nullable
   public Instant getTransferredRegistrationExpirationTime() {
-    return toInstant(transferredRegistrationExpirationTime);
+    return transferredRegistrationExpirationTime;
   }
 
   @Nullable
@@ -334,9 +336,20 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
     }
 
     public Builder setTransferredRegistrationExpirationTime(
-        DateTime transferredRegistrationExpirationTime) {
+        Instant transferredRegistrationExpirationTime) {
       getInstance().transferredRegistrationExpirationTime = transferredRegistrationExpirationTime;
       return this;
+    }
+
+    /**
+     * @deprecated Use {@link #setTransferredRegistrationExpirationTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public Builder setTransferredRegistrationExpirationTime(
+        DateTime transferredRegistrationExpirationTime) {
+      return setTransferredRegistrationExpirationTime(
+          toInstant(transferredRegistrationExpirationTime));
     }
 
     public Builder setServerApproveBillingEvent(VKey<BillingEvent> serverApproveBillingEvent) {

@@ -56,7 +56,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
             updateTimestamp=UpdateAutoTimestamp: {
-                lastUpdateTime=2022-09-01T00:00:00.000Z
+                lastUpdateTime=2022-09-01T00:00:00Z
             }
             userRoles=UserRoles: {
                 globalRole=FTE
@@ -78,7 +78,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
             updateTimestamp=UpdateAutoTimestamp: {
-                lastUpdateTime=2022-09-01T00:00:00.000Z
+                lastUpdateTime=2022-09-01T00:00:00Z
             }
             userRoles=UserRoles: {
                 globalRole=NONE
@@ -92,7 +92,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
             updateTimestamp=UpdateAutoTimestamp: {
-                lastUpdateTime=2022-09-01T00:00:00.000Z
+                lastUpdateTime=2022-09-01T00:00:00Z
             }
             userRoles=UserRoles: {
                 globalRole=FTE
@@ -114,7 +114,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
             updateTimestamp=UpdateAutoTimestamp: {
-                lastUpdateTime=2022-09-01T00:00:00.000Z
+                lastUpdateTime=2022-09-01T00:00:00Z
             }
             userRoles=UserRoles: {
                 globalRole=NONE

@@ -179,6 +179,7 @@ import google.registry.tmch.TmchTestData;
 import google.registry.xml.ValidationMode;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -325,10 +326,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             : clock.nowUtc().plus(Tld.get(domainTld).getAddGracePeriodLength());
     assertLastHistoryContainsResource(domain);
     DomainHistory historyEntry = getHistoryEntries(domain, DomainHistory.class).get(0);
+    VKey<BillingRecurrence> autorenewVKey = domain.getAutorenewBillingEvent();
+    BillingRecurrence autorenewBR = tm().transact(() -> tm().loadByKey(autorenewVKey));
+    Instant eventTime = autorenewBR.getEventTimeInstant();
     assertAboutDomains()
         .that(domain)
-        .hasRegistrationExpirationTime(
-            tm().transact(() -> tm().loadByKey(domain.getAutorenewBillingEvent()).getEventTime()))
+        .hasRegistrationExpirationTime(eventTime)
         .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.DOMAIN_CREATE)

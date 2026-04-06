@@ -16,7 +16,9 @@ package google.registry.model.poll;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
@@ -55,6 +57,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -132,7 +135,7 @@ public abstract class PollMessage extends ImmutableObject
 
   /** The time when the poll message should be delivered. May be in the future. */
   @Column(nullable = false)
-  DateTime eventTime;
+  Instant eventTime;
 
   /** Human-readable message that will be returned with this poll message. */
   @Column(name = "message")
@@ -158,7 +161,16 @@ public abstract class PollMessage extends ImmutableObject
     return clientId;
   }
 
+  /**
+   * @deprecated Use {@link #getEventTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getEventTime() {
+    return toDateTime(eventTime);
+  }
+
+  public Instant getEventTimeInstant() {
     return eventTime;
   }
 
@@ -242,7 +254,16 @@ public abstract class PollMessage extends ImmutableObject
       return thisCastToDerived();
     }
 
+    /**
+     * @deprecated Use {@link #setEventTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public B setEventTime(DateTime eventTime) {
+      return setEventTime(toInstant(eventTime));
+    }
+
+    public B setEventTime(Instant eventTime) {
       getInstance().eventTime = eventTime;
       return thisCastToDerived();
     }
@@ -372,7 +393,7 @@ public abstract class PollMessage extends ImmutableObject
     String domainName;
 
     @Column(name = "transfer_response_domain_expiration_time")
-    DateTime extendedRegistrationExpirationTime;
+    Instant extendedRegistrationExpirationTime;
 
     @Column(name = "transfer_response_contact_id")
     String contactId;
@@ -388,6 +409,19 @@ public abstract class PollMessage extends ImmutableObject
     @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
+    }
+
+    /**
+     * @deprecated Use {@link #getExtendedRegistrationExpirationTime()}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public DateTime getExtendedRegistrationExpirationDateTime() {
+      return toDateTime(extendedRegistrationExpirationTime);
+    }
+
+    public Instant getExtendedRegistrationExpirationTime() {
+      return extendedRegistrationExpirationTime;
     }
 
     @Override
@@ -435,9 +469,9 @@ public abstract class PollMessage extends ImmutableObject
                   .setGainingRegistrarId(transferResponse.getGainingRegistrarId())
                   .setLosingRegistrarId(transferResponse.getLosingRegistrarId())
                   .setTransferStatus(transferResponse.getTransferStatus())
-                  .setTransferRequestTime(transferResponse.getTransferRequestTime())
+                  .setTransferRequestTime(transferResponse.getTransferRequestTimeInstant())
                   .setPendingTransferExpirationTime(
-                      transferResponse.getPendingTransferExpirationDateTime())
+                      transferResponse.getPendingTransferExpirationTime())
                   .setExtendedRegistrationExpirationTime(extendedRegistrationExpirationTime)
                   .build();
         }
@@ -517,13 +551,22 @@ public abstract class PollMessage extends ImmutableObject
     String targetId;
 
     /** The autorenew recurs annually between {@link #eventTime} and this time. */
-    DateTime autorenewEndTime;
+    Instant autorenewEndTime;
 
     public String getTargetId() {
       return targetId;
     }
 
+    /**
+     * @deprecated Use {@link #getAutorenewEndTimeInstant()}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public DateTime getAutorenewEndTime() {
+      return toDateTime(autorenewEndTime);
+    }
+
+    public Instant getAutorenewEndTimeInstant() {
       return autorenewEndTime;
     }
 
@@ -536,7 +579,9 @@ public abstract class PollMessage extends ImmutableObject
     public ImmutableList<ResponseData> getResponseData() {
       // Note that the event time is when the autorenew occurred, so the expiration time in the
       // response should be 1 year past that, since it denotes the new expiration time.
-      return ImmutableList.of(DomainRenewData.create(getTargetId(), getEventTime().plusYears(1)));
+      return ImmutableList.of(
+          DomainRenewData.create(
+              getTargetId(), google.registry.util.DateTimeUtils.leapSafeAddYears(eventTime, 1)));
     }
 
     @Override
@@ -558,7 +603,16 @@ public abstract class PollMessage extends ImmutableObject
         return this;
       }
 
+      /**
+       * @deprecated Use {@link #setAutorenewEndTime(Instant)}
+       */
+      @Deprecated
+      @SuppressWarnings("InlineMeSuggester")
       public Builder setAutorenewEndTime(DateTime autorenewEndTime) {
+        return setAutorenewEndTime(toInstant(autorenewEndTime));
+      }
+
+      public Builder setAutorenewEndTime(Instant autorenewEndTime) {
         getInstance().autorenewEndTime = autorenewEndTime;
         return this;
       }
@@ -567,7 +621,7 @@ public abstract class PollMessage extends ImmutableObject
       public Autorenew build() {
         Autorenew instance = getInstance();
         instance.autorenewEndTime =
-            Optional.ofNullable(instance.autorenewEndTime).orElse(END_OF_TIME);
+            Optional.ofNullable(instance.autorenewEndTime).orElse(END_INSTANT);
         return super.build();
       }
     }

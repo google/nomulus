@@ -16,6 +16,7 @@ package google.registry.bsa.persistence;
 
 import static google.registry.bsa.persistence.DownloadScheduler.fetchMostRecentDownload;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -41,14 +42,15 @@ public class RefreshScheduler {
               if (recentJobs.size() > 1) {
                 BsaDomainRefresh mostRecent = recentJobs.get(0);
                 if (mostRecent.isDone()) {
-                  return Optional.of(scheduleNewJob(mostRecent.getCreationTime()));
+                  return Optional.of(scheduleNewJob(toDateTime(mostRecent.getCreationTime())));
                 } else {
                   return Optional.of(
-                      rescheduleOngoingJob(mostRecent, recentJobs.get(1).getCreationTime()));
+                      rescheduleOngoingJob(
+                          mostRecent, toDateTime(recentJobs.get(1).getCreationTime())));
                 }
               }
               if (recentJobs.size() == 1 && recentJobs.get(0).isDone()) {
-                return Optional.of(scheduleNewJob(recentJobs.get(0).getCreationTime()));
+                return Optional.of(scheduleNewJob(toDateTime(recentJobs.get(0).getCreationTime())));
               }
               // No previously completed refreshes. Need start time of a completed download as
               // lower bound of refresh checks.
@@ -56,7 +58,7 @@ public class RefreshScheduler {
                 return Optional.empty();
               }
 
-              DateTime prevDownloadTime = mostRecentDownload.get().getCreationTime();
+              DateTime prevDownloadTime = toDateTime(mostRecentDownload.get().getCreationTime());
               if (recentJobs.isEmpty()) {
                 return Optional.of(scheduleNewJob(prevDownloadTime));
               } else {

@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -38,6 +39,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -64,7 +66,7 @@ public class ClaimsList extends ImmutableObject {
         name = "creationTime",
         column = @Column(name = "creationTimestamp", nullable = false))
   })
-  CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create((Instant) null);
 
   /**
    * When the claims list was last updated.
@@ -144,8 +146,17 @@ public class ClaimsList extends ImmutableObject {
   }
 
   /** Returns the creation time of this claims list. */
-  public DateTime getCreationTimestamp() {
+  public Instant getCreationTime() {
     return creationTimestamp.getTimestamp();
+  }
+
+  /**
+   * @deprecated Use {@link #getCreationTime()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getCreationDateTime() {
+    return toDateTime(creationTimestamp.getTimestamp());
   }
 
   /**
