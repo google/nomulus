@@ -18,8 +18,9 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -410,17 +411,17 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   private DomainSearchResponse searchByNameserverIp(final InetAddress inetAddress) {
     Optional<String> desiredRegistrar = getDesiredRegistrar();
     ImmutableSet<VKey<Host>> hostKeys;
-      // Hibernate does not allow us to query @Converted array fields directly, either
-      // in the CriteriaQuery or the raw text format. However, Postgres does -- so we
-      // use native queries to find hosts where any of the inetAddresses match.
-      StringBuilder queryBuilder =
-          new StringBuilder(
-              "SELECT h.repo_id FROM \"Host\" h WHERE :address = ANY(h.inet_addresses) AND "
-                  + "h.deletion_time = CAST(:endOfTime AS timestamptz)");
-      ImmutableMap.Builder<String, String> parameters =
-          new ImmutableMap.Builder<String, String>()
-              .put("address", InetAddresses.toAddrString(inetAddress))
-              .put("endOfTime", END_OF_TIME.toString());
+    // Hibernate does not allow us to query @Converted array fields directly, either
+    // in the CriteriaQuery or the raw text format. However, Postgres does -- so we
+    // use native queries to find hosts where any of the inetAddresses match.
+    StringBuilder queryBuilder =
+        new StringBuilder(
+            "SELECT h.repo_id FROM \"Host\" h WHERE :address = ANY(h.inet_addresses) AND "
+                + "h.deletion_time = :endOfTime");
+    ImmutableMap.Builder<String, Object> parameters =
+        new ImmutableMap.Builder<String, Object>()
+            .put("address", InetAddresses.toAddrString(inetAddress))
+            .put("endOfTime", END_INSTANT);
       if (desiredRegistrar.isPresent()) {
         queryBuilder.append(" AND h.current_sponsor_registrar_id = :desiredRegistrar");
         parameters.put("desiredRegistrar", desiredRegistrar.get());
@@ -476,7 +477,9 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                   if (!shouldIncludeDeleted()) {
                     queryBuilder =
                         queryBuilder.where(
-                            "deletionTime", criteriaBuilder::greaterThan, getRequestTime());
+                            "deletionTime",
+                            criteriaBuilder::greaterThan,
+                            toInstant(getRequestTime()));
                   }
                   if (cursorString.isPresent()) {
                     queryBuilder =

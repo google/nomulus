@@ -16,6 +16,8 @@ package google.registry.flows.certs;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
@@ -94,8 +96,8 @@ public class CertificateChecker {
   }
 
   private static int getValidityLengthInDays(X509Certificate certificate) {
-    DateTime start = DateTime.parse(certificate.getNotBefore().toInstant().toString());
-    DateTime end = DateTime.parse(certificate.getNotAfter().toInstant().toString());
+    DateTime start = toDateTime(toInstant(certificate.getNotBefore()));
+    DateTime end = toDateTime(toInstant(certificate.getNotAfter()));
     return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay()).getDays();
   }
 

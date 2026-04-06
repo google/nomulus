@@ -24,6 +24,7 @@ import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
@@ -178,7 +179,7 @@ public class SyncRegistrarsSheetTest {
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .build());
     // Use registrar key for contacts' parent.
-    DateTime registrarCreationTime = persistResource(registrar).getCreationTime();
+    DateTime registrarCreationTime = toDateTime(persistResource(registrar).getCreationTime());
     persistResources(contacts);
 
     clock.advanceBy(standardMinutes(1));

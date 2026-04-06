@@ -17,6 +17,7 @@ package google.registry.bsa.persistence;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.RefreshStage.CHECK_FOR_CHANGES;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -40,7 +41,8 @@ public class BsaDomainRefreshTest {
     BsaDomainRefresh persisted =
         tm().transact(() -> tm().getEntityManager().merge(new BsaDomainRefresh()));
     assertThat(persisted.jobId).isNotNull();
-    assertThat(persisted.creationTime.getTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persisted.creationTime.getTimestamp()).isEqualTo(toInstant(fakeClock.nowUtc()));
+    assertThat(persisted.updateTime.getTimestamp()).isEqualTo(toInstant(fakeClock.nowUtc()));
     assertThat(persisted.stage).isEqualTo(CHECK_FOR_CHANGES);
   }
 

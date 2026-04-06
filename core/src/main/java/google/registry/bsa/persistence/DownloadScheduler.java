@@ -20,6 +20,7 @@ import static google.registry.bsa.DownloadStage.DONE;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.bsa.persistence.RefreshScheduler.fetchMostRecentRefresh;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.Duration.standardSeconds;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -115,7 +116,11 @@ public final class DownloadScheduler {
   }
 
   private boolean isTimeAgain(BsaDownload mostRecent, Duration interval) {
-    return mostRecent.getCreationTime().plus(interval).minus(CRON_JITTER).isBefore(clock.nowUtc());
+    return mostRecent
+        .getCreationTime()
+        .plus(java.time.Duration.ofMillis(interval.getMillis()))
+        .minus(java.time.Duration.ofMillis(CRON_JITTER.getMillis()))
+        .isBefore(toInstant(clock.nowUtc()));
   }
 
   /**

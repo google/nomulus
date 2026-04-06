@@ -19,7 +19,9 @@ import static google.registry.beam.BeamUtils.createJobName;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
+import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
@@ -127,8 +129,8 @@ public class ExpandBillingRecurrencesAction implements Runnable {
             .setParameters(
                 new ImmutableMap.Builder<String, String>()
                     .put("registryEnvironment", RegistryEnvironment.get().name())
-                    .put("startTime", startTime.toString("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
-                    .put("endTime", endTime.toString("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
+                    .put("startTime", ISO_8601_FORMATTER.format(toInstant(startTime)))
+                    .put("endTime", ISO_8601_FORMATTER.format(toInstant(endTime)))
                     .put("isDryRun", Boolean.toString(isDryRun))
                     .put("advanceCursor", Boolean.toString(advanceCursor))
                     .build());

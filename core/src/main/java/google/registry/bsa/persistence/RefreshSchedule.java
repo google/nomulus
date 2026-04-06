@@ -16,6 +16,7 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.base.Verify.verify;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import google.registry.bsa.RefreshStage;
@@ -53,7 +54,7 @@ public record RefreshSchedule(
   static RefreshSchedule create(BsaDomainRefresh job, DateTime prevJobCreationTime) {
     return new RefreshSchedule(
         job.getJobId(),
-        job.getCreationTime(),
+        toDateTime(job.getCreationTime()),
         job.getJobName(),
         job.getStage(),
         prevJobCreationTime);

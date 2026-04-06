@@ -104,7 +104,7 @@ public class DomainDeletionTimeCache {
             ForeignKeyUtils.loadMostRecentResources(
                     Domain.class, ImmutableSet.of(domainName), false)
                 .get(domainName);
-        return mostRecentResource == null ? null : mostRecentResource.deletionTime();
+        return mostRecentResource == null ? null : mostRecentResource.getDeletionTime();
       };
 
   // Unfortunately, maintenance tasks aren't necessarily already in a transaction

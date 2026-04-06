@@ -28,6 +28,7 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -143,7 +144,7 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build();
     assertThat(tokenBeforePersisting.getCreationTime()).isEmpty();
     AllocationToken tokenAfterPersisting = persistResource(tokenBeforePersisting);
-    assertThat(tokenAfterPersisting.getCreationTime()).hasValue(fakeClock.nowUtc());
+    assertThat(tokenAfterPersisting.getCreationTime()).hasValue(toInstant(fakeClock.nowUtc()));
   }
 
   @Test

@@ -30,6 +30,8 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -358,7 +360,7 @@ public class ExpandBillingRecurrencesPipelineTest {
   void testSuccess_expandMultipleEvents_multipleEventTime() {
     clock.advanceBy(Duration.standardDays(365));
     endTime = endTime.plusYears(1);
-    options.setEndTime(DATE_TIME_FORMATTER.print(endTime));
+    options.setEndTime(ISO_8601_FORMATTER.format(toInstant(endTime)));
 
     runPipeline();
     // Assert about DomainHistory.

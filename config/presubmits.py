@@ -153,7 +153,7 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*java\.util\.Date.*",
         "java",
-        {"/node_modules/", "JpaTransactionManagerImpl.java"},
+        {"/node_modules/", "JpaTransactionManagerImpl.java", "DateTimeUtils.java"},
     ):
         "Do not use java.util.Date. Use classes in java.time package instead.",
     PresubmitCheck(

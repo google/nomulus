@@ -17,6 +17,7 @@ package google.registry.model.console;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.model.EntityTestCase;
@@ -46,7 +47,7 @@ public class PasswordResetRequestTest extends EntityTestCase {
     PasswordResetRequest fromDatabase =
         DatabaseHelper.loadByKey(VKey.create(PasswordResetRequest.class, verificationCode));
     assertAboutImmutableObjects().that(fromDatabase).isEqualExceptFields(request, "requestTime");
-    assertThat(fromDatabase.getRequestTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(fromDatabase.getRequestTime()).isEqualTo(toInstant(fakeClock.nowUtc()));
   }
 
   @Test

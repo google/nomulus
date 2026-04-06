@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -62,9 +63,11 @@ final class GetHistoryEntriesCommand implements Command {
           type != null && uniqueId != null,
           "If either of 'type' or 'id' are set then both must be");
       VKey<? extends EppResource> parentKey = type.getKey(uniqueId, clock.nowUtc());
-      historyEntries = HistoryEntryDao.loadHistoryObjectsForResource(parentKey, after, before);
+      historyEntries =
+          HistoryEntryDao.loadHistoryObjectsForResource(
+              parentKey, toInstant(after), toInstant(before));
     } else {
-      historyEntries = HistoryEntryDao.loadAllHistoryObjects(after, before);
+      historyEntries = HistoryEntryDao.loadAllHistoryObjects(toInstant(after), toInstant(before));
     }
     for (HistoryEntry entry : historyEntries) {
       System.out.printf(

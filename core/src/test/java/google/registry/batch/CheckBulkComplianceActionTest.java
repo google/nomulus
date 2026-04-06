@@ -19,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -119,8 +120,8 @@ public class CheckBulkComplianceActionTest {
             .setMaxDomains(3)
             .setMaxCreates(1)
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
-            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
-            .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
+            .setNextBillingDate(toInstant(DateTime.parse("2012-11-12T05:00:00Z")))
+            .setLastNotificationSent(toInstant(DateTime.parse("2010-11-12T05:00:00Z")))
             .build();
   }
 
@@ -213,7 +214,7 @@ public class CheckBulkComplianceActionTest {
             .setMaxDomains(8)
             .setMaxCreates(1)
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
-            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
+            .setNextBillingDate(toInstant(DateTime.parse("2012-11-12T05:00:00Z")))
             .build();
     tm().transact(() -> tm().put(bulkPricingPackage2));
 
@@ -271,7 +272,7 @@ public class CheckBulkComplianceActionTest {
             .setMaxDomains(8)
             .setMaxCreates(1)
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
-            .setNextBillingDate(DateTime.parse("2015-11-12T05:00:00Z"))
+            .setNextBillingDate(toInstant(DateTime.parse("2015-11-12T05:00:00Z")))
             .build();
     tm().transact(() -> tm().put(packagePromotion2));
 
@@ -347,7 +348,7 @@ public class CheckBulkComplianceActionTest {
             .setMaxDomains(8)
             .setMaxCreates(4)
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
-            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
+            .setNextBillingDate(toInstant(DateTime.parse("2012-11-12T05:00:00Z")))
             .build();
     tm().transact(() -> tm().put(bulkPricingPackage2));
     persistEppResource(
@@ -414,7 +415,7 @@ public class CheckBulkComplianceActionTest {
             .setMaxDomains(1)
             .setMaxCreates(5)
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
-            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
+            .setNextBillingDate(toInstant(DateTime.parse("2012-11-12T05:00:00Z")))
             .build();
     tm().transact(() -> tm().put(bulkPricingPackage2));
 
