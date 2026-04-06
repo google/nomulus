@@ -19,6 +19,7 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -80,7 +81,7 @@ public final class HostInfoFlow implements TransactionalFlow {
           tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now);
       hostInfoDataBuilder
           .setCurrentSponsorRegistrarId(superordinateDomain.getCurrentSponsorRegistrarId())
-          .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));
+          .setLastTransferTime(toDateTime(host.computeLastTransferTime(superordinateDomain)));
       if (superordinateDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
         statusValues.add(StatusValue.PENDING_TRANSFER);
       }

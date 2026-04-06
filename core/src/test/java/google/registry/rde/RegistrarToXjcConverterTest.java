@@ -33,6 +33,7 @@ import google.registry.xjc.rderegistrar.XjcRdeRegistrarPostalInfoEnumType;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarPostalInfoType;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarStatusType;
 import java.io.ByteArrayOutputStream;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,7 +87,7 @@ public class RegistrarToXjcConverterTest {
             .setUrl("http://www.goblinmen.example")
             .build();
     registrar = cloneAndSetAutoTimestamps(registrar);  // Set the creation time in 2013.
-    registrar = registrar.asBuilder().setLastUpdateTime(null).build();
+    registrar = registrar.asBuilder().setLastUpdateTime((Instant) null).build();
     clock.setTo(DateTime.parse("2014-01-01T00:00:00Z"));
     registrar = cloneAndSetAutoTimestamps(registrar);  // Set the update time in 2014.
   }

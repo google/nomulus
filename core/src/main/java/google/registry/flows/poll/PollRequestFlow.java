@@ -35,8 +35,8 @@ import google.registry.model.poll.PollMessageExternalKeyConverter;
 import google.registry.persistence.IsolationLevel;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow for requesting {@link PollMessage}s.
@@ -67,7 +67,7 @@ public final class PollRequestFlow implements TransactionalFlow {
     }
 
     // Return the oldest message from the queue.
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     Optional<PollMessage> maybePollMessage = getFirstPollMessage(registrarId, now);
     if (maybePollMessage.isEmpty()) {
       return responseBuilder.setResultFromCode(SUCCESS_WITH_NO_MESSAGES).build();

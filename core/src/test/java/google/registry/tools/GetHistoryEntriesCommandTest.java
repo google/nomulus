@@ -52,7 +52,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
     assertStdoutIs(
         """
         Client: TheRegistrar
-        Time: 2000-01-01T00:00:00.000Z
+        Time: 2000-01-01T00:00:00Z
         Client TRID: ABC-123
         Server TRID: server-trid
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -104,7 +104,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
     assertStdoutIs(
         """
         Client: TheRegistrar
-        Time: 2000-01-01T00:00:00.000Z
+        Time: 2000-01-01T00:00:00Z
         Client TRID: ABC-123
         Server TRID: server-trid
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -129,7 +129,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
     assertStdoutIs(
         """
         Client: TheRegistrar
-        Time: 2000-01-01T00:00:00.000Z
+        Time: 2000-01-01T00:00:00Z
         Client TRID: null
         Server TRID: null
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

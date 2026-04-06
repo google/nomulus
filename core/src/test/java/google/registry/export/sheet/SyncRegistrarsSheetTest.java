@@ -42,6 +42,8 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,9 +90,11 @@ public class SyncRegistrarsSheetTest {
   @Test
   void test_wereRegistrarsModified_atDifferentCursorTimes() {
     persistNewRegistrar("SomeRegistrar", "Some Registrar Inc.", Registrar.Type.REAL, 8L);
-    persistResource(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.nowUtc().minusHours(1)));
+    persistResource(
+        Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.now().minus(Duration.ofHours(1))));
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isTrue();
-    persistResource(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.nowUtc().plusHours(1)));
+    persistResource(
+        Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.now().plus(Duration.ofHours(1))));
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isFalse();
   }
 
@@ -178,7 +182,7 @@ public class SyncRegistrarsSheetTest {
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .build());
     // Use registrar key for contacts' parent.
-    DateTime registrarCreationTime = persistResource(registrar).getCreationTime();
+    Instant registrarCreationTime = persistResource(registrar).getCreationTime();
     persistResources(contacts);
 
     clock.advanceBy(standardMinutes(1));
@@ -315,7 +319,7 @@ public class SyncRegistrarsSheetTest {
 
     Cursor cursor = loadByKey(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET));
     assertThat(cursor).isNotNull();
-    assertThat(cursor.getCursorTime()).isGreaterThan(registrarCreationTime);
+    assertThat(cursor.getCursorTimeInstant()).isGreaterThan(registrarCreationTime);
   }
 
   @Test

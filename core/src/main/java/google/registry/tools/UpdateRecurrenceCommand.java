@@ -17,8 +17,6 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -38,7 +36,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /**
  * Command to update {@link BillingRecurrence} billing events with a new behavior and/or price.
@@ -117,7 +114,7 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
 
   private ImmutableList<BillingRecurrence> internalExecute() {
     ImmutableMap<Domain, BillingRecurrence> domainsAndRecurrences = loadDomainsAndRecurrences();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     ImmutableList.Builder<BillingRecurrence> resultBuilder = new ImmutableList.Builder<>();
     domainsAndRecurrences.forEach(
         (domain, existingRecurrence) -> {
@@ -183,18 +180,18 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
           "Domain %s has a pending transfer: %s",
           domainName,
           domain.getTransferData());
-      Optional<DateTime> domainAutorenewEndTime = domain.getAutorenewEndTime();
+      Optional<Instant> domainAutorenewEndTime = domain.getAutorenewEndTimeInstant();
       domainAutorenewEndTime.ifPresent(
           endTime ->
               checkArgument(
-                  endTime.isAfter(toDateTime(now)),
+                  endTime.isAfter(now),
                   "Domain %s autorenew ended prior to now at %s",
                   domainName,
                   endTime));
       BillingRecurrence billingRecurrence = tm().loadByKey(domain.getAutorenewBillingEvent());
       checkArgument(
-          billingRecurrence.getRecurrenceEndTime().equals(END_OF_TIME),
-          "Domain %s's recurrence's end date is not END_OF_TIME",
+          billingRecurrence.getRecurrenceEndTimeInstant().equals(END_INSTANT),
+          "Domain %s's recurrence's end date is not END_INSTANT",
           domainName);
       result.put(domain, billingRecurrence);
     }

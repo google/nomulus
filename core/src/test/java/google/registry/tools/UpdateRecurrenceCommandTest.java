@@ -197,7 +197,7 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
                 IllegalArgumentException.class,
                 () -> runCommandForced("domain.tld", "--renewal_price_behavior", "NONPREMIUM")))
         .hasMessageThat()
-        .isEqualTo("Domain domain.tld's recurrence's end date is not END_OF_TIME");
+        .isEqualTo("Domain domain.tld's recurrence's end date is not END_INSTANT");
   }
 
   @Test

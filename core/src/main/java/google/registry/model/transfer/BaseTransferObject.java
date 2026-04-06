@@ -14,17 +14,20 @@
 
 package google.registry.model.transfer;
 
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
+import google.registry.xml.UtcInstantAdapter;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.time.Instant;
 import org.joda.time.DateTime;
 
@@ -44,7 +47,8 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
 
   /** The time that the last transfer was requested. Can be null if never transferred. */
   @XmlElement(name = "reDate")
-  DateTime transferRequestTime;
+  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+  Instant transferRequestTime;
 
   /** The losing registrar of the current or last transfer. Can be null if never transferred. */
   @XmlElement(name = "acID")
@@ -57,8 +61,9 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
    * this holds the time that the last pending transfer ended. Can be null if never transferred.
    */
   @XmlElement(name = "acDate")
+  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
   @Column(name = "transfer_pending_expiration_time")
-  DateTime pendingTransferExpirationTime;
+  Instant pendingTransferExpirationTime;
 
   public TransferStatus getTransferStatus() {
     return transferStatus;
@@ -68,7 +73,16 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
     return gainingClientId;
   }
 
+  /**
+   * @deprecated Use {@link #getTransferRequestTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getTransferRequestTime() {
+    return toDateTime(transferRequestTime);
+  }
+
+  public Instant getTransferRequestTimeInstant() {
     return transferRequestTime;
   }
 
@@ -76,13 +90,17 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
     return losingClientId;
   }
 
+  /**
+   * @deprecated Use {@link #getPendingTransferExpirationTime()}
+   */
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getPendingTransferExpirationDateTime() {
-    return pendingTransferExpirationTime;
+    return toDateTime(pendingTransferExpirationTime);
   }
 
   public Instant getPendingTransferExpirationTime() {
-    return toInstant(pendingTransferExpirationTime);
+    return pendingTransferExpirationTime;
   }
 
   /** Base class for builders of {@link BaseTransferObject} subclasses. */
@@ -110,9 +128,18 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
     }
 
     /** Set the time that the current transfer request was made on this resource. */
-    public B setTransferRequestTime(DateTime transferRequestTime) {
+    public B setTransferRequestTime(Instant transferRequestTime) {
       getInstance().transferRequestTime = transferRequestTime;
       return thisCastToDerived();
+    }
+
+    /**
+     * @deprecated Use {@link #setTransferRequestTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setTransferRequestTime(DateTime transferRequestTime) {
+      return setTransferRequestTime(toInstant(transferRequestTime));
     }
 
     /** Set the losing registrar for a pending transfer on this resource. */
@@ -122,9 +149,18 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
     }
 
     /** Set the expiration time of the current pending transfer. */
-    public B setPendingTransferExpirationTime(DateTime pendingTransferExpirationTime) {
+    public B setPendingTransferExpirationTime(Instant pendingTransferExpirationTime) {
       getInstance().pendingTransferExpirationTime = pendingTransferExpirationTime;
       return thisCastToDerived();
+    }
+
+    /**
+     * @deprecated Use {@link #setPendingTransferExpirationTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setPendingTransferExpirationTime(DateTime pendingTransferExpirationTime) {
+      return setPendingTransferExpirationTime(toInstant(pendingTransferExpirationTime));
     }
 
     @Override

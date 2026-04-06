@@ -20,6 +20,7 @@ import static google.registry.bsa.BsaStringUtils.DOMAIN_JOINER;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.label.ReservedList.loadReservedLists;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
@@ -28,6 +29,7 @@ import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.Tlds;
 import google.registry.model.tld.label.ReservedList;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,7 +47,16 @@ public final class ReservedDomainsUtils {
 
   private ReservedDomainsUtils() {}
 
+  /**
+   * @deprecated Use {@link #getAllReservedNames(Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static Stream<String> getAllReservedNames(DateTime now) {
+    return getAllReservedNames(toInstant(now));
+  }
+
+  public static Stream<String> getAllReservedNames(Instant now) {
     return Tlds.getTldEntitiesOfType(TldType.REAL).stream()
         .filter(tld -> Tld.isEnrolledWithBsa(tld, now))
         .map(tld -> getAllReservedDomainsInTld(tld, now))
@@ -53,7 +64,7 @@ public final class ReservedDomainsUtils {
   }
 
   /** Returns all reserved domains in a given {@code tld} as of {@code now}. */
-  static ImmutableSet<String> getAllReservedDomainsInTld(Tld tld, DateTime now) {
+  static ImmutableSet<String> getAllReservedDomainsInTld(Tld tld, Instant now) {
     return loadReservedLists(tld.getReservedListNames()).stream()
         .map(ReservedList::getReservedListEntries)
         .map(Map::keySet)
@@ -64,15 +75,33 @@ public final class ReservedDomainsUtils {
   }
 
   /**
+   * @deprecated Use {@link #getAllReservedDomainsInTld(Tld, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  static ImmutableSet<String> getAllReservedDomainsInTld(Tld tld, DateTime now) {
+    return getAllReservedDomainsInTld(tld, toInstant(now));
+  }
+
+  /**
    * Returns true if {@code domain} is a reserved name that can be registered right now (e.g.,
    * during sunrise or with allocation token), therefore unblockable.
    */
-  public static boolean isReservedDomain(String domain, DateTime now) {
+  public static boolean isReservedDomain(String domain, Instant now) {
     Optional<InternetDomainName> tldStr = findTldForName(InternetDomainName.from(domain));
     verify(tldStr.isPresent(), "Tld for domain [%s] unexpectedly missing.", domain);
     Tld tld = Tld.get(tldStr.get().toString());
     return isReserved(
         InternetDomainName.from(domain),
         Objects.equals(tld.getTldState(now), TldState.START_DATE_SUNRISE));
+  }
+
+  /**
+   * @deprecated Use {@link #isReservedDomain(String, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static boolean isReservedDomain(String domain, DateTime now) {
+    return isReservedDomain(domain, toInstant(now));
   }
 }

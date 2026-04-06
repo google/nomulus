@@ -26,7 +26,7 @@ import static google.registry.testing.DatabaseHelper.persistDomainWithDependentR
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -43,6 +43,8 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
@@ -82,7 +84,7 @@ public class ResaveAllEppResourcesPipelineTest {
   @Test
   void testPipeline_unchangedEntity() {
     Host host = persistActiveHost("ns1.example.tld");
-    DateTime creationTime = host.getUpdateTimestamp().getTimestamp();
+    Instant creationTime = host.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     assertThat(loadByEntity(host).getUpdateTimestamp().getTimestamp()).isEqualTo(creationTime);
     fakeClock.advanceOneMilli();
@@ -93,51 +95,57 @@ public class ResaveAllEppResourcesPipelineTest {
   @Test
   void testPipeline_fulfilledDomainTransfer() {
     options.setFast(true);
-    DateTime now = fakeClock.nowUtc();
+    Instant now = fakeClock.now();
     Domain domain =
         persistDomainWithPendingTransfer(
             persistDomainWithDependentResources(
-                "domain", "tld", now.minusDays(5), now.minusDays(5), now.plusYears(2)),
-            now.minusDays(4),
-            now.minusDays(1),
-            now.plusYears(2));
+                "domain",
+                "tld",
+                toDateTime(now.minus(5, ChronoUnit.DAYS)),
+                toDateTime(now.minus(5, ChronoUnit.DAYS)),
+                toDateTime(plusYears(now, 2))),
+            toDateTime(now.minus(4, ChronoUnit.DAYS)),
+            toDateTime(now.minus(1, ChronoUnit.DAYS)),
+            toDateTime(plusYears(now, 2)));
     assertThat(domain.getStatusValues()).contains(StatusValue.PENDING_TRANSFER);
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(now);
     fakeClock.advanceOneMilli();
     runPipeline();
     Domain postPipeline = loadByEntity(domain);
     assertThat(postPipeline.getStatusValues()).doesNotContain(StatusValue.PENDING_TRANSFER);
-    assertThat(postPipeline.getUpdateTimestamp().getTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(postPipeline.getUpdateTimestamp().getTimestamp()).isEqualTo(fakeClock.now());
   }
 
   @Test
   void testPipeline_autorenewedDomain() {
-    DateTime now = fakeClock.nowUtc();
+    Instant now = fakeClock.now();
     Domain domain =
-        persistDomainWithDependentResources("domain", "tld", now, now, now.plusYears(1));
-    assertThat(domain.getRegistrationExpirationTime()).isEqualTo(plusYears(toInstant(now), 1));
+        persistDomainWithDependentResources(
+            "domain", "tld", toDateTime(now), toDateTime(now), toDateTime(plusYears(now, 1)));
+    assertThat(domain.getRegistrationExpirationTime()).isEqualTo(plusYears(now, 1));
     fakeClock.advanceBy(Duration.standardDays(500));
     runPipeline();
     Domain postPipeline = loadByEntity(domain);
-    assertThat(postPipeline.getRegistrationExpirationTime())
-        .isEqualTo(plusYears(toInstant(now), 2));
+    assertThat(postPipeline.getRegistrationExpirationTime()).isEqualTo(plusYears(now, 2));
   }
 
   @Test
   void testPipeline_expiredGracePeriod() {
-    DateTime now = fakeClock.nowUtc();
-    persistDomainWithDependentResources("domain", "tld", now, now, now.plusYears(1));
+    Instant now = fakeClock.now();
+    persistDomainWithDependentResources(
+        "domain", "tld", toDateTime(now), toDateTime(now), toDateTime(plusYears(now, 1)));
     assertThat(loadAllOf(GracePeriod.class)).hasSize(1);
-    fakeClock.advanceBy(Duration.standardDays(500));
+    fakeClock.advanceBy(org.joda.time.Duration.standardDays(500));
     runPipeline();
     assertThat(loadAllOf(GracePeriod.class)).isEmpty();
   }
 
   @Test
   void testPipeline_fastOnlySavesChanged() {
-    DateTime now = fakeClock.nowUtc();
-    persistDomainWithDependentResources("renewed", "tld", now, now, now.plusYears(1));
-    persistActiveDomain("nonrenewed.tld", now, now.plusYears(20));
+    Instant now = fakeClock.now();
+    persistDomainWithDependentResources(
+        "renewed", "tld", toDateTime(now), toDateTime(now), toDateTime(plusYears(now, 1)));
+    persistActiveDomain("nonrenewed.tld", toDateTime(now), toDateTime(plusYears(now, 20)));
     // Spy the transaction manager so we can be sure we're only saving the renewed domain
     JpaTransactionManager spy = spy(tm());
     TransactionManagerFactory.setJpaTm(() -> spy);

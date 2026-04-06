@@ -23,7 +23,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.bsa.api.UnblockableDomain;
@@ -33,9 +34,9 @@ import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -43,7 +44,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link DomainsRefresher}. */
 public class DomainsRefresherTest {
 
-  FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
+  FakeClock fakeClock = new FakeClock(Instant.parse("2023-11-09T02:08:57.880Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -57,9 +58,9 @@ public class DomainsRefresherTest {
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().minusMillis(1)))
+            .setBsaEnrollStartTime(Optional.of(toDateTime(fakeClock.now().minusMillis(1))))
             .build());
-    refresher = new DomainsRefresher(START_OF_TIME, fakeClock.nowUtc(), Duration.ZERO, 100);
+    refresher = new DomainsRefresher(START_INSTANT, fakeClock.now(), Duration.ZERO, 100);
   }
 
   @Test

@@ -68,7 +68,7 @@ public class BsaLabelUtilsTest {
     JpaTransactionManager replicaTm = mock(JpaTransactionManager.class);
     setJpaTm(() -> primaryTm);
     setReplicaJpaTm(() -> replicaTm);
-    when(replicaTm.loadByKey(any())).thenReturn(new BsaLabel("abc", fakeClock.nowUtc()));
+    when(replicaTm.loadByKey(any())).thenReturn(new BsaLabel("abc", fakeClock.now()));
     try {
       assertThat(isLabelBlocked("abc")).isTrue();
       assertThat(isLabelBlocked("abc")).isTrue();
@@ -85,7 +85,7 @@ public class BsaLabelUtilsTest {
     JpaTransactionManager replicaTmSave = replicaTm();
     JpaTransactionManager replicaTm = mock(JpaTransactionManager.class);
     setReplicaJpaTm(() -> replicaTm);
-    when(replicaTm.loadByKey(any())).thenReturn(new BsaLabel("abc", fakeClock.nowUtc()));
+    when(replicaTm.loadByKey(any())).thenReturn(new BsaLabel("abc", fakeClock.now()));
     try {
       assertThat(isLabelBlocked("abc")).isTrue();
       // If test fails, check and fix cache expiry in the config file. Do not increase the duration
