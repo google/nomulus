@@ -20,7 +20,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -49,6 +48,7 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
+import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.rdap.RdapDataStructures.Event;
 import google.registry.rdap.RdapDataStructures.EventAction;
@@ -72,12 +72,12 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /**
  * Helper class to create RDAP JSON objects for various registry entities and objects.
@@ -96,7 +96,7 @@ public class RdapJsonFormatter {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @VisibleForTesting
-  record HistoryTimeAndRegistrar(DateTime modificationTime, String registrarId) {}
+  record HistoryTimeAndRegistrar(Instant modificationTime, String registrarId) {}
 
   private static final LoadingCache<String, ImmutableMap<EventAction, HistoryTimeAndRegistrar>>
       DOMAIN_HISTORIES_BY_REPO_ID =
@@ -105,7 +105,7 @@ public class RdapJsonFormatter {
               .maximumSize(RegistryConfig.getEppResourceMaxCachedEntries() * 4L)
               .build(repoId -> getLastHistoryByType(repoId, Domain.class));
 
-  private DateTime requestTime = null;
+  private Instant requestTime = null;
 
   @Inject
   @Config("rdapTos")
@@ -320,11 +320,11 @@ public class RdapJsonFormatter {
                 .setEventAction(EventAction.REGISTRATION)
                 .setEventActor(
                     Optional.ofNullable(domain.getCreationRegistrarId()).orElse("(none)"))
-                .setEventDate(domain.getCreationTime())
+                .setEventDate(toInstant(domain.getCreationTime()))
                 .build(),
             Event.builder()
                 .setEventAction(EventAction.EXPIRATION)
-                .setEventDate(domain.getRegistrationExpirationDateTime())
+                .setEventDate(toInstant(domain.getRegistrationExpirationDateTime()))
                 .build(),
             // RDAP response profile section 1.5:
             // The topmost object in the RDAP response MUST contain an event of "eventAction" type
@@ -347,7 +347,7 @@ public class RdapJsonFormatter {
           .add(
               Event.builder()
                   .setEventAction(EventAction.LAST_CHANGED)
-                  .setEventDate(toDateTime(domain.getLastEppUpdateTime()))
+                  .setEventDate(domain.getLastEppUpdateTime())
                   .build());
     }
     // RDAP Response Profile section 2.3.2 discusses optional events. We add some of those
@@ -385,7 +385,8 @@ public class RdapJsonFormatter {
         makeStatusValueList(
             allStatusValues,
             false, // isRedacted
-            domain.getDeletionDateTime().isBefore(getRequestTime()));
+            domain.getDeletionTime().isBefore(getRequestTime()));
+
     builder.statusBuilder().addAll(status);
     if (status.isEmpty()) {
       logger.atWarning().log(
@@ -452,18 +453,15 @@ public class RdapJsonFormatter {
     if (outputDataType == OutputDataType.FULL) {
       ImmutableSet.Builder<StatusValue> statuses = new ImmutableSet.Builder<>();
       statuses.addAll(host.getStatusValues());
+      VKey<Domain> superordinateDomain = host.getSuperordinateDomain();
+      if (superordinateDomain != null) {
+        Domain domain = replicaTm().reTransact(() -> replicaTm().loadByKey(superordinateDomain));
+        if (TransferStatus.PENDING.equals(domain.getTransferData().getTransferStatus())) {
+          statuses.add(StatusValue.PENDING_TRANSFER);
+        }
+      }
       if (isLinked(host.createVKey(), getRequestTime())) {
         statuses.add(StatusValue.LINKED);
-      }
-      if (host.isSubordinate()
-          && replicaTm()
-              .transact(
-                  () ->
-                      EppResource.loadByCache(host.getSuperordinateDomain())
-                          .cloneProjectedAtTime(getRequestTime())
-                          .getStatusValues()
-                          .contains(StatusValue.PENDING_TRANSFER))) {
-        statuses.add(StatusValue.PENDING_TRANSFER);
       }
       builder
           .statusBuilder()
@@ -471,7 +469,7 @@ public class RdapJsonFormatter {
               makeStatusValueList(
                   statuses.build(),
                   false, // isRedacted
-                  host.getDeletionDateTime().isBefore(getRequestTime())));
+                  host.getDeletionTime().isBefore(getRequestTime())));
     }
 
     // For query responses - we MUST have all the ip addresses: RDAP Response Profile 4.2.
@@ -762,7 +760,7 @@ public class RdapJsonFormatter {
                             lastEntryOfType.put(
                                 rdapEventAction,
                                 new HistoryTimeAndRegistrar(
-                                    historyEntry.getModificationTime(),
+                                    historyEntry.getModificationTimeInstant(),
                                     historyEntry.getRegistrarId()));
                           }
                         }));
@@ -921,7 +919,7 @@ public class RdapJsonFormatter {
   }
 
   /**
-   * Returns the DateTime this request took place.
+   * Returns the Instant this request took place.
    *
    * <p>The RDAP reply is large with a lot of different object in them. We want to make sure that
    * all these objects are projected to the same "now".
@@ -935,9 +933,9 @@ public class RdapJsonFormatter {
    * <p>We would like even more to just inject it in RequestModule and use it in many places in our
    * codebase that just need a general "now" of the request, but that's a lot of work.
    */
-  DateTime getRequestTime() {
+  Instant getRequestTime() {
     if (requestTime == null) {
-      requestTime = clock.nowUtc();
+      requestTime = toInstant(clock.nowUtc());
     }
     return requestTime;
   }

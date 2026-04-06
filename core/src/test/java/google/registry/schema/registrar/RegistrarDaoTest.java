@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.existsInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
@@ -88,7 +89,7 @@ public class RegistrarDaoTest {
 
     assertThat(persisted.getRegistrarId()).isEqualTo("registrarId");
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
-    assertThat(persisted.getCreationTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persisted.getCreationTime()).isEqualTo(toInstant(fakeClock.nowUtc()));
     assertThat(persisted.getLocalizedAddress())
         .isEqualTo(
             new RegistrarAddress.Builder()

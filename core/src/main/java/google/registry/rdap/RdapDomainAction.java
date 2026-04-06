@@ -17,7 +17,8 @@ package google.registry.rdap;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
@@ -70,7 +71,8 @@ public class RdapDomainAction extends RdapActionBase {
         ForeignKeyUtils.loadResourceByCache(
             Domain.class,
             pathSearchString,
-            shouldIncludeDeleted() ? START_OF_TIME : rdapJsonFormatter.getRequestTime());
+            toDateTime(
+                shouldIncludeDeleted() ? START_INSTANT : rdapJsonFormatter.getRequestTime()));
     if (domain.isEmpty() || !isAuthorized(domain.get())) {
       handlePossibleBsaBlock(domainName);
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the

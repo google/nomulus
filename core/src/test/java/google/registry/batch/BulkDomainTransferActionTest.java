@@ -107,23 +107,27 @@ public class BulkDomainTransferActionTest {
     activeDomain = loadByEntity(activeDomain);
     assertThat(activeDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
         .isEqualTo("NewRegistrar");
-    assertThat(activeDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(runTime);
+    assertThat(activeDomain.getUpdateTimestamp().getTimestamp())
+        .isEqualTo(DateTimeUtils.toInstant(runTime));
 
     // The other three domains shouldn't change
     alreadyTransferredDomain = loadByEntity(alreadyTransferredDomain);
     assertThat(alreadyTransferredDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
         .isEqualTo("NewRegistrar");
-    assertThat(alreadyTransferredDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
+    assertThat(alreadyTransferredDomain.getUpdateTimestamp().getTimestamp())
+        .isEqualTo(DateTimeUtils.toInstant(preRunTime));
 
     pendingDeleteDomain = loadByEntity(pendingDeleteDomain);
     assertThat(pendingDeleteDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
         .isEqualTo("TheRegistrar");
-    assertThat(pendingDeleteDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
+    assertThat(pendingDeleteDomain.getUpdateTimestamp().getTimestamp())
+        .isEqualTo(DateTimeUtils.toInstant(preRunTime));
 
     deletedDomain = loadByEntity(deletedDomain);
     assertThat(deletedDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
         .isEqualTo("TheRegistrar");
-    assertThat(deletedDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
+    assertThat(deletedDomain.getUpdateTimestamp().getTimestamp())
+        .isEqualTo(DateTimeUtils.toInstant(preRunTime));
   }
 
   private BulkDomainTransferAction createAction(String... domains) {

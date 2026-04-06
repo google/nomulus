@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -396,7 +396,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
           builder.where(
               "deletionTime",
               replicaTm().getEntityManager().getCriteriaBuilder()::equal,
-              END_OF_TIME);
+              END_INSTANT);
     }
     return builder;
   }
