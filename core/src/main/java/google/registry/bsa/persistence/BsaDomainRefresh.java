@@ -29,7 +29,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * Records of completed and ongoing refresh actions, which recomputes the set of unblockable domains
@@ -46,10 +46,10 @@ class BsaDomainRefresh {
   Long jobId;
 
   @Column(nullable = false)
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create((Instant) null);
 
   @Column(nullable = false)
-  UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create(null);
+  UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create((Instant) null);
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
@@ -61,7 +61,7 @@ class BsaDomainRefresh {
     return jobId;
   }
 
-  DateTime getCreationTime() {
+  Instant getCreationTime() {
     return creationTime.getTimestamp();
   }
 

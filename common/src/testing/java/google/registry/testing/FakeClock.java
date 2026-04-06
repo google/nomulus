@@ -49,6 +49,11 @@ public final class FakeClock implements Clock {
     setTo(startTime);
   }
 
+  /** Creates a FakeClock initialized to a specific time. */
+  public FakeClock(Instant startTime) {
+    setTo(startTime);
+  }
+
   /** Returns the current time. */
   @Override
   public DateTime nowUtc() {
@@ -87,6 +92,11 @@ public final class FakeClock implements Clock {
   /** Sets the time to the specified instant. */
   public void setTo(ReadableInstant time) {
     currentTimeMillis.set(time.getMillis());
+  }
+
+  /** Sets the time to the specified instant. */
+  public void setTo(Instant time) {
+    currentTimeMillis.set(time.toEpochMilli());
   }
 
   /** Invokes {@link #setAutoIncrementStep} with one millisecond-step. */

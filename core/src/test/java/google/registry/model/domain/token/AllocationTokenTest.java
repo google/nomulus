@@ -27,8 +27,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -43,9 +42,9 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.util.SerializeUtils;
+import java.time.Instant;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -68,17 +67,17 @@ public class AllocationTokenTest extends EntityTestCase {
             new AllocationToken.Builder()
                 .setToken("abc123Unlimited")
                 .setTokenType(UNLIMITED_USE)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("dev", "app"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar, NewRegistrar"))
                 .setDiscountFraction(0.5)
                 .setDiscountPremiums(true)
                 .setDiscountYears(3)
-                .setTokenStatusTransitions(
-                    ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                        .put(START_OF_TIME, NOT_STARTED)
-                        .put(DateTime.now(UTC), TokenStatus.VALID)
-                        .put(DateTime.now(UTC).plusWeeks(8), TokenStatus.ENDED)
+                .setTokenStatusTransitionsInstant(
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, NOT_STARTED)
+                        .put(fakeClock.now(), TokenStatus.VALID)
+                        .put(fakeClock.now().plus(java.time.Duration.ofDays(56)), TokenStatus.ENDED)
                         .build())
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
                 .build());
@@ -92,7 +91,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setToken("abc123Single")
                 .setRedemptionHistoryId(historyEntryId)
                 .setDomainName("example.foo")
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
                 .build());
     assertThat(loadByEntity(singleUseToken)).isEqualTo(singleUseToken);
@@ -105,17 +104,17 @@ public class AllocationTokenTest extends EntityTestCase {
             new AllocationToken.Builder()
                 .setToken("abc123Unlimited")
                 .setTokenType(UNLIMITED_USE)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("dev", "app"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar, NewRegistrar"))
                 .setDiscountFraction(0.5)
                 .setDiscountPremiums(true)
                 .setDiscountYears(3)
-                .setTokenStatusTransitions(
-                    ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                        .put(START_OF_TIME, NOT_STARTED)
-                        .put(DateTime.now(UTC), TokenStatus.VALID)
-                        .put(DateTime.now(UTC).plusWeeks(8), TokenStatus.ENDED)
+                .setTokenStatusTransitionsInstant(
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, NOT_STARTED)
+                        .put(fakeClock.now(), TokenStatus.VALID)
+                        .put(fakeClock.now().plus(java.time.Duration.ofDays(56)), TokenStatus.ENDED)
                         .build())
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
                 .build());
@@ -130,7 +129,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setToken("abc123Single")
                 .setRedemptionHistoryId(historyEntryId)
                 .setDomainName("example.foo")
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
                 .build());
     persisted = loadByEntity(singleUseToken);
@@ -143,7 +142,7 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build();
     assertThat(tokenBeforePersisting.getCreationTime()).isEmpty();
     AllocationToken tokenAfterPersisting = persistResource(tokenBeforePersisting);
-    assertThat(tokenAfterPersisting.getCreationTime()).hasValue(fakeClock.nowUtc());
+    assertThat(tokenAfterPersisting.getCreationTime()).hasValue(fakeClock.now());
   }
 
   @Test
@@ -199,11 +198,11 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(SINGLE_USE)
-            .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"));
+            .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"));
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
-            () -> builder.setCreationTimeForTest(DateTime.parse("2010-11-13T05:00:00Z")));
+            () -> builder.setCreationTimeForTest(Instant.parse("2010-11-13T05:00:00Z")));
     assertThat(thrown).hasMessageThat().isEqualTo("Creation time can only be set once");
   }
 
@@ -420,11 +419,15 @@ public class AllocationTokenTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new AllocationToken.Builder()
-                    .setTokenStatusTransitions(
-                        ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                            .put(DateTime.now(UTC), NOT_STARTED)
-                            .put(DateTime.now(UTC).plusDays(1), TokenStatus.VALID)
-                            .put(DateTime.now(UTC).plusDays(2), TokenStatus.ENDED)
+                    .setTokenStatusTransitionsInstant(
+                        ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                            .put(fakeClock.now(), NOT_STARTED)
+                            .put(
+                                fakeClock.now().plus(java.time.Duration.ofDays(1)),
+                                TokenStatus.VALID)
+                            .put(
+                                fakeClock.now().plus(java.time.Duration.ofDays(2)),
+                                TokenStatus.ENDED)
                             .build()));
     assertThat(thrown)
         .hasMessageThat()
@@ -438,10 +441,10 @@ public class AllocationTokenTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new AllocationToken.Builder()
-                    .setTokenStatusTransitions(
-                        ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                            .put(START_OF_TIME, TokenStatus.VALID)
-                            .put(DateTime.now(UTC), TokenStatus.ENDED)
+                    .setTokenStatusTransitionsInstant(
+                        ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                            .put(START_INSTANT, TokenStatus.VALID)
+                            .put(fakeClock.now(), TokenStatus.ENDED)
                             .build()));
     assertThat(thrown)
         .hasMessageThat()
@@ -459,18 +462,18 @@ public class AllocationTokenTest extends EntityTestCase {
   void testSetTransitions_badTransitionsFromValid() {
     // VALID can only go to ENDED or CANCELLED
     assertBadTransition(
-        ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-            .put(START_OF_TIME, NOT_STARTED)
-            .put(DateTime.now(UTC), VALID)
-            .put(DateTime.now(UTC).plusDays(1), VALID)
+        ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+            .put(START_INSTANT, NOT_STARTED)
+            .put(fakeClock.now(), VALID)
+            .put(fakeClock.now().plus(java.time.Duration.ofDays(1)), VALID)
             .build(),
         VALID,
         VALID);
     assertBadTransition(
-        ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-            .put(START_OF_TIME, NOT_STARTED)
-            .put(DateTime.now(UTC), VALID)
-            .put(DateTime.now(UTC).plusDays(1), NOT_STARTED)
+        ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+            .put(START_INSTANT, NOT_STARTED)
+            .put(fakeClock.now(), VALID)
+            .put(fakeClock.now().plus(java.time.Duration.ofDays(1)), NOT_STARTED)
             .build(),
         VALID,
         NOT_STARTED);
@@ -707,20 +710,20 @@ public class AllocationTokenTest extends EntityTestCase {
 
   private void assertBadInitialTransition(TokenStatus status) {
     assertBadTransition(
-        ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-            .put(START_OF_TIME, NOT_STARTED)
-            .put(DateTime.now(UTC), status)
+        ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+            .put(START_INSTANT, NOT_STARTED)
+            .put(fakeClock.now(), status)
             .build(),
         NOT_STARTED,
         status);
   }
 
   private void assertBadTransition(
-      ImmutableSortedMap<DateTime, TokenStatus> map, TokenStatus from, TokenStatus to) {
+      ImmutableSortedMap<Instant, TokenStatus> map, TokenStatus from, TokenStatus to) {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new AllocationToken.Builder().setTokenStatusTransitions(map));
+            () -> new AllocationToken.Builder().setTokenStatusTransitionsInstant(map));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
@@ -734,12 +737,12 @@ public class AllocationTokenTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new AllocationToken.Builder()
-                    .setTokenStatusTransitions(
-                        ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                            .put(START_OF_TIME, NOT_STARTED)
-                            .put(DateTime.now(UTC), VALID)
-                            .put(DateTime.now(UTC).plusDays(1), status)
-                            .put(DateTime.now(UTC).plusDays(2), CANCELLED)
+                    .setTokenStatusTransitionsInstant(
+                        ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                            .put(START_INSTANT, NOT_STARTED)
+                            .put(fakeClock.now(), VALID)
+                            .put(fakeClock.now().plus(java.time.Duration.ofDays(1)), status)
+                            .put(fakeClock.now().plus(java.time.Duration.ofDays(2)), CANCELLED)
                             .build()));
     assertThat(thrown)
         .hasMessageThat()

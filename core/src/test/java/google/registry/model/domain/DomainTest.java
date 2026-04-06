@@ -547,7 +547,7 @@ public class DomainTest {
             .setRegistrationExpirationTime(oldExpirationTime)
             .setTransferData(DomainTransferData.EMPTY)
             .setGracePeriods(ImmutableSet.of())
-            .setLastEppUpdateTime(null)
+            .setLastEppUpdateTime((Instant) null)
             .setLastEppUpdateRegistrarId(null)
             .build();
   }

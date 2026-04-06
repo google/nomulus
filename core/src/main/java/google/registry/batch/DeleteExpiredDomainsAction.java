@@ -19,7 +19,6 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -134,7 +133,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
                 () ->
                     tm().createQueryComposer(Domain.class)
                         .where("autorenewEndTime", Comparator.LTE, runTime)
-                        .where("deletionTime", Comparator.EQ, END_OF_TIME)
+                        .where("deletionTime", Comparator.EQ, END_INSTANT)
                         .list());
     if (domainsToDelete.isEmpty()) {
       logger.atInfo().log("Found 0 domains to delete.");

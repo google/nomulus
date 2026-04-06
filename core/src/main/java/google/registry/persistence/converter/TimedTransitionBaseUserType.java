@@ -16,13 +16,15 @@ package google.registry.persistence.converter;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
+import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
+import static google.registry.util.DateTimeUtils.parseInstant;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import google.registry.model.common.TimedTransitionProperty;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Map;
-import org.joda.time.DateTime;
 
 /**
  * Base Hibernate custom type for {@link TimedTransitionProperty}.
@@ -44,19 +46,21 @@ public abstract class TimedTransitionBaseUserType<V extends Serializable>
 
   @Override
   Map<String, String> toStringMap(TimedTransitionProperty<V> map) {
-    return map.toValueMap().entrySet().stream()
-        .collect(toImmutableMap(e -> e.getKey().toString(), e -> valueToString(e.getValue())));
+    return map.toValueMapInstant().entrySet().stream()
+        .collect(
+            toImmutableMap(
+                e -> ISO_8601_FORMATTER.format(e.getKey()), e -> valueToString(e.getValue())));
   }
 
   @Override
   TimedTransitionProperty<V> toEntity(Map<String, String> map) {
-    ImmutableSortedMap<DateTime, V> valueMap =
+    ImmutableSortedMap<Instant, V> valueMap =
         map.entrySet().stream()
             .collect(
                 toImmutableSortedMap(
                     Ordering.natural(),
-                    e -> DateTime.parse(e.getKey()),
+                    e -> parseInstant(e.getKey()),
                     e -> stringToValue(e.getValue())));
-    return TimedTransitionProperty.fromValueMap(valueMap);
+    return TimedTransitionProperty.fromValueMapInstant(valueMap);
   }
 }

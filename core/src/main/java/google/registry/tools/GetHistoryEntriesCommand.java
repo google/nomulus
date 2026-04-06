@@ -15,8 +15,9 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -25,10 +26,11 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
 import google.registry.tools.CommandUtilities.ResourceType;
+import google.registry.tools.params.InstantParameter;
 import google.registry.util.Clock;
 import google.registry.xml.XmlTransformer;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /** Command to show history entries. */
 @Parameters(
@@ -40,13 +42,15 @@ final class GetHistoryEntriesCommand implements Command {
 
   @Parameter(
       names = {"-a", "--after"},
-      description = "Only show history entries that occurred at or after this time")
-  private DateTime after = START_OF_TIME;
+      description = "Only show history entries that occurred at or after this time",
+      converter = InstantParameter.class)
+  private Instant after = START_INSTANT;
 
   @Parameter(
       names = {"-b", "--before"},
-      description = "Only show history entries that occurred at or before this time")
-  private DateTime before = END_OF_TIME;
+      description = "Only show history entries that occurred at or before this time",
+      converter = InstantParameter.class)
+  private Instant before = END_INSTANT;
 
   @Parameter(names = "--type", description = "Resource type.")
   private ResourceType type;
@@ -61,7 +65,7 @@ final class GetHistoryEntriesCommand implements Command {
       checkArgument(
           type != null && uniqueId != null,
           "If either of 'type' or 'id' are set then both must be");
-      VKey<? extends EppResource> parentKey = type.getKey(uniqueId, clock.nowUtc());
+      VKey<? extends EppResource> parentKey = type.getKey(uniqueId, toDateTime(clock.now()));
       historyEntries = HistoryEntryDao.loadHistoryObjectsForResource(parentKey, after, before);
     } else {
       historyEntries = HistoryEntryDao.loadAllHistoryObjects(after, before);
@@ -70,7 +74,7 @@ final class GetHistoryEntriesCommand implements Command {
       System.out.printf(
           "Client: %s\nTime: %s\nClient TRID: %s\nServer TRID: %s\n%s\n",
           entry.getRegistrarId(),
-          entry.getModificationTime(),
+          entry.getModificationTimeInstant(),
           entry.getTrid() == null ? null : entry.getTrid().getClientTransactionId().orElse(null),
           entry.getTrid() == null ? null : entry.getTrid().getServerTransactionId(),
           entry.getXmlBytes() == null

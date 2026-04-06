@@ -33,13 +33,13 @@ import google.registry.model.domain.GracePeriodBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.tools.params.NameserversParameter;
 import google.registry.tools.soy.DomainUpdateSoyInfo;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** A command to update a new domain via EPP. */
 @Parameters(separators = " =", commandDescription = "Update a new domain via EPP.")
@@ -143,7 +143,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
     }
 
     ImmutableSet.Builder<String> autorenewGracePeriodWarningDomains = new ImmutableSet.Builder<>();
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     for (String domainName : domains) {
       Domain domain = ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, now);
       checkArgument(
