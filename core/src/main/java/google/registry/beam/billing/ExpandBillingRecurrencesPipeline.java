@@ -15,6 +15,7 @@
 package google.registry.beam.billing;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.Period.Unit.YEARS;
@@ -51,9 +52,11 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.model.tld.Tld;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.util.Clock;
+import google.registry.util.DateTimeUtils;
 import google.registry.util.SystemClock;
 import jakarta.inject.Singleton;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.beam.sdk.Pipeline;
@@ -195,11 +198,11 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                     + "AND recurrence_last_expansion + INTERVAL '1 YEAR' < recurrence_end_time",
                 ImmutableMap.of(
                     "endTime",
-                    endTime,
+                    toInstant(endTime),
                     "startTime",
-                    startTime,
+                    toInstant(startTime),
                     "oneYearAgo",
-                    endTime.minusYears(1)),
+                    toInstant(endTime.minusYears(1))),
                 true,
                 (Long id) -> {
                   recurrencesInScopeCounter.inc();
@@ -289,16 +292,19 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
     // Find the times for which the OneTime billing event are already created, making this expansion
     // idempotent. There is no need to match to the domain repo ID as the cancellation matching
     // billing event itself can only be for a single domain.
-    ImmutableSet<DateTime> existingEventTimes =
+    ImmutableSet<Instant> existingEventTimes =
         ImmutableSet.copyOf(
             tm().query(
                     "SELECT eventTime FROM BillingEvent WHERE cancellationMatchingBillingEvent ="
                         + " :key",
-                    DateTime.class)
+                    Instant.class)
                 .setParameter("key", billingRecurrence.createVKey())
                 .getResultList());
 
-    Set<DateTime> eventTimesToExpand = difference(eventTimes, existingEventTimes);
+    Set<DateTime> eventTimesToExpand =
+        difference(
+            eventTimes,
+            existingEventTimes.stream().map(DateTimeUtils::toDateTime).collect(toImmutableSet()));
 
     if (eventTimesToExpand.isEmpty()) {
       return;
@@ -416,7 +422,8 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
     results.add(
         billingRecurrence
             .asBuilder()
-            .setRecurrenceLastExpansion(recurrenceLastExpansionTime)
+            .setRecurrenceLastExpansion(
+                google.registry.util.DateTimeUtils.toInstant(recurrenceLastExpansionTime))
             .build());
   }
 

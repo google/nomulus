@@ -79,13 +79,24 @@ public abstract class DateTimeUtils {
 
   /** Returns the latest of a number of given {@link DateTime} instances. */
   public static DateTime latestOf(DateTime first, DateTime... rest) {
+    return latestDateTimeOf(Lists.asList(first, rest));
+  }
+
+  /** Returns the latest of a number of given {@link Instant} instances. */
+  public static Instant latestOf(Instant first, Instant... rest) {
     return latestOf(Lists.asList(first, rest));
   }
 
   /** Returns the latest element in a {@link DateTime} iterable. */
-  public static DateTime latestOf(Iterable<DateTime> dates) {
+  public static DateTime latestDateTimeOf(Iterable<DateTime> dates) {
     checkArgument(!Iterables.isEmpty(dates));
     return Ordering.<DateTime>natural().max(dates);
+  }
+
+  /** Returns the latest element in a {@link Instant} iterable. */
+  public static Instant latestOf(Iterable<Instant> instants) {
+    checkArgument(!Iterables.isEmpty(instants));
+    return Ordering.<Instant>natural().max(instants);
   }
 
   /** Returns whether the first {@link DateTime} is equal to or earlier than the second. */
@@ -162,6 +173,32 @@ public abstract class DateTimeUtils {
   @Nullable
   public static Instant toInstant(@Nullable DateTime dateTime) {
     return (dateTime == null) ? null : Instant.ofEpochMilli(dateTime.getMillis());
+  }
+
+  /**
+   * Converts various timestamp objects to {@link Instant}.
+   *
+   * <p>Supported types: {@link Instant}, {@link DateTime}, {@link java.util.Date}, {@link
+   * java.sql.Timestamp}.
+   */
+  @Nullable
+  public static Instant toInstant(@Nullable Object obj) {
+    if (obj == null) {
+      return null;
+    }
+    if (obj instanceof Instant instant) {
+      return instant;
+    }
+    if (obj instanceof DateTime dateTime) {
+      return toInstant(dateTime);
+    }
+    if (obj instanceof java.sql.Timestamp timestamp) {
+      return timestamp.toInstant();
+    }
+    if (obj instanceof java.util.Date date) {
+      return date.toInstant();
+    }
+    throw new IllegalArgumentException("Unsupported type: " + obj.getClass().getName());
   }
 
   /** Convert a java.time {@link Instant} to a joda {@link DateTime}, null-safe. */

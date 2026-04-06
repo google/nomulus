@@ -19,6 +19,7 @@ import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.xml.bind.annotation.XmlTransient;
+import java.time.Instant;
 
 /**
  * Base class for entities that contains an {@link UpdateAutoTimestamp} which is updated every time
@@ -38,7 +39,7 @@ public abstract class UpdateAutoTimestampEntity extends ImmutableObject
   // Prevents subclasses from unexpectedly accessing as property (e.g., Host), which would
   // require an unnecessary non-private setter method.
   @Access(AccessType.FIELD)
-  UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create(null);
+  UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create((Instant) null);
 
   /** Get the {@link UpdateAutoTimestamp} for this entity. */
   public UpdateAutoTimestamp getUpdateTimestamp() {
@@ -62,7 +63,7 @@ public abstract class UpdateAutoTimestampEntity extends ImmutableObject
    * object being persisted.
    */
   protected void resetUpdateTimestamp() {
-    this.updateTimestamp = UpdateAutoTimestamp.create(null);
+    this.updateTimestamp = UpdateAutoTimestamp.create((Instant) null);
   }
 
   /**

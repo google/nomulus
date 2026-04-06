@@ -201,7 +201,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
                   GracePeriod.createWithoutBillingEvent(
                       GracePeriodStatus.REDEMPTION,
                       existingDomain.getRepoId(),
-                      redemptionTime,
+                      google.registry.util.DateTimeUtils.toInstant(redemptionTime),
                       registrarId)));
       // Note: The expiration time is unchanged, so if it's before the new deletion time, there will
       // be a "phantom autorenew" where the expiration time advances. No poll message will be

@@ -100,18 +100,18 @@ public class MutatingCommandTest {
     assertThat(changes)
         .isEqualTo(
             """
-                Update Host@2-ROID
-                lastEppUpdateTime: null -> 2014-09-09T09:09:09.000Z
+            Update Host@2-ROID
+            lastEppUpdateTime: null -> 2014-09-09T09:09:09Z
 
-                Update Host@3-ROID
-                currentSponsorRegistrarId: TheRegistrar -> Registrar2
+            Update Host@3-ROID
+            currentSponsorRegistrarId: TheRegistrar -> Registrar2
 
-                Update Registrar@Registrar1
-                poNumber: null -> 23
+            Update Registrar@Registrar1
+            poNumber: null -> 23
 
-                Update Registrar@Registrar2
-                blockPremiumNames: false -> true
-                """);
+            Update Registrar@Registrar2
+            blockPremiumNames: false -> true
+            """);
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
     assertThat(loadByEntity(host1)).isEqualTo(newHost1);
@@ -217,12 +217,12 @@ public class MutatingCommandTest {
     assertThat(changes)
         .isEqualTo(
             """
-                Update Host@2-ROID
-                [no changes]
+            Update Host@2-ROID
+            [no changes]
 
-                Update Registrar@Registrar1
-                [no changes]
-                """);
+            Update Registrar@Registrar1
+            [no changes]
+            """);
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 2 entities.\n");
     assertThat(loadByEntity(host1)).isEqualTo(host1);

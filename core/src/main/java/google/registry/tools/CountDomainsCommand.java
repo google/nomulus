@@ -17,6 +17,7 @@ package google.registry.tools;
 import static google.registry.model.tld.Tlds.assertTldsExist;
 import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -50,7 +51,7 @@ final class CountDomainsCommand implements Command {
             () ->
                 tm().createQueryComposer(Domain.class)
                     .where("tld", Comparator.EQ, tld)
-                    .where("deletionTime", Comparator.GT, now)
+                    .where("deletionTime", Comparator.GT, toInstant(now))
                     .count());
   }
 }

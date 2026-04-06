@@ -68,7 +68,8 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getBillingEvent()).isEqualTo(onetime.createVKey());
     assertThat(gracePeriod.getBillingRecurrence()).isNull();
     assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
-    assertThat(gracePeriod.getExpirationDateTime()).isEqualTo(now.plusDays(1));
+    assertThat(gracePeriod.getExpirationTime())
+        .isEqualTo(google.registry.util.DateTimeUtils.toInstant(now.plusDays(1)));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
   }
 
@@ -76,13 +77,18 @@ public class GracePeriodTest {
   void testSuccess_forRecurrence() {
     GracePeriod gracePeriod =
         GracePeriod.createForRecurrence(
-            GracePeriodStatus.AUTO_RENEW, "1-TEST", now.plusDays(1), "TheRegistrar", recurrenceKey);
+            GracePeriodStatus.AUTO_RENEW,
+            "1-TEST",
+            google.registry.util.DateTimeUtils.toInstant(now.plusDays(1)),
+            "TheRegistrar",
+            recurrenceKey);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.AUTO_RENEW);
     assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
     assertThat(gracePeriod.getBillingEvent()).isNull();
     assertThat(gracePeriod.getBillingRecurrence()).isEqualTo(recurrenceKey);
     assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
-    assertThat(gracePeriod.getExpirationDateTime()).isEqualTo(now.plusDays(1));
+    assertThat(gracePeriod.getExpirationTime())
+        .isEqualTo(google.registry.util.DateTimeUtils.toInstant(now.plusDays(1)));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
   }
 
@@ -90,13 +96,17 @@ public class GracePeriodTest {
   void testSuccess_createWithoutBillingEvent() {
     GracePeriod gracePeriod =
         GracePeriod.createWithoutBillingEvent(
-            GracePeriodStatus.REDEMPTION, "1-TEST", now, "TheRegistrar");
+            GracePeriodStatus.REDEMPTION,
+            "1-TEST",
+            google.registry.util.DateTimeUtils.toInstant(now),
+            "TheRegistrar");
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.REDEMPTION);
     assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
     assertThat(gracePeriod.getBillingEvent()).isNull();
     assertThat(gracePeriod.getBillingRecurrence()).isNull();
     assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
-    assertThat(gracePeriod.getExpirationDateTime()).isEqualTo(now);
+    assertThat(gracePeriod.getExpirationTime())
+        .isEqualTo(google.registry.util.DateTimeUtils.toInstant(now));
     assertThat(gracePeriod.hasBillingEvent()).isFalse();
   }
 

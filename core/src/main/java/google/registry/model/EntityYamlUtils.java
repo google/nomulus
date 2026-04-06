@@ -16,6 +16,7 @@ package google.registry.model;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.collect.Ordering.natural;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -38,6 +39,7 @@ import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.VKey;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,8 +61,12 @@ public class EntityYamlUtils {
     SimpleModule module = new SimpleModule();
     module.addSerializer(Money.class, new MoneySerializer());
     module.addDeserializer(Money.class, new MoneyDeserializer());
+    module.addSerializer(CreateAutoTimestamp.class, new CreateAutoTimestampSerializer());
+    module.addDeserializer(CreateAutoTimestamp.class, new CreateAutoTimestampDeserializer());
     module.addSerializer(Duration.class, new DurationSerializer());
     module.addSerializer(TimedTransitionProperty.class, new TimedTransitionPropertySerializer());
+    module.addSerializer(Instant.class, new InstantSerializer());
+    module.addDeserializer(Instant.class, new InstantDeserializer());
     ObjectMapper mapper =
         JsonMapper.builder(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER))
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -346,11 +352,13 @@ public class EntityYamlUtils {
     public TimedTransitionProperty<TldState> deserialize(
         JsonParser jp, DeserializationContext context) throws IOException {
       SortedMap<String, String> valueMap = jp.readValueAs(SortedMap.class);
-      return TimedTransitionProperty.fromValueMap(
+      return TimedTransitionProperty.fromValueMapInstant(
           valueMap.keySet().stream()
               .collect(
                   toImmutableSortedMap(
-                      natural(), DateTime::parse, key -> TldState.valueOf(valueMap.get(key)))));
+                      natural(),
+                      key -> toInstant(DateTime.parse(key)),
+                      key -> TldState.valueOf(valueMap.get(key)))));
     }
   }
 
@@ -370,12 +378,12 @@ public class EntityYamlUtils {
     public TimedTransitionProperty<Money> deserialize(JsonParser jp, DeserializationContext context)
         throws IOException {
       SortedMap<String, LinkedHashMap<String, Object>> valueMap = jp.readValueAs(SortedMap.class);
-      return TimedTransitionProperty.fromValueMap(
+      return TimedTransitionProperty.fromValueMapInstant(
           valueMap.keySet().stream()
               .collect(
                   toImmutableSortedMap(
                       natural(),
-                      DateTime::parse,
+                      key -> toInstant(DateTime.parse(key)),
                       key ->
                           Money.of(
                               CurrencyUnit.of(valueMap.get(key).get("currency").toString()),
@@ -400,13 +408,39 @@ public class EntityYamlUtils {
     public TimedTransitionProperty<FeatureStatus> deserialize(
         JsonParser jp, DeserializationContext context) throws IOException {
       SortedMap<String, String> valueMap = jp.readValueAs(SortedMap.class);
-      return TimedTransitionProperty.fromValueMap(
+      return TimedTransitionProperty.fromValueMapInstant(
           valueMap.keySet().stream()
               .collect(
                   toImmutableSortedMap(
                       natural(),
-                      DateTime::parse,
+                      key -> toInstant(DateTime.parse(key)),
                       key -> FeatureStatus.valueOf(valueMap.get(key)))));
+    }
+  }
+
+  /** A custom JSON serializer for a {@link CreateAutoTimestamp}. */
+  public static class CreateAutoTimestampSerializer extends StdSerializer<CreateAutoTimestamp> {
+
+    private static final java.time.format.DateTimeFormatter FORMATTER =
+        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            .withZone(java.time.ZoneOffset.UTC);
+
+    public CreateAutoTimestampSerializer() {
+      this(null);
+    }
+
+    public CreateAutoTimestampSerializer(Class<CreateAutoTimestamp> t) {
+      super(t);
+    }
+
+    @Override
+    public void serialize(CreateAutoTimestamp value, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
+      if (value.getTimestamp() == null) {
+        gen.writeNull();
+      } else {
+        gen.writeString(FORMATTER.format(value.getTimestamp()));
+      }
     }
   }
 
@@ -424,8 +458,37 @@ public class EntityYamlUtils {
     @Override
     public CreateAutoTimestamp deserialize(JsonParser jp, DeserializationContext context)
         throws IOException {
-      DateTime creationTime = jp.readValueAs(DateTime.class);
-      return CreateAutoTimestamp.create(creationTime);
+      String creationTime = jp.getText();
+      return CreateAutoTimestamp.create(toInstant(DateTime.parse(creationTime)));
+    }
+  }
+
+  /** A custom JSON serializer for {@link Instant}. */
+  public static class InstantSerializer extends StdSerializer<Instant> {
+    private static final java.time.format.DateTimeFormatter FORMATTER =
+        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            .withZone(java.time.ZoneOffset.UTC);
+
+    public InstantSerializer() {
+      super(Instant.class);
+    }
+
+    @Override
+    public void serialize(Instant value, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
+      gen.writeString(FORMATTER.format(value));
+    }
+  }
+
+  /** A custom JSON deserializer for {@link Instant}. */
+  public static class InstantDeserializer extends StdDeserializer<Instant> {
+    public InstantDeserializer() {
+      super(Instant.class);
+    }
+
+    @Override
+    public Instant deserialize(JsonParser jp, DeserializationContext context) throws IOException {
+      return toInstant(DateTime.parse(jp.getText()));
     }
   }
 }

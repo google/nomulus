@@ -17,6 +17,8 @@ package google.registry.model.billing;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
@@ -29,6 +31,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
@@ -61,7 +64,7 @@ public class BillingEvent extends BillingBase {
   Money cost;
 
   /** When the cost should be billed. */
-  DateTime billingTime;
+  Instant billingTime;
 
   /**
    * The period in years of the action being billed for, if applicable, otherwise null. Used for
@@ -75,7 +78,7 @@ public class BillingEvent extends BillingBase {
    * needs to be undone, a query on this field will return the complete set of potentially bad
    * events.
    */
-  DateTime syntheticCreationTime;
+  Instant syntheticCreationTime;
 
   /**
    * For {@link Flag#SYNTHETIC} events, a {@link VKey} to the {@link BillingRecurrence} from which
@@ -105,7 +108,16 @@ public class BillingEvent extends BillingBase {
     return cost;
   }
 
+  /**
+   * @deprecated Use {@link #getBillingTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getBillingTime() {
+    return toDateTime(billingTime);
+  }
+
+  public Instant getBillingTimeInstant() {
     return billingTime;
   }
 
@@ -113,7 +125,16 @@ public class BillingEvent extends BillingBase {
     return periodYears;
   }
 
+  /**
+   * @deprecated Use {@link #getSyntheticCreationTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getSyntheticCreationTime() {
+    return toDateTime(syntheticCreationTime);
+  }
+
+  public Instant getSyntheticCreationTimeInstant() {
     return syntheticCreationTime;
   }
 
@@ -165,12 +186,30 @@ public class BillingEvent extends BillingBase {
       return this;
     }
 
+    /**
+     * @deprecated Use {@link #setBillingTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public Builder setBillingTime(DateTime billingTime) {
+      return setBillingTime(toInstant(billingTime));
+    }
+
+    public Builder setBillingTime(Instant billingTime) {
       getInstance().billingTime = billingTime;
       return this;
     }
 
+    /**
+     * @deprecated Use {@link #setSyntheticCreationTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public Builder setSyntheticCreationTime(DateTime syntheticCreationTime) {
+      return setSyntheticCreationTime(toInstant(syntheticCreationTime));
+    }
+
+    public Builder setSyntheticCreationTime(Instant syntheticCreationTime) {
       getInstance().syntheticCreationTime = syntheticCreationTime;
       return this;
     }
@@ -197,7 +236,7 @@ public class BillingEvent extends BillingBase {
       checkState(!instance.cost.isNegative(), "Costs should be non-negative.");
       // TODO(mcilwain): Enforce this check on all billing events (not just more recent ones)
       //                 post-migration after we add the missing period years values in SQL.
-      if (instance.eventTime.isAfter(DateTime.parse("2019-01-01T00:00:00Z"))) {
+      if (instance.eventTime.isAfter(Instant.parse("2019-01-01T00:00:00Z"))) {
         checkState(
             instance.reason.hasPeriodYears() == (instance.periodYears != null),
             "Period years must be set if and only if reason is "

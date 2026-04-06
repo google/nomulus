@@ -139,7 +139,7 @@ final class RegistrarToXjcConverter {
 
     // o  A <crDate> element that contains the date and time of registrar-
     //    object creation.
-    bean.setCrDate(model.getCreationTime());
+    bean.setCrDate(google.registry.util.DateTimeUtils.toDateTime(model.getCreationTime()));
 
     // o  An OPTIONAL <upDate> element that contains the date and time of
     //    the most recent RDE registrar-object modification.  This element

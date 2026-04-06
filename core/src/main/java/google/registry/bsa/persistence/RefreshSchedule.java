@@ -53,7 +53,7 @@ public record RefreshSchedule(
   static RefreshSchedule create(BsaDomainRefresh job, DateTime prevJobCreationTime) {
     return new RefreshSchedule(
         job.getJobId(),
-        job.getCreationTime(),
+        google.registry.util.DateTimeUtils.toDateTime(job.getCreationTime()),
         job.getJobName(),
         job.getStage(),
         prevJobCreationTime);

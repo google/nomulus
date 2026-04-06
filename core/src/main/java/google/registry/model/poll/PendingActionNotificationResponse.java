@@ -19,6 +19,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
+import google.registry.xml.UtcInstantAdapter;
 import jakarta.persistence.Embeddable;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -26,6 +27,8 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.XmlValue;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.time.Instant;
 import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned when completing a pending action on a domain. */
@@ -51,7 +54,8 @@ public class PendingActionNotificationResponse extends ImmutableObject
   Trid trid;
 
   @XmlElement(name = "paDate")
-  DateTime processedDate;
+  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+  Instant processedDate;
 
   public String getNameAsString() {
     return nameOrId.value;
@@ -68,7 +72,7 @@ public class PendingActionNotificationResponse extends ImmutableObject
   }
 
   protected static <T extends PendingActionNotificationResponse> T init(
-      T response, String nameOrId, boolean actionResult, Trid trid, DateTime processedDate) {
+      T response, String nameOrId, boolean actionResult, Trid trid, Instant processedDate) {
     response.nameOrId = new NameOrId();
     response.nameOrId.value = nameOrId;
     response.nameOrId.actionResult = actionResult;
@@ -91,13 +95,27 @@ public class PendingActionNotificationResponse extends ImmutableObject
     }
 
     public static DomainPendingActionNotificationResponse create(
-        String domainName, boolean actionResult, Trid trid, DateTime processedDate) {
+        String domainName, boolean actionResult, Trid trid, Instant processedDate) {
       return init(
           new DomainPendingActionNotificationResponse(),
           domainName,
           actionResult,
           trid,
           processedDate);
+    }
+
+    /**
+     * @deprecated Use {@link #create(String, boolean, Trid, Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public static DomainPendingActionNotificationResponse create(
+        String domainName, boolean actionResult, Trid trid, DateTime processedDate) {
+      return create(
+          domainName,
+          actionResult,
+          trid,
+          google.registry.util.DateTimeUtils.toInstant(processedDate));
     }
   }
 
@@ -115,13 +133,27 @@ public class PendingActionNotificationResponse extends ImmutableObject
     }
 
     public static ContactPendingActionNotificationResponse create(
-        String contactId, boolean actionResult, Trid trid, DateTime processedDate) {
+        String contactId, boolean actionResult, Trid trid, Instant processedDate) {
       return init(
           new ContactPendingActionNotificationResponse(),
           contactId,
           actionResult,
           trid,
           processedDate);
+    }
+
+    /**
+     * @deprecated Use {@link #create(String, boolean, Trid, Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public static ContactPendingActionNotificationResponse create(
+        String contactId, boolean actionResult, Trid trid, DateTime processedDate) {
+      return create(
+          contactId,
+          actionResult,
+          trid,
+          google.registry.util.DateTimeUtils.toInstant(processedDate));
     }
   }
 
@@ -140,9 +172,23 @@ public class PendingActionNotificationResponse extends ImmutableObject
     }
 
     public static HostPendingActionNotificationResponse create(
-        String hostName, boolean actionResult, Trid trid, DateTime processedDate) {
+        String hostName, boolean actionResult, Trid trid, Instant processedDate) {
       return init(
           new HostPendingActionNotificationResponse(), hostName, actionResult, trid, processedDate);
+    }
+
+    /**
+     * @deprecated Use {@link #create(String, boolean, Trid, Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public static HostPendingActionNotificationResponse create(
+        String hostName, boolean actionResult, Trid trid, DateTime processedDate) {
+      return create(
+          hostName,
+          actionResult,
+          trid,
+          google.registry.util.DateTimeUtils.toInstant(processedDate));
     }
   }
 }

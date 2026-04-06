@@ -125,7 +125,10 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
           long newHistoryId = tm().allocateId();
           HistoryEntryId newDomainHistoryId = new HistoryEntryId(domain.getRepoId(), newHistoryId);
           BillingRecurrence endingNow =
-              existingRecurrence.asBuilder().setRecurrenceEndTime(now).build();
+              existingRecurrence
+                  .asBuilder()
+                  .setRecurrenceEndTime(google.registry.util.DateTimeUtils.toInstant(now))
+                  .build();
           BillingRecurrence.Builder newRecurrenceBuilder =
               existingRecurrence
                   .asBuilder()

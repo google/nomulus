@@ -81,6 +81,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.security.cert.CertificateParsingException;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -399,7 +400,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   // Metadata.
 
   /** The time when this registrar was created. */
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create((Instant) null);
 
   /** The time that the certificate was last updated. */
   DateTime lastCertificateUpdateTime;
@@ -434,8 +435,17 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return registrarId;
   }
 
-  public DateTime getCreationTime() {
+  public Instant getCreationTime() {
     return creationTime.getTimestamp();
+  }
+
+  /**
+   * @deprecated Use {@link #getCreationTime()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getCreationDateTime() {
+    return google.registry.util.DateTimeUtils.toDateTime(creationTime.getTimestamp());
   }
 
   @Nullable
@@ -454,7 +464,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   public DateTime getLastUpdateTime() {
-    return getUpdateTimestamp().getTimestamp();
+    return getUpdateTimestamp().getTimestampDateTime();
   }
 
   public DateTime getLastCertificateUpdateTime() {

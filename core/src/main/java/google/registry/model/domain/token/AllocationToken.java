@@ -26,8 +26,11 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.REGIS
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -37,6 +40,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
@@ -60,6 +64,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -208,7 +213,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   @Nullable String domainName;
 
   /** When this token was created. */
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create((Instant) null);
 
   /** Allowed registrar client IDs for this token, or null if all registrars are allowed. */
   @Column(name = "allowedRegistrarIds")
@@ -300,7 +305,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return Optional.ofNullable(domainName);
   }
 
-  public Optional<DateTime> getCreationTime() {
+  public Optional<Instant> getCreationTime() {
     return Optional.ofNullable(creationTime.getTimestamp());
   }
 
@@ -334,8 +339,28 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return tokenType;
   }
 
+  /**
+   * @deprecated Use {@link #getCreationTime()}
+   */
+  @JsonIgnore
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public Optional<DateTime> getCreationDateTime() {
+    return Optional.ofNullable(toDateTime(creationTime.getTimestamp()));
+  }
+
+  @JsonIgnore
   public TimedTransitionProperty<TokenStatus> getTokenStatusTransitions() {
     return tokenStatusTransitions;
+  }
+
+  public ImmutableSortedMap<DateTime, TokenStatus> getTokenStatusTransitionsMap() {
+    return tokenStatusTransitions.toValueMap();
+  }
+
+  @JsonIgnore
+  public ImmutableSortedMap<Instant, TokenStatus> getTokenStatusTransitionsMapInstant() {
+    return tokenStatusTransitions.toValueMapInstant();
   }
 
   public ImmutableSet<CommandName> getAllowedEppActions() {
@@ -514,6 +539,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
     @VisibleForTesting
     public Builder setCreationTimeForTest(DateTime creationTime) {
+      return setCreationTimeForTest(toInstant(creationTime));
+    }
+
+    @VisibleForTesting
+    public Builder setCreationTimeForTest(Instant creationTime) {
       checkState(
           getInstance().creationTime.getTimestamp() == null, "Creation time can only be set once");
       getInstance().creationTime = CreateAutoTimestamp.create(creationTime);
@@ -559,8 +589,17 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
     public Builder setTokenStatusTransitions(
         ImmutableSortedMap<DateTime, TokenStatus> transitions) {
+      return setTokenStatusTransitionsInstant(
+          transitions.entrySet().stream()
+              .collect(
+                  ImmutableSortedMap.toImmutableSortedMap(
+                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
+    }
+
+    public Builder setTokenStatusTransitionsInstant(
+        ImmutableSortedMap<Instant, TokenStatus> transitions) {
       getInstance().tokenStatusTransitions =
-          TimedTransitionProperty.make(
+          TimedTransitionProperty.makeInstant(
               transitions,
               VALID_TOKEN_STATUS_TRANSITIONS,
               "tokenStatusTransitions",

@@ -565,7 +565,10 @@ public class DomainFlowUtils {
     }
 
     BillingRecurrence newBillingRecurrence =
-        existingBillingRecurrence.asBuilder().setRecurrenceEndTime(newEndTime).build();
+        existingBillingRecurrence
+            .asBuilder()
+            .setRecurrenceEndTime(google.registry.util.DateTimeUtils.toInstant(newEndTime))
+            .build();
     tm().update(newBillingRecurrence);
     return newBillingRecurrence;
   }

@@ -26,6 +26,7 @@ import static google.registry.testing.DatabaseHelper.persistDomainWithDependentR
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
 import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -82,9 +83,10 @@ public class ResaveAllEppResourcesPipelineTest {
   @Test
   void testPipeline_unchangedEntity() {
     Host host = persistActiveHost("ns1.example.tld");
-    DateTime creationTime = host.getUpdateTimestamp().getTimestamp();
+    DateTime creationTime = toDateTime(host.getUpdateTimestamp().getTimestamp());
     fakeClock.advanceOneMilli();
-    assertThat(loadByEntity(host).getUpdateTimestamp().getTimestamp()).isEqualTo(creationTime);
+    assertThat(toDateTime(loadByEntity(host).getUpdateTimestamp().getTimestamp()))
+        .isEqualTo(creationTime);
     fakeClock.advanceOneMilli();
     runPipeline();
     assertThat(loadByEntity(host)).isEqualTo(host);
@@ -102,12 +104,13 @@ public class ResaveAllEppResourcesPipelineTest {
             now.minusDays(1),
             now.plusYears(2));
     assertThat(domain.getStatusValues()).contains(StatusValue.PENDING_TRANSFER);
-    assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(now);
+    assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(toInstant(now));
     fakeClock.advanceOneMilli();
     runPipeline();
     Domain postPipeline = loadByEntity(domain);
     assertThat(postPipeline.getStatusValues()).doesNotContain(StatusValue.PENDING_TRANSFER);
-    assertThat(postPipeline.getUpdateTimestamp().getTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(postPipeline.getUpdateTimestamp().getTimestamp())
+        .isEqualTo(toInstant(fakeClock.nowUtc()));
   }
 
   @Test

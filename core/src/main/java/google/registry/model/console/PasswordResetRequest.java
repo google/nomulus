@@ -27,6 +27,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.joda.time.DateTime;
@@ -57,7 +58,7 @@ public class PasswordResetRequest extends ImmutableObject implements Buildable {
         name = "creationTime",
         column = @Column(name = "requestTime", nullable = false))
   })
-  CreateAutoTimestamp requestTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp requestTime = CreateAutoTimestamp.create((Instant) null);
 
   @Column(nullable = false)
   String requester;
@@ -78,8 +79,17 @@ public class PasswordResetRequest extends ImmutableObject implements Buildable {
     return type;
   }
 
-  public DateTime getRequestTime() {
+  public Instant getRequestTime() {
     return requestTime.getTimestamp();
+  }
+
+  /**
+   * @deprecated Use {@link #getRequestTime()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getRequestDateTime() {
+    return google.registry.util.DateTimeUtils.toDateTime(requestTime.getTimestamp());
   }
 
   public String getRequester() {

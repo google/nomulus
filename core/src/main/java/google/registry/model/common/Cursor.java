@@ -31,6 +31,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -143,10 +144,18 @@ public class Cursor extends UpdateAutoTimestampEntity {
     return VKey.create(Cursor.class, new CursorId(type, scope));
   }
 
-  public DateTime getLastUpdateTime() {
+  public Instant getLastUpdateTime() {
     return getUpdateTimestamp().getTimestamp();
   }
 
+  /**
+   * @deprecated Use {@link #getLastUpdateTime()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getLastUpdateDateTime() {
+    return google.registry.util.DateTimeUtils.toDateTime(getUpdateTimestamp().getTimestamp());
+  }
 
   public String getScope() {
     return scope;

@@ -32,6 +32,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import java.time.Instant;
 import org.joda.time.DateTime;
 
 /** Static utility functions for domain transfers. */
@@ -67,14 +68,31 @@ public final class ResourceTransferUtils {
    * specified status and date.
    */
   public static PendingActionNotificationResponse createPendingTransferNotificationResponse(
-      Domain domain, Trid transferRequestTrid, boolean actionResult, DateTime processedDate) {
+      Domain domain, Trid transferRequestTrid, boolean actionResult, Instant processedDate) {
     return DomainPendingActionNotificationResponse.create(
         domain.getDomainName(), actionResult, transferRequestTrid, processedDate);
   }
 
+  /**
+   * Create a pending action notification response indicating the resolution of a transfer.
+   *
+   * @deprecated Use {@link #createPendingTransferNotificationResponse(Domain, Trid, boolean,
+   *     Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static PendingActionNotificationResponse createPendingTransferNotificationResponse(
+      Domain domain, Trid transferRequestTrid, boolean actionResult, DateTime processedDate) {
+    return createPendingTransferNotificationResponse(
+        domain,
+        transferRequestTrid,
+        actionResult,
+        google.registry.util.DateTimeUtils.toInstant(processedDate));
+  }
+
   /** If there is a transfer out, delete the server-approve entities and enqueue a poll message. */
   public static void handlePendingTransferOnDelete(
-      Domain domain, Domain newDomain, DateTime now, HistoryEntry historyEntry) {
+      Domain domain, Domain newDomain, Instant now, HistoryEntry historyEntry) {
     if (!domain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       return;
     }
@@ -95,6 +113,19 @@ public final class ResourceTransferUtils {
   }
 
   /**
+   * If there is a transfer out, delete the server-approve entities and enqueue a poll message.
+   *
+   * @deprecated Use {@link #handlePendingTransferOnDelete(Domain, Domain, Instant, HistoryEntry)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static void handlePendingTransferOnDelete(
+      Domain domain, Domain newDomain, DateTime now, HistoryEntry historyEntry) {
+    handlePendingTransferOnDelete(
+        domain, newDomain, google.registry.util.DateTimeUtils.toInstant(now), historyEntry);
+  }
+
+  /**
    * Turn a domain into a builder with its pending transfer resolved.
    *
    * <p>This removes the {@link StatusValue#PENDING_TRANSFER} status, sets the {@link
@@ -102,7 +133,7 @@ public final class ResourceTransferUtils {
    * sets the expiration time of the last pending transfer to now.
    */
   private static Domain.Builder resolvePendingTransfer(
-      Domain domain, TransferStatus transferStatus, DateTime now) {
+      Domain domain, TransferStatus transferStatus, Instant now) {
     checkArgument(
         domain.getStatusValues().contains(StatusValue.PENDING_TRANSFER),
         "Domain is not in pending transfer status.");
@@ -116,7 +147,8 @@ public final class ResourceTransferUtils {
                 .getTransferData()
                 .copyConstantFieldsToBuilder()
                 .setTransferStatus(transferStatus)
-                .setPendingTransferExpirationTime(checkNotNull(now))
+                .setPendingTransferExpirationTime(
+                    google.registry.util.DateTimeUtils.toDateTime(checkNotNull(now)))
                 .build());
   }
 
@@ -129,13 +161,26 @@ public final class ResourceTransferUtils {
    * transfer to now.
    */
   public static Domain approvePendingTransfer(
-      Domain domain, TransferStatus transferStatus, DateTime now) {
+      Domain domain, TransferStatus transferStatus, Instant now) {
     checkArgument(transferStatus.isApproved(), "Not an approval transfer status");
     Domain.Builder builder = resolvePendingTransfer(domain, transferStatus, now);
     return builder
-        .setLastTransferTime(now)
+        .setLastTransferTime(google.registry.util.DateTimeUtils.toDateTime(now))
         .setPersistedCurrentSponsorRegistrarId(domain.getTransferData().getGainingRegistrarId())
         .build();
+  }
+
+  /**
+   * Resolve a pending transfer by awarding it to the gaining client.
+   *
+   * @deprecated Use {@link #approvePendingTransfer(Domain, TransferStatus, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static Domain approvePendingTransfer(
+      Domain domain, TransferStatus transferStatus, DateTime now) {
+    return approvePendingTransfer(
+        domain, transferStatus, google.registry.util.DateTimeUtils.toInstant(now));
   }
 
   /**
@@ -147,11 +192,27 @@ public final class ResourceTransferUtils {
    * and sets the last EPP update client id to the given client id.
    */
   public static Domain denyPendingTransfer(
-      Domain domain, TransferStatus transferStatus, DateTime now, String lastEppUpdateRegistrarId) {
+      Domain domain, TransferStatus transferStatus, Instant now, String lastEppUpdateRegistrarId) {
     checkArgument(transferStatus.isDenied(), "Not a denial transfer status");
     return resolvePendingTransfer(domain, transferStatus, now)
-        .setLastEppUpdateTime(now)
+        .setLastEppUpdateTime(google.registry.util.DateTimeUtils.toDateTime(now))
         .setLastEppUpdateRegistrarId(lastEppUpdateRegistrarId)
         .build();
+  }
+
+  /**
+   * Resolve a pending transfer by denying it.
+   *
+   * @deprecated Use {@link #denyPendingTransfer(Domain, TransferStatus, Instant, String)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static Domain denyPendingTransfer(
+      Domain domain, TransferStatus transferStatus, DateTime now, String lastEppUpdateRegistrarId) {
+    return denyPendingTransfer(
+        domain,
+        transferStatus,
+        google.registry.util.DateTimeUtils.toInstant(now),
+        lastEppUpdateRegistrarId);
   }
 }

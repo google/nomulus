@@ -51,9 +51,21 @@ class DateTimeUtilsTest {
   }
 
   @Test
+  void testSuccess_earliestOf_instant() {
+    assertThat(earliestOf(START_INSTANT, END_INSTANT)).isEqualTo(START_INSTANT);
+    assertThat(earliestOf(ImmutableList.of(START_INSTANT, END_INSTANT))).isEqualTo(START_INSTANT);
+  }
+
+  @Test
   void testSuccess_latestOf() {
     assertThat(latestOf(START_OF_TIME, END_OF_TIME)).isEqualTo(END_OF_TIME);
-    assertThat(latestOf(sampleDates)).isEqualTo(END_OF_TIME);
+    assertThat(DateTimeUtils.latestDateTimeOf(sampleDates)).isEqualTo(END_OF_TIME);
+  }
+
+  @Test
+  void testSuccess_latestOf_instant() {
+    assertThat(latestOf(START_INSTANT, END_INSTANT)).isEqualTo(END_INSTANT);
+    assertThat(latestOf(ImmutableList.of(START_INSTANT, END_INSTANT))).isEqualTo(END_INSTANT);
   }
 
   @Test
@@ -106,12 +118,14 @@ class DateTimeUtilsTest {
 
   @Test
   void testFailure_earliestOfEmpty() {
-    assertThrows(IllegalArgumentException.class, () -> earliestOf(ImmutableList.of()));
+    assertThrows(
+        IllegalArgumentException.class, () -> DateTimeUtils.earliestDateTimeOf(ImmutableList.of()));
   }
 
   @Test
   void testFailure_latestOfEmpty() {
-    assertThrows(IllegalArgumentException.class, () -> latestOf(ImmutableList.of()));
+    assertThrows(
+        IllegalArgumentException.class, () -> DateTimeUtils.latestDateTimeOf(ImmutableList.of()));
   }
 
   @Test

@@ -30,7 +30,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNo
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RESTORE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -163,14 +163,14 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     BillingRecurrence autorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
-            .setRecurrenceEndTime(END_OF_TIME)
+            .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistoryId(domainHistoryId)
             .build();
     entitiesToInsert.add(autorenewEvent);
     PollMessage.Autorenew autorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
             .setEventTime(newExpirationTime)
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(END_INSTANT)
             .setDomainHistoryId(domainHistoryId)
             .build();
     entitiesToInsert.add(autorenewPollMessage);
@@ -242,7 +242,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     return existingDomain
         .asBuilder()
         .setRegistrationExpirationTime(newExpirationTime)
-        .setDeletionTime(END_OF_TIME)
+        .setDeletionTime(END_INSTANT)
         .setStatusValues(null)
         .setGracePeriods(null)
         .setDeletePollMessage(null)

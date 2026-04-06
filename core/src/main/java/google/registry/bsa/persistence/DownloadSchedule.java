@@ -88,7 +88,7 @@ public record DownloadSchedule(
   static DownloadSchedule create(BsaDownload currentJob) {
     return new DownloadSchedule(
         currentJob.getJobId(),
-        currentJob.getCreationTime(),
+        google.registry.util.DateTimeUtils.toDateTime(currentJob.getCreationTime()),
         currentJob.getJobName(),
         currentJob.getStage(),
         Optional.empty(),
@@ -99,7 +99,7 @@ public record DownloadSchedule(
       BsaDownload currentJob, CompletedJob latestCompleted, boolean alwaysDownload) {
     return new DownloadSchedule(
         currentJob.getJobId(),
-        currentJob.getCreationTime(),
+        google.registry.util.DateTimeUtils.toDateTime(currentJob.getCreationTime()),
         currentJob.getJobName(),
         currentJob.getStage(),
         Optional.of(latestCompleted),

@@ -32,7 +32,7 @@ import static google.registry.model.reporting.DomainTransactionRecord.Transactio
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.union;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
@@ -211,7 +211,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                     ? RenewalPriceBehavior.DEFAULT
                     : existingBillingRecurrence.getRenewalPriceBehavior())
             .setRenewalPrice(renewalPrice)
-            .setRecurrenceEndTime(END_OF_TIME)
+            .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistoryId(domainHistoryId)
             .build();
     // Create a new autorenew poll message.
@@ -220,7 +220,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(END_INSTANT)
             .setMsg("Domain was auto-renewed.")
             .setDomainHistoryId(domainHistoryId)
             .build();

@@ -67,7 +67,7 @@ AllocationToken: {
     allowedEppActions=[CREATE]
     allowedTlds=[bar]
     creationTime=CreateAutoTimestamp: {
-        creationTime=2022-09-01T00:00:00.000Z
+        creationTime=2022-09-01T00:00:00Z
     }
     discountFraction=0.5
     discountPremiums=false
@@ -79,10 +79,10 @@ AllocationToken: {
     renewalPrice=null
     renewalPriceBehavior=DEFAULT
     token=foo
-    tokenStatusTransitions={1970-01-01T00:00:00.000Z=NOT_STARTED, 2022-09-01T00:00:00.000Z=VALID}
+    tokenStatusTransitions={1970-01-01T00:00:00Z=NOT_STARTED, 2022-09-01T00:00:00Z=VALID}
     tokenType=SINGLE_USE
     updateTimestamp=UpdateAutoTimestamp: {
-        lastUpdateTime=2022-09-01T00:00:00.000Z
+        lastUpdateTime=2022-09-01T00:00:00Z
     }
 }
 Token foo was not redeemed.

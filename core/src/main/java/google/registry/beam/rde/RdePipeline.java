@@ -27,6 +27,7 @@ import static google.registry.beam.rde.RdePipeline.TupleTags.REVISION_ID;
 import static google.registry.beam.rde.RdePipeline.TupleTags.SUPERORDINATE_DOMAINS;
 import static google.registry.model.reporting.HistoryEntryDao.RESOURCE_TYPES_TO_HISTORY_TYPES;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.SafeSerializationUtils.safeDeserializeCollection;
 import static google.registry.util.SafeSerializationUtils.serializeCollection;
 import static google.registry.util.SerializeUtils.decodeBase64;
@@ -314,9 +315,9 @@ public class RdePipeline implements Serializable {
         String.format("Load most recent %s", historyClass.getSimpleName()),
         RegistryJpaIO.read(
                 ("SELECT repoId, revisionId FROM %entity% WHERE (repoId, modificationTime) IN"
-                     + " (SELECT repoId, MAX(modificationTime) FROM %entity% WHERE"
-                     + " modificationTime <= :watermark GROUP BY repoId) AND resource.deletionTime"
-                     + " > :watermark AND COALESCE(resource.creationRegistrarId, '') NOT LIKE"
+                     + " (SELECT repoId, MAX(modificationTime) FROM %entity% WHERE modificationTime"
+                     + " <= :watermark GROUP BY repoId) AND resource.deletionTime >"
+                     + " :watermarkInstant AND COALESCE(resource.creationRegistrarId, '') NOT LIKE"
                      + " 'prober-%' AND COALESCE(resource.currentSponsorRegistrarId, '') NOT LIKE"
                      + " 'prober-%' AND COALESCE(resource.lastEppUpdateRegistrarId, '') NOT LIKE"
                      + " 'prober-%' "
@@ -324,7 +325,7 @@ public class RdePipeline implements Serializable {
                             ? "AND resource.tld IN " + "(SELECT id FROM Tld WHERE tldType = 'REAL')"
                             : ""))
                     .replace("%entity%", historyClass.getSimpleName()),
-                ImmutableMap.of("watermark", watermark),
+                ImmutableMap.of("watermark", watermark, "watermarkInstant", toInstant(watermark)),
                 Object[].class,
                 row -> KV.of((String) row[0], (long) row[1]))
             .withCoder(KvCoder.of(StringUtf8Coder.of(), VarLongCoder.of())));

@@ -16,6 +16,7 @@ package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -52,7 +53,7 @@ public class ClaimsListDaoTest {
     claimsList = ClaimsListDao.save(claimsList);
     ClaimsList insertedClaimsList = ClaimsListDao.get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
-    assertThat(insertedClaimsList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(toDateTime(insertedClaimsList.getCreationTime())).isEqualTo(fakeClock.nowUtc());
   }
 
   @Test
@@ -72,7 +73,7 @@ public class ClaimsListDaoTest {
     assertThat(insertedClaimsList.getTmdbGenerationTime())
         .isEqualTo(claimsList.getTmdbGenerationTime());
     assertThat(insertedClaimsList.getLabelsToKeys()).isEqualTo(claimsList.getLabelsToKeys());
-    assertThat(insertedClaimsList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(toDateTime(insertedClaimsList.getCreationTime())).isEqualTo(fakeClock.nowUtc());
   }
 
   @Test

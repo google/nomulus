@@ -15,7 +15,6 @@
 package google.registry.model.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.gson.annotations.Expose;
@@ -36,6 +35,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -118,7 +118,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
         column = @Column(name = "lockRequestTime", nullable = false))
   })
   @Expose
-  private final CreateAutoTimestamp lockRequestTime = CreateAutoTimestamp.create(null);
+  private final CreateAutoTimestamp lockRequestTime = CreateAutoTimestamp.create((Instant) null);
 
   /** When the unlock is first requested. */
   @Expose private DateTime unlockRequestTime;
@@ -173,8 +173,17 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
     return registryLockEmail;
   }
 
-  public DateTime getLockRequestTime() {
+  public Instant getLockRequestTime() {
     return lockRequestTime.getTimestamp();
+  }
+
+  /**
+   * @deprecated Use {@link #getLockRequestTime()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getLockRequestDateTime() {
+    return google.registry.util.DateTimeUtils.toDateTime(lockRequestTime.getTimestamp());
   }
 
   /** Returns the unlock request timestamp or null if an unlock has not been requested yet. */
@@ -203,7 +212,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
   }
 
   public DateTime getLastUpdateTime() {
-    return getUpdateTimestamp().getTimestamp();
+    return getUpdateTimestamp().getTimestampDateTime();
   }
 
   public Long getRevisionId() {
@@ -229,18 +238,43 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
     return lockCompletionTime != null && unlockCompletionTime == null;
   }
 
-  /** Returns true iff the lock was requested &gt;= 1 hour ago and has not been verified. */
+  /**
+   * Returns true iff the lock was requested &gt;= 1 hour ago and has not been verified.
+   *
+   * @deprecated Use {@link #isLockRequestExpired(Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public boolean isLockRequestExpired(DateTime now) {
+    return isLockRequestExpired(google.registry.util.DateTimeUtils.toInstant(now));
+  }
+
+  /** Returns true iff the lock was requested &gt;= 1 hour ago and has not been verified. */
+  public boolean isLockRequestExpired(Instant now) {
     return getLockCompletionTime().isEmpty()
-        && isBeforeOrAt(getLockRequestTime(), now.minusHours(1));
+        && google.registry.util.DateTimeUtils.isBeforeOrAt(
+            getLockRequestTime(), now.minus(java.time.Duration.ofHours(1)));
+  }
+
+  /**
+   * Returns true iff the unlock was requested &gt;= 1 hour ago and has not been verified.
+   *
+   * @deprecated Use {@link #isUnlockRequestExpired(Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public boolean isUnlockRequestExpired(DateTime now) {
+    return isUnlockRequestExpired(google.registry.util.DateTimeUtils.toInstant(now));
   }
 
   /** Returns true iff the unlock was requested &gt;= 1 hour ago and has not been verified. */
-  public boolean isUnlockRequestExpired(DateTime now) {
+  public boolean isUnlockRequestExpired(Instant now) {
     Optional<DateTime> unlockRequestTimestamp = getUnlockRequestTime();
     return unlockRequestTimestamp.isPresent()
         && getUnlockCompletionTime().isEmpty()
-        && isBeforeOrAt(unlockRequestTimestamp.get(), now.minusHours(1));
+        && google.registry.util.DateTimeUtils.isBeforeOrAt(
+            google.registry.util.DateTimeUtils.toInstant(unlockRequestTimestamp.get()),
+            now.minus(java.time.Duration.ofHours(1)));
   }
 
   @Override
