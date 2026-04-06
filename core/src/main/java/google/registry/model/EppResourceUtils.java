@@ -17,9 +17,10 @@ package google.registry.model;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
@@ -39,7 +40,6 @@ import java.util.Comparator;
 import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
-import org.joda.time.Interval;
 
 /** Utilities for working with {@link EppResource}. */
 public final class EppResourceUtils {
@@ -79,20 +79,31 @@ public final class EppResourceUtils {
     return (T resource) -> cloneProjectedAtTime(resource, now);
   }
 
+  public static boolean isActive(EppResource resource, Instant time) {
+    return isAtOrAfter(time, resource.getCreationTimeInstant())
+        && time.isBefore(resource.getDeletionTime());
+  }
+
   /**
-   * The lifetime of a resource is from its creation time, inclusive, through its deletion time,
-   * exclusive, which happily maps to the behavior of Interval.
+   * @deprecated Use {@link #isActive(EppResource, Instant)}
    */
-  private static Interval getLifetime(EppResource resource) {
-    return new Interval(resource.getCreationTime(), resource.getDeletionDateTime());
-  }
-
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static boolean isActive(EppResource resource, DateTime time) {
-    return getLifetime(resource).contains(time);
+    return isActive(resource, toInstant(time));
   }
 
-  public static boolean isDeleted(EppResource resource, DateTime time) {
+  public static boolean isDeleted(EppResource resource, Instant time) {
     return !isActive(resource, time);
+  }
+
+  /**
+   * @deprecated Use {@link #isDeleted(EppResource, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static boolean isDeleted(EppResource resource, DateTime time) {
+    return isDeleted(resource, toInstant(time));
   }
 
   /** Process an automatic transfer on a domain. */
@@ -132,7 +143,7 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Rewinds an {@link EppResource} object to a given point in time.
+   * Returns the given resource as it was at a specific point in time.
    *
    * <p>This method costs nothing if {@code resource} is already current. Otherwise, it needs to
    * perform a single fetch operation.
@@ -141,12 +152,12 @@ public final class EppResourceUtils {
    * {@code resource} should be whatever's currently in SQL.
    *
    * @return the resource at {@code timestamp} or {@code null} if resource is deleted or not yet
-   *     created
+   *     created.
    */
   public static <T extends EppResource> T loadAtPointInTime(
-      final T resource, final DateTime timestamp) {
+      final T resource, final Instant timestamp) {
     // If we're before the resource creation time, don't try to find a "most recent revision".
-    if (timestamp.isBefore(resource.getCreationTime())) {
+    if (timestamp.isBefore(resource.getCreationTimeInstant())) {
       return null;
     }
     // If the resource was not modified after the requested time, then use it as-is, otherwise find
@@ -159,23 +170,31 @@ public final class EppResourceUtils {
     return (loadedResource == null)
         ? null
         : (isActive(loadedResource, timestamp)
-            ? cloneProjectedAtTime(loadedResource, timestamp)
+            ? (T) loadedResource.cloneProjectedAtInstant(timestamp)
             : null);
+  }
+
+  /**
+   * @deprecated Use {@link #loadAtPointInTime(EppResource, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static <T extends EppResource> T loadAtPointInTime(
+      final T resource, final DateTime timestamp) {
+    return loadAtPointInTime(resource, toInstant(timestamp));
   }
 
   /**
    * Returns the most recent revision of a given EppResource before or at the provided timestamp,
    * falling back to using the resource as-is if there are no revisions.
-   *
-   * @see #loadAtPointInTime(EppResource, DateTime)
    */
   private static <T extends EppResource> T loadMostRecentRevisionAtTime(
-      final T resource, final DateTime timestamp) {
+      final T resource, final Instant timestamp) {
     @SuppressWarnings("unchecked")
     T resourceAtPointInTime =
         (T)
             HistoryEntryDao.loadHistoryObjectsForResource(
-                    resource.createVKey(), START_OF_TIME, timestamp)
+                    resource.createVKey(), START_INSTANT, timestamp)
                 .stream()
                 .max(Comparator.comparing(HistoryEntry::getModificationTime))
                 .flatMap(HistoryEntry::getResourceAtPointInTime)
@@ -193,18 +212,27 @@ public final class EppResourceUtils {
    * Returns a set of {@link VKey} for domains that reference a specified host.
    *
    * @param key the referent key
-   * @param now the logical time of the check
-   * @param limit the maximum number of returned keys, unlimited if null
+   * @param now the logical time of the check /** Returns the domains that are linked to this host
+   *     at the given time.
+   * @deprecated Use {@link #getLinkedDomainKeys(VKey, Instant, Integer)}
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static ImmutableSet<VKey<Domain>> getLinkedDomainKeys(
       VKey<Host> key, DateTime now, @Nullable Integer limit) {
+    return getLinkedDomainKeys(key, toInstant(now), limit);
+  }
+
+  /** Returns the domains that are linked to this host at the given time. */
+  public static ImmutableSet<VKey<Domain>> getLinkedDomainKeys(
+      VKey<Host> key, Instant now, @Nullable Integer limit) {
     return tm().reTransact(
             () -> {
               Query query =
                   tm().getEntityManager()
                       .createNativeQuery(HOST_LINKED_DOMAIN_QUERY)
                       .setParameter("fkRepoId", key.getKey())
-                      .setParameter("now", now.toDate());
+                      .setParameter("now", now);
               if (limit != null) {
                 query.setMaxResults(limit);
               }
@@ -220,12 +248,18 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Returns whether the given host is linked to (that is, referenced by) a domain.
+   * Returns whether this host is linked to any domains at the given time.
    *
-   * @param key the referent key
-   * @param now the logical time of the check
+   * @deprecated Use {@link #isLinked(VKey, Instant)}
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static boolean isLinked(VKey<Host> key, DateTime now) {
+    return isLinked(key, toInstant(now));
+  }
+
+  /** Returns whether this resource is linked to any domains at the given time. */
+  public static boolean isLinked(VKey<Host> key, Instant now) {
     return !getLinkedDomainKeys(key, now, 1).isEmpty();
   }
 

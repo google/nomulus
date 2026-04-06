@@ -22,7 +22,7 @@ import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurr
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
+import static google.registry.util.DateTimeUtils.minusYears;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -98,8 +98,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
       }
       domainsWithDisallowedStatusesBuilder.putAll(
           domainName, Sets.intersection(domain.get().getStatusValues(), DISALLOWED_STATUSES));
-      if (isBeforeOrAt(
-          leapSafeSubtractYears(domain.get().getRegistrationExpirationDateTime(), period), now)) {
+      if (isBeforeOrAt(minusYears(domain.get().getRegistrationExpirationDateTime(), period), now)) {
         domainsExpiringTooSoonBuilder.put(
             domainName, domain.get().getRegistrationExpirationDateTime());
       }
@@ -145,7 +144,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
     for (String domainName : mainParameters) {
       Domain domain = ForeignKeyUtils.loadResource(Domain.class, domainName, now).get();
       DateTime previousTime = domain.getRegistrationExpirationDateTime();
-      DateTime newTime = leapSafeSubtractYears(previousTime, period);
+      DateTime newTime = minusYears(previousTime, period);
       resultBuilder.append(
           String.format(
               "%s expiration time changed from %s to %s\n", domainName, previousTime, newTime));
@@ -180,12 +179,11 @@ class UnrenewDomainCommand extends ConfirmingCommand {
         "Domain %s has prohibited status values",
         domainName);
     checkState(
-        leapSafeSubtractYears(domain.getRegistrationExpirationDateTime(), period).isAfter(now),
+        minusYears(domain.getRegistrationExpirationDateTime(), period).isAfter(now),
         "Domain %s expires too soon",
         domainName);
 
-    DateTime newExpirationTime =
-        leapSafeSubtractYears(domain.getRegistrationExpirationDateTime(), period);
+    DateTime newExpirationTime = minusYears(domain.getRegistrationExpirationDateTime(), period);
     DomainHistory domainHistory =
         new DomainHistory.Builder()
             .setDomain(domain)

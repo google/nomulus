@@ -45,14 +45,13 @@ import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.util.BatchedStreams;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Rechecks {@link BsaUnblockableDomain the registered/reserved domain names} in the database for
@@ -89,14 +88,14 @@ import org.joda.time.Duration;
  */
 public final class DomainsRefresher {
 
-  private final DateTime prevRefreshStartTime;
+  private final Instant prevRefreshStartTime;
   private final int transactionBatchSize;
-  private final DateTime now;
+  private final Instant now;
 
   public DomainsRefresher(
-      DateTime prevRefreshStartTime,
-      DateTime now,
-      Duration domainTxnMaxDuration,
+      Instant prevRefreshStartTime,
+      Instant now,
+      java.time.Duration domainTxnMaxDuration,
       int transactionBatchSize) {
     this.prevRefreshStartTime = prevRefreshStartTime.minus(domainTxnMaxDuration);
     this.now = now;
@@ -249,7 +248,7 @@ public final class DomainsRefresher {
   }
 
   static ImmutableSet<String> getNewlyCreatedUnblockables(
-      DateTime prevRefreshStartTime, DateTime now) {
+      Instant prevRefreshStartTime, Instant now) {
     ImmutableSet<String> bsaEnabledTlds =
         getTldEntitiesOfType(TldType.REAL).stream()
             .filter(tld -> isEnrolledWithBsa(tld, now))
@@ -260,7 +259,7 @@ public final class DomainsRefresher {
     return getBlockedDomainNames(liveDomains);
   }
 
-  static ImmutableSet<String> getAllReservedUnblockables(DateTime now, int batchSize) {
+  static ImmutableSet<String> getAllReservedUnblockables(Instant now, int batchSize) {
     Stream<String> allReserved = getAllReservedNames(now);
     return BatchedStreams.toBatches(allReserved, batchSize)
         .map(DomainsRefresher::getBlockedDomainNames)

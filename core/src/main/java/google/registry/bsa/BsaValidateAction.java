@@ -57,11 +57,11 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /** Validates the BSA data in the database against the most recent block lists. */
 @Action(
@@ -88,14 +88,14 @@ public class BsaValidateAction implements Runnable {
       IdnChecker idnChecker,
       BsaEmailSender emailSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
-      @Config("bsaValidationMaxStaleness") Duration maxStaleness,
+      @Config("bsaValidationMaxStaleness") org.joda.time.Duration maxStaleness,
       Clock clock,
       Response response) {
     this.gcsClient = gcsClient;
     this.idnChecker = idnChecker;
     this.emailSender = emailSender;
     this.transactionBatchSize = transactionBatchSize;
-    this.maxStaleness = maxStaleness;
+    this.maxStaleness = Duration.ofMillis(maxStaleness.getMillis());
     this.clock = clock;
     this.response = response;
   }
@@ -186,7 +186,7 @@ public class BsaValidateAction implements Runnable {
           ForeignKeyUtils.loadResources(
               Domain.class,
               batch.stream().map(UnblockableDomain::domainName).collect(toImmutableList()),
-              clock.nowUtc());
+              clock.now());
       for (var unblockable : batch) {
         verifyDomainStillUnblockableWithReason(unblockable, activeDomains).ifPresent(errors::add);
       }
@@ -199,7 +199,7 @@ public class BsaValidateAction implements Runnable {
 
   Optional<String> verifyDomainStillUnblockableWithReason(
       UnblockableDomain domain, ImmutableMap<String, Domain> activeDomains) {
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     boolean isRegistered = activeDomains.containsKey(domain.domainName());
     boolean isReserved = isReservedDomain(domain.domainName(), now);
     InternetDomainName domainName = InternetDomainName.from(domain.domainName());
@@ -228,7 +228,7 @@ public class BsaValidateAction implements Runnable {
   }
 
   boolean isStalenessAllowed(Domain domain) {
-    return domain.getCreationTime().plus(maxStaleness).isAfter(clock.nowUtc());
+    return domain.getCreationTimeInstant().plus(maxStaleness).isAfter(clock.now());
   }
 
   /** Returns unique labels across all block lists in the download specified by {@code jobName}. */
@@ -262,20 +262,20 @@ public class BsaValidateAction implements Runnable {
   }
 
   ImmutableList<String> checkMissingUnblockableDomains() {
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
     errors.addAll(checkForMissingReservedUnblockables(now));
     errors.addAll(checkForMissingRegisteredUnblockables(now));
     return errors.build();
   }
 
-  ImmutableList<String> checkForMissingRegisteredUnblockables(DateTime now) {
+  ImmutableList<String> checkForMissingRegisteredUnblockables(Instant now) {
     ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
     ImmutableList<Tld> bsaEnabledTlds =
         getTldEntitiesOfType(TldType.REAL).stream()
             .filter(tld -> isEnrolledWithBsa(tld, now))
             .collect(toImmutableList());
-    DateTime stalenessThreshold = now.minus(maxStaleness);
+    Instant stalenessThreshold = now.minus(maxStaleness);
     bsaEnabledTlds.stream()
         .map(Tld::getTldStr)
         .map(tld -> bsaQuery(() -> queryMissedRegisteredUnblockables(tld, now)))
@@ -290,7 +290,7 @@ public class BsaValidateAction implements Runnable {
     return errors.build();
   }
 
-  ImmutableList<String> checkForMissingReservedUnblockables(DateTime now) {
+  ImmutableList<String> checkForMissingReservedUnblockables(Instant now) {
     ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
     try (Stream<ImmutableList<String>> reservedNames =
         toBatches(

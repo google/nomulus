@@ -48,6 +48,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
+import java.time.Instant;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -480,7 +481,10 @@ class RegistrarTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new Registrar.Builder().setLastExpiringCertNotificationSentDate(null).build());
+            () ->
+                new Registrar.Builder()
+                    .setLastExpiringCertNotificationSentDate((Instant) null)
+                    .build());
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Registrar lastExpiringCertNotificationSentDate cannot be null");
@@ -513,7 +517,7 @@ class RegistrarTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new Registrar.Builder().setLastPocVerificationDate(null).build());
+            () -> new Registrar.Builder().setLastPocVerificationDate((Instant) null).build());
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Registrar lastPocVerificationDate cannot be null");
@@ -526,7 +530,7 @@ class RegistrarTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new Registrar.Builder()
-                    .setLastExpiringFailoverCertNotificationSentDate(null)
+                    .setLastExpiringFailoverCertNotificationSentDate((Instant) null)
                     .build());
     assertThat(thrown)
         .hasMessageThat()

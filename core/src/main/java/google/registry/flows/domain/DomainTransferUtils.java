@@ -16,7 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -240,7 +240,7 @@ public final class DomainTransferUtils {
         .setTargetId(targetId)
         .setRegistrarId(gainingRegistrarId)
         .setEventTime(serverApproveNewExpirationTime)
-        .setAutorenewEndTime(END_OF_TIME)
+        .setAutorenewEndTime(END_INSTANT)
         .setMsg("Domain was auto-renewed.")
         .setDomainHistoryId(domainHistoryId)
         .build();
@@ -258,7 +258,7 @@ public final class DomainTransferUtils {
         .setTargetId(targetId)
         .setRegistrarId(gainingRegistrarId)
         .setEventTime(serverApproveNewExpirationTime)
-        .setRecurrenceEndTime(END_OF_TIME)
+        .setRecurrenceEndTime(END_INSTANT)
         .setRenewalPriceBehavior(existingBillingRecurrence.getRenewalPriceBehavior())
         .setRenewalPrice(existingBillingRecurrence.getRenewalPrice().orElse(null))
         .setDomainHistoryId(domainHistoryId)

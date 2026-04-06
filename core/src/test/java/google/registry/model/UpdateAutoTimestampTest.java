@@ -16,8 +16,7 @@ package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.persistence.VKey;
@@ -26,7 +25,8 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExte
 import google.registry.testing.FakeClock;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import org.joda.time.DateTime;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -46,7 +46,7 @@ public class UpdateAutoTimestampTest {
   @Entity
   public static class UpdateAutoTimestampTestObject extends CrossTldSingleton {
     @Id long id = SINGLETON_ID;
-    UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create(null);
+    UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create((Instant) null);
   }
 
   private static UpdateAutoTimestampTestObject reload() {
@@ -56,35 +56,36 @@ public class UpdateAutoTimestampTest {
 
   @Test
   void testSaveSetsTime() {
-    DateTime transactionTime =
+    Instant transactionTime =
         tm().transact(
                 () -> {
                   clock.advanceOneMilli();
                   UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
-                  assertThat(object.updateTime.getTimestamp()).isEqualTo(START_OF_TIME);
+                  assertThat(object.updateTime.getTimestamp()).isEqualTo(START_INSTANT);
                   tm().insert(object);
-                  return tm().getTransactionTime();
+                  return tm().getTxTime();
                 });
     assertThat(reload().updateTime.getTimestamp()).isEqualTo(transactionTime);
   }
 
   @Test
   void testResavingOverwritesOriginalTime() {
-    DateTime transactionTime =
+    Instant transactionTime =
         tm().transact(
                 () -> {
                   clock.advanceOneMilli();
                   UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
-                  object.updateTime = UpdateAutoTimestamp.create(DateTime.now(UTC).minusDays(1));
+                  object.updateTime =
+                      UpdateAutoTimestamp.create(clock.now().minus(Duration.ofDays(1)));
                   tm().insert(object);
-                  return tm().getTransactionTime();
+                  return tm().getTxTime();
                 });
     assertThat(reload().updateTime.getTimestamp()).isEqualTo(transactionTime);
   }
 
   @Test
   void testReadingTwiceDoesNotModify() {
-    DateTime originalTime = DateTime.parse("1999-01-01T00:00:00Z");
+    Instant originalTime = Instant.parse("1999-01-01T00:00:00Z");
     clock.setTo(originalTime);
     tm().transact(() -> tm().insert(new UpdateAutoTimestampTestObject()));
     clock.advanceOneMilli();

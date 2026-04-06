@@ -23,6 +23,7 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.BulkPricingPackage;
 import google.registry.persistence.VKey;
 import google.registry.tools.params.DateTimeParameter;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -108,7 +109,7 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
                 Optional.ofNullable(nextBillingDate)
                     .ifPresent(nextBillingDate -> builder.setNextBillingDate(nextBillingDate));
                 if (clearLastNotificationSent()) {
-                  builder.setLastNotificationSent(null);
+                  builder.setLastNotificationSent((Instant) null);
                 }
                 BulkPricingPackage newBulkPricingPackage = builder.build();
                 stageEntityChange(oldBulkPricingPackage, newBulkPricingPackage);

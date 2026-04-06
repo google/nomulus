@@ -22,6 +22,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.HostSubject.assertAboutHosts;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -36,6 +37,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DatabaseHelper;
 import google.registry.util.SerializeUtils;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -190,8 +192,12 @@ class HostTest extends EntityTestCase {
 
   @Test
   void testComputeLastTransferTime_hostNeverSwitchedDomains_domainWasNeverTransferred() {
-    domain = domain.asBuilder().setLastTransferTime(null).build();
-    host = host.asBuilder().setLastTransferTime(null).setLastSuperordinateChange(null).build();
+    domain = domain.asBuilder().setLastTransferTime((Instant) null).build();
+    host =
+        host.asBuilder()
+            .setLastTransferTime((Instant) null)
+            .setLastSuperordinateChange((Instant) null)
+            .build();
     assertThat(host.computeLastTransferTime(domain)).isNull();
   }
 
@@ -204,10 +210,10 @@ class HostTest extends EntityTestCase {
     host =
         host.asBuilder()
             .setCreationTimeForTest(day1)
-            .setLastTransferTime(null)
-            .setLastSuperordinateChange(null)
+            .setLastTransferTime((Instant) null)
+            .setLastSuperordinateChange((Instant) null)
             .build();
-    assertThat(host.computeLastTransferTime(domain)).isEqualTo(day2);
+    assertThat(host.computeLastTransferTime(domain)).isEqualTo(toInstant(day2));
   }
 
   @Test
@@ -237,9 +243,9 @@ class HostTest extends EntityTestCase {
     // Host was transferred on Day 1.
     // Host was made subordinate to domain on Day 2.
     // Domain was never transferred.
-    domain = domain.asBuilder().setLastTransferTime(null).build();
+    domain = domain.asBuilder().setLastTransferTime((Instant) null).build();
     host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day2).build();
-    assertThat(host.computeLastTransferTime(domain)).isEqualTo(day1);
+    assertThat(host.computeLastTransferTime(domain)).isEqualTo(toInstant(day1));
   }
 
   @Test
@@ -249,7 +255,7 @@ class HostTest extends EntityTestCase {
     // Host was made subordinate to domain on Day 3.
     domain = domain.asBuilder().setLastTransferTime(day2).build();
     host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day3).build();
-    assertThat(host.computeLastTransferTime(domain)).isEqualTo(day1);
+    assertThat(host.computeLastTransferTime(domain)).isEqualTo(toInstant(day1));
   }
 
   @Test
@@ -259,6 +265,6 @@ class HostTest extends EntityTestCase {
     // Domain was transferred on Day 3.
     domain = domain.asBuilder().setLastTransferTime(day3).build();
     host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day2).build();
-    assertThat(host.computeLastTransferTime(domain)).isEqualTo(day3);
+    assertThat(host.computeLastTransferTime(domain)).isEqualTo(toInstant(day3));
   }
 }

@@ -37,12 +37,12 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.tools.params.MoneyParameter;
 import google.registry.tools.params.StringListParameter;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /** Command to update existing {@link AllocationToken}s. */
 @Parameters(
@@ -115,7 +115,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
       description =
           "Comma-delimited list of token status transitions effective on specific dates, of the "
               + "form <time>=<status>[,<time>=<status>]* where each status represents the status.")
-  private ImmutableSortedMap<DateTime, TokenStatus> tokenStatusTransitions;
+  private ImmutableSortedMap<Instant, TokenStatus> tokenStatusTransitions;
 
   @Parameter(
       names = {"--renewal_price_behavior"},
@@ -220,7 +220,8 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     Optional.ofNullable(discountPremiums).ifPresent(builder::setDiscountPremiums);
     Optional.ofNullable(discountPrice).ifPresent(builder::setDiscountPrice);
     Optional.ofNullable(discountYears).ifPresent(builder::setDiscountYears);
-    Optional.ofNullable(tokenStatusTransitions).ifPresent(builder::setTokenStatusTransitions);
+    Optional.ofNullable(tokenStatusTransitions)
+        .ifPresent(builder::setTokenStatusTransitionsInstant);
 
     if (renewalPriceBehavior != null
         && renewalPriceBehavior != original.getRenewalPriceBehavior()) {
