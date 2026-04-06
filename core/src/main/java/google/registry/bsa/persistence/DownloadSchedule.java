@@ -20,6 +20,7 @@ import static google.registry.bsa.DownloadStage.CHECKSUMS_DO_NOT_MATCH;
 import static google.registry.bsa.DownloadStage.MAKE_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.bsa.BlockListType;
@@ -88,7 +89,7 @@ public record DownloadSchedule(
   static DownloadSchedule create(BsaDownload currentJob) {
     return new DownloadSchedule(
         currentJob.getJobId(),
-        currentJob.getCreationTime(),
+        toDateTime(currentJob.getCreationTime()),
         currentJob.getJobName(),
         currentJob.getStage(),
         Optional.empty(),
@@ -99,7 +100,7 @@ public record DownloadSchedule(
       BsaDownload currentJob, CompletedJob latestCompleted, boolean alwaysDownload) {
     return new DownloadSchedule(
         currentJob.getJobId(),
-        currentJob.getCreationTime(),
+        toDateTime(currentJob.getCreationTime()),
         currentJob.getJobName(),
         currentJob.getStage(),
         Optional.of(latestCompleted),

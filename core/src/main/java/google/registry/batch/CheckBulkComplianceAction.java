@@ -16,6 +16,7 @@ package google.registry.batch;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -127,7 +128,7 @@ public class CheckBulkComplianceAction implements Runnable {
                       + " AND deletionTime = :endOfTime",
                   Long.class)
               .setParameter("token", bulkPricingPackage.getToken())
-              .setParameter("endOfTime", END_OF_TIME)
+              .setParameter("endOfTime", toInstant(END_OF_TIME))
               .getSingleResult();
       if (activeDomains > bulkPricingPackage.getMaxDomains()) {
         int overage = Ints.saturatedCast(activeDomains) - bulkPricingPackage.getMaxDomains();

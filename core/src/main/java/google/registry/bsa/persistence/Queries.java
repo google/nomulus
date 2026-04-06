@@ -19,13 +19,14 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_SPLITTER;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.api.UnblockableDomain;
-import google.registry.model.CreateAutoTimestamp;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -139,12 +140,12 @@ public final class Queries {
     return ImmutableSet.copyOf(
         tm().getEntityManager()
             .createQuery(
-                "SELECT domainName FROM Domain WHERE creationTime >= :minCreationTime "
+                "SELECT domainName FROM Domain WHERE creationTime.creationTime >= :minCreationTime "
                     + "AND deletionTime > :now "
                     + "AND tld in (:tlds)",
                 String.class)
-            .setParameter("minCreationTime", CreateAutoTimestamp.create(minCreationTime))
-            .setParameter("now", now)
+            .setParameter("minCreationTime", toInstant(minCreationTime))
+            .setParameter("now", toInstant(now))
             .setParameter("tlds", tlds)
             .getResultList());
   }
@@ -159,22 +160,22 @@ public final class Queries {
       String tld, DateTime now) {
     String sqlTemplate =
         """
-    SELECT l.domain_name, creation_time, deletion_time
-    FROM
-        (SELECT d.domain_name, d.creation_time, d.deletion_time
-         FROM
-             "Domain" d
-         JOIN
-             (SELECT concat(label, '.', :tld) AS domain_name from "BsaLabel") b
-         ON b.domain_name = d.domain_name
-         WHERE deletion_time > :now) l
-    LEFT OUTER JOIN
-        (SELECT concat(label, '.', tld) as domain_name
-         FROM "BsaUnblockableDomain"
-         WHERE tld = :tld and reason = 'REGISTERED') r
-    ON l.domain_name = r.domain_name
-    WHERE r.domain_name is null;
-    """;
+        SELECT l.domain_name, creation_time, deletion_time
+        FROM
+            (SELECT d.domain_name, d.creation_time, d.deletion_time
+             FROM
+                 "Domain" d
+             JOIN
+                 (SELECT concat(label, '.', :tld) AS domain_name from "BsaLabel") b
+             ON b.domain_name = d.domain_name
+             WHERE deletion_time > :now) l
+        LEFT OUTER JOIN
+            (SELECT concat(label, '.', tld) as domain_name
+             FROM "BsaUnblockableDomain"
+             WHERE tld = :tld and reason = 'REGISTERED') r
+        ON l.domain_name = r.domain_name
+        WHERE r.domain_name is null;
+        """;
 
     return ((Stream<?>)
             tm().getEntityManager()
@@ -186,13 +187,10 @@ public final class Queries {
         .map(
             row ->
                 new DomainLifeSpan(
-                    (String) row[0], toDateTime((Instant) row[1]), toDateTime((Instant) row[2])))
+                    (String) row[0],
+                    toDateTime(toInstant((Timestamp) row[1])),
+                    toDateTime(toInstant((Timestamp) row[2]))))
         .collect(toImmutableList());
-  }
-
-  // For testing convenience: 'assertEquals' fails between `new DateTime(timestamp)` and below.
-  static DateTime toDateTime(Instant timestamp) {
-    return new DateTime(timestamp.toEpochMilli(), UTC);
   }
 
   public record DomainLifeSpan(String domainName, DateTime creationTime, DateTime deletionTime) {}

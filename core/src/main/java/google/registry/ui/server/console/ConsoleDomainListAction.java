@@ -17,6 +17,7 @@ package google.registry.ui.server.console;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.console.ConsolePermission.DOWNLOAD_DOMAINS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -101,13 +102,13 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
                 createCountQuery()
                     .setParameter("registrarId", registrarId)
                     .setParameter("createdBeforeTime", checkpointTimestamp)
-                    .setParameter("deletedAfterTime", checkpoint)
+                    .setParameter("deletedAfterTime", toInstant(checkpoint))
                     .getSingleResult());
     List<Domain> domains =
         createDomainQuery()
             .setParameter("registrarId", registrarId)
             .setParameter("createdBeforeTime", checkpointTimestamp)
-            .setParameter("deletedAfterTime", checkpoint)
+            .setParameter("deletedAfterTime", toInstant(checkpoint))
             .setFirstResult(numResultsToSkip)
             .setMaxResults(resultsPerPage)
             .getResultList();

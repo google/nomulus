@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import java.math.BigDecimal;
+import java.time.Instant;
 import org.joda.time.DateTime;
 
 /**
@@ -47,6 +48,18 @@ public class Fee extends BaseFee {
       Object... descriptionArgs) {
     Fee instance = create(cost, type, isPremium, descriptionArgs);
     instance.validDateRange = validDateRange;
+    return instance;
+  }
+
+  /** Creates a Fee for the given cost, type, and valid date range with the default description. */
+  public static Fee createInstant(
+      BigDecimal cost,
+      FeeType type,
+      boolean isPremium,
+      Range<Instant> validDateRange,
+      Object... descriptionArgs) {
+    Fee instance = create(cost, type, isPremium, descriptionArgs);
+    instance.validDateRangeInstant = validDateRange;
     return instance;
   }
 

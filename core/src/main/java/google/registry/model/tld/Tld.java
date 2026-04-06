@@ -22,8 +22,10 @@ import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDura
 import static google.registry.model.EntityYamlUtils.createObjectMapper;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.money.CurrencyUnit.USD;
 
@@ -75,6 +77,7 @@ import google.registry.persistence.converter.AllocationTokenVkeyListUserType;
 import google.registry.persistence.converter.BillingCostTransitionUserType;
 import google.registry.persistence.converter.TldStateTransitionUserType;
 import google.registry.tldconfig.idn.IdnTableEnum;
+import google.registry.util.DateTimeUtils;
 import google.registry.util.Idn;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -83,6 +86,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -258,7 +262,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** Checks if {@code tld} is enrolled with BSA. */
   public static boolean isEnrolledWithBsa(Tld tld, DateTime now) {
-    return tld.getBsaEnrollStartTime().orElse(END_OF_TIME).isBefore(now);
+    return isEnrolledWithBsa(tld, toInstant(now));
+  }
+
+  /** Checks if {@code tld} is enrolled with BSA. */
+  public static boolean isEnrolledWithBsa(Tld tld, Instant now) {
+    return tld.getBsaEnrollStartTimeInstant().orElse(END_INSTANT).isBefore(now);
   }
 
   /**
@@ -349,6 +358,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * store this in a field so that it will be retained upon import into BigQuery.
    */
   @Column(nullable = false)
+  @JsonProperty
   String tldUnicode;
 
   /**
@@ -381,8 +391,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** An automatically managed creation timestamp. */
   @Column(nullable = false)
+  @JsonProperty
   @JsonDeserialize(using = CreateAutoTimestampDeserializer.class)
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create((Instant) null);
 
   /** The set of reserved list names that are applicable to this tld. */
   @JsonSerialize(using = SortedSetSerializer.class)
@@ -524,7 +535,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** The end of the claims period (at or after this time, claims no longer applies). */
   @Column(nullable = false)
-  DateTime claimsPeriodEnd = END_OF_TIME;
+  Instant claimsPeriodEnd = END_INSTANT;
 
   /** An allowlist of hosts allowed to be used on domains on this TLD (ignored if empty). */
   @Nullable
@@ -569,7 +580,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    */
   // TODO(b/309175410): implement setup and cleanup procedure for joining or leaving BSA, and see
   // if it can be integrated with the ConfigTldCommand.
-  @JsonIgnore @Nullable DateTime bsaEnrollStartTime;
+  @JsonIgnore @Nullable Instant bsaEnrollStartTime;
 
   public String getTldStr() {
     return tldStr;
@@ -593,6 +604,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /** Returns the time when this TLD was enrolled in the Brand Safety Alliance (BSA) program. */
   @JsonIgnore
   public Optional<DateTime> getBsaEnrollStartTime() {
+    return Optional.ofNullable(toDateTime(this.bsaEnrollStartTime));
+  }
+
+  /** Returns the time when this TLD was enrolled in the Brand Safety Alliance (BSA) program. */
+  @JsonIgnore
+  public Optional<Instant> getBsaEnrollStartTimeInstant() {
     return Optional.ofNullable(this.bsaEnrollStartTime);
   }
 
@@ -607,17 +624,42 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * <p>Note that {@link TldState#PDT} TLDs pretend to be in {@link TldState#GENERAL_AVAILABILITY}.
    */
   public TldState getTldState(DateTime now) {
+    return getTldState(toInstant(now));
+  }
+
+  /**
+   * Retrieve the TLD state at the given time. Defaults to {@link TldState#PREDELEGATION}.
+   *
+   * <p>Note that {@link TldState#PDT} TLDs pretend to be in {@link TldState#GENERAL_AVAILABILITY}.
+   */
+  public TldState getTldState(Instant now) {
     TldState state = tldStateTransitions.getValueAtTime(now);
     return TldState.PDT.equals(state) ? TldState.GENERAL_AVAILABILITY : state;
   }
 
   /** Retrieve whether this TLD is in predelegation testing. */
   public boolean isPdt(DateTime now) {
+    return isPdt(toInstant(now));
+  }
+
+  /** Retrieve whether this TLD is in predelegation testing. */
+  public boolean isPdt(Instant now) {
     return TldState.PDT.equals(tldStateTransitions.getValueAtTime(now));
   }
 
-  public DateTime getCreationTime() {
+  @JsonIgnore
+  public Instant getCreationTime() {
     return creationTime.getTimestamp();
+  }
+
+  /**
+   * @deprecated Use {@link #getCreationTime()}
+   */
+  @JsonIgnore
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getCreationDateTime() {
+    return toDateTime(creationTime.getTimestamp());
   }
 
   public boolean getEscrowEnabled() {
@@ -678,11 +720,24 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * domain create.
    */
   public Money getCreateBillingCost(DateTime now) {
+    return getCreateBillingCost(toInstant(now));
+  }
+
+  /**
+   * Use {@code PricingEngineProxy.getDomainCreateCost} instead of this to find the cost for a
+   * domain create.
+   */
+  public Money getCreateBillingCost(Instant now) {
     return createBillingCostTransitions.getValueAtTime(now);
   }
 
   public ImmutableSortedMap<DateTime, Money> getCreateBillingCostTransitions() {
     return createBillingCostTransitions.toValueMap();
+  }
+
+  @JsonIgnore
+  public ImmutableSortedMap<Instant, Money> getCreateBillingCostTransitionsInstant() {
+    return createBillingCostTransitions.toValueMapInstant();
   }
 
   /**
@@ -699,6 +754,15 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * restore cost).
    */
   public Money getStandardRenewCost(DateTime now) {
+    return getStandardRenewCost(toInstant(now));
+  }
+
+  /**
+   * Use {@code PricingEngineProxy.getDomainRenewCost} instead of this to find the cost for a domain
+   * renewal, and all derived costs (i.e. autorenews, transfers, and the per-domain part of a
+   * restore cost).
+   */
+  public Money getStandardRenewCost(Instant now) {
     return renewBillingCostTransitions.getValueAtTime(now);
   }
 
@@ -716,28 +780,43 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return tldStateTransitions.toValueMap();
   }
 
+  @JsonIgnore
+  public ImmutableSortedMap<Instant, TldState> getTldStateTransitionsInstant() {
+    return tldStateTransitions.toValueMapInstant();
+  }
+
   public ImmutableSortedMap<DateTime, Money> getRenewBillingCostTransitions() {
     return renewBillingCostTransitions.toValueMap();
   }
 
+  @JsonIgnore
+  public ImmutableSortedMap<Instant, Money> getRenewBillingCostTransitionsInstant() {
+    return renewBillingCostTransitions.toValueMapInstant();
+  }
+
   /** Returns the EAP fee for the tld at the given time. */
   public Fee getEapFeeFor(DateTime now) {
-    ImmutableSortedMap<DateTime, Money> valueMap = getEapFeeScheduleAsMap();
-    DateTime periodStart = valueMap.floorKey(now);
-    DateTime periodEnd = valueMap.ceilingKey(now);
-    // NOTE: assuming END_OF_TIME would never be reached...
-    Range<DateTime> validPeriod =
+    return getEapFeeFor(toInstant(now));
+  }
+
+  /** Returns the EAP fee for the tld at the given time. */
+  public Fee getEapFeeFor(Instant now) {
+    ImmutableSortedMap<Instant, Money> valueMap = getEapFeeScheduleAsMapInstant();
+    Instant periodStart = valueMap.floorKey(now);
+    Instant periodEnd = valueMap.ceilingKey(now);
+    // NOTE: assuming END_INSTANT would never be reached...
+    Range<Instant> validPeriod =
         Range.closedOpen(
-            periodStart != null ? periodStart : START_OF_TIME,
-            periodEnd != null ? periodEnd : END_OF_TIME);
-    return Fee.create(
+            periodStart != null ? periodStart : START_INSTANT,
+            periodEnd != null ? periodEnd : END_INSTANT);
+    return Fee.createInstant(
         eapFeeSchedule.getValueAtTime(now).getAmount(),
         FeeType.EAP,
         // An EAP fee does not count as premium -- it's a separate one-time fee, independent of
         // which the domain is separately considered standard vs premium depending on renewal price.
         false,
         validPeriod,
-        validPeriod.upperEndpoint());
+        toDateTime(validPeriod.upperEndpoint()));
   }
 
   @VisibleForTesting
@@ -746,11 +825,22 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return eapFeeSchedule.toValueMap();
   }
 
+  @JsonIgnore
+  @VisibleForTesting
+  public ImmutableSortedMap<Instant, Money> getEapFeeScheduleAsMapInstant() {
+    return eapFeeSchedule.toValueMapInstant();
+  }
+
   public String getLordnUsername() {
     return lordnUsername;
   }
 
   public DateTime getClaimsPeriodEnd() {
+    return toDateTime(claimsPeriodEnd);
+  }
+
+  @JsonIgnore
+  public Instant getClaimsPeriodEndInstant() {
     return claimsPeriodEnd;
   }
 
@@ -783,6 +873,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   /** Retrieve the TLD unicode representation. */
+  @JsonIgnore
   public String getTldUnicode() {
     return tldUnicode;
   }
@@ -828,6 +919,16 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     /** Sets the TLD state to transition to the specified states at the specified times. */
     public Builder setTldStateTransitions(ImmutableSortedMap<DateTime, TldState> tldStatesMap) {
+      return setTldStateTransitionsInstant(
+          tldStatesMap.entrySet().stream()
+              .collect(
+                  ImmutableSortedMap.toImmutableSortedMap(
+                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
+    }
+
+    /** Sets the TLD state to transition to the specified states at the specified times. */
+    public Builder setTldStateTransitionsInstant(
+        ImmutableSortedMap<Instant, TldState> tldStatesMap) {
       checkNotNull(tldStatesMap, "TLD states map cannot be null");
       // Filter out any entries with QUIET_PERIOD as the value before checking for ordering, since
       // that phase is allowed to appear anywhere.
@@ -838,7 +939,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
                       .filter(state -> !TldState.QUIET_PERIOD.equals(state))
                       .collect(Collectors.toList())),
           "The TLD states are chronologically out of order");
-      getInstance().tldStateTransitions = TimedTransitionProperty.fromValueMap(tldStatesMap);
+      getInstance().tldStateTransitions = TimedTransitionProperty.fromValueMapInstant(tldStatesMap);
       return this;
     }
 
@@ -960,12 +1061,21 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setCreateBillingCostTransitions(
         ImmutableSortedMap<DateTime, Money> createCostsMap) {
+      return setCreateBillingCostTransitionsInstant(
+          createCostsMap.entrySet().stream()
+              .collect(
+                  ImmutableSortedMap.toImmutableSortedMap(
+                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
+    }
+
+    public Builder setCreateBillingCostTransitionsInstant(
+        ImmutableSortedMap<Instant, Money> createCostsMap) {
       checkArgumentNotNull(createCostsMap, "Create billing costs map cannot be null");
       checkArgument(
           createCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
           "Create billing cost cannot be negative");
       getInstance().createBillingCostTransitions =
-          TimedTransitionProperty.fromValueMap(createCostsMap);
+          TimedTransitionProperty.fromValueMapInstant(createCostsMap);
       return this;
     }
 
@@ -1021,24 +1131,43 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
      */
     public Builder setRenewBillingCostTransitions(
         ImmutableSortedMap<DateTime, Money> renewCostsMap) {
+      return setRenewBillingCostTransitionsInstant(
+          renewCostsMap.entrySet().stream()
+              .collect(
+                  ImmutableSortedMap.toImmutableSortedMap(
+                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
+    }
+
+    public Builder setRenewBillingCostTransitionsInstant(
+        ImmutableSortedMap<Instant, Money> renewCostsMap) {
       checkArgumentNotNull(renewCostsMap, "Renew billing costs map cannot be null");
       checkArgument(
           renewCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
           "Renew billing cost cannot be negative");
       getInstance().renewBillingCostTransitions =
-          TimedTransitionProperty.fromValueMap(renewCostsMap);
+          TimedTransitionProperty.fromValueMapInstant(renewCostsMap);
       return this;
     }
 
     /** Sets the EAP fee schedule for the TLD. */
     public Builder setEapFeeSchedule(ImmutableSortedMap<DateTime, Money> eapFeeSchedule) {
-      checkArgumentNotNull(eapFeeSchedule, "EAP schedule map cannot be null");
+      return setEapFeeScheduleInstant(
+          eapFeeSchedule.entrySet().stream()
+              .collect(
+                  ImmutableSortedMap.toImmutableSortedMap(
+                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
+    }
+
+    /** Sets the EAP fee schedule for the TLD. */
+    public Builder setEapFeeScheduleInstant(ImmutableSortedMap<Instant, Money> eapFeeSchedule) {
+      checkArgumentNotNull(eapFeeSchedule, "EAP fee schedule cannot be null");
       checkArgument(
           eapFeeSchedule.values().stream().allMatch(Money::isPositiveOrZero),
           "EAP fee cannot be negative");
-      getInstance().eapFeeSchedule = TimedTransitionProperty.fromValueMap(eapFeeSchedule);
+      getInstance().eapFeeSchedule = TimedTransitionProperty.fromValueMapInstant(eapFeeSchedule);
       return this;
     }
+
 
     public static final Pattern ROID_SUFFIX_PATTERN = Pattern.compile("^[A-Z\\d]{1,8}$");
 
@@ -1071,6 +1200,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setClaimsPeriodEnd(DateTime claimsPeriodEnd) {
+      return setClaimsPeriodEndInstant(toInstant(claimsPeriodEnd));
+    }
+
+    public Builder setClaimsPeriodEndInstant(Instant claimsPeriodEnd) {
       getInstance().claimsPeriodEnd = checkArgumentNotNull(claimsPeriodEnd);
       return this;
     }
@@ -1116,6 +1249,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setBsaEnrollStartTime(Optional<DateTime> enrollTime) {
       // TODO(b/309175133): forbid if enrolled with BSA
+      getInstance().bsaEnrollStartTime = enrollTime.map(DateTimeUtils::toInstant).orElse(null);
+      return this;
+    }
+
+    public Builder setBsaEnrollStartTimeInstant(Optional<Instant> enrollTime) {
+      // TODO(b/309175133): forbid if enrolled with BSA
       getInstance().bsaEnrollStartTime = enrollTime.orElse(null);
       return this;
     }
@@ -1153,13 +1292,15 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       Predicate<Money> currencyCheck =
           (Money money) -> money.getCurrencyUnit().equals(instance.currency);
       checkArgument(
-          instance.getRenewBillingCostTransitions().values().stream().allMatch(currencyCheck),
+          instance.getRenewBillingCostTransitionsInstant().values().stream()
+              .allMatch(currencyCheck),
           "Renew cost must be in the TLD's currency");
       checkArgument(
-          instance.getCreateBillingCostTransitions().values().stream().allMatch(currencyCheck),
+          instance.getCreateBillingCostTransitionsInstant().values().stream()
+              .allMatch(currencyCheck),
           "Create cost must be in the TLD's currency");
       checkArgument(
-          instance.eapFeeSchedule.toValueMap().values().stream().allMatch(currencyCheck),
+          instance.eapFeeSchedule.toValueMapInstant().values().stream().allMatch(currencyCheck),
           "All EAP fees must be in the TLD's currency");
       checkArgumentNotNull(
           instance.pricingEngineClassName, "All registries must have a configured pricing engine");

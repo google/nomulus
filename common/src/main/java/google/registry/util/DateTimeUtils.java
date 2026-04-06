@@ -79,13 +79,24 @@ public abstract class DateTimeUtils {
 
   /** Returns the latest of a number of given {@link DateTime} instances. */
   public static DateTime latestOf(DateTime first, DateTime... rest) {
+    return latestDateTimeOf(Lists.asList(first, rest));
+  }
+
+  /** Returns the latest of a number of given {@link Instant} instances. */
+  public static Instant latestOf(Instant first, Instant... rest) {
     return latestOf(Lists.asList(first, rest));
   }
 
   /** Returns the latest element in a {@link DateTime} iterable. */
-  public static DateTime latestOf(Iterable<DateTime> dates) {
+  public static DateTime latestDateTimeOf(Iterable<DateTime> dates) {
     checkArgument(!Iterables.isEmpty(dates));
     return Ordering.<DateTime>natural().max(dates);
+  }
+
+  /** Returns the latest element in a {@link Instant} iterable. */
+  public static Instant latestOf(Iterable<Instant> instants) {
+    checkArgument(!Iterables.isEmpty(instants));
+    return Ordering.<Instant>natural().max(instants);
   }
 
   /** Returns whether the first {@link DateTime} is equal to or earlier than the second. */
@@ -162,6 +173,24 @@ public abstract class DateTimeUtils {
   @Nullable
   public static Instant toInstant(@Nullable DateTime dateTime) {
     return (dateTime == null) ? null : Instant.ofEpochMilli(dateTime.getMillis());
+  }
+
+  /** Convert a {@link java.sql.Timestamp} to a java.time {@link Instant}, null-safe. */
+  @Nullable
+  public static Instant toInstant(@Nullable java.sql.Timestamp timestamp) {
+    return (timestamp == null) ? null : timestamp.toInstant();
+  }
+
+  /** Convert a {@link java.util.Date} to a java.time {@link Instant}, null-safe. */
+  @Nullable
+  public static Instant toInstant(@Nullable java.util.Date date) {
+    return (date == null) ? null : date.toInstant();
+  }
+
+  /** Returns the given {@link Instant}, null-safe. */
+  @Nullable
+  public static Instant toInstant(@Nullable Instant instant) {
+    return instant;
   }
 
   /** Convert a java.time {@link Instant} to a joda {@link DateTime}, null-safe. */

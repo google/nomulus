@@ -14,7 +14,7 @@
 
 package google.registry.model.domain;
 
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -54,7 +54,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
 
   /** When the grace period ends. */
   @Column(nullable = false)
-  DateTime expirationTime;
+  Instant expirationTime;
 
   /** The registrar to bill. */
   @Column(name = "registrarId", nullable = false)
@@ -94,12 +94,13 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   }
 
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getExpirationDateTime() {
-    return expirationTime;
+    return toDateTime(expirationTime);
   }
 
   public Instant getExpirationTime() {
-    return toInstant(expirationTime);
+    return expirationTime;
   }
 
   public String getRegistrarId() {

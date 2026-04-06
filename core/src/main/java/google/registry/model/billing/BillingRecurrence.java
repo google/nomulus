@@ -16,7 +16,9 @@ package google.registry.model.billing;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.common.TimeOfYear;
 import google.registry.persistence.VKey;
@@ -30,6 +32,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
@@ -61,17 +64,17 @@ public class BillingRecurrence extends BillingBase {
    * The billing event recurs every year between {@link #eventTime} and this time on the [month,
    * day, time] specified in {@link #recurrenceTimeOfYear}.
    */
-  DateTime recurrenceEndTime;
+  Instant recurrenceEndTime;
 
   /**
-   * The most recent {@link DateTime} when this recurrence was expanded.
+   * The most recent {@link Instant} when this recurrence was expanded.
    *
    * <p>We only bother checking recurrences for potential expansion if this is at least one year in
    * the past. If it's more recent than that, it means that the recurrence was already expanded too
    * recently to need to be checked again (as domains autorenew each year).
    */
   @Column(nullable = false)
-  DateTime recurrenceLastExpansion;
+  Instant recurrenceLastExpansion;
 
   /**
    * The eventTime recurs every year on this [month, day, time] between {@link #eventTime} and
@@ -109,11 +112,29 @@ public class BillingRecurrence extends BillingBase {
   @Column(name = "renewalPriceBehavior", nullable = false)
   RenewalPriceBehavior renewalPriceBehavior = RenewalPriceBehavior.DEFAULT;
 
+  /**
+   * @deprecated Use {@link #getRecurrenceEndTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getRecurrenceEndTime() {
+    return toDateTime(recurrenceEndTime);
+  }
+
+  public Instant getRecurrenceEndTimeInstant() {
     return recurrenceEndTime;
   }
 
+  /**
+   * @deprecated Use {@link #getRecurrenceLastExpansionInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getRecurrenceLastExpansion() {
+    return toDateTime(recurrenceLastExpansion);
+  }
+
+  public Instant getRecurrenceLastExpansionInstant() {
     return recurrenceLastExpansion;
   }
 
@@ -155,12 +176,30 @@ public class BillingRecurrence extends BillingBase {
       super(instance);
     }
 
+    /**
+     * @deprecated Use {@link #setRecurrenceEndTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public Builder setRecurrenceEndTime(DateTime recurrenceEndTime) {
+      return setRecurrenceEndTime(toInstant(recurrenceEndTime));
+    }
+
+    public Builder setRecurrenceEndTime(Instant recurrenceEndTime) {
       getInstance().recurrenceEndTime = recurrenceEndTime;
       return this;
     }
 
+    /**
+     * @deprecated Use {@link #setRecurrenceLastExpansion(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public Builder setRecurrenceLastExpansion(DateTime recurrenceLastExpansion) {
+      return setRecurrenceLastExpansion(toInstant(recurrenceLastExpansion));
+    }
+
+    public Builder setRecurrenceLastExpansion(Instant recurrenceLastExpansion) {
       getInstance().recurrenceLastExpansion = recurrenceLastExpansion;
       return this;
     }
@@ -187,15 +226,16 @@ public class BillingRecurrence extends BillingBase {
       // ensures that it will be expanded on 2/28 next year and included in the February invoice.
       instance.recurrenceLastExpansion =
           Optional.ofNullable(instance.recurrenceLastExpansion)
-              .orElse(instance.eventTime.minusYears(1));
+              .orElse(
+                  google.registry.util.DateTimeUtils.leapSafeSubtractYears(instance.eventTime, 1));
       checkArgument(
           instance.renewalPriceBehavior == RenewalPriceBehavior.SPECIFIED
               ^ instance.renewalPrice == null,
           "Renewal price can have a value if and only if the renewal price behavior is"
               + " SPECIFIED");
-      instance.recurrenceTimeOfYear = TimeOfYear.fromDateTime(instance.eventTime);
+      instance.recurrenceTimeOfYear = TimeOfYear.fromInstant(instance.eventTime);
       instance.recurrenceEndTime =
-          Optional.ofNullable(instance.recurrenceEndTime).orElse(END_OF_TIME);
+          Optional.ofNullable(instance.recurrenceEndTime).orElse(END_INSTANT);
       return super.build();
     }
   }

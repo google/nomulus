@@ -28,6 +28,8 @@ import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
@@ -387,7 +389,7 @@ public class DomainSqlTest {
   void testUpdateTimeAfterNameserverUpdate() {
     persistDomain();
     Domain persisted = loadByKey(domain.createVKey());
-    DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
+    DateTime originalUpdateTime = toDateTime(persisted.getUpdateTimestamp().getTimestamp());
     fakeClock.advanceOneMilli();
     Host host2 =
         new Host.Builder()
@@ -401,14 +403,14 @@ public class DomainSqlTest {
     persistResource(domain);
     domain = loadByKey(domain.createVKey());
     assertThat(domain.getUpdateTimestamp().getTimestamp())
-        .isEqualTo(originalUpdateTime.plusMillis(1));
+        .isEqualTo(toInstant(originalUpdateTime.plusMillis(1)));
   }
 
   @Test
   void testUpdateTimeAfterDsDataUpdate() {
     persistDomain();
     Domain persisted = loadByKey(domain.createVKey());
-    DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
+    DateTime originalUpdateTime = toDateTime(persisted.getUpdateTimestamp().getTimestamp());
     fakeClock.advanceOneMilli();
     domain =
         persisted
@@ -418,6 +420,6 @@ public class DomainSqlTest {
     persistResource(domain);
     domain = loadByKey(domain.createVKey());
     assertThat(domain.getUpdateTimestamp().getTimestamp())
-        .isEqualTo(originalUpdateTime.plusMillis(1));
+        .isEqualTo(toInstant(originalUpdateTime.plusMillis(1)));
   }
 }
