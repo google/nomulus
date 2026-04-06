@@ -27,6 +27,7 @@ import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_BATCH_SIZE;
 import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.RegistryEnvironment.PRODUCTION;
 
 import com.google.common.base.Strings;
@@ -188,8 +189,8 @@ public class DeleteProberDataAction implements Runnable {
             .setParameter("tlds", deletableTlds)
             .setParameter(
                 "creationTimeCutoff", CreateAutoTimestamp.create(now.minus(DOMAIN_USED_DURATION)))
-            .setParameter("nowMinusSoftDeleteDelay", now.minus(SOFT_DELETE_DELAY))
-            .setParameter("now", now);
+            .setParameter("nowMinusSoftDeleteDelay", toInstant(now.minus(SOFT_DELETE_DELAY)))
+            .setParameter("now", toInstant(now));
     ImmutableList<Domain> domainList =
         query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
       ImmutableList.Builder<String> domainRepoIdsToHardDelete = new ImmutableList.Builder<>();

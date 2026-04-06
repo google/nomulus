@@ -15,6 +15,8 @@
 package google.registry.model.reporting;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.batch.ExpandBillingRecurrencesAction;
@@ -41,6 +43,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.MappedSuperclass;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.BooleanUtils;
@@ -138,7 +141,7 @@ public abstract class HistoryEntry extends ImmutableObject
 
   /** The time the command occurred, represented by the transaction time. */
   @Column(nullable = false, name = "historyModificationTime")
-  DateTime modificationTime;
+  protected Instant modificationTime;
 
   /** The id of the registrar that sent the command. */
   @Column(name = "historyRegistrarId")
@@ -197,7 +200,19 @@ public abstract class HistoryEntry extends ImmutableObject
     return xmlBytes == null ? null : xmlBytes.clone();
   }
 
+  /**
+   * Returns the time the command occurred.
+   *
+   * @deprecated Use {@link #getModificationTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getModificationTime() {
+    return toDateTime(modificationTime);
+  }
+
+  /** Returns the time the command occurred. */
+  public Instant getModificationTimeInstant() {
     return modificationTime;
   }
 
@@ -307,9 +322,18 @@ public abstract class HistoryEntry extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setModificationTime(DateTime modificationTime) {
+    public B setModificationTime(Instant modificationTime) {
       getInstance().modificationTime = modificationTime;
       return thisCastToDerived();
+    }
+
+    /**
+     * @deprecated Use {@link #setModificationTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setModificationTime(DateTime modificationTime) {
+      return setModificationTime(toInstant(modificationTime));
     }
 
     public B setRegistrarId(String registrarId) {

@@ -19,22 +19,47 @@ import static google.registry.persistence.transaction.QueryComposer.Comparator.E
 import static google.registry.persistence.transaction.QueryComposer.Comparator.LTE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
+import static google.registry.util.DateTimeUtils.leapSafeAddYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.transaction.QueryComposer;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
 /** Static utility functions for poll flows. */
 public final class PollFlowUtils {
 
-  /** Returns the number of poll messages for the given registrar that are not in the future. */
+  /**
+   * Returns the number of poll messages for the given registrar that are not in the future.
+   *
+   * @deprecated Use {@link #getPollMessageCount(String, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static int getPollMessageCount(String registrarId, DateTime now) {
+    return getPollMessageCount(registrarId, toInstant(now));
+  }
+
+  /** Returns the number of poll messages for the given registrar that are not in the future. */
+  public static int getPollMessageCount(String registrarId, Instant now) {
     return (int) createPollMessageQuery(registrarId, now).count();
   }
 
-  /** Returns the first (by event time) poll message not in the future for this registrar. */
+  /**
+   * Returns the first (by event time) poll message not in the future for this registrar.
+   *
+   * @deprecated Use {@link #getFirstPollMessage(String, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static Optional<PollMessage> getFirstPollMessage(String registrarId, DateTime now) {
+    return getFirstPollMessage(registrarId, toInstant(now));
+  }
+
+  /** Returns the first (by event time) poll message not in the future for this registrar. */
+  public static Optional<PollMessage> getFirstPollMessage(String registrarId, Instant now) {
     return createPollMessageQuery(registrarId, now).orderBy("eventTime").first();
   }
 
@@ -57,12 +82,12 @@ public final class PollFlowUtils {
     } else if (pollMessage instanceof PollMessage.Autorenew autorenewPollMessage) {
 
       // Move the eventTime of this autorenew poll message forward by a year.
-      DateTime nextEventTime = autorenewPollMessage.getEventTime().plusYears(1);
+      Instant nextEventTime = leapSafeAddYears(toInstant(autorenewPollMessage.getEventTime()), 1);
 
       // If the next event falls within the bounds of the end time, then just update the eventTime
       // and re-save it for future autorenew poll messages to be delivered. Otherwise, this
       // autorenew poll message has no more events to deliver and should be deleted.
-      if (nextEventTime.isBefore(autorenewPollMessage.getAutorenewEndTime())) {
+      if (nextEventTime.isBefore(toInstant(autorenewPollMessage.getAutorenewEndTime()))) {
         tm().put(autorenewPollMessage.asBuilder().setEventTime(nextEventTime).build());
       } else {
         tm().delete(autorenewPollMessage.createVKey());
@@ -75,9 +100,21 @@ public final class PollFlowUtils {
   /**
    * Returns the QueryComposer for poll messages from the given registrar that are not in the
    * future.
+   *
+   * @deprecated Use {@link #createPollMessageQuery(String, Instant)}
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static QueryComposer<PollMessage> createPollMessageQuery(
       String registrarId, DateTime now) {
+    return createPollMessageQuery(registrarId, toInstant(now));
+  }
+
+  /**
+   * Returns the QueryComposer for poll messages from the given registrar that are not in the
+   * future.
+   */
+  public static QueryComposer<PollMessage> createPollMessageQuery(String registrarId, Instant now) {
     return tm().createQueryComposer(PollMessage.class)
         .where("clientId", EQ, registrarId)
         .where("eventTime", LTE, now);

@@ -43,6 +43,7 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
 import static java.util.stream.Collectors.joining;
 
@@ -565,7 +566,7 @@ public class DomainFlowUtils {
     }
 
     BillingRecurrence newBillingRecurrence =
-        existingBillingRecurrence.asBuilder().setRecurrenceEndTime(newEndTime).build();
+        existingBillingRecurrence.asBuilder().setRecurrenceEndTime(toInstant(newEndTime)).build();
     tm().update(newBillingRecurrence);
     return newBillingRecurrence;
   }
@@ -1113,7 +1114,7 @@ public class DomainFlowUtils {
             "FROM DomainHistory WHERE modificationTime >= :beginning AND repoId = "
                 + ":repoId ORDER BY modificationTime ASC",
             DomainHistory.class)
-        .setParameter("beginning", now.minus(maxSearchPeriod))
+        .setParameter("beginning", toInstant(now.minus(maxSearchPeriod)))
         .setParameter("repoId", domain.getRepoId())
         .getResultList();
   }

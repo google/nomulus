@@ -34,7 +34,6 @@ import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
-import org.joda.time.Duration;
 
 @Action(
     service = Action.Service.CONSOLE,
@@ -122,10 +121,7 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
           case REGISTRY_LOCK -> ConsolePermission.REGISTRY_LOCK;
         };
     checkPermission(user, request.getRegistrarId(), requiredVerifyPermission);
-    if (request
-        .getRequestTime()
-        .plus(Duration.standardHours(1))
-        .isBefore(tm().getTransactionTime())) {
+    if (request.getRequestTime().plus(java.time.Duration.ofHours(1)).isBefore(tm().getTxTime())) {
       throw createVerificationCodeException();
     }
     return request;

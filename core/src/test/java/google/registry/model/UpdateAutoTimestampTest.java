@@ -16,7 +16,8 @@ package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.common.CrossTldSingleton;
@@ -46,7 +47,7 @@ public class UpdateAutoTimestampTest {
   @Entity
   public static class UpdateAutoTimestampTestObject extends CrossTldSingleton {
     @Id long id = SINGLETON_ID;
-    UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create(null);
+    UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create((java.time.Instant) null);
   }
 
   private static UpdateAutoTimestampTestObject reload() {
@@ -61,11 +62,11 @@ public class UpdateAutoTimestampTest {
                 () -> {
                   clock.advanceOneMilli();
                   UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
-                  assertThat(object.updateTime.getTimestamp()).isEqualTo(START_OF_TIME);
+                  assertThat(object.updateTime.getTimestamp()).isEqualTo(START_INSTANT);
                   tm().insert(object);
                   return tm().getTransactionTime();
                 });
-    assertThat(reload().updateTime.getTimestamp()).isEqualTo(transactionTime);
+    assertThat(reload().updateTime.getTimestamp()).isEqualTo(toInstant(transactionTime));
   }
 
   @Test
@@ -79,7 +80,7 @@ public class UpdateAutoTimestampTest {
                   tm().insert(object);
                   return tm().getTransactionTime();
                 });
-    assertThat(reload().updateTime.getTimestamp()).isEqualTo(transactionTime);
+    assertThat(reload().updateTime.getTimestamp()).isEqualTo(toInstant(transactionTime));
   }
 
   @Test
@@ -89,9 +90,9 @@ public class UpdateAutoTimestampTest {
     tm().transact(() -> tm().insert(new UpdateAutoTimestampTestObject()));
     clock.advanceOneMilli();
     UpdateAutoTimestampTestObject firstRead = reload();
-    assertThat(firstRead.updateTime.getTimestamp()).isEqualTo(originalTime);
+    assertThat(firstRead.updateTime.getTimestamp()).isEqualTo(toInstant(originalTime));
     clock.advanceOneMilli();
     UpdateAutoTimestampTestObject secondRead = reload();
-    assertThat(secondRead.updateTime.getTimestamp()).isEqualTo(originalTime);
+    assertThat(secondRead.updateTime.getTimestamp()).isEqualTo(toInstant(originalTime));
   }
 }

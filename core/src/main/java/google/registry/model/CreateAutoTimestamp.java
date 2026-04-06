@@ -10,17 +10,20 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the Licenseschema..
+// limitations under the License.
 
 package google.registry.model;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.gson.annotations.Expose;
 import google.registry.persistence.EntityCallbacksListener.RecursivePrePersist;
 import google.registry.persistence.EntityCallbacksListener.RecursivePreUpdate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import java.time.Instant;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
@@ -30,25 +33,44 @@ public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerial
 
   @Column(nullable = false)
   @Expose
-  DateTime creationTime;
+  Instant creationTime;
 
   @RecursivePrePersist
   @RecursivePreUpdate
   public void setTimestamp() {
     if (creationTime == null) {
-      creationTime = tm().getTransactionTime();
+      creationTime = tm().getTxTime();
     }
   }
 
   /** Returns the timestamp. */
   @Nullable
-  public DateTime getTimestamp() {
+  public Instant getTimestamp() {
     return creationTime;
   }
 
-  public static CreateAutoTimestamp create(@Nullable DateTime creationTime) {
+  /**
+   * @deprecated Use {@link #getTimestamp()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  @Nullable
+  public DateTime getTimestampDateTime() {
+    return toDateTime(creationTime);
+  }
+
+  public static CreateAutoTimestamp create(@Nullable Instant creationTime) {
     CreateAutoTimestamp instance = new CreateAutoTimestamp();
     instance.creationTime = creationTime;
     return instance;
+  }
+
+  /**
+   * @deprecated Use {@link #create(Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static CreateAutoTimestamp create(@Nullable DateTime creationTime) {
+    return create(toInstant(creationTime));
   }
 }

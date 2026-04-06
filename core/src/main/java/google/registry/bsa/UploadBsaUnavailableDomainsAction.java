@@ -54,6 +54,7 @@ import java.io.OutputStreamWriter;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.Writer;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.zip.GZIPOutputStream;
 import okhttp3.MediaType;
@@ -65,7 +66,6 @@ import okhttp3.Response;
 import okio.BufferedSink;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joda.time.DateTime;
 
 /**
  * Daily action that uploads unavailable domain names on applicable TLDs to BSA.
@@ -122,7 +122,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
   public void run() {
     // TODO(mcilwain): Implement a date Cursor, have the cronjob run frequently, and short-circuit
     //                 the run if the daily upload is already completed.
-    DateTime runTime = clock.nowUtc();
+    Instant runTime = clock.now();
     ImmutableSortedSet<String> unavailableDomains = getUnavailableDomains(runTime);
     if (unavailableDomains.isEmpty()) {
       logger.atWarning().log("No unavailable domains found; terminating.");
@@ -141,7 +141,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
   }
 
   /** Uploads the unavailable domains list to GCS in the unavailable domains bucket. */
-  boolean uploadToGcs(ImmutableSortedSet<String> unavailableDomains, DateTime runTime) {
+  boolean uploadToGcs(ImmutableSortedSet<String> unavailableDomains, Instant runTime) {
     logger.atInfo().log("Uploading unavailable names file to GCS in bucket %s", gcsBucket);
     BlobId blobId = BlobId.of(gcsBucket, createFilename(runTime));
     // `gcsUtils.openOutputStream` returns a buffered stream
@@ -159,7 +159,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
     }
   }
 
-  boolean uploadToBsa(ImmutableSortedSet<String> unavailableDomains, DateTime runTime) {
+  boolean uploadToBsa(ImmutableSortedSet<String> unavailableDomains, Instant runTime) {
     try {
       Hasher sha512Hasher = Hashing.sha512().newHasher();
       unavailableDomains.stream()
@@ -211,11 +211,11 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
     }
   }
 
-  private static String createFilename(DateTime runTime) {
+  private static String createFilename(Instant runTime) {
     return String.format("unavailable_domains_%s.txt", runTime.toString());
   }
 
-  private ImmutableSortedSet<String> getUnavailableDomains(DateTime runTime) {
+  private ImmutableSortedSet<String> getUnavailableDomains(Instant runTime) {
     // Get list of TLDs to process.
     ImmutableSet<Tld> bsaEnabledTlds =
         getTldEntitiesOfType(TldType.REAL).stream()

@@ -18,6 +18,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
@@ -29,6 +30,7 @@ import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlValue;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.stream.Stream;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -104,6 +106,8 @@ public abstract class BaseFee extends ImmutableObject {
 
   @XmlTransient Range<DateTime> validDateRange;
 
+  @XmlTransient Range<Instant> validDateRangeInstant;
+
   @XmlTransient boolean isPremium;
 
   public String getDescription() {
@@ -143,13 +147,44 @@ public abstract class BaseFee extends ImmutableObject {
     return type;
   }
 
+  @JsonIgnore
   public boolean hasValidDateRange() {
-    return validDateRange != null;
+    return validDateRange != null || validDateRangeInstant != null;
   }
 
+  @JsonIgnore
   public Range<DateTime> getValidDateRange() {
     checkState(hasValidDateRange());
-    return validDateRange;
+    if (validDateRange != null) {
+      return validDateRange;
+    }
+    return convertRange(validDateRangeInstant, google.registry.util.DateTimeUtils::toDateTime);
+  }
+
+  @JsonIgnore
+  public Range<Instant> getValidDateRangeInstant() {
+    checkState(hasValidDateRange());
+    if (validDateRangeInstant != null) {
+      return validDateRangeInstant;
+    }
+    return convertRange(validDateRange, google.registry.util.DateTimeUtils::toInstant);
+  }
+
+  private static <S extends Comparable<? super S>, T extends Comparable<? super T>>
+      Range<T> convertRange(Range<S> range, java.util.function.Function<S, T> converter) {
+    if (range.hasLowerBound() && range.hasUpperBound()) {
+      return Range.range(
+          converter.apply(range.lowerEndpoint()),
+          range.lowerBoundType(),
+          converter.apply(range.upperEndpoint()),
+          range.upperBoundType());
+    } else if (range.hasLowerBound()) {
+      return Range.downTo(converter.apply(range.lowerEndpoint()), range.lowerBoundType());
+    } else if (range.hasUpperBound()) {
+      return Range.upTo(converter.apply(range.upperEndpoint()), range.upperBoundType());
+    } else {
+      return Range.all();
+    }
   }
 
   public boolean hasZeroCost() {

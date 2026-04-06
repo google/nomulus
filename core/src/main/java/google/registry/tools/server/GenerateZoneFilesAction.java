@@ -19,6 +19,7 @@ import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.cloud.storage.BlobId;
@@ -161,7 +162,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     ScrollableResults<Domain> scrollableResults =
         tm().query("FROM Domain WHERE tld = :tld AND deletionTime > :exportTime", Domain.class)
             .setParameter("tld", tld)
-            .setParameter("exportTime", exportTime)
+            .setParameter("exportTime", toInstant(exportTime))
             .unwrap(org.hibernate.query.SelectionQuery.class)
             .setCacheMode(CacheMode.IGNORE)
             .scroll(ScrollMode.FORWARD_ONLY);
