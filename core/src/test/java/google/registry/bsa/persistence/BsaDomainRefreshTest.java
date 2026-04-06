@@ -40,7 +40,8 @@ public class BsaDomainRefreshTest {
     BsaDomainRefresh persisted =
         tm().transact(() -> tm().getEntityManager().merge(new BsaDomainRefresh()));
     assertThat(persisted.jobId).isNotNull();
-    assertThat(persisted.creationTime.getTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persisted.creationTime.getTimestamp()).isEqualTo(fakeClock.now());
+    assertThat(persisted.updateTime.getTimestamp()).isEqualTo(fakeClock.now());
     assertThat(persisted.stage).isEqualTo(CHECK_FOR_CHANGES);
   }
 

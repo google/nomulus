@@ -88,7 +88,7 @@ public class RegistrarDaoTest {
 
     assertThat(persisted.getRegistrarId()).isEqualTo("registrarId");
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
-    assertThat(persisted.getCreationTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persisted.getCreationTime()).isEqualTo(fakeClock.now());
     assertThat(persisted.getLocalizedAddress())
         .isEqualTo(
             new RegistrarAddress.Builder()

@@ -20,8 +20,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Assigns work for each cron invocation of domain refresh job. */
 public class RefreshScheduler {
@@ -56,7 +56,7 @@ public class RefreshScheduler {
                 return Optional.empty();
               }
 
-              DateTime prevDownloadTime = mostRecentDownload.get().getCreationTime();
+              Instant prevDownloadTime = mostRecentDownload.get().getCreationTime();
               if (recentJobs.isEmpty()) {
                 return Optional.of(scheduleNewJob(prevDownloadTime));
               } else {
@@ -65,13 +65,13 @@ public class RefreshScheduler {
             });
   }
 
-  RefreshSchedule scheduleNewJob(DateTime prevRefreshTime) {
+  RefreshSchedule scheduleNewJob(Instant prevRefreshTime) {
     BsaDomainRefresh newJob = new BsaDomainRefresh();
     tm().insert(newJob);
     return RefreshSchedule.create(newJob, prevRefreshTime);
   }
 
-  RefreshSchedule rescheduleOngoingJob(BsaDomainRefresh ongoingJob, DateTime prevJobStartTime) {
+  RefreshSchedule rescheduleOngoingJob(BsaDomainRefresh ongoingJob, Instant prevJobStartTime) {
     return RefreshSchedule.create(ongoingJob, prevJobStartTime);
   }
 

@@ -241,7 +241,7 @@ class DomainTransferApproveFlowTest
             .collect(onlyElement());
     assertThat(transferResponse.getTransferStatus()).isEqualTo(TransferStatus.CLIENT_APPROVED);
     assertThat(transferResponse.getExtendedRegistrationExpirationTime())
-        .isEqualTo(domain.getRegistrationExpirationDateTime());
+        .isEqualTo(domain.getRegistrationExpirationTime());
     PendingActionNotificationResponse panData =
         gainingTransferPollMessage
             .getResponseData()

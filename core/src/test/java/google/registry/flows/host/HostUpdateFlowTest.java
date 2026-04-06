@@ -81,6 +81,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
+import java.time.Instant;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -523,7 +524,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         newHost(oldHostName())
             .asBuilder()
             .setSuperordinateDomain(foo.createVKey())
-            .setLastTransferTime(null)
+            .setLastTransferTime((Instant) null)
             .setInetAddresses(
                 ImmutableSet.of(InetAddresses.forString("1080:0:0:0:8:800:200C:417A")))
             .build());
@@ -595,7 +596,10 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
                 .build());
     // Set the new domain to have a null last transfer time.
     persistResource(
-        DatabaseHelper.newDomain("example.tld").asBuilder().setLastTransferTime(null).build());
+        DatabaseHelper.newDomain("example.tld")
+            .asBuilder()
+            .setLastTransferTime((Instant) null)
+            .build());
     DateTime lastTransferTime = clock.nowUtc().minusDays(20);
 
     persistResource(
@@ -628,10 +632,16 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     createTld("tld");
     Domain foo =
         persistResource(
-            DatabaseHelper.newDomain("foo.tld").asBuilder().setLastTransferTime(null).build());
+            DatabaseHelper.newDomain("foo.tld")
+                .asBuilder()
+                .setLastTransferTime((Instant) null)
+                .build());
     // Set the new domain to have a null last transfer time.
     persistResource(
-        DatabaseHelper.newDomain("example.tld").asBuilder().setLastTransferTime(null).build());
+        DatabaseHelper.newDomain("example.tld")
+            .asBuilder()
+            .setLastTransferTime((Instant) null)
+            .build());
     DateTime lastTransferTime = clock.nowUtc().minusDays(20);
 
     persistResource(
@@ -669,12 +679,15 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
                 .build());
     // Set the new domain to have a null last transfer time.
     persistResource(
-        DatabaseHelper.newDomain("example.tld").asBuilder().setLastTransferTime(null).build());
+        DatabaseHelper.newDomain("example.tld")
+            .asBuilder()
+            .setLastTransferTime((Instant) null)
+            .build());
     persistResource(
         newHost(oldHostName())
             .asBuilder()
             .setSuperordinateDomain(foo.createVKey())
-            .setLastTransferTime(null)
+            .setLastTransferTime((Instant) null)
             .setLastSuperordinateChange(clock.nowUtc().minusDays(3))
             .setInetAddresses(
                 ImmutableSet.of(InetAddresses.forString("1080:0:0:0:8:800:200C:417A")))

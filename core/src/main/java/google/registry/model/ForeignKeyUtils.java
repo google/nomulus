@@ -20,6 +20,8 @@ import static google.registry.config.RegistryConfig.getEppResourceCachingDuratio
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -63,7 +65,30 @@ public final class ForeignKeyUtils {
               Domain.class, "domainName",
               Host.class, "hostName");
 
-  public record MostRecentResource(String repoId, DateTime deletionTime) {}
+  public record MostRecentResource(String repoId, Instant deletionTime) {
+    /**
+     * @deprecated Use {@link #deletionTime()}
+     */
+    @Deprecated
+    public DateTime getDeletionTime() {
+      return toDateTime(deletionTime);
+    }
+  }
+
+  /**
+   * Loads an optional {@link VKey} to an {@link EppResource} from the database by foreign key.
+   *
+   * <p>Returns empty if no resource with this foreign key was ever created, or if the most recently
+   * created resource was deleted before time "now".
+   *
+   * @deprecated Use {@link #loadKey(Class, String, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static <E extends EppResource> Optional<VKey<E>> loadKey(
+      Class<E> clazz, String foreignKey, DateTime now) {
+    return loadKey(clazz, foreignKey, toInstant(now));
+  }
 
   /**
    * Loads an optional {@link VKey} to an {@link EppResource} from the database by foreign key.
@@ -72,7 +97,7 @@ public final class ForeignKeyUtils {
    * created resource was deleted before time "now".
    */
   public static <E extends EppResource> Optional<VKey<E>> loadKey(
-      Class<E> clazz, String foreignKey, DateTime now) {
+      Class<E> clazz, String foreignKey, Instant now) {
     return Optional.ofNullable(loadKeys(clazz, ImmutableList.of(foreignKey), now).get(foreignKey));
   }
 
@@ -81,13 +106,14 @@ public final class ForeignKeyUtils {
    *
    * <p>Returns null if no resource with this foreign key was ever created or if the most recently
    * created resource was deleted before time "now".
+   *
+   * @deprecated Use {@link #loadResource(Class, String, Instant)}
    */
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static <E extends EppResource> Optional<E> loadResource(
       Class<E> clazz, String foreignKey, DateTime now) {
-    // Note: no need to project to "now" because loadResources already does
-    return Optional.ofNullable(
-        loadResources(clazz, ImmutableList.of(foreignKey), now).get(foreignKey));
+    return loadResource(clazz, foreignKey, toInstant(now));
   }
 
   /**
@@ -109,9 +135,25 @@ public final class ForeignKeyUtils {
    *
    * <p>The returned map will omit any foreign keys for which the {@link EppResource} doesn't exist
    * or has been soft-deleted.
+   *
+   * @deprecated Use {@link #loadKeys(Class, Collection, Instant)}
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static <E extends EppResource> ImmutableMap<String, VKey<E>> loadKeys(
       Class<E> clazz, Collection<String> foreignKeys, DateTime now) {
+    return loadKeys(clazz, foreignKeys, toInstant(now));
+  }
+
+  /**
+   * Load a map of {@link String} foreign keys to {@link VKey}s to {@link EppResource} that are
+   * active at or after the specified moment in time.
+   *
+   * <p>The returned map will omit any foreign keys for which the {@link EppResource} doesn't exist
+   * or has been soft-deleted.
+   */
+  public static <E extends EppResource> ImmutableMap<String, VKey<E>> loadKeys(
+      Class<E> clazz, Collection<String> foreignKeys, Instant now) {
     return loadMostRecentResources(clazz, foreignKeys, false).entrySet().stream()
         .filter(e -> now.isBefore(e.getValue().deletionTime()))
         .collect(toImmutableMap(Entry::getKey, e -> VKey.create(clazz, e.getValue().repoId())));
@@ -124,13 +166,11 @@ public final class ForeignKeyUtils {
    * <p>The returned map will omit any foreign keys for which the {@link EppResource} doesn't exist
    * or has been soft-deleted.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "InlineMeSuggester"})
   @Deprecated
   public static <E extends EppResource> ImmutableMap<String, E> loadResources(
       Class<E> clazz, Collection<String> foreignKeys, DateTime now) {
-    return loadMostRecentResourceObjects(clazz, foreignKeys, false).entrySet().stream()
-        .filter(e -> now.isBefore(e.getValue().getDeletionDateTime()))
-        .collect(toImmutableMap(Entry::getKey, e -> (E) e.getValue().cloneProjectedAtTime(now)));
+    return loadResources(clazz, foreignKeys, toInstant(now));
   }
 
   /**
@@ -181,7 +221,7 @@ public final class ForeignKeyUtils {
                 .collect(
                     toImmutableMap(
                         row -> (String) row[0],
-                        row -> new MostRecentResource((String) row[1], (DateTime) row[2]))));
+                        row -> new MostRecentResource((String) row[1], (Instant) row[2]))));
   }
 
   /** Method to load the most recent {@link EppResource}s for the given foreign keys. */
@@ -291,9 +331,28 @@ public final class ForeignKeyUtils {
    *
    * <p>Don't use the cached version of this method unless you really need it for performance
    * reasons, and are OK with the trade-offs in loss of transactional consistency.
+   *
+   * @deprecated Use {@link #loadKeysByCacheIfEnabled(Class, Collection, Instant)}
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static <E extends EppResource> ImmutableMap<String, VKey<E>> loadKeysByCacheIfEnabled(
       Class<E> clazz, Collection<String> foreignKeys, DateTime now) {
+    return loadKeysByCacheIfEnabled(clazz, foreignKeys, toInstant(now));
+  }
+
+  /**
+   * Load a list of {@link VKey} to {@link EppResource} instances by class and foreign key strings
+   * that are active at or after the specified moment in time, using the cache if enabled.
+   *
+   * <p>The returned map will omit any keys for which the {@link EppResource} doesn't exist or has
+   * been soft-deleted.
+   *
+   * <p>Don't use the cached version of this method unless you really need it for performance
+   * reasons, and are OK with the trade-offs in loss of transactional consistency.
+   */
+  public static <E extends EppResource> ImmutableMap<String, VKey<E>> loadKeysByCacheIfEnabled(
+      Class<E> clazz, Collection<String> foreignKeys, Instant now) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
       return loadKeys(clazz, foreignKeys, now);
     }
@@ -308,9 +367,21 @@ public final class ForeignKeyUtils {
                 e -> VKey.create(clazz, e.getValue().get().repoId())));
   }
 
-  /** Loads an optional {@link VKey} to an {@link EppResource} using the cache. */
+  /**
+   * Loads an optional {@link VKey} to an {@link EppResource} using the cache.
+   *
+   * @deprecated Use {@link #loadKeyByCache(Class, String, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static <E extends EppResource> Optional<VKey<E>> loadKeyByCache(
       Class<E> clazz, String foreignKey, DateTime now) {
+    return loadKeyByCache(clazz, foreignKey, toInstant(now));
+  }
+
+  /** Loads an optional {@link VKey} to an {@link EppResource} using the cache. */
+  public static <E extends EppResource> Optional<VKey<E>> loadKeyByCache(
+      Class<E> clazz, String foreignKey, Instant now) {
     return foreignKeyToRepoIdCache
         .get(VKey.create(clazz, foreignKey))
         .filter(mrr -> now.isBefore(mrr.deletionTime()))
@@ -407,9 +478,36 @@ public final class ForeignKeyUtils {
    *
    * <p>Do not call this cached version for anything that needs transactional consistency. It should
    * only be used when it's OK if the data is potentially being out of date, e.g. RDAP.
+   *
+   * @deprecated Use {@link #loadResourceByCacheIfEnabled(Class, String, Instant)}
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static <E extends EppResource> Optional<E> loadResourceByCacheIfEnabled(
       Class<E> clazz, String foreignKey, DateTime now) {
+    return loadResourceByCacheIfEnabled(clazz, foreignKey, toInstant(now));
+  }
+
+  /**
+   * Loads the last created version of an {@link EppResource} from the database by foreign key,
+   * using a cache, if caching is enabled in config settings.
+   *
+   * <p>Returns null if no resource with this foreign key was ever created, or if the most recently
+   * created resource was deleted before time "now".
+   *
+   * <p>Loading an {@link EppResource} by itself is not sufficient to know its current state since
+   * it may have various expirable conditions and status values that might implicitly change its
+   * state as time progresses even if it has not been updated in the database. Rather, the resource
+   * must be combined with a timestamp to view its current state. We use a global last updated
+   * timestamp to guarantee monotonically increasing write times, and forward our projected time to
+   * the greater of this timestamp or "now". This guarantees that we're not projecting into the
+   * past.
+   *
+   * <p>Do not call this cached version for anything that needs transactional consistency. It should
+   * only be used when it's OK if the data is potentially being out of date, e.g. RDAP.
+   */
+  public static <E extends EppResource> Optional<E> loadResourceByCacheIfEnabled(
+      Class<E> clazz, String foreignKey, Instant now) {
     return RegistryConfig.isEppResourceCachingEnabled()
         ? loadResourceByCache(clazz, foreignKey, now)
         : loadResource(clazz, foreignKey, now);
@@ -421,14 +519,30 @@ public final class ForeignKeyUtils {
    *
    * <p>This method ignores the config setting for caching, and is reserved for use cases that can
    * tolerate slightly stale data.
+   *
+   * @deprecated Use {@link #loadResourceByCache(Class, String, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static <E extends EppResource> Optional<E> loadResourceByCache(
+      Class<E> clazz, String foreignKey, DateTime now) {
+    return loadResourceByCache(clazz, foreignKey, toInstant(now));
+  }
+
+  /**
+   * Loads the last created version of an {@link EppResource} from the replica database by foreign
+   * key, using a cache.
+   *
+   * <p>This method ignores the config setting for caching, and is reserved for use cases that can
+   * tolerate slightly stale data.
    */
   @SuppressWarnings("unchecked")
   public static <E extends EppResource> Optional<E> loadResourceByCache(
-      Class<E> clazz, String foreignKey, DateTime now) {
+      Class<E> clazz, String foreignKey, Instant now) {
     return (Optional<E>)
         foreignKeyToResourceCache
             .get(VKey.create(clazz, foreignKey))
-            .filter(e -> now.isBefore(e.getDeletionDateTime()))
-            .map(e -> e.cloneProjectedAtTime(now));
+            .filter(e -> now.isBefore(e.getDeletionTime()))
+            .map(e -> e.cloneProjectedAtInstant(now));
   }
 }

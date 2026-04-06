@@ -18,7 +18,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.google.common.collect.ImmutableSet;
@@ -80,7 +82,7 @@ public class HostBase extends EppResource {
    *
    * <p>Can be null if the resource has never been transferred.
    */
-  DateTime lastTransferTime;
+  Instant lastTransferTime;
 
   /**
    * The most recent time that the {@link #superordinateDomain} field was changed.
@@ -89,7 +91,7 @@ public class HostBase extends EppResource {
    * to null. This field will be null for new hosts that have never experienced a change of
    * superordinate domain.
    */
-  DateTime lastSuperordinateChange;
+  Instant lastSuperordinateChange;
 
   public String getHostName() {
     return hostName;
@@ -107,11 +109,29 @@ public class HostBase extends EppResource {
     return nullToEmptyImmutableCopy(inetAddresses);
   }
 
+  /**
+   * @deprecated Use {@link #getLastTransferTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastTransferTime() {
+    return toDateTime(lastTransferTime);
+  }
+
+  public Instant getLastTransferTimeInstant() {
     return lastTransferTime;
   }
 
+  /**
+   * @deprecated Use {@link #getLastSuperordinateChangeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastSuperordinateChange() {
+    return toDateTime(lastSuperordinateChange);
+  }
+
+  public Instant getLastSuperordinateChangeInstant() {
     return lastSuperordinateChange;
   }
 
@@ -158,21 +178,30 @@ public class HostBase extends EppResource {
    *     {@link #superordinateDomain} field. Passing it as a parameter allows the caller to control
    *     the degree of consistency used to load it.
    */
-  public DateTime computeLastTransferTime(@Nullable Domain superordinateDomain) {
+  public Instant computeLastTransferTime(@Nullable Domain superordinateDomain) {
     if (!isSubordinate()) {
       checkArgument(superordinateDomain == null);
-      return getLastTransferTime();
+      return lastTransferTime;
     }
     checkArgument(
         superordinateDomain != null
             && superordinateDomain.createVKey().equals(getSuperordinateDomain()));
-    DateTime lastSuperordinateChange =
-        Optional.ofNullable(getLastSuperordinateChange()).orElse(getCreationTime());
-    DateTime lastTransferOfCurrentSuperordinate =
-        Optional.ofNullable(superordinateDomain.getLastTransferTime()).orElse(START_OF_TIME);
+    Instant lastSuperordinateChange =
+        Optional.ofNullable(getLastSuperordinateChangeInstant()).orElse(getCreationTimeInstant());
+    Instant lastTransferOfCurrentSuperordinate =
+        Optional.ofNullable(superordinateDomain.getLastTransferTimeInstant()).orElse(START_INSTANT);
     return lastSuperordinateChange.isBefore(lastTransferOfCurrentSuperordinate)
-        ? superordinateDomain.getLastTransferTime()
-        : getLastTransferTime();
+        ? lastTransferOfCurrentSuperordinate
+        : lastTransferTime;
+  }
+
+  /**
+   * @deprecated Use {@link #computeLastTransferTime(Domain)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime computeLastTransferTimeDateTime(@Nullable Domain superordinateDomain) {
+    return toDateTime(computeLastTransferTime(superordinateDomain));
   }
 
   /** A builder for constructing {@link HostBase}, since it is immutable. */
@@ -210,9 +239,18 @@ public class HostBase extends EppResource {
       return thisCastToDerived();
     }
 
-    public B setLastSuperordinateChange(DateTime lastSuperordinateChange) {
+    public B setLastSuperordinateChange(Instant lastSuperordinateChange) {
       getInstance().lastSuperordinateChange = lastSuperordinateChange;
       return thisCastToDerived();
+    }
+
+    /**
+     * @deprecated Use {@link #setLastSuperordinateChange(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setLastSuperordinateChange(DateTime lastSuperordinateChange) {
+      return setLastSuperordinateChange(toInstant(lastSuperordinateChange));
     }
 
     public B addInetAddresses(ImmutableSet<InetAddress> inetAddresses) {
@@ -230,21 +268,30 @@ public class HostBase extends EppResource {
       return thisCastToDerived();
     }
 
-    public B setLastTransferTime(DateTime lastTransferTime) {
+    public B setLastTransferTime(Instant lastTransferTime) {
       getInstance().lastTransferTime = lastTransferTime;
       return thisCastToDerived();
     }
 
+    /**
+     * @deprecated Use {@link #setLastTransferTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setLastTransferTime(DateTime lastTransferTime) {
+      return setLastTransferTime(toInstant(lastTransferTime));
+    }
+
     public B copyFrom(HostBase hostBase) {
       return setCreationRegistrarId(hostBase.getCreationRegistrarId())
-          .setCreationTime(hostBase.getCreationTime())
-          .setDeletionTime(hostBase.getDeletionDateTime())
+          .setCreationTime(hostBase.getCreationTimeInstant())
+          .setDeletionTime(hostBase.getDeletionTime())
           .setHostName(hostBase.getHostName())
           .setInetAddresses(hostBase.getInetAddresses())
-          .setLastTransferTime(hostBase.getLastTransferTime())
-          .setLastSuperordinateChange(hostBase.getLastSuperordinateChange())
+          .setLastTransferTime(hostBase.getLastTransferTimeInstant())
+          .setLastSuperordinateChange(hostBase.getLastSuperordinateChangeInstant())
           .setLastEppUpdateRegistrarId(hostBase.getLastEppUpdateRegistrarId())
-          .setLastEppUpdateTime(hostBase.getLastEppUpdateDateTime())
+          .setLastEppUpdateTime(hostBase.getLastEppUpdateTime())
           .setPersistedCurrentSponsorRegistrarId(hostBase.getPersistedCurrentSponsorRegistrarId())
           .setRepoId(hostBase.getRepoId())
           .setSuperordinateDomain(hostBase.getSuperordinateDomain())
