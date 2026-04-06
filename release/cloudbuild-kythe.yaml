@@ -31,6 +31,7 @@ steps:
     export JAVAC_EXTRACTOR_JAR="$${PWD}/kythe/extractors/javac_extractor.jar"
     jvmopts="--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED"
     jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+    jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED"
     jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED"
     jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"
     jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"

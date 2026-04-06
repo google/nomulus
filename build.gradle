@@ -200,6 +200,7 @@ allprojects {
                                 "--add-exports",
                                 "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"]
         options.forkOptions.jvmArgs = ["-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+                                       "-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
                                        "-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
                                        "-J--add-exports=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
                                        "-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
