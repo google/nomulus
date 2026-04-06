@@ -27,8 +27,10 @@ import google.registry.model.adapters.SerializableJsonTypeAdapter;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.CidrAddressBlock.CidrAddressBlockAdapter;
 import google.registry.util.DateTimeTypeAdapter;
+import google.registry.util.InstantTypeAdapter;
 import java.io.IOException;
 import java.io.Serializable;
+import java.time.Instant;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
@@ -75,6 +77,7 @@ public class GsonUtils {
         .registerTypeAdapter(CidrAddressBlock.class, new CidrAddressBlockAdapter())
         .registerTypeAdapter(CurrencyUnit.class, new CurrencyJsonAdapter())
         .registerTypeAdapter(DateTime.class, new DateTimeTypeAdapter())
+        .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
         .registerTypeAdapter(Serializable.class, new SerializableJsonTypeAdapter())
         .registerTypeAdapterFactory(new ClassProcessingTypeAdapterFactory())
         .registerTypeAdapterFactory(new GsonPostProcessableTypeAdapterFactory())

@@ -69,6 +69,7 @@ AllocationToken: {
     creationTime=CreateAutoTimestamp: {
         creationTime=2022-09-01T00:00:00.000Z
     }
+
     discountFraction=0.5
     discountPremiums=false
     discountPrice=null

@@ -29,7 +29,7 @@ import google.registry.rdap.RdapDataStructures.PublicId;
 import google.registry.rdap.RdapDataStructures.RdapConformance;
 import google.registry.rdap.RdapDataStructures.RdapStatus;
 import google.registry.rdap.RdapDataStructures.Remark;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapDataStructures}. */
@@ -121,7 +121,7 @@ final class RdapDataStructuresTest {
         Event.builder()
             .setEventAction(EventAction.REGISTRATION)
             .setEventActor("Event Actor")
-            .setEventDate(DateTime.parse("2012-04-03T14:54Z"))
+            .setEventDate(Instant.parse("2012-04-03T14:54:00Z"))
             .addLink(Link.builder().setHref("myHref").build())
             .build();
     assertThat(event.toJson())
@@ -141,7 +141,7 @@ final class RdapDataStructuresTest {
     EventWithoutActor event =
         EventWithoutActor.builder()
             .setEventAction(EventAction.REGISTRATION)
-            .setEventDate(DateTime.parse("2012-04-03T14:54Z"))
+            .setEventDate(Instant.parse("2012-04-03T14:54:00Z"))
             .addLink(Link.builder().setHref("myHref").build())
             .build();
     assertThat(event.toJson())

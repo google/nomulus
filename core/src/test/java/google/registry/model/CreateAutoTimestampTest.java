@@ -17,6 +17,7 @@ package google.registry.model;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.common.CrossTldSingleton;
@@ -41,7 +42,7 @@ public class CreateAutoTimestampTest {
   @Entity
   public static class CreateAutoTimestampTestObject extends CrossTldSingleton {
     @Id long id = SINGLETON_ID;
-    CreateAutoTimestamp createTime = CreateAutoTimestamp.create(null);
+    CreateAutoTimestamp createTime = CreateAutoTimestamp.create((java.time.Instant) null);
   }
 
   private static CreateAutoTimestampTestObject reload() {
@@ -58,7 +59,7 @@ public class CreateAutoTimestampTest {
                   tm().put(object);
                   return tm().getTransactionTime();
                 });
-    assertThat(reload().createTime.getTimestamp()).isEqualTo(transactionTime);
+    assertThat(reload().createTime.getTimestamp()).isEqualTo(toInstant(transactionTime));
   }
 
   @Test
@@ -70,6 +71,6 @@ public class CreateAutoTimestampTest {
               object.createTime = CreateAutoTimestamp.create(oldCreateTime);
               tm().put(object);
             });
-    assertThat(reload().createTime.getTimestamp()).isEqualTo(oldCreateTime);
+    assertThat(reload().createTime.getTimestamp()).isEqualTo(toInstant(oldCreateTime));
   }
 }

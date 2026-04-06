@@ -22,6 +22,7 @@ import com.google.common.collect.Ordering;
 import java.sql.Date;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -55,6 +56,34 @@ public abstract class DateTimeUtils {
    */
   public static final Instant END_INSTANT = Instant.ofEpochMilli(Long.MAX_VALUE / 1000);
 
+  /**
+   * Standard ISO 8601 formatter with millisecond precision in UTC.
+   *
+   * <p>Example: {@code 2024-03-27T10:15:30.105Z}
+   *
+   * <p>Uses the 'u' symbol for year to support large/negative years in a way compatible with ISO
+   * 8601.
+   */
+  public static final DateTimeFormatter ISO_8601_FORMATTER =
+      DateTimeFormatter.ofPattern("u-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
+
+  /**
+   * Parses an ISO-8601 string to an {@link Instant}.
+   *
+   * <p>This method is lenient and supports both strings with and without millisecond precision
+   * (e.g. {@code 2024-03-27T10:15:30Z} and {@code 2024-03-27T10:15:30.105Z}). It also supports
+   * large years (e.g. {@code 294247-01-10T04:00:54.775Z}).
+   */
+  public static Instant parseInstant(String timestamp) {
+    try {
+      // Try the standard millisecond precision format first.
+      return Instant.from(ISO_8601_FORMATTER.parse(timestamp));
+    } catch (java.time.format.DateTimeParseException e) {
+      // Fall back to the standard ISO instant parser which handles varied precision.
+      return Instant.parse(timestamp);
+    }
+  }
+
   /** Returns the earliest of a number of given {@link DateTime} instances. */
   public static DateTime earliestOf(DateTime first, DateTime... rest) {
     return earliestDateTimeOf(Lists.asList(first, rest));
@@ -79,13 +108,24 @@ public abstract class DateTimeUtils {
 
   /** Returns the latest of a number of given {@link DateTime} instances. */
   public static DateTime latestOf(DateTime first, DateTime... rest) {
+    return latestDateTimeOf(Lists.asList(first, rest));
+  }
+
+  /** Returns the latest of a number of given {@link Instant} instances. */
+  public static Instant latestOf(Instant first, Instant... rest) {
     return latestOf(Lists.asList(first, rest));
   }
 
   /** Returns the latest element in a {@link DateTime} iterable. */
-  public static DateTime latestOf(Iterable<DateTime> dates) {
+  public static DateTime latestDateTimeOf(Iterable<DateTime> dates) {
     checkArgument(!Iterables.isEmpty(dates));
     return Ordering.<DateTime>natural().max(dates);
+  }
+
+  /** Returns the latest element in a {@link Instant} iterable. */
+  public static Instant latestOf(Iterable<Instant> instants) {
+    checkArgument(!Iterables.isEmpty(instants));
+    return Ordering.<Instant>natural().max(instants);
   }
 
   /** Returns whether the first {@link DateTime} is equal to or earlier than the second. */
@@ -162,6 +202,50 @@ public abstract class DateTimeUtils {
   @Nullable
   public static Instant toInstant(@Nullable DateTime dateTime) {
     return (dateTime == null) ? null : Instant.ofEpochMilli(dateTime.getMillis());
+  }
+
+  /** Convert a {@link java.sql.Timestamp} to a java.time {@link Instant}, null-safe. */
+  @Nullable
+  public static Instant toInstant(@Nullable java.sql.Timestamp timestamp) {
+    return (timestamp == null) ? null : timestamp.toInstant();
+  }
+
+  /** Convert a {@link java.util.Date} to a java.time {@link Instant}, null-safe. */
+  @Nullable
+  public static Instant toInstant(@Nullable java.util.Date date) {
+    return (date == null) ? null : date.toInstant();
+  }
+
+  /** Returns the given {@link Instant}, null-safe. */
+  @Nullable
+  public static Instant toInstant(@Nullable Instant instant) {
+    return instant;
+  }
+
+  /**
+   * Converts various timestamp objects to {@link Instant}.
+   *
+   * <p>Supported types: {@link Instant}, {@link DateTime}, {@link java.util.Date}, {@link
+   * java.sql.Timestamp}.
+   */
+  @Nullable
+  public static Instant toInstantUnsafe(@Nullable Object obj) {
+    if (obj == null) {
+      return null;
+    }
+    if (obj instanceof Instant instant) {
+      return instant;
+    }
+    if (obj instanceof DateTime dateTime) {
+      return toInstant(dateTime);
+    }
+    if (obj instanceof java.sql.Timestamp timestamp) {
+      return timestamp.toInstant();
+    }
+    if (obj instanceof java.util.Date date) {
+      return date.toInstant();
+    }
+    throw new IllegalArgumentException("Unsupported type: " + obj.getClass().getName());
   }
 
   /** Convert a java.time {@link Instant} to a joda {@link DateTime}, null-safe. */

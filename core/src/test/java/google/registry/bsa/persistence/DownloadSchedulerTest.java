@@ -22,6 +22,7 @@ import static google.registry.bsa.DownloadStage.MAKE_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.bsa.persistence.DownloadScheduler.fetchTwoMostRecentDownloads;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardMinutes;
 import static org.joda.time.Duration.standardSeconds;
@@ -94,7 +95,7 @@ class DownloadSchedulerTest {
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
     assertThat(schedule.jobId()).isEqualTo(inProgressJob.jobId);
-    assertThat(schedule.jobCreationTime()).isEqualTo(inProgressJob.getCreationTime());
+    assertThat(schedule.jobCreationTime()).isEqualTo(toDateTime(inProgressJob.getCreationTime()));
     assertThat(schedule.jobName()).isEqualTo(inProgressJob.getJobName());
     assertThat(schedule.stage()).isEqualTo(MAKE_ORDER_AND_LABEL_DIFF);
     assertThat(schedule.latestCompleted()).isEmpty();
@@ -109,7 +110,7 @@ class DownloadSchedulerTest {
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
     assertThat(schedule.jobId()).isEqualTo(inProgressJob.jobId);
-    assertThat(schedule.jobCreationTime()).isEqualTo(inProgressJob.getCreationTime());
+    assertThat(schedule.jobCreationTime()).isEqualTo(toDateTime(inProgressJob.getCreationTime()));
     assertThat(schedule.jobName()).isEqualTo(inProgressJob.getJobName());
     assertThat(schedule.stage()).isEqualTo(MAKE_ORDER_AND_LABEL_DIFF);
     assertThat(schedule.alwaysDownload()).isFalse();

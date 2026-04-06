@@ -20,7 +20,9 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.github.benmanes.caffeine.cache.CacheLoader;
@@ -31,6 +33,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyFeatureStatusDeserializer;
@@ -42,6 +45,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -179,7 +183,13 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     return status;
   }
 
+  @JsonIgnore
   public FeatureStatus getStatus(DateTime time) {
+    return getStatus(toInstant(time));
+  }
+
+  @JsonIgnore
+  public FeatureStatus getStatus(Instant time) {
     return status.getValueAtTime(time);
   }
 
@@ -188,7 +198,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
    */
   public static boolean isActiveNow(FeatureName featureName) {
     tm().assertInTransaction();
-    return isActiveAt(featureName, tm().getTransactionTime());
+    return isActiveAt(featureName, tm().getTxTime());
   }
 
   /**
@@ -196,11 +206,19 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
    * doesn't exist.
    */
   public static boolean isActiveAt(FeatureName featureName, DateTime dateTime) {
+    return isActiveAt(featureName, toInstant(dateTime));
+  }
+
+  /**
+   * Returns whether the flag is active at the given time, or else the flag's default value if it
+   * doesn't exist.
+   */
+  public static boolean isActiveAt(FeatureName featureName, Instant instant) {
     tm().assertInTransaction();
     return CACHE
         .get(featureName)
-        .map(flag -> flag.getStatus(dateTime).equals(ACTIVE))
-        .orElse(featureName.getDefaultStatus().equals(ACTIVE));
+        .map(flag -> flag.getStatus(instant).equals(ACTIVE))
+        .orElseGet(() -> featureName.getDefaultStatus().equals(ACTIVE));
   }
 
   @Override
@@ -230,7 +248,15 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     }
 
     public Builder setStatusMap(ImmutableSortedMap<DateTime, FeatureStatus> statusMap) {
-      getInstance().status = TimedTransitionProperty.fromValueMap(statusMap);
+      return setStatusMapInstant(
+          statusMap.entrySet().stream()
+              .collect(
+                  ImmutableSortedMap.toImmutableSortedMap(
+                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
+    }
+
+    public Builder setStatusMapInstant(ImmutableSortedMap<Instant, FeatureStatus> statusMap) {
+      getInstance().status = TimedTransitionProperty.fromValueMapInstant(statusMap);
       return this;
     }
   }

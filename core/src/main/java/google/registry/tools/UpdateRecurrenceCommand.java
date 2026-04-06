@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -125,7 +126,7 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
           long newHistoryId = tm().allocateId();
           HistoryEntryId newDomainHistoryId = new HistoryEntryId(domain.getRepoId(), newHistoryId);
           BillingRecurrence endingNow =
-              existingRecurrence.asBuilder().setRecurrenceEndTime(now).build();
+              existingRecurrence.asBuilder().setRecurrenceEndTime(toInstant(now)).build();
           BillingRecurrence.Builder newRecurrenceBuilder =
               existingRecurrence
                   .asBuilder()

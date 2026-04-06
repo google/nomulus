@@ -25,8 +25,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
-import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.testing.truth.RegistryTruth.assertAt;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -43,6 +42,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
@@ -82,9 +82,9 @@ public class ResaveAllEppResourcesPipelineTest {
   @Test
   void testPipeline_unchangedEntity() {
     Host host = persistActiveHost("ns1.example.tld");
-    DateTime creationTime = host.getUpdateTimestamp().getTimestamp();
+    Instant creationTime = host.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
-    assertThat(loadByEntity(host).getUpdateTimestamp().getTimestamp()).isEqualTo(creationTime);
+    assertAt(loadByEntity(host).getUpdateTimestamp().getTimestamp()).isAt(creationTime);
     fakeClock.advanceOneMilli();
     runPipeline();
     assertThat(loadByEntity(host)).isEqualTo(host);
@@ -102,12 +102,12 @@ public class ResaveAllEppResourcesPipelineTest {
             now.minusDays(1),
             now.plusYears(2));
     assertThat(domain.getStatusValues()).contains(StatusValue.PENDING_TRANSFER);
-    assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(now);
+    assertAt(domain.getUpdateTimestamp().getTimestamp()).isAt(now);
     fakeClock.advanceOneMilli();
     runPipeline();
     Domain postPipeline = loadByEntity(domain);
     assertThat(postPipeline.getStatusValues()).doesNotContain(StatusValue.PENDING_TRANSFER);
-    assertThat(postPipeline.getUpdateTimestamp().getTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertAt(postPipeline.getUpdateTimestamp().getTimestamp()).isAt(fakeClock.nowUtc());
   }
 
   @Test
@@ -115,12 +115,11 @@ public class ResaveAllEppResourcesPipelineTest {
     DateTime now = fakeClock.nowUtc();
     Domain domain =
         persistDomainWithDependentResources("domain", "tld", now, now, now.plusYears(1));
-    assertThat(domain.getRegistrationExpirationTime()).isEqualTo(plusYears(toInstant(now), 1));
+    assertAt(domain.getRegistrationExpirationTime()).isAt(now.plusYears(1));
     fakeClock.advanceBy(Duration.standardDays(500));
     runPipeline();
     Domain postPipeline = loadByEntity(domain);
-    assertThat(postPipeline.getRegistrationExpirationTime())
-        .isEqualTo(plusYears(toInstant(now), 2));
+    assertAt(postPipeline.getRegistrationExpirationTime()).isAt(now.plusYears(2));
   }
 
   @Test
