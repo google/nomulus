@@ -78,7 +78,7 @@ if ! pgrep cloud_sql_proxy; then
   exit 1
 fi
 
-/flyway/flyway -postgresql.transactional.lock=false -community \
+/flyway/flyway -postgresql.transactional.lock=false \
   -user=${db_user} -password=${db_password} \
   -url=jdbc:postgresql://localhost:5432/postgres \
   -locations=classpath:sql/flyway \
@@ -87,7 +87,7 @@ migration_result=$?
 
 if [ ${flyway_action} == "migrate" ]; then
   # After deployment, log the current schema.
-  /flyway/flyway -community -user=${db_user} -password=${db_password} \
+  /flyway/flyway -user=${db_user} -password=${db_password} \
     -url=jdbc:postgresql://localhost:5432/postgres \
     -locations=classpath:sql/flyway \
     info
