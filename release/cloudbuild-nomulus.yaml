@@ -27,7 +27,7 @@ steps:
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   # Set home for Gradle caches. Must be consistent with last step below
   # and ./build_nomulus_for_env.sh
-  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
+  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches', 'DOCKER_API_VERSION=1.41' ]
   entrypoint: /bin/bash
   args:
   - -c
@@ -45,7 +45,7 @@ steps:
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   # Set home for Gradle caches. Must be consistent with last step below
   # and ./build_nomulus_for_env.sh
-  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
+  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches', 'DOCKER_API_VERSION=1.41' ]
   entrypoint: /bin/bash
   args:
   - -c
@@ -102,6 +102,7 @@ steps:
 # nomulus.jar built earlier.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
+  env: [ 'DOCKER_API_VERSION=1.41' ]
   args:
   - -c
   - |
@@ -119,6 +120,7 @@ steps:
 # nomulus.jar built earlier.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
+  env: [ 'DOCKER_API_VERSION=1.41' ]
   args:
   - -c
   - |
