@@ -19,6 +19,7 @@ import static google.registry.keyring.api.PgpHelper.KeyRequirement.SIGN;
 import static google.registry.testing.TestDataHelper.loadBytes;
 import static google.registry.testing.TestDataHelper.loadFile;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteSource;
 import dagger.Module;
 import dagger.Provides;
@@ -57,7 +58,8 @@ public final class FakeKeyringModule {
   private static final String MARKSDB_SMDRL_LOGIN_AND_PASSWORD = "smdrl:yolo";
   private static final String BSA_API_KEY = "bsaapikey";
   private static final String SQL_PRIMARY_CONNECTION = "project:primary-region:primary-name";
-  private static final String SQL_REPLICA_CONNECTION = "project:replica-region:replica-name";
+  private static final String SQL_REPLICA_CONNECTION_1 = "project:replica-region:replica-name";
+  private static final String SQL_REPLICA_CONNECTION_2 = "project:replica-region:replica-name-2";
 
   @Provides
   public Keyring get() {
@@ -160,7 +162,12 @@ public final class FakeKeyringModule {
 
       @Override
       public String getSqlReplicaConnectionName() {
-        return SQL_REPLICA_CONNECTION;
+        return SQL_REPLICA_CONNECTION_1;
+      }
+
+      @Override
+      public ImmutableList<String> getSqlReplicaConnectionNames() {
+        return ImmutableList.of(SQL_REPLICA_CONNECTION_1, SQL_REPLICA_CONNECTION_2);
       }
 
       @Override

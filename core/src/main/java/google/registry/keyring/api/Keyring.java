@@ -14,6 +14,7 @@
 
 package google.registry.keyring.api;
 
+import com.google.common.collect.ImmutableList;
 import javax.annotation.concurrent.ThreadSafe;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -151,8 +152,16 @@ public interface Keyring extends AutoCloseable {
   /** Returns the Cloud SQL connection name of the primary database instance. */
   String getSqlPrimaryConnectionName();
 
-  /** Returns the Cloud SQL connection name of the replica database instance. */
+  /**
+   * Returns the Cloud SQL connection name of the replica database instance.
+   *
+   * <p>Note: It is likely a better idea to use multiple replicas and {@link
+   * #getSqlReplicaConnectionNames()} instead.
+   */
   String getSqlReplicaConnectionName();
+
+  /** Returns the Cloud SQL connection names of the replica database instances. */
+  ImmutableList<String> getSqlReplicaConnectionNames();
 
   // Don't throw so try-with-resources works better.
   @Override

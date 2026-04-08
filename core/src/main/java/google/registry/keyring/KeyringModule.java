@@ -14,6 +14,7 @@
 
 package google.registry.keyring;
 
+import com.google.common.collect.ImmutableList;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
@@ -21,7 +22,6 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.secretmanager.SecretManagerKeyring;
 import jakarta.inject.Singleton;
-import java.util.Optional;
 
 /** Dagger module for {@link Keyring} */
 @Module
@@ -38,9 +38,10 @@ public abstract class KeyringModule {
   }
 
   @Provides
-  @Config("cloudSqlReplicaInstanceConnectionName")
-  public static Optional<String> provideCloudSqlReplicaInstanceConnectionName(Keyring keyring) {
-    return Optional.ofNullable(keyring.getSqlReplicaConnectionName());
+  @Config("cloudSqlReplicaInstanceConnectionNames")
+  public static ImmutableList<String> provideCloudSqlReplicaInstanceConnectionNames(
+      Keyring keyring) {
+    return ImmutableList.copyOf(keyring.getSqlReplicaConnectionNames());
   }
 
   @Provides

@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.keyring.api.KeySerializer;
@@ -95,6 +96,10 @@ final class GetKeyringSecretCommand implements Command {
           out.write(KeySerializer.serializeString(keyring.getSqlPrimaryConnectionName()));
       case SQL_REPLICA_CONN_NAME ->
           out.write(KeySerializer.serializeString(keyring.getSqlReplicaConnectionName()));
+      case SQL_REPLICA_CONN_NAMES ->
+          out.write(
+              KeySerializer.serializeString(
+                  String.join("\n", keyring.getSqlReplicaConnectionNames())));
     }
   }
 }

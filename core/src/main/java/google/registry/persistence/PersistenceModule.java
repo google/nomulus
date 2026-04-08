@@ -15,6 +15,7 @@
 package google.registry.persistence;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.config.RegistryConfig.getHibernateConnectionIsolation;
 import static google.registry.config.RegistryConfig.getHibernateHikariConnectionTimeout;
 import static google.registry.config.RegistryConfig.getHibernateHikariIdleTimeout;
@@ -28,6 +29,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import dagger.BindsOptionalOf;
@@ -36,6 +38,7 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.persistence.transaction.CloudSqlCredentialSupplier;
+import google.registry.persistence.transaction.DelegatingReplicaJpaTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
 import google.registry.persistence.transaction.TransactionManager;
@@ -59,6 +62,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Random;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.hibernate.cfg.Environment;
@@ -264,16 +268,13 @@ public abstract class PersistenceModule {
   static JpaTransactionManager provideReadOnlyReplicaJpaTm(
       SqlCredentialStore credentialStore,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
-      @Config("cloudSqlReplicaInstanceConnectionName")
-          Optional<String> replicaInstanceConnectionName,
-      Clock clock) {
+      @Config("cloudSqlReplicaInstanceConnectionNames")
+          ImmutableList<String> replicaInstanceConnectionNames,
+      Clock clock,
+      Random random) {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
     setSqlCredential(credentialStore, new RobotUser(RobotId.NOMULUS), overrides);
-    replicaInstanceConnectionName.ifPresent(
-        name -> overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, name));
-    overrides.put(
-        Environment.ISOLATION, TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ.name());
-    return new JpaTransactionManagerImpl(create(overrides), clock, true);
+    return createReplicaJpaTm(overrides, replicaInstanceConnectionNames, clock, random);
   }
 
   @Provides
@@ -281,15 +282,34 @@ public abstract class PersistenceModule {
   @BeamReadOnlyReplicaJpaTm
   static JpaTransactionManager provideBeamReadOnlyReplicaJpaTm(
       @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> beamCloudSqlConfigs,
-      @Config("cloudSqlReplicaInstanceConnectionName")
-          Optional<String> replicaInstanceConnectionName,
-      Clock clock) {
+      @Config("cloudSqlReplicaInstanceConnectionNames")
+          ImmutableList<String> replicaInstanceConnectionNames,
+      Clock clock,
+      Random random) {
     HashMap<String, String> overrides = Maps.newHashMap(beamCloudSqlConfigs);
-    replicaInstanceConnectionName.ifPresent(
-        name -> overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, name));
-    overrides.put(
+    return createReplicaJpaTm(overrides, replicaInstanceConnectionNames, clock, random);
+  }
+
+  private static JpaTransactionManager createReplicaJpaTm(
+      Map<String, String> baseOverrides,
+      ImmutableList<String> replicaInstanceConnectionNames,
+      Clock clock,
+      Random random) {
+    baseOverrides.put(
         Environment.ISOLATION, TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ.name());
-    return new JpaTransactionManagerImpl(create(overrides), clock, true);
+    if (replicaInstanceConnectionNames.isEmpty()) {
+      return new JpaTransactionManagerImpl(create(baseOverrides), clock, true);
+    }
+    ImmutableList<JpaTransactionManager> replicas =
+        replicaInstanceConnectionNames.stream()
+            .map(
+                name -> {
+                  HashMap<String, String> overrides = Maps.newHashMap(baseOverrides);
+                  overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, name);
+                  return new JpaTransactionManagerImpl(create(overrides), clock, true);
+                })
+            .collect(toImmutableList());
+    return new DelegatingReplicaJpaTransactionManager(replicas, random);
   }
 
   /** Constructs the {@link EntityManagerFactory} instance. */

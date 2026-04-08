@@ -100,6 +100,8 @@ final class UpdateKeyringSecretCommand implements Command {
           secretManagerKeyringUpdater.setSqlPrimaryConnectionName(deserializeString(input));
       case SQL_REPLICA_CONN_NAME ->
           secretManagerKeyringUpdater.setSqlReplicaConnectionName(deserializeString(input));
+      case SQL_REPLICA_CONN_NAMES ->
+          secretManagerKeyringUpdater.setSqlReplicaConnectionNames(deserializeString(input));
     }
 
     secretManagerKeyringUpdater.update();
