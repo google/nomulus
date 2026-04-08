@@ -17,6 +17,8 @@ package google.registry.keyring.secretmanager;
 import static com.google.common.base.CaseFormat.LOWER_HYPHEN;
 import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import google.registry.keyring.api.KeySerializer;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.api.KeyringException;
@@ -66,7 +68,8 @@ public class SecretManagerKeyring implements Keyring {
     RDE_SSH_CLIENT_PUBLIC_STRING,
     SAFE_BROWSING_API_KEY,
     SQL_PRIMARY_CONN_NAME,
-    SQL_REPLICA_CONN_NAME;
+    SQL_REPLICA_CONN_NAME,
+    SQL_REPLICA_CONN_NAMES;
 
     String getLabel() {
       return UPPER_UNDERSCORE.to(LOWER_HYPHEN, name());
@@ -157,7 +160,25 @@ public class SecretManagerKeyring implements Keyring {
 
   @Override
   public String getSqlReplicaConnectionName() {
-    return getString(StringKeyLabel.SQL_REPLICA_CONN_NAME);
+    try {
+      return getString(StringKeyLabel.SQL_REPLICA_CONN_NAME);
+    } catch (KeyringException e) {
+      return null;
+    }
+  }
+
+  @Override
+  public ImmutableList<String> getSqlReplicaConnectionNames() {
+    try {
+      String names = getString(StringKeyLabel.SQL_REPLICA_CONN_NAMES);
+      return ImmutableList.copyOf(
+          Splitter.on('\n').trimResults().omitEmptyStrings().splitToList(names));
+    } catch (KeyringException e) {
+      String replicaConnectionName = getSqlReplicaConnectionName();
+      return replicaConnectionName == null
+          ? ImmutableList.of()
+          : ImmutableList.of(replicaConnectionName);
+    }
   }
 
   /** No persistent resources are maintained for this Keyring implementation. */

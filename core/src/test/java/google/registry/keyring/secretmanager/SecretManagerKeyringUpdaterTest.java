@@ -121,6 +121,23 @@ public class SecretManagerKeyringUpdaterTest {
   }
 
   @Test
+  void sqlReplicaConnectionNames() {
+    String names = "name1\nname2";
+    updater.setSqlReplicaConnectionNames(names).update();
+
+    assertThat(keyring.getSqlReplicaConnectionNames()).containsExactly("name1", "name2").inOrder();
+    verifyPersistedSecret("sql-replica-conn-names", names);
+  }
+
+  @Test
+  void sqlReplicaConnectionNames_fallback() {
+    String name = "name";
+    updater.setSqlReplicaConnectionName(name).update();
+
+    assertThat(keyring.getSqlReplicaConnectionNames()).containsExactly(name);
+  }
+
+  @Test
   void marksdbDnlLoginAndPassword() {
     String secret = "marksdbDnlLoginAndPassword";
     updater.setMarksdbDnlLoginAndPassword(secret).update();
