@@ -74,11 +74,7 @@ sourceSets {
   nonprod {
     java {
       compileClasspath += main.output
-
-      // Add the DB runtime classpath to nonprod so we can load the flyway
-      // scripts.
-      runtimeClasspath += main.output +
-          rootProject.project(":db").sourceSets.main.runtimeClasspath
+      runtimeClasspath += main.output
     }
   }
   test {
@@ -102,6 +98,7 @@ configurations {
   devtool
 
   nonprodImplementation.extendsFrom implementation
+  nonprodRuntimeOnly.extendsFrom runtimeOnly
 
   testImplementation.extendsFrom nonprodImplementation
 
@@ -259,6 +256,7 @@ dependencies {
   implementation project(':util')
   // Import NomulusPostreSql from ':db' for implementation but exclude dependencies.
   implementation project(path: ':db', configuration: 'implementationApi')
+  nonprodRuntimeOnly project(':db')
   testRuntimeOnly project(':db')
 
   annotationProcessor deps['com.google.auto.service:auto-service']
