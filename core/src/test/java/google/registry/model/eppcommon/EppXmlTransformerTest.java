@@ -82,11 +82,11 @@ class EppXmlTransformerTest {
   }
 
   @Test
-  void testSchemas_inProduction_skipsFee1Point0() {
+  void testSchemas_inProduction_includesFee1Point0() {
     var currentEnv = RegistryEnvironment.get();
     try {
       RegistryEnvironment.PRODUCTION.setup();
-      assertThat(EppXmlTransformer.getSchemas()).doesNotContain("fee-std-v1.xsd");
+      assertThat(EppXmlTransformer.getSchemas()).contains("fee-std-v1.xsd");
     } finally {
       currentEnv.setup();
     }
