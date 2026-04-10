@@ -24,7 +24,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
@@ -109,7 +110,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   // Need to override the default non-null column attribute.
   @AttributeOverride(name = "creationTime", column = @Column)
   @Expose
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create((Instant) null);
 
   /**
    * The time when this resource was or will be deleted.
@@ -124,7 +125,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * out of the index at that time, as long as we query for resources whose deletion time is before
    * now.
    */
-  DateTime deletionTime;
+  Instant deletionTime;
 
   /**
    * The time that this resource was last updated.
@@ -133,7 +134,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * edits; it only includes EPP-visible modifications such as {@literal <update>}. Can be null if
    * the resource has never been modified.
    */
-  @Expose DateTime lastEppUpdateTime;
+  @Expose Instant lastEppUpdateTime;
 
   /** Status values associated with this resource. */
   @Enumerated(EnumType.STRING)
@@ -157,7 +158,16 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
     this.repoId = repoId;
   }
 
+  /**
+   * @deprecated Use {@link #getCreationTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public final DateTime getCreationTime() {
+    return creationTime.getTimestampDateTime();
+  }
+
+  public final Instant getCreationTimeInstant() {
     return creationTime.getTimestamp();
   }
 
@@ -166,12 +176,13 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   }
 
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastEppUpdateDateTime() {
-    return lastEppUpdateTime;
+    return toDateTime(lastEppUpdateTime);
   }
 
   public Instant getLastEppUpdateTime() {
-    return toInstant(lastEppUpdateTime);
+    return lastEppUpdateTime;
   }
 
   public String getLastEppUpdateRegistrarId() {
@@ -193,12 +204,13 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   }
 
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getDeletionDateTime() {
-    return deletionTime;
+    return toDateTime(deletionTime);
   }
 
   public Instant getDeletionTime() {
-    return toInstant(deletionTime);
+    return deletionTime;
   }
 
   /** Return a clone of the resource with timed status values modified using the given time. */
@@ -240,7 +252,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
      * <p>Note: This can only be used if the creation time hasn't already been set, which it is in
      * normal EPP flows.
      */
-    public B setCreationTime(DateTime creationTime) {
+    public B setCreationTime(Instant creationTime) {
       checkState(
           getInstance().creationTime.getTimestamp() == null,
           "creationTime can only be set once for EppResource.");
@@ -248,17 +260,45 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
       return thisCastToDerived();
     }
 
+    /**
+     * @deprecated Use {@link #setCreationTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setCreationTime(DateTime creationTime) {
+      return setCreationTime(toInstant(creationTime));
+    }
+
     /** Set the time this resource was created. Should only be used in tests. */
     @VisibleForTesting
-    public B setCreationTimeForTest(DateTime creationTime) {
+    public B setCreationTimeForTest(Instant creationTime) {
       getInstance().creationTime = CreateAutoTimestamp.create(creationTime);
       return thisCastToDerived();
     }
 
+    /**
+     * @deprecated Use {@link #setCreationTimeForTest(Instant)}
+     */
+    @Deprecated
+    @VisibleForTesting
+    @SuppressWarnings("InlineMeSuggester")
+    public B setCreationTimeForTest(DateTime creationTime) {
+      return setCreationTimeForTest(toInstant(creationTime));
+    }
+
     /** Set the time after which this resource should be considered deleted. */
-    public B setDeletionTime(DateTime deletionTime) {
+    public B setDeletionTime(Instant deletionTime) {
       getInstance().deletionTime = deletionTime;
       return thisCastToDerived();
+    }
+
+    /**
+     * @deprecated Use {@link #setDeletionTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setDeletionTime(DateTime deletionTime) {
+      return setDeletionTime(toInstant(deletionTime));
     }
 
     /** Set the current sponsoring registrar. */
@@ -274,9 +314,18 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
     }
 
     /** Set the time when a {@literal <update>} was performed on this resource. */
-    public B setLastEppUpdateTime(DateTime lastEppUpdateTime) {
+    public B setLastEppUpdateTime(Instant lastEppUpdateTime) {
       getInstance().lastEppUpdateTime = lastEppUpdateTime;
       return thisCastToDerived();
+    }
+
+    /**
+     * @deprecated Use {@link #setLastEppUpdateTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setLastEppUpdateTime(DateTime lastEppUpdateTime) {
+      return setLastEppUpdateTime(toInstant(lastEppUpdateTime));
     }
 
     /** Set the registrar who last performed a {@literal <update>} on this resource. */
@@ -345,8 +394,8 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
       if (getInstance().getStatusValues().isEmpty()) {
         addStatusValue(StatusValue.OK);
       }
-      // If there is no deletion time, set it to END_OF_TIME.
-      setDeletionTime(Optional.ofNullable(getInstance().deletionTime).orElse(END_OF_TIME));
+      // If there is no deletion time, set it to END_INSTANT.
+      setDeletionTime(Optional.ofNullable(getInstance().deletionTime).orElse(END_INSTANT));
       return ImmutableObject.cloneEmptyToNull(super.build());
     }
   }

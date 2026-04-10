@@ -507,8 +507,9 @@ public class DomainBase extends EppResource {
                 GracePeriod.create(
                     GracePeriodStatus.TRANSFER,
                     domain.getRepoId(),
-                    toDateTime(transferExpirationTime)
-                        .plus(Tld.get(domain.getTld()).getTransferGracePeriodLength()),
+                    transferExpirationTime.plus(
+                        java.time.Duration.ofMillis(
+                            Tld.get(domain.getTld()).getTransferGracePeriodLength().getMillis())),
                     transferData.getGainingRegistrarId(),
                     transferData.getServerApproveBillingEvent())));
       } else {
@@ -543,8 +544,9 @@ public class DomainBase extends EppResource {
               GracePeriod.createForRecurrence(
                   GracePeriodStatus.AUTO_RENEW,
                   domain.getRepoId(),
-                  toDateTime(lastAutorenewTime)
-                      .plus(Tld.get(domain.getTld()).getAutoRenewGracePeriodLength()),
+                  lastAutorenewTime.plus(
+                      java.time.Duration.ofMillis(
+                          Tld.get(domain.getTld()).getAutoRenewGracePeriodLength().getMillis())),
                   domain.getCurrentSponsorRegistrarId(),
                   domain.getAutorenewBillingEvent()));
       newLastEppUpdateTime = Optional.of(lastAutorenewTime);

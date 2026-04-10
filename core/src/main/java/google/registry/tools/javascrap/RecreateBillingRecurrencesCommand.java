@@ -17,7 +17,8 @@ package google.registry.tools.javascrap;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -101,8 +102,8 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
               DateTime eventTime = timeOfYear.getNextInstanceAtOrAfter(tm().getTransactionTime());
               return existingRecurrence
                   .asBuilder()
-                  .setRecurrenceEndTime(END_OF_TIME)
-                  .setRecurrenceLastExpansion(newLastExpansion)
+                  .setRecurrenceEndTime(END_INSTANT)
+                  .setRecurrenceLastExpansion(toInstant(newLastExpansion))
                   .setEventTime(eventTime)
                   .setId(0)
                   .build();
@@ -123,7 +124,7 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
                               "Domain %s does not exist or has been deleted", domainName)));
       BillingRecurrence billingRecurrence = tm().loadByKey(domain.getAutorenewBillingEvent());
       checkArgument(
-          !billingRecurrence.getRecurrenceEndTime().equals(END_OF_TIME),
+          !billingRecurrence.getRecurrenceEndTimeInstant().equals(END_INSTANT),
           "Domain %s's recurrence's end date is already END_OF_TIME",
           domainName);
       // Double-check that there are no non-linked BillingRecurrences that have an END_OF_TIME end.
@@ -135,7 +136,7 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
       allRecurrencesForDomain.forEach(
           recurrence ->
               checkArgument(
-                  !recurrence.getRecurrenceEndTime().equals(END_OF_TIME),
+                  !recurrence.getRecurrenceEndTimeInstant().equals(END_INSTANT),
                   "There exists a recurrence with id %s for domain %s with an end date of"
                       + " END_OF_TIME",
                   recurrence.getId(),

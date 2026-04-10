@@ -17,7 +17,8 @@ package google.registry.rdap;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedSet;
@@ -159,7 +160,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
 
     Optional<Host> host =
         ForeignKeyUtils.loadResourceByCache(
-            Host.class, partialStringQuery.getInitialString(), getRequestTime());
+            Host.class, partialStringQuery.getInitialString(), toDateTime(getRequestTime()));
 
     metricInformationBuilder.setNumHostsRetrieved(host.isPresent() ? 1 : 0);
 
@@ -176,7 +177,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       RdapSearchPattern partialStringQuery) {
     Optional<Domain> domain =
         ForeignKeyUtils.loadResourceByCache(
-            Domain.class, partialStringQuery.getSuffix(), getRequestTime());
+            Domain.class, partialStringQuery.getSuffix(), toDateTime(getRequestTime()));
     if (domain.isEmpty()) {
       // Don't allow wildcards with suffixes which are not domains we manage. That would risk a
       // table scan in many easily foreseeable cases. The user might ask for ns*.zombo.com,
@@ -195,7 +196,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       // then the query ns.exam*.example.com would match against nameserver ns.example.com.
       if (partialStringQuery.matches(fqhn)) {
         Optional<Host> host =
-            ForeignKeyUtils.loadResourceByCache(Host.class, fqhn, getRequestTime());
+            ForeignKeyUtils.loadResourceByCache(Host.class, fqhn, toDateTime(getRequestTime()));
         if (shouldBeVisible(host)) {
           hostList.add(host.get());
           if (hostList.size() > rdapResultSetMaxSize) {
@@ -246,12 +247,12 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       // find hosts where any of the inetAddresses match.
       StringBuilder queryBuilder =
           new StringBuilder("SELECT * FROM \"Host\" WHERE :address = ANY(inet_addresses)");
-      ImmutableMap.Builder<String, String> parameters =
-          new ImmutableMap.Builder<String, String>()
-              .put("address", InetAddresses.toAddrString(inetAddress));
+    ImmutableMap.Builder<String, Object> parameters =
+        new ImmutableMap.Builder<String, Object>()
+            .put("address", InetAddresses.toAddrString(inetAddress));
       if (getDeletedItemHandling().equals(DeletedItemHandling.EXCLUDE)) {
-        queryBuilder.append(" AND deletion_time = CAST(:endOfTime AS timestamptz)");
-        parameters.put("endOfTime", END_OF_TIME.toString());
+      queryBuilder.append(" AND deletion_time = :endOfTime");
+      parameters.put("endOfTime", END_INSTANT);
       }
       if (cursorString.isPresent()) {
         // cursorString here must be the repo ID

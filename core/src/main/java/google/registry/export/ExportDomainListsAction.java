@@ -114,13 +114,13 @@ public class ExportDomainListsAction implements Runnable {
                               .unwrap(NativeQuery.class)
                               .setTupleTransformer(new DomainResultTransformer())
                               .setParameter("tld", tld)
-                              .setParameter("now", replicaTm().getTransactionTime().toString())
+                              .setParameter("now", replicaTm().getTxTime().toString())
                               .getResultList();
                         } else {
                           return replicaTm()
                               .query(SELECT_DOMAINS_STATEMENT, String.class)
                               .setParameter("tld", tld)
-                              .setParameter("now", replicaTm().getTransactionTime())
+                              .setParameter("now", replicaTm().getTxTime())
                               .getResultList();
                         }
                       });

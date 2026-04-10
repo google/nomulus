@@ -337,7 +337,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             .setCreationTimeForTest(DateTime.parse("2003-11-26T22:00:00.0Z"))
             .setRegistrationExpirationTime(DateTime.parse("2005-11-26T22:00:00.0Z"))
             .setLastTransferTime(null)
-            .setLastEppUpdateTime(null)
+            .setLastEppUpdateTime((java.time.Instant) null)
             .setLastEppUpdateRegistrarId(null)
             .build());
     doSuccessfulTest("domain_info_response_addperiod.xml", false);

@@ -16,6 +16,7 @@ package google.registry.rde;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registrar.Registrar;
@@ -139,7 +140,7 @@ final class RegistrarToXjcConverter {
 
     // o  A <crDate> element that contains the date and time of registrar-
     //    object creation.
-    bean.setCrDate(model.getCreationTime());
+    bean.setCrDate(toDateTime(model.getCreationTime()));
 
     // o  An OPTIONAL <upDate> element that contains the date and time of
     //    the most recent RDE registrar-object modification.  This element

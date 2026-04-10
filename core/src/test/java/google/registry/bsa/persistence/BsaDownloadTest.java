@@ -19,6 +19,7 @@ import static google.registry.bsa.BlockListType.BLOCK;
 import static google.registry.bsa.BlockListType.BLOCK_PLUS;
 import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
@@ -43,7 +44,7 @@ public class BsaDownloadTest {
   void saveJob() {
     BsaDownload persisted = tm().transact(() -> tm().getEntityManager().merge(new BsaDownload()));
     assertThat(persisted.jobId).isNotNull();
-    assertThat(persisted.creationTime.getTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persisted.creationTime.getTimestamp()).isEqualTo(toInstant(fakeClock.nowUtc()));
     assertThat(persisted.stage).isEqualTo(DOWNLOAD_BLOCK_LISTS);
   }
 

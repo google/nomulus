@@ -16,6 +16,7 @@ package google.registry.rdap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import com.google.common.base.Joiner;
@@ -33,6 +34,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -337,6 +339,12 @@ abstract class AbstractJsonableObject implements Jsonable {
       //
       // According to RFC3339, we should use ISO8601, which is what DateTime.toString does!
       return new JsonPrimitive(object.toString());
+    }
+    if (object instanceof Instant) {
+      // According to RFC 9083 section 3, the syntax of dates and times is defined in RFC3339.
+      //
+      // According to RFC3339, we should use ISO8601, so we use ISO_8601_FORMATTER.
+      return new JsonPrimitive(ISO_8601_FORMATTER.format((Instant) object));
     }
     if (object == null) {
       return JsonNull.INSTANCE;
