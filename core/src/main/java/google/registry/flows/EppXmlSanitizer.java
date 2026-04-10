@@ -15,6 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.xml.XmlTransformer.createXmlInputFactory;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableSet;
@@ -72,8 +73,8 @@ public class EppXmlSanitizer {
   private static final String DEFAULT_MASK = "*";
 
   private static final XMLInputFactory XML_INPUT_FACTORY = createXmlInputFactory();
-  private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newFactory();
-  private static final XMLEventFactory XML_EVENT_FACTORY = XMLEventFactory.newFactory();
+  private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newDefaultFactory();
+  private static final XMLEventFactory XML_EVENT_FACTORY = XMLEventFactory.newDefaultFactory();
 
   /**
    * Returns sanitized EPP XML message. For malformed XML messages, base64-encoded raw bytes will be
@@ -157,17 +158,5 @@ public class EppXmlSanitizer {
 
   private static boolean isMatchingEndEvent(XMLEvent xmlEvent, QName startEventName) {
     return xmlEvent.isEndElement() && xmlEvent.asEndElement().getName().equals(startEventName);
-  }
-
-  private static XMLInputFactory createXmlInputFactory() {
-    XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
-    // Coalesce adjacent data, so that all chars in a string will be grouped as one item.
-    xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
-    // Preserve Name Space information.
-    xmlInputFactory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, true);
-    // Prevent XXE attacks.
-    xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-    xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-    return xmlInputFactory;
   }
 }

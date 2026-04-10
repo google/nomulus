@@ -1463,6 +1463,18 @@ public final class RegistryConfig {
       return config.mosapi.tldThreadCount;
     }
 
+    @Provides
+    @Config("valkeyServerAddress")
+    public static Optional<String> provideValkeyServerAddress(RegistryConfigSettings config) {
+      return Optional.ofNullable(config.valkey).map(v -> v.serverAddress);
+    }
+
+    @Provides
+    @Config("valkeyClusterModeEnabled")
+    public static boolean provideValkeyClusterModeEnabled(RegistryConfigSettings config) {
+      return config.valkey != null && config.valkey.clusterModeEnabled;
+    }
+
     private static String formatComments(String text) {
       return Splitter.on('\n').omitEmptyStrings().trimResults().splitToList(text).stream()
           .map(s -> "# " + s)

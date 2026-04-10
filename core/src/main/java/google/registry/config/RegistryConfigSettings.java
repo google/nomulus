@@ -43,6 +43,7 @@ public class RegistryConfigSettings {
   public BulkPricingPackageMonitoring bulkPricingPackageMonitoring;
   public Bsa bsa;
   public MosApi mosapi;
+  public Valkey valkey;
 
   /** Configuration options that apply to the entire GCP project. */
   public static class GcpProject {
@@ -266,5 +267,11 @@ public class RegistryConfigSettings {
     public List<String> tlds;
     public List<String> services;
     public int tldThreadCount;
+  }
+
+  /** Configuration for Valkey. */
+  public static class Valkey {
+    public String serverAddress;
+    public boolean clusterModeEnabled;
   }
 }
