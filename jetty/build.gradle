@@ -85,6 +85,7 @@ tasks.register('run', JavaExec) {
     }
     def jetty_home = System.getenv('JETTY_HOME')
     def environment = rootProject.environment
+    jvmArgs "--sun-misc-unsafe-memory-access=allow", "--enable-native-access=ALL-UNNAMED"
     workingDir(layout.buildDirectory.dir('jetty-base'))
     classpath = files(jetty_home + '/start.jar')
     systemProperty('google.registry.environment', environment)

@@ -67,14 +67,14 @@ steps:
     docker tag gcr.io/${PROJECT_ID}/builder:${TAG_NAME} gcr.io/${PROJECT_ID}/builder:latest
     docker push gcr.io/${PROJECT_ID}/builder:${TAG_NAME}
     docker push gcr.io/${PROJECT_ID}/builder:latest
-    docker pull jetty:12-jdk21
-    docker tag jetty:12-jdk21 gcr.io/${PROJECT_ID}/jetty:${TAG_NAME}
-    docker tag jetty:12-jdk21 gcr.io/${PROJECT_ID}/jetty:latest
+    docker pull jetty:12-jdk25
+    docker tag jetty:12-jdk25 gcr.io/${PROJECT_ID}/jetty:${TAG_NAME}
+    docker tag jetty:12-jdk25 gcr.io/${PROJECT_ID}/jetty:latest
     docker push gcr.io/${PROJECT_ID}/jetty:${TAG_NAME}
     docker push gcr.io/${PROJECT_ID}/jetty:latest
-    docker pull eclipse-temurin:21
-    docker tag eclipse-temurin:21 gcr.io/${PROJECT_ID}/temurin:${TAG_NAME}
-    docker tag eclipse-temurin:21 gcr.io/${PROJECT_ID}/temurin:latest
+    docker pull eclipse-temurin:25
+    docker tag eclipse-temurin:25 gcr.io/${PROJECT_ID}/temurin:${TAG_NAME}
+    docker tag eclipse-temurin:25 gcr.io/${PROJECT_ID}/temurin:latest
     docker push gcr.io/${PROJECT_ID}/temurin:${TAG_NAME}
     docker push gcr.io/${PROJECT_ID}/temurin:latest
   dir: 'release/builder/'
@@ -91,9 +91,9 @@ steps:
       --format='get(digest)' --filter='tags = ${TAG_NAME}')
     temurin_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/temurin \
       --format='get(digest)' --filter='tags = ${TAG_NAME}')
-    sed -i s%eclipse-temurin:21%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g proxy/Dockerfile
-    sed -i s%eclipse-temurin:21%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g core/Dockerfile
-    sed -i s%jetty:12-jdk21%gcr.io/${PROJECT_ID}/jetty@$jetty_digest%g jetty/Dockerfile
+    sed -i s%eclipse-temurin:25%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g proxy/Dockerfile
+    sed -i s%eclipse-temurin:25%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g core/Dockerfile
+    sed -i s%jetty:12-jdk25%gcr.io/${PROJECT_ID}/jetty@$jetty_digest%g jetty/Dockerfile
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-proxy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-nomulus.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-deploy-gke.yaml

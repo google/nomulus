@@ -359,11 +359,13 @@ subprojects {
   // search for `flex-template-base-image` and update the parameter value.
   // There are at least two instances, one in core/build.gradle, one in
   // release/stage_beam_pipeline.sh
+  // Also need to change:
+  // - base images in Dockerfiles under core, jetty, and proxy.
+  // - Java installation command in the builder image under release.
+  // - cloudbuild-release.yaml under release.
   java {
-    // TODO(b/457758757): change to V_25 once Java in all environments are
-    // upgraded.
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
   }
 
   project.tasks.test.dependsOn runPresubmits

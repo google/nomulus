@@ -383,6 +383,7 @@ task soyToJava {
     project.services.get(ExecOperations).javaexec {
       mainClass = "com.google.template.soy.SoyParseInfoGenerator"
       classpath = configurations.soy
+      jvmArgs = ["--sun-misc-unsafe-memory-access=allow", "--enable-native-access=ALL-UNNAMED"]
       args = ["--javaPackage", "${javaPackage}",
               "--outputDirectory", "${outputDirectory}",
               "--javaClassNameSource", "filename",
@@ -438,7 +439,7 @@ artifacts {
 task findGoldenImages(type: JavaExec) {
   classpath = sourceSets.test.runtimeClasspath
   mainClass = 'google.registry.webdriver.GoldenImageFinder'
-
+  jvmArgs "--sun-misc-unsafe-memory-access=allow"
   def arguments = []
   arguments << "--screenshots_for_goldens_dir=${screenshotsForGoldensDir}"
   arguments << "--new_goldens_dir=${newGoldensDir}"
@@ -489,6 +490,7 @@ ext.createToolTask = {
   project.tasks.create(taskName, JavaExec) {
     classpath = sourceSet.runtimeClasspath
     mainClass = mainClassName
+    jvmArgs "--sun-misc-unsafe-memory-access=allow", "--enable-native-access=ALL-UNNAMED"
 
     doFirst {
       getToolArgsList().ifPresent {
@@ -506,6 +508,7 @@ createToolTask(
 project.tasks.create('generateSqlSchema', JavaExec) {
   classpath = sourceSets.nonprod.runtimeClasspath
   mainClass = 'google.registry.tools.DevTool'
+  jvmArgs "--sun-misc-unsafe-memory-access=allow"
   args = [
       '-e', 'alpha',
       'generate_sql_schema', '--start_postgresql', '-o',
@@ -664,6 +667,7 @@ artifacts {
 task runTestServer(type: JavaExec) {
   mainClass = 'google.registry.server.RegistryTestServerMain'
   classpath = sourceSets.test.runtimeClasspath
+  jvmArgs "--sun-misc-unsafe-memory-access=allow"
   dependsOn(rootProject.project('console-webapp').tasks.named('buildConsoleWebapp'))
 }
 
