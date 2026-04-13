@@ -146,7 +146,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
               ? ImmutableSet.of(StatusValue.CLIENT_HOLD.getXmlName())
               : ImmutableSet.of();
     } else {
-      statusesToApply = URS_LOCKS;
+      statusesToApply = ImmutableSet.copyOf(difference(URS_LOCKS, existingLocks));
     }
 
     // trigger renew flow

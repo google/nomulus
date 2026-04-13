@@ -95,6 +95,34 @@ class UniformRapidSuspensionCommandTest
   }
 
   @Test
+  void testCommand_respectExistingStatuses() throws Exception {
+    persistDomainWithHosts(
+        defaultDomain
+            .asBuilder()
+            .addStatusValues(ImmutableSet.of(StatusValue.SERVER_DELETE_PROHIBITED))
+            .build(),
+        defaultDsData,
+        ns1,
+        ns2);
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--hosts=urs1.example.com,urs2.example.com",
+        "--dsdata=1 1 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--renew_one_year=false");
+    eppVerifier
+        .expectRegistrarId("CharlestonRoad")
+        .expectSuperuser()
+        .verifySent("uniform_rapid_suspension_with_forbid_delete.xml")
+        .verifyNoMoreSent();
+    assertInStdout("uniform_rapid_suspension --undo");
+    assertInStdout("--domain_name evil.tld");
+    assertInStdout("--hosts ns1.example.com,ns2.example.com");
+    assertInStdout("--dsdata 1 2 3 DEAD,4 5 6 BEEF");
+    assertInStdout("--locks_to_preserve serverDeleteProhibited");
+    assertNotInStdout("--restore_client_hold");
+  }
+
+  @Test
   void testCommand_respectsExistingHost() throws Exception {
     persistDomainWithHosts(defaultDomain, defaultDsData, urs2, ns1);
     runCommandForced(

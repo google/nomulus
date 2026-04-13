@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <update>
+      <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>evil.tld</domain:name>
+        <domain:add>
+          <domain:ns>
+            <domain:hostObj>urs1.example.com</domain:hostObj>
+            <domain:hostObj>urs2.example.com</domain:hostObj>
+          </domain:ns>
+          <domain:status s="serverTransferProhibited" />
+          <domain:status s="serverUpdateProhibited" />
+        </domain:add>
+        <domain:rem>
+          <domain:ns>
+            <domain:hostObj>ns2.example.com</domain:hostObj>
+            <domain:hostObj>ns1.example.com</domain:hostObj>
+          </domain:ns>
+        </domain:rem>
+      </domain:update>
+    </update>
+    <extension>
+      <secDNS:update xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
+        <secDNS:rem>
+          <secDNS:all>true</secDNS:all>
+        </secDNS:rem>
+        <secDNS:add>
+          <secDNS:dsData>
+            <secDNS:keyTag>1</secDNS:keyTag>
+            <secDNS:alg>1</secDNS:alg>
+            <secDNS:digestType>1</secDNS:digestType>
+            <secDNS:digest>A94A8FE5CCB19BA61C4C0873D391E987982FBBD3</secDNS:digest>
+          </secDNS:dsData>
+        </secDNS:add>
+      </secDNS:update>
+      <superuser:domainUpdate xmlns:superuser="urn:google:params:xml:ns:superuser-1.0">
+        <superuser:autorenews>false</superuser:autorenews>
+      </superuser:domainUpdate>
+      <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
+        <metadata:reason>Uniform Rapid Suspension</metadata:reason>
+        <metadata:requestedByRegistrar>false</metadata:requestedByRegistrar>
+      </metadata:metadata>
+    </extension>
+    <clTRID>RegistryTool</clTRID>
+  </command>
+</epp>
