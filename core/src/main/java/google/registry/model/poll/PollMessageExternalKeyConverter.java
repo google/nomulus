@@ -17,6 +17,7 @@ package google.registry.model.poll;
 import com.google.common.base.Splitter;
 import google.registry.persistence.VKey;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * A converter between external key strings for {@link PollMessage}s (i.e. what registrars use to
@@ -41,7 +42,8 @@ public final class PollMessageExternalKeyConverter {
 
   /** Returns an external poll message ID for the given poll message. */
   public static String makePollMessageExternalId(PollMessage pollMessage) {
-    return String.format("%d-%d", pollMessage.getId(), pollMessage.getEventTime().getYear());
+    return String.format(
+        Locale.ROOT, "%d-%d", pollMessage.getId(), pollMessage.getEventTime().getYear());
   }
 
   /**

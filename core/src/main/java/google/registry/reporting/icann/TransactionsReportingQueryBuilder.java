@@ -24,6 +24,7 @@ import google.registry.util.SqlTemplate;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalTime;
 import org.joda.time.YearMonth;
 import org.joda.time.format.DateTimeFormat;
@@ -64,8 +65,9 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
   /** Sets the month we're doing transactions reporting for, and returns the view query map. */
   @Override
   public ImmutableMap<String, String> getViewQueryMap(YearMonth yearMonth) {
-    // Set the earliest date to to yearMonth on day 1 at 00:00:00
-    DateTime earliestReportTime = yearMonth.toLocalDate(1).toDateTime(new LocalTime(0, 0, 0));
+    // Set the earliest date to yearMonth on day 1 at 00:00:00
+    DateTime earliestReportTime =
+        yearMonth.toLocalDate(1).toDateTime(new LocalTime(0, 0, 0), DateTimeZone.UTC);
     // Set the latest date to yearMonth on the last day at 23:59:59.999
     DateTime latestReportTime = earliestReportTime.plusMonths(1).minusMillis(1);
 
