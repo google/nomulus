@@ -15,11 +15,11 @@
 package google.registry.flows;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.xml.XmlTransformer.createXmlInputFactory;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
+import google.registry.xml.XmlTransformer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -72,7 +72,7 @@ public class EppXmlSanitizer {
   private static final String CTRL_CHAR_MASK = "C";
   private static final String DEFAULT_MASK = "*";
 
-  private static final XMLInputFactory XML_INPUT_FACTORY = createXmlInputFactory();
+  private static final XMLInputFactory XML_INPUT_FACTORY = XmlTransformer.createXmlInputFactory();
   private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newDefaultFactory();
   private static final XMLEventFactory XML_EVENT_FACTORY = XMLEventFactory.newDefaultFactory();
 

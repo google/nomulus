@@ -128,13 +128,10 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   private static final ImmutableMap<String, String> FEE_STD_1_0_MAP =
       ImmutableMap.of("FEE_VERSION", "epp:fee-1.0", "FEE_NS", "fee1_00");
 
-  DomainDeleteFlowTest() {
-    setEppInput("domain_delete.xml");
-    clock.setTo(TIME_BEFORE_FLOW);
-  }
-
   @BeforeEach
   void initDomainTest() {
+    clock.setTo(TIME_BEFORE_FLOW);
+    setEppInput("domain_delete.xml");
     createTld("tld");
   }
 

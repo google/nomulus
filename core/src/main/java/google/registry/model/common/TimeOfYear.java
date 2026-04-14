@@ -29,6 +29,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import jakarta.persistence.Embeddable;
 import java.util.List;
+import java.util.Locale;
 import org.joda.time.DateTime;
 
 /**
@@ -60,11 +61,13 @@ public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
   public static TimeOfYear fromDateTime(DateTime dateTime) {
     DateTime nextYear = dateTime.plusYears(1);  // This turns February 29 into February 28.
     TimeOfYear instance = new TimeOfYear();
-    instance.timeString = String.format(
-        "%02d %02d %08d",
-        nextYear.getMonthOfYear(),
-        nextYear.getDayOfMonth(),
-        nextYear.getMillisOfDay());
+    instance.timeString =
+        String.format(
+            Locale.ROOT,
+            "%02d %02d %08d",
+            nextYear.getMonthOfYear(),
+            nextYear.getDayOfMonth(),
+            nextYear.getMillisOfDay());
     return instance;
   }
 
