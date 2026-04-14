@@ -37,6 +37,7 @@ import google.registry.persistence.VKey;
 import jakarta.persistence.Query;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -62,7 +63,7 @@ public final class EppResourceUtils {
   /** Returns the full repoId in the format HEX-TLD for the specified long id and ROID suffix. */
   public static String createRepoId(long repoId, String roidSuffix) {
     // %X is uppercase hexadecimal.
-    return String.format("%X-%s", repoId, roidSuffix);
+    return String.format(Locale.ROOT, "%X-%s", repoId, roidSuffix);
   }
 
   /** Helper to call {@link EppResource#cloneProjectedAtTime} without warnings. */

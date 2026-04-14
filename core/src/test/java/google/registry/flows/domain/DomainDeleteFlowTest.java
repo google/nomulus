@@ -115,7 +115,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   private Domain domain;
   private DomainHistory earlierHistoryEntry;
 
-  private static final DateTime TIME_BEFORE_FLOW = DateTime.parse("2000-06-06T22:00:00.0Z");
+  private static final DateTime TIME_BEFORE_FLOW = DateTime.parse("2000-06-06T22:00:00.000Z");
   private static final DateTime A_MONTH_AGO = TIME_BEFORE_FLOW.minusMonths(1);
   private static final DateTime A_MONTH_FROM_NOW = TIME_BEFORE_FLOW.plusMonths(1);
 
@@ -128,13 +128,10 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   private static final ImmutableMap<String, String> FEE_STD_1_0_MAP =
       ImmutableMap.of("FEE_VERSION", "epp:fee-1.0", "FEE_NS", "fee1_00");
 
-  DomainDeleteFlowTest() {
-    setEppInput("domain_delete.xml");
-    clock.setTo(TIME_BEFORE_FLOW);
-  }
-
   @BeforeEach
   void initDomainTest() {
+    clock.setTo(TIME_BEFORE_FLOW);
+    setEppInput("domain_delete.xml");
     createTld("tld");
   }
 
