@@ -639,3 +639,7 @@ mosapi:
   # ICANN MoSAPI Specification, Section 12.3</a>
   tldThreadCount: 4
 
+valkey:
+  # Optional: hosts and ports for remote Valkey caching, e.g.
+  # - "127.0.0.1:6379"
+  hostsAndPorts: []

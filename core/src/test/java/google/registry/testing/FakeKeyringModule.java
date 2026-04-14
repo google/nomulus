@@ -171,6 +171,12 @@ public final class FakeKeyringModule {
       }
 
       @Override
+      public String getValkeyCertificateAuthority() {
+        // This isn't necessary for keyring testing
+        return "";
+      }
+
+      @Override
       public void close() {}
     };
   }

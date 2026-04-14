@@ -163,6 +163,8 @@ public interface Keyring extends AutoCloseable {
   /** Returns the Cloud SQL connection names of the replica database instances. */
   ImmutableList<String> getSqlReplicaConnectionNames();
 
+  String getValkeyCertificateAuthority();
+
   // Don't throw so try-with-resources works better.
   @Override
   void close();

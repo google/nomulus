@@ -69,7 +69,8 @@ public class SecretManagerKeyring implements Keyring {
     SAFE_BROWSING_API_KEY,
     SQL_PRIMARY_CONN_NAME,
     SQL_REPLICA_CONN_NAME,
-    SQL_REPLICA_CONN_NAMES;
+    SQL_REPLICA_CONN_NAMES,
+    VALKEY_CERTIFICATE_AUTHORITY;
 
     String getLabel() {
       return UPPER_UNDERSCORE.to(LOWER_HYPHEN, name());
@@ -178,6 +179,16 @@ public class SecretManagerKeyring implements Keyring {
       return replicaConnectionName == null
           ? ImmutableList.of()
           : ImmutableList.of(replicaConnectionName);
+    }
+  }
+
+  @Override
+  public String getValkeyCertificateAuthority() {
+    try {
+      return getString(StringKeyLabel.VALKEY_CERTIFICATE_AUTHORITY);
+    } catch (KeyringException e) {
+      // this is optional
+      return null;
     }
   }
 
