@@ -27,9 +27,12 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.Range;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
+import google.registry.util.DateTimeUtils;
 import jakarta.persistence.Embeddable;
 import java.util.List;
+import java.util.Locale;
 import org.joda.time.DateTime;
+import org.joda.time.chrono.ISOChronology;
 
 /**
  * A time of year (month, day, millis of day) that can be stored in a sort-friendly format.
@@ -58,13 +61,17 @@ public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
    * February 28. It is impossible to construct a {@link TimeOfYear} for February 29th.
    */
   public static TimeOfYear fromDateTime(DateTime dateTime) {
-    DateTime nextYear = dateTime.plusYears(1);  // This turns February 29 into February 28.
+    DateTime nextYear =
+        DateTimeUtils.leapSafeAddYears(dateTime, 1).withChronology(ISOChronology.getInstanceUTC());
+    // This turns February 29 into February 28.
     TimeOfYear instance = new TimeOfYear();
-    instance.timeString = String.format(
-        "%02d %02d %08d",
-        nextYear.getMonthOfYear(),
-        nextYear.getDayOfMonth(),
-        nextYear.getMillisOfDay());
+    instance.timeString =
+        String.format(
+            Locale.ROOT,
+            "%02d %02d %08d",
+            nextYear.getMonthOfYear(),
+            nextYear.getDayOfMonth(),
+            nextYear.getMillisOfDay());
     return instance;
   }
 

@@ -191,9 +191,9 @@ public class XmlTransformer {
     try {
       // Omit XML declaration because character-oriented output prevents us from knowing.
       getMarshaller(
-          STRICT.equals(validation) ? schema : null,
-          ImmutableMap.of(Marshaller.JAXB_FRAGMENT, true)).marshal(
-              checkNotNull(root, "root"), checkNotNull(writer, "writer"));
+              STRICT.equals(validation) ? schema : null,
+              ImmutableMap.of(Marshaller.JAXB_FRAGMENT, true))
+          .marshal(checkNotNull(root, "root"), checkNotNull(writer, "writer"));
     } catch (JAXBException e) {
       throw new XmlException(e);
     }
@@ -218,9 +218,9 @@ public class XmlTransformer {
       throws XmlException {
     try {
       getMarshaller(
-          STRICT.equals(validation) ? schema : null,
-          ImmutableMap.of(Marshaller.JAXB_ENCODING, charset.toString())).marshal(
-              checkNotNull(root, "root"), checkNotNull(out, "out"));
+              STRICT.equals(validation) ? schema : null,
+              ImmutableMap.of(Marshaller.JAXB_ENCODING, charset.toString()))
+          .marshal(checkNotNull(root, "root"), checkNotNull(out, "out"));
     } catch (JAXBException e) {
       throw new XmlException(e);
     }
