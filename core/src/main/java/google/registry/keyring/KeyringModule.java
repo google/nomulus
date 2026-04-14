@@ -52,4 +52,10 @@ public abstract class KeyringModule {
     int lastColonIndex = instanceConnectionName.lastIndexOf(':');
     return instanceConnectionName.substring(lastColonIndex + 1);
   }
+
+  @Provides
+  @Config("valkeyCertificateAuthority")
+  public static String provideValkeyCertificateAuthority(Keyring keyring) {
+    return keyring.getValkeyCertificateAuthority();
+  }
 }

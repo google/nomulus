@@ -1463,6 +1463,14 @@ public final class RegistryConfig {
       return config.mosapi.tldThreadCount;
     }
 
+    @Provides
+    @Config("valkeyHostsAndPorts")
+    public static Optional<ImmutableList<String>> provideValkeyHostsAndPorts(
+        RegistryConfigSettings config) {
+      return Optional.ofNullable(config.valkey)
+          .map(valkey -> ImmutableList.copyOf(valkey.hostsAndPorts));
+    }
+
     private static String formatComments(String text) {
       return Splitter.on('\n').omitEmptyStrings().trimResults().splitToList(text).stream()
           .map(s -> "# " + s)

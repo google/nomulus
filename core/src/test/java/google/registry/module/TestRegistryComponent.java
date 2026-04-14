@@ -19,6 +19,7 @@ import dagger.Component;
 import dagger.Lazy;
 import google.registry.batch.BatchModule;
 import google.registry.bigquery.BigqueryModule;
+import google.registry.cache.CacheModule;
 import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
@@ -52,6 +53,7 @@ import jakarta.inject.Singleton;
       AuthModule.class,
       BatchModule.class,
       BigqueryModule.class,
+      CacheModule.class,
       CloudTasksUtilsModule.class,
       ConfigModule.class,
       CredentialModule.class,

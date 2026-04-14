@@ -225,7 +225,7 @@ public final class ForeignKeyUtils {
   }
 
   /** Method to load the most recent {@link EppResource}s for the given foreign keys. */
-  private static <E extends EppResource> ImmutableMap<String, E> loadMostRecentResourceObjects(
+  public static <E extends EppResource> ImmutableMap<String, E> loadMostRecentResourceObjects(
       Class<E> clazz, Collection<String> foreignKeys, boolean useReplicaTm) {
     String fkProperty = RESOURCE_TYPE_TO_FK_PROPERTY.get(clazz);
     JpaTransactionManager tmToUse = useReplicaTm ? replicaTm() : tm();
