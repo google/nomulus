@@ -377,7 +377,7 @@ class RdapJsonFormatterTest {
         .that(
             TopLevelReplyObject.create(
                     new ReplyPayloadBase(BoilerplateType.OTHER) {
-                      @JsonableElement public static final String key = "value";
+                      @JsonableElement static final String key = "value";
                     },
                     rdapJsonFormatter.createTosNotice())
                 .toJson())
@@ -390,7 +390,7 @@ class RdapJsonFormatterTest {
         .that(
             TopLevelReplyObject.create(
                     new ReplyPayloadBase(BoilerplateType.DOMAIN) {
-                      @JsonableElement public static final String key = "value";
+                      @JsonableElement static final String key = "value";
                     },
                     rdapJsonFormatter.createTosNotice())
                 .toJson())

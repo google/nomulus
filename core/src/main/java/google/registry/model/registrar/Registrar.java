@@ -1095,18 +1095,17 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
           "Must specify at least one of localized or internationalized address");
       checkArgument(
           getInstance().type.isValidIanaId(getInstance().ianaIdentifier),
-          String.format(
-              "Supplied IANA ID is not valid for %s registrar type: %s",
-              getInstance().type, getInstance().ianaIdentifier));
+          "Supplied IANA ID is not valid for %s registrar type: %s",
+          getInstance().type,
+          getInstance().ianaIdentifier);
 
       // We do not allow creating Real registrars with IANA ID that's already in the system
       // b/315007360 - for more details
       checkArgument(
           isNotADuplicateIanaId(loadAllCached(), getInstance()),
-          String.format(
-              "Rejected attempt to create a registrar with ianaId that's already in the system -"
-                  + " %s",
-              getInstance().ianaIdentifier));
+          "Rejected attempt to create a registrar with ianaId that's already in the system -"
+              + " %s",
+          getInstance().ianaIdentifier);
 
       // In order to grant access to real TLDs, the registrar must have a corresponding billing
       // account ID for that TLD's billing currency.

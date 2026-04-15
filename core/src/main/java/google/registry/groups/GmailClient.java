@@ -174,8 +174,8 @@ public final class GmailClient {
 
     @Override
     public boolean test(Throwable e) {
-      if (e instanceof HttpResponseException) {
-        return testHttpResponse((HttpResponseException) e);
+      if (e instanceof HttpResponseException httpResponseException) {
+        return testHttpResponse(httpResponseException);
       }
       return true;
     }

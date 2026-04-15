@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Strings;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 
 /** A {@link Command} that implements a confirmation step before executing. */
 public abstract class ConfirmingCommand implements Command {
@@ -34,12 +33,8 @@ public abstract class ConfirmingCommand implements Command {
   public PrintStream errorPrintStream;
 
   protected ConfirmingCommand() {
-    try {
-      printStream = new PrintStream(System.out, false, UTF_8.name());
-      errorPrintStream = new PrintStream(System.err, false, UTF_8.name());
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
+    printStream = new PrintStream(System.out, false, UTF_8);
+    errorPrintStream = new PrintStream(System.err, false, UTF_8);
   }
 
   @Override

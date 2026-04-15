@@ -144,7 +144,8 @@ public class ExportPremiumTermsAction implements Runnable {
     String premiumListName = tld.getPremiumListName().get();
     checkState(
         PremiumListDao.getLatestRevision(premiumListName).isPresent(),
-        "Could not load premium list for " + tldStr);
+        "Could not load premium list for %s",
+        tldStr);
     SortedSet<String> premiumTerms =
         PremiumListDao.loadAllPremiumEntries(premiumListName).stream()
             .map(PremiumEntry::toString)

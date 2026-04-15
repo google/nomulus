@@ -1164,7 +1164,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-
     public static final Pattern ROID_SUFFIX_PATTERN = Pattern.compile("^[A-Z\\d]{1,8}$");
 
     public Builder setRoidSuffix(String roidSuffix) {
@@ -1217,15 +1216,15 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
                   AllocationToken token = tm().loadByKey(tokenKey);
                   checkArgument(
                       token.getTokenType().equals(TokenType.DEFAULT_PROMO),
-                      String.format(
-                          "Token %s has an invalid token type of %s. DefaultPromoTokens must be of"
-                              + " the type DEFAULT_PROMO",
-                          token.getToken(), token.getTokenType()));
+                      "Token %s has an invalid token type of %s. DefaultPromoTokens must be of"
+                          + " the type DEFAULT_PROMO",
+                      token.getToken(),
+                      token.getTokenType());
                   checkArgument(
                       token.getAllowedTlds().contains(getInstance().tldStr),
-                      String.format(
-                          "The token %s is not valid for this TLD. The valid TLDs for it are %s",
-                          token.getToken(), token.getAllowedTlds()));
+                      "The token %s is not valid for this TLD. The valid TLDs for it are %s",
+                      token.getToken(),
+                      token.getAllowedTlds());
                 }
                 getInstance().defaultPromoTokens = promoTokens;
               });

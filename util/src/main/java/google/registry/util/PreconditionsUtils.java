@@ -16,6 +16,8 @@ package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
@@ -41,9 +43,10 @@ public class PreconditionsUtils {
   }
 
   /** Checks whether the provided reference is null, throws IAE if it is, and returns it if not. */
+  @FormatMethod
   public static <T> T checkArgumentNotNull(
       @Nullable T reference,
-      @Nullable String errorMessageTemplate,
+      @Nullable @FormatString String errorMessageTemplate,
       @Nullable Object... errorMessageArgs) {
     checkArgument(reference != null, errorMessageTemplate, errorMessageArgs);
     return reference;
@@ -65,9 +68,10 @@ public class PreconditionsUtils {
   }
 
   /** Checks if the provided Optional is present, returns its value if so, and throws IAE if not. */
+  @FormatMethod
   public static <T> T checkArgumentPresent(
       @Nullable Optional<T> reference,
-      @Nullable String errorMessageTemplate,
+      @Nullable @FormatString String errorMessageTemplate,
       @Nullable Object... errorMessageArgs) {
     checkArgumentNotNull(reference, errorMessageTemplate, errorMessageArgs);
     checkArgument(reference.isPresent(), errorMessageTemplate, errorMessageArgs);

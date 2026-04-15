@@ -67,10 +67,12 @@ abstract class AbstractEppResourceSubject<
   @Override
   public void isEqualTo(@Nullable Object other) {
     // If the objects differ and we can show an interesting ImmutableObject diff, do so.
-    if (actual != null && other instanceof ImmutableObject && !actual.equals(other)) {
+    if (actual != null
+        && other instanceof ImmutableObject immutableObject
+        && !actual.equals(other)) {
       String diffText =
           prettyPrintEntityDeepDiff(
-              ((ImmutableObject) other).toDiffableFieldMap(), actual.toDiffableFieldMap());
+              immutableObject.toDiffableFieldMap(), actual.toDiffableFieldMap());
       failWithoutActual(fact("expected", other), fact("but was", actual), fact("diff", diffText));
     }
     // Otherwise, fall back to regular behavior.

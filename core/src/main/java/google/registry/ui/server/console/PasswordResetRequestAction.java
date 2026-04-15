@@ -75,12 +75,12 @@ public class PasswordResetRequestAction extends ConsoleApiAction {
     String destinationEmail;
     String emailSubject;
     switch (type) {
-      case EPP:
+      case EPP -> {
         requiredPermission = ConsolePermission.EDIT_REGISTRAR_DETAILS;
         destinationEmail = getAdminPocEmail(registrarId);
         emailSubject = "EPP password reset request";
-        break;
-      case REGISTRY_LOCK:
+      }
+      case REGISTRY_LOCK -> {
         checkArgument(
             passwordResetRequestData.registryLockEmail != null,
             "Must provide registry lock email to reset");
@@ -88,9 +88,8 @@ public class PasswordResetRequestAction extends ConsoleApiAction {
         destinationEmail = passwordResetRequestData.registryLockEmail;
         checkUserExistsWithRegistryLockEmail(destinationEmail);
         emailSubject = "Registry lock password reset request";
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown type " + type);
+      }
+      default -> throw new IllegalArgumentException("Unknown type " + type);
     }
 
     checkPermission(user, registrarId, requiredPermission);

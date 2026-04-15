@@ -93,8 +93,8 @@ public class RelayHandler<I> extends SimpleChannelInboundHandler<I> {
     // to zero and its buffer will be freed. After the buffer is freed, the message cannot be used
     // anymore, even if in Java's eye the object still exist, its content is gone. We increment a
     // count here so that the message can be retried, in case the relay is not successful.
-    if (msg instanceof ReferenceCounted) {
-      ((ReferenceCounted) msg).retain();
+    if (msg instanceof ReferenceCounted referenceCounted) {
+      referenceCounted.retain();
     }
     ChannelFuture unusedFuture =
         relayChannel

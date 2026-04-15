@@ -364,10 +364,10 @@ public abstract class HistoryEntry extends ImmutableObject
 
   public static <E extends EppResource>
       HistoryEntry.Builder<? extends HistoryEntry, ?> createBuilderForResource(E parent) {
-    if (parent instanceof DomainBase) {
-      return new DomainHistory.Builder().setDomain((DomainBase) parent);
-    } else if (parent instanceof HostBase) {
-      return new HostHistory.Builder().setHost((HostBase) parent);
+    if (parent instanceof DomainBase domainBase) {
+      return new DomainHistory.Builder().setDomain(domainBase);
+    } else if (parent instanceof HostBase hostBase) {
+      return new HostHistory.Builder().setHost(hostBase);
     } else {
       throw new IllegalStateException(
           String.format(

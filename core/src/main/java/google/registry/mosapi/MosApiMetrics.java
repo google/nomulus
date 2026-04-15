@@ -305,8 +305,8 @@ public class MosApiMetrics {
     Metric metric = new Metric().setType(METRIC_DOMAIN + suffix).setLabels(labels);
 
     TypedValue tv = new TypedValue();
-    if (val instanceof Double) {
-      tv.setDoubleValue((Double) val);
+    if (val instanceof Double d) {
+      tv.setDoubleValue(d);
     } else {
       tv.setInt64Value(val.longValue());
     }

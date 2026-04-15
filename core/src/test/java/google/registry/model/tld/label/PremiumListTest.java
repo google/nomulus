@@ -73,7 +73,7 @@ public class PremiumListTest {
     BloomFilter<String> bloomFilter = pl.getBloomFilter();
     assertThat(bloomFilter.mightContain("notpremium")).isFalse();
     for (String label : ImmutableList.of("rich", "lol", "johnny-be-goode", "icann")) {
-      assertWithMessage(label + " should be a probable premium")
+      assertWithMessage("%s should be a probable premium", label)
           .that(bloomFilter.mightContain(label))
           .isTrue();
     }

@@ -55,7 +55,12 @@ public class ExportPremiumTermsActionTest {
   private static final ImmutableList<String> PREMIUM_NAMES =
       ImmutableList.of("2048,USD 549", "0,USD 549");
   private static final String EXPECTED_FILE_CONTENT =
-      "# Premium Terms Export Disclaimer\n# TLD: tld\n0, 549.00\n" + "2048, 549.00\n";
+      """
+      # Premium Terms Export Disclaimer
+      # TLD: tld
+      0, 549.00
+      2048, 549.00
+      """;
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =

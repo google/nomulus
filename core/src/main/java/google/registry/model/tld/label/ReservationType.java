@@ -29,11 +29,6 @@ import javax.annotation.Nullable;
  */
 public enum ReservationType {
 
-  // We explicitly set the severity, even though we have a checkState that makes it equal to the
-  // ordinal, so that no one accidentally reorders these values and changes the sort order. If a
-  // label has multiple reservation types, its message is the that of the one with the highest
-  // severity.
-
   /** The domain can only be registered during sunrise, and is reserved thereafter. */
   ALLOWED_IN_SUNRISE("Reserved", 0),
 
@@ -55,6 +50,13 @@ public enum ReservationType {
   @Nullable
   private final String messageForCheck;
 
+  /**
+   * We explicitly set the severity, even though we have a checkState that makes it equal to the
+   * ordinal, so that no one accidentally reorders these values and changes the sort order. If a
+   * label has multiple reservation types, its message is the that of the one with the highest
+   * severity.
+   */
+  @SuppressWarnings("EnumOrdinal")
   ReservationType(@Nullable String messageForCheck, int severity) {
     this.messageForCheck = messageForCheck;
     checkState(
@@ -67,13 +69,7 @@ public enum ReservationType {
     return messageForCheck;
   }
 
-  private static final Ordering<ReservationType> ORDERING =
-      new Ordering<>() {
-        @Override
-        public int compare(ReservationType left, ReservationType right) {
-          return Integer.compare(left.ordinal(), right.ordinal());
-        }
-      };
+  private static final Ordering<ReservationType> ORDERING = Ordering.natural();
 
   /**
    * Returns the {@code ReservationType} with the highest severity, used when a label has multiple

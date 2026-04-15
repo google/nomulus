@@ -114,8 +114,8 @@ public class ProxyProtocolHandler extends ByteToMessageDecoder {
 
   private static String getSourceIP(ChannelHandlerContext ctx) {
     SocketAddress remoteAddress = ctx.channel().remoteAddress();
-    return (remoteAddress instanceof InetSocketAddress)
-        ? ((InetSocketAddress) remoteAddress).getAddress().getHostAddress()
+    return (remoteAddress instanceof InetSocketAddress inetSocketAddress)
+        ? inetSocketAddress.getAddress().getHostAddress()
         : null;
   }
 

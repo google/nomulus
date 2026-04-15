@@ -29,8 +29,8 @@ public final class BigqueryJobFailureException extends RuntimeException {
 
   /** Delegate {@link IOException} errors, checking for {@link GoogleJsonResponseException} */
   public static BigqueryJobFailureException create(IOException cause) {
-    if (cause instanceof GoogleJsonResponseException) {
-        return create((GoogleJsonResponseException) cause);
+    if (cause instanceof GoogleJsonResponseException googleJsonResponseException) {
+      return create(googleJsonResponseException);
     } else {
       return new BigqueryJobFailureException(cause.getMessage(), cause, null, null);
     }

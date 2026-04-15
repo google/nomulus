@@ -110,8 +110,7 @@ public final class GpgSystemCommandExtension implements BeforeEachCallback, Afte
     publicKeyring.copyTo(pid.getOutputStream());
     pid.getOutputStream().close();
     int returnValue = pid.waitFor();
-    assertWithMessage(
-            String.format("Failed to import public keyring: \n%s", slurp(pid.getErrorStream())))
+    assertWithMessage("Failed to import public keyring: \n%s", slurp(pid.getErrorStream()))
         .that(returnValue)
         .isEqualTo(0);
 
@@ -119,8 +118,7 @@ public final class GpgSystemCommandExtension implements BeforeEachCallback, Afte
     privateKeyring.copyTo(pid.getOutputStream());
     pid.getOutputStream().close();
     returnValue = pid.waitFor();
-    assertWithMessage(
-            String.format("Failed to import private keyring: \n%s", slurp(pid.getErrorStream())))
+    assertWithMessage("Failed to import private keyring: \n%s", slurp(pid.getErrorStream()))
         .that(returnValue)
         .isEqualTo(0);
   }

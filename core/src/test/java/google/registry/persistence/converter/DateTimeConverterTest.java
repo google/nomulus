@@ -99,7 +99,7 @@ public class DateTimeConverterTest {
 
     DateTime dt;
 
-    public TestEntity() {}
+    TestEntity() {}
 
     TestEntity(String name, DateTime dt) {
       this.name = name;

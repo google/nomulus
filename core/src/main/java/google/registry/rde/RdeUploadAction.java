@@ -136,9 +136,8 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   public void runWithLock(final DateTime watermark) throws Exception {
     // If a prefix is not provided,try to determine the prefix. This should only happen when the RDE
     // upload cron job runs to catch up any un-retried (i. e. expected) RDE failures.
-    if (prefix.isEmpty()) {
-      prefix = Optional.of(findMostRecentPrefixForWatermark(watermark, bucket, tld, gcsUtils));
-    }
+    String actualPrefix =
+        prefix.orElseGet(() -> findMostRecentPrefixForWatermark(watermark, bucket, tld, gcsUtils));
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");
     Optional<Cursor> cursor =
         tm().transact(
@@ -175,7 +174,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
                 () -> new IllegalStateException("RdeRevision was not set on generated deposit"));
     final String nameWithoutPrefix =
         RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
-    final String name = prefix.get() + nameWithoutPrefix;
+    final String name = actualPrefix + nameWithoutPrefix;
     final BlobId xmlFilename = BlobId.of(bucket, name + ".xml.ghostryde");
     final BlobId xmlLengthFilename = BlobId.of(bucket, name + ".xml.length");
     BlobId reportFilename = BlobId.of(bucket, name + "-report.xml.ghostryde");

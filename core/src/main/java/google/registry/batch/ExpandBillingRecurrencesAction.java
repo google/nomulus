@@ -114,7 +114,9 @@ public class ExpandBillingRecurrencesAction implements Runnable {
                             .getCursorTimeInstant()));
     checkArgument(
         startTime.isBefore(endTime),
-        String.format("Start time (%s) must be before end time (%s)", startTime, endTime));
+        "Start time (%s) must be before end time (%s)",
+        startTime,
+        endTime);
     LaunchFlexTemplateParameter launchParameter =
         new LaunchFlexTemplateParameter()
             .setJobName(

@@ -62,7 +62,7 @@ public class BlockListFetcher {
     // TODO: use more informative exceptions to describe retriable errors
     return retrier.callWithRetry(
         () -> tryFetch(blockListType),
-        e -> e instanceof BsaException && ((BsaException) e).isRetriable());
+        e -> e instanceof BsaException bsaException && bsaException.isRetriable());
   }
 
   LazyBlockList tryFetch(BlockListType blockListType) {

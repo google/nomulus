@@ -64,7 +64,7 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
         throw new RuntimeException();
       }
       return new ReplyPayloadBase(BoilerplateType.OTHER) {
-        @JsonableElement public String key = "value";
+        @JsonableElement String key = "value";
       };
     }
   }

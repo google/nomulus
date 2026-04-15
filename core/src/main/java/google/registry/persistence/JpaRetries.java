@@ -36,8 +36,8 @@ public final class JpaRetries {
       ((Predicate<Throwable>) OptimisticLockException.class::isInstance)
           .or(
               e ->
-                  e instanceof SQLException
-                      && RETRIABLE_TXN_SQL_STATE.contains(((SQLException) e).getSQLState()));
+                  e instanceof SQLException sqlException
+                      && RETRIABLE_TXN_SQL_STATE.contains(sqlException.getSQLState()));
 
   public static boolean isFailedTxnRetriable(Throwable throwable) {
     Throwable t = throwable;

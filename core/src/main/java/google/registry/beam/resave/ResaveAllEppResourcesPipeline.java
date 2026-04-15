@@ -154,9 +154,7 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
     }
 
     @ProcessElement
-    public void processElement(
-        @Element KV<ShardedKey<Integer>, Iterable<String>> element,
-        OutputReceiver<Void> outputReceiver) {
+    public void processElement(@Element KV<ShardedKey<Integer>, Iterable<String>> element) {
       tm().transact(
               () -> {
                 DateTime now = tm().getTransactionTime();

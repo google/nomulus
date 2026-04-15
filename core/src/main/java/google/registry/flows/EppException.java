@@ -217,12 +217,13 @@ public abstract class EppException extends Exception {
   public static class UnimplementedCommandException extends EppException {
 
     public UnimplementedCommandException(InnerCommand command) {
-      super(String.format(
-          "No flow found for %s with extension %s",
-          command.getClass().getSimpleName(),
-          command instanceof ResourceCommandWrapper
-              ? ((ResourceCommandWrapper) command).getResourceCommand().getClass().getSimpleName()
-              : null));
+      super(
+          String.format(
+              "No flow found for %s with extension %s",
+              command.getClass().getSimpleName(),
+              command instanceof ResourceCommandWrapper resourceCommandWrapper
+                  ? resourceCommandWrapper.getResourceCommand().getClass().getSimpleName()
+                  : null));
     }
 
     public UnimplementedCommandException(String message) {

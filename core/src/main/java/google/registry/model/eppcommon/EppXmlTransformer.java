@@ -18,7 +18,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import google.registry.flows.FeeExtensionXmlTagNormalizer;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.fee.FeeCheckResponseExtension;
@@ -59,9 +58,6 @@ public class EppXmlTransformer  {
           "superuser.xsd",
           "allocationToken-1.0.xsd",
           "bulkToken.xsd");
-
-  // XML schemas that should not be used in production (yet)
-  private static final ImmutableSet<String> NON_PROD_SCHEMAS = ImmutableSet.of("fee-std-v1.xsd");
 
   private static final XmlTransformer INPUT_TRANSFORMER =
       new XmlTransformer(getSchemas(), EppInput.class);

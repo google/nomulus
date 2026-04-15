@@ -906,12 +906,12 @@ class JpaTransactionManagerImplTest {
     }
 
     @Id
-    public String getNameField() {
+    String getNameField() {
       return name;
     }
 
     @Id
-    public int getAgeField() {
+    int getAgeField() {
       return age;
     }
 

@@ -94,7 +94,8 @@ public abstract class ImmutableObject implements Cloneable {
 
   @Override
   public boolean equals(Object other) {
-    return other instanceof ImmutableObject && equalsImmutableObject((ImmutableObject) other);
+    return other instanceof ImmutableObject immutableObject
+        && equalsImmutableObject(immutableObject);
   }
 
   @Override
@@ -141,8 +142,8 @@ public abstract class ImmutableObject implements Cloneable {
     NavigableMap<String, Object> sortedFields = new TreeMap<>();
     for (Entry<Field, Object> entry : getSignificantFields().entrySet()) {
       Object value = entry.getValue();
-      if (value instanceof Instant) {
-        value = ISO_8601_FORMATTER.format((Instant) value);
+      if (value instanceof Instant instant) {
+        value = ISO_8601_FORMATTER.format(instant);
       }
       sortedFields.put(entry.getKey().getName(), value);
     }
@@ -159,8 +160,8 @@ public abstract class ImmutableObject implements Cloneable {
           field.isAnnotationPresent(DoNotHydrate.class)
               ? entry.getValue()
               : hydrate(entry.getValue());
-      if (value instanceof Instant) {
-        value = ISO_8601_FORMATTER.format((Instant) value);
+      if (value instanceof Instant instant) {
+        value = ISO_8601_FORMATTER.format(instant);
       }
       sortedFields.put(field.getName(), value);
     }
@@ -176,17 +177,17 @@ public abstract class ImmutableObject implements Cloneable {
 
   /** Helper function to recursively hydrate an ImmutableObject. */
   private static Object hydrate(Object value) {
-    if (value instanceof Map) {
-      return transformValues((Map<?, ?>) value, ImmutableObject::hydrate);
+    if (value instanceof Map map) {
+      return transformValues(map, ImmutableObject::hydrate);
     }
-    if (value instanceof Collection) {
-      return transform((Collection<?>) value, ImmutableObject::hydrate);
+    if (value instanceof Collection collection) {
+      return transform(collection, ImmutableObject::hydrate);
     }
-    if (value instanceof ImmutableObject) {
-      return ((ImmutableObject) value).toHydratedString();
+    if (value instanceof ImmutableObject immutableObject) {
+      return immutableObject.toHydratedString();
     }
-    if (value instanceof Instant) {
-      return ISO_8601_FORMATTER.format((Instant) value);
+    if (value instanceof Instant instant) {
+      return ISO_8601_FORMATTER.format(instant);
     }
     return value;
   }
@@ -195,22 +196,21 @@ public abstract class ImmutableObject implements Cloneable {
   private static Object toMapRecursive(Object o) {
     if (o == null) {
       return null;
-    } else if (o instanceof ImmutableObject) {
+    } else if (o instanceof ImmutableObject immutableObject) {
       // LinkedHashMap to preserve field ordering and because ImmutableMap forbids null
       // values.
       Map<String, Object> result = new LinkedHashMap<>();
-      for (Entry<Field, Object> entry : ((ImmutableObject) o).getSignificantFields().entrySet()) {
+      for (Entry<Field, Object> entry : immutableObject.getSignificantFields().entrySet()) {
         Field field = entry.getKey();
         if (!field.isAnnotationPresent(IgnoredInDiffableMap.class)) {
           result.put(field.getName(), toMapRecursive(entry.getValue()));
         }
       }
       return result;
-    } else if (o instanceof Map) {
-      return transformValues((Map<?, ?>) o, ImmutableObject::toMapRecursive);
-    } else if (o instanceof Set) {
-      return ((Set<?>) o)
-          .stream()
+    } else if (o instanceof Map map) {
+      return transformValues(map, ImmutableObject::toMapRecursive);
+    } else if (o instanceof Set<?> set) {
+      return set.stream()
           .map(ImmutableObject::toMapRecursive)
           // We can't use toImmutableSet here, because values can be null (especially since the
           // original ImmutableObject might have been the result of a cloneEmptyToNull call).
@@ -218,15 +218,14 @@ public abstract class ImmutableObject implements Cloneable {
           // We can't use toSet either, because we want to preserve order. So we use LinkedHashSet
           // instead.
           .collect(toCollection(LinkedHashSet::new));
-    } else if (o instanceof Collection) {
-      return ((Collection<?>) o)
-          .stream()
+    } else if (o instanceof Collection<?> collection) {
+      return collection.stream()
           .map(ImmutableObject::toMapRecursive)
           // We can't use toImmutableList here, because values can be null (especially since the
           // original ImmutableObject might have been the result of a cloneEmptyToNull call).
           .collect(toList());
-    } else if (o instanceof Instant) {
-      return ISO_8601_FORMATTER.format((Instant) o);
+    } else if (o instanceof Instant instant) {
+      return ISO_8601_FORMATTER.format(instant);
     } else if (o instanceof Number || o instanceof Boolean) {
       return o;
     } else {

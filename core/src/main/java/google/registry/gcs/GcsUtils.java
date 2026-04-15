@@ -182,7 +182,7 @@ public class GcsUtils implements Serializable {
   // These two methods are needed to check whether serialization is done correctly in tests.
   @Override
   public boolean equals(Object obj) {
-    return obj instanceof GcsUtils && ((GcsUtils) obj).storageOptions.equals(storageOptions);
+    return obj instanceof GcsUtils gcsUtils && gcsUtils.storageOptions.equals(storageOptions);
   }
 
   @Override

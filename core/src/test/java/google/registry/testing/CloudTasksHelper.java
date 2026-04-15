@@ -300,7 +300,7 @@ public class CloudTasksHelper implements Serializable {
       params = paramBuilder.build();
     }
 
-    public Map<String, Object> toMap() {
+    Map<String, Object> toMap() {
       Map<String, Object> builder = new HashMap<>();
       builder.put("taskName", taskName);
       builder.put("method", method);

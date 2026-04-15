@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.tools.GenerateSqlErDiagramCommand.FLYWAY_FILE_ELEMENT_ID;
 import static google.registry.tools.GenerateSqlErDiagramCommand.getLastFlywayFileName;
 
-import com.google.common.base.Joiner;
 import google.registry.util.ResourceUtils;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -33,15 +32,14 @@ class GenerateSqlErDiagramCommandTest extends CommandTestCase<GenerateSqlErDiagr
 
   private static final String GOLDEN_DIAGRAM_FOLDER = "sql/er_diagram";
   private static final String UPDATE_INSTRUCTIONS =
-      Joiner.on('\n')
-          .join(
-              "",
-              "-------------------------------------------------------------------------------",
-              "Your changes affect SQL ER diagrams. To update the checked-in version, run the"
-                  + " following command in the repository root:",
-              "./gradlew devTool --args=\"-e localhost generate_sql_er_diagram -o"
-                  + " ../db/src/main/resources/sql/er_diagram\"",
-              "");
+      """
+
+      -------------------------------------------------------------------------------
+      Your changes affect SQL ER diagrams. To update the checked-in version, run the \
+      following command in the repository root:
+      ./gradlew devTool --args="-e localhost generate_sql_er_diagram -o \
+      ../db/src/main/resources/sql/er_diagram"
+      """;
 
   @Test
   void testSchemaGeneration() throws Exception {

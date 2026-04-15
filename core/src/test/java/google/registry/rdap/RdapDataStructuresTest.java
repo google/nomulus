@@ -111,7 +111,7 @@ final class RdapDataStructuresTest {
 
   @Test
   void testLanguage() {
-    assertThat(LanguageIdentifier.EN.toJson()).isEqualTo(createJson("'en'"));
+    assertThat(createJson("'en'")).isEqualTo(LanguageIdentifier.EN.toJson());
     assertRestrictedNames(LanguageIdentifier.EN, "lang");
   }
 
@@ -157,7 +157,7 @@ final class RdapDataStructuresTest {
 
   @Test
   void testRdapStatus() {
-    assertThat(RdapStatus.ACTIVE.toJson()).isEqualTo(createJson("'active'"));
+    assertThat(createJson("'active'")).isEqualTo(RdapStatus.ACTIVE.toJson());
     assertRestrictedNames(RdapStatus.ACTIVE, "status[]");
   }
 
@@ -178,7 +178,7 @@ final class RdapDataStructuresTest {
 
   @Test
   void testObjectClassName() {
-    assertThat(ObjectClassName.DOMAIN.toJson()).isEqualTo(createJson("'domain'"));
+    assertThat(createJson("'domain'")).isEqualTo(ObjectClassName.DOMAIN.toJson());
     assertRestrictedNames(ObjectClassName.DOMAIN, "objectClassName");
   }
 }

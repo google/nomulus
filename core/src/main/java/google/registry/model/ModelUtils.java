@@ -167,9 +167,9 @@ public class ModelUtils {
       // Recurse into maps with ImmutableObject values.
       return transformValues((Map<?, ?>) obj, ModelUtils::cloneEmptyToNullRecursive);
     }
-    if (obj instanceof ImmutableObject) {
+    if (obj instanceof ImmutableObject immutableObject) {
       // Recurse on the fields of an ImmutableObject.
-      ImmutableObject copy = ImmutableObject.clone((ImmutableObject) obj);
+      ImmutableObject copy = ImmutableObject.clone(immutableObject);
       for (Field field : getAllFields(obj.getClass()).values()) {
         Object oldValue = getFieldValue(obj, field);
         Object newValue = cloneEmptyToNullRecursive(oldValue);

@@ -141,7 +141,7 @@ final class DomainToXjcConverter {
     }
 
     switch (mode) {
-      case FULL:
+      case FULL -> {
         // o  Zero or more OPTIONAL <rgpStatus> element to represent
         //    "pendingDelete" sub-statuses, including "redemptionPeriod",
         //    "pendingRestore", and "pendingDelete", that a domain name can be
@@ -206,10 +206,8 @@ final class DomainToXjcConverter {
             bean.setTrnData(convertTransferData(model.getTransferData()));
           }
         }
-
-        break;
-      case THIN:
-        break;
+      }
+      case THIN -> {}
     }
 
     return bean;

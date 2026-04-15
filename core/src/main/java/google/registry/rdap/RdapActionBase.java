@@ -156,9 +156,9 @@ public abstract class RdapActionBase implements Runnable {
 
       ReplyPayloadBase replyObject =
           getJsonObjectForResource(pathSearchString, requestMethod == Action.Method.HEAD);
-      if (replyObject instanceof BaseSearchResponse) {
+      if (replyObject instanceof BaseSearchResponse baseSearchResponse) {
         metricInformationBuilder.setIncompletenessWarningType(
-            ((BaseSearchResponse) replyObject).incompletenessWarningType());
+            baseSearchResponse.incompletenessWarningType());
       }
       // RFC7480 5.1 - if the server has the information requested and wishes to respond, it returns
       // that answer in the body of a 200 (OK) response

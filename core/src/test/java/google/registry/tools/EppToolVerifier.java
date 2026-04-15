@@ -183,7 +183,7 @@ public class EppToolVerifier {
     assertThat(map).containsEntry("dryRun", Boolean.toString(dryRun));
     assertThat(map).containsEntry("clientId", registrarId);
     assertThat(map).containsEntry("superuser", Boolean.toString(superuser));
-    return URLDecoder.decode(map.get("xml"), UTF_8.toString());
+    return URLDecoder.decode(map.get("xml"), UTF_8);
   }
 
   private EppToolVerifier verifySentContents(String expectedXmlContent) throws Exception {

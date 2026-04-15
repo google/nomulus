@@ -41,7 +41,8 @@ class JpaTestExtensionsSqlLoggingTest {
   @BeforeEach
   void beforeEach() {
     orgStdout = System.out;
-    System.setOut(new PrintStream(stdoutBuffer = new ByteArrayOutputStream()));
+    stdoutBuffer = new ByteArrayOutputStream();
+    System.setOut(new PrintStream(stdoutBuffer));
   }
 
   @AfterEach
@@ -56,6 +57,6 @@ class JpaTestExtensionsSqlLoggingTest {
                 tm().getEntityManager()
                     .createNativeQuery("select 1", long.class)
                     .getSingleResult());
-    assertThat(stdoutBuffer.toString(UTF_8.name())).contains("select 1");
+    assertThat(stdoutBuffer.toString(UTF_8)).contains("select 1");
   }
 }

@@ -151,7 +151,7 @@ public final class ReservedList
     private static class Builder
         extends DomainLabelEntry.Builder<ReservedListEntry, ReservedListEntry.Builder> {
 
-      public Builder() {}
+      Builder() {}
 
       private Builder(ReservedListEntry instance) {
         super(instance);

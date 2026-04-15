@@ -150,8 +150,8 @@ public final class TestUtils {
   private static void assertHttpMessageEquivalent(HttpMessage msg1, HttpMessage msg2) {
     assertThat(msg1.protocolVersion()).isEqualTo(msg2.protocolVersion());
     assertThat(msg1.headers()).isEqualTo(msg2.headers());
-    if (msg1 instanceof FullHttpRequest && msg2 instanceof FullHttpRequest) {
-      assertThat(((FullHttpRequest) msg1).content()).isEqualTo(((FullHttpRequest) msg2).content());
+    if (msg1 instanceof FullHttpRequest req1 && msg2 instanceof FullHttpRequest req2) {
+      assertThat(req1.content()).isEqualTo(req2.content());
     }
   }
 

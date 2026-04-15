@@ -170,8 +170,9 @@ public final class RdeMarshaller implements Serializable {
   }
 
   private XmlFragmentMarshaller getMarshaller() {
-    return memoizedMarshaller != null
-        ?  memoizedMarshaller
-        : (memoizedMarshaller = XjcXmlTransformer.get().createFragmentMarshaller());
+    if (memoizedMarshaller == null) {
+      memoizedMarshaller = XjcXmlTransformer.get().createFragmentMarshaller();
+    }
+    return memoizedMarshaller;
   }
 }

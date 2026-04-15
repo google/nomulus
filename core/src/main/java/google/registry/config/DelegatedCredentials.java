@@ -131,7 +131,7 @@ public class DelegatedCredentials extends GoogleCredentials {
       Clock clock,
       Duration tokenRefreshDelay) {
     checkArgument(
-        tokenRefreshDelay.getSeconds() <= MAX_TOKEN_REFRESH_DELAY.getSeconds(),
+        tokenRefreshDelay.toSeconds() <= MAX_TOKEN_REFRESH_DELAY.toSeconds(),
         "Max refresh delay must not exceed %s.",
         MAX_TOKEN_REFRESH_DELAY);
 
@@ -206,7 +206,7 @@ public class DelegatedCredentials extends GoogleCredentials {
     JsonWebToken.Payload payload = new JsonWebToken.Payload();
     payload.setIssuer(this.delegatedServiceAccountUser);
     payload.setIssuedAtTimeSeconds(currentTime / 1000);
-    payload.setExpirationTimeSeconds(currentTime / 1000 + tokenRefreshDelay.getSeconds());
+    payload.setExpirationTimeSeconds(currentTime / 1000 + tokenRefreshDelay.toSeconds());
     payload.setSubject(delegatingUserEmail);
     payload.put("scope", Joiner.on(' ').join(scopes));
     payload.setAudience(DEFAULT_TOKEN_URI);
@@ -241,10 +241,10 @@ public class DelegatedCredentials extends GoogleCredentials {
     if (value == null) {
       throw new IOException(String.format(VALUE_NOT_FOUND_MESSAGE, errorPrefix, key));
     }
-    if (!(value instanceof String)) {
+    if (!(value instanceof String string)) {
       throw new IOException(String.format(VALUE_WRONG_TYPE_MESSAGE, errorPrefix, "string", key));
     }
-    return (String) value;
+    return string;
   }
 
   /** Return the specified integer from JSON or throw a helpful error message. */
@@ -257,9 +257,9 @@ public class DelegatedCredentials extends GoogleCredentials {
     if (value instanceof BigDecimal bigDecimalValue) {
       return bigDecimalValue.intValueExact();
     }
-    if (!(value instanceof Integer)) {
+    if (!(value instanceof Integer i)) {
       throw new IOException(String.format(VALUE_WRONG_TYPE_MESSAGE, errorPrefix, "integer", key));
     }
-    return (Integer) value;
+    return i;
   }
 }

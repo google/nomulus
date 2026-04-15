@@ -148,7 +148,7 @@ public class RouterDisplayHelper {
     return headerToString(formatString)
         + String.format("%n")
         + Streams.stream(routes)
-            .sorted(Comparator.comparing((Route route) -> route.action().service().ordinal()))
+            .sorted(Comparator.comparing((Route route) -> route.action().service()))
             .map(route -> routeToString(route, formatString))
             .collect(joining(String.format("%n")));
   }

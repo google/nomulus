@@ -132,17 +132,11 @@ public final class NordnVerifyAction implements Runnable {
       }
       for (Entry<String, LordnLog.Result> result : log) {
         switch (result.getValue().getOutcome()) {
-          case OK:
-            break;
-          case WARNING:
-            // fall through
-          case ERROR:
-            logger.atWarning().log(result.toString());
-            break;
-          default:
-            logger.atWarning().log(
-                "LORDN verify task %s: Unexpected outcome: %s", actionLogId, result);
-            break;
+          case OK -> {}
+          case WARNING, ERROR -> logger.atWarning().log(result.toString());
+          default ->
+              logger.atWarning().log(
+                  "LORDN verify task %s: Unexpected outcome: %s", actionLogId, result);
         }
       }
       return log;

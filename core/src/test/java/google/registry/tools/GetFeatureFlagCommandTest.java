@@ -57,10 +57,12 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
             .build());
     runCommand("TEST_FEATURE");
     assertInStdout(
-        "featureName: \"TEST_FEATURE\"\n"
-            + "status:\n"
-            + "  \"1970-01-01T00:00:00.000Z\": \"INACTIVE\"\n"
-            + "  \"2000-02-26T00:00:00.000Z\": \"ACTIVE\"");
+        """
+        featureName: "TEST_FEATURE"
+        status:
+          "1970-01-01T00:00:00.000Z": "INACTIVE"
+          "2000-02-26T00:00:00.000Z": "ACTIVE\"\
+        """);
   }
 
   @Test
@@ -86,16 +88,18 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
             .build());
     runCommand("TEST_FEATURE", "MINIMUM_DATASET_CONTACTS_OPTIONAL");
     assertInStdout(
-        "featureName: \"TEST_FEATURE\"\n"
-            + "status:\n"
-            + "  \"1970-01-01T00:00:00.000Z\": \"INACTIVE\"\n"
-            + "  \"2000-02-26T00:00:00.000Z\": \"ACTIVE\""
-            + "\n\n"
-            + "featureName: \"MINIMUM_DATASET_CONTACTS_OPTIONAL\"\n"
-            + "status:\n"
-            + "  \"1970-01-01T00:00:00.000Z\": \"INACTIVE\"\n"
-            + "  \"2000-01-22T00:00:00.000Z\": \"ACTIVE\"\n"
-            + "  \"2000-02-12T00:00:00.000Z\": \"INACTIVE\"");
+        """
+        featureName: "TEST_FEATURE"
+        status:
+          "1970-01-01T00:00:00.000Z": "INACTIVE"
+          "2000-02-26T00:00:00.000Z": "ACTIVE"
+
+        featureName: "MINIMUM_DATASET_CONTACTS_OPTIONAL"
+        status:
+          "1970-01-01T00:00:00.000Z": "INACTIVE"
+          "2000-01-22T00:00:00.000Z": "ACTIVE"
+          "2000-02-12T00:00:00.000Z": "INACTIVE\"\
+        """);
   }
 
   @Test

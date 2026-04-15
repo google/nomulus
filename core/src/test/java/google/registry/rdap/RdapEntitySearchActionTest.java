@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static google.registry.testing.GsonSubject.assertAboutJson;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -214,7 +215,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
         assertThat(linkToNext).isNotNull();
         int pos = linkToNext.indexOf("cursor=");
         assertThat(pos).isAtLeast(0);
-        cursor = URLDecoder.decode(linkToNext.substring(pos + 7), "UTF-8");
+        cursor = URLDecoder.decode(linkToNext.substring(pos + 7), UTF_8);
         JsonArray searchResults = results.getAsJsonArray("entitySearchResults");
         assertThat(searchResults).hasSize(action.rdapResultSetMaxSize);
         for (JsonElement item : searchResults) {

@@ -67,7 +67,7 @@ public class LocalDateConverterTest {
 
     LocalDate date;
 
-    public LocalDateConverterTestEntity() {}
+    LocalDateConverterTestEntity() {}
 
     LocalDateConverterTestEntity(LocalDate date) {
       this.date = date;

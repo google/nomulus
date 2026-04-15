@@ -87,7 +87,7 @@ public class LogsSubject extends Subject {
     for (String messageCandidate : messagesAtLevel) {
       if (messageCandidate.contains(message)) {
         return new Which<>(
-            assertWithMessage(String.format("log message at %s matching '%s'", level, message))
+            assertWithMessage("log message at %s matching '%s'", level, message)
                 .that(messageCandidate));
       }
     }

@@ -49,7 +49,7 @@ public class QueryComposerTest {
           .withEntityClass(TestEntity.class)
           .buildUnitTestExtension();
 
-  public QueryComposerTest() {}
+  QueryComposerTest() {}
 
   @BeforeEach
   void setUp() {
@@ -324,18 +324,18 @@ public class QueryComposerTest {
     @Column(name = "some_value")
     private int val;
 
-    public TestEntity() {}
+    TestEntity() {}
 
-    public TestEntity(String name, int val) {
+    TestEntity(String name, int val) {
       this.name = name;
       this.val = val;
     }
 
-    public int getVal() {
+    int getVal() {
       return val;
     }
 
-    public String getName() {
+    String getName() {
       return name;
     }
   }

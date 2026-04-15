@@ -133,7 +133,7 @@ public class RdeIO {
     private final byte[] stagingKeyBytes;
     private final RdeMarshaller marshaller;
 
-    protected RdeWriter(
+    RdeWriter(
         GcsUtils gcsUtils,
         String rdeBucket,
         byte[] stagingKeyBytes,
@@ -144,7 +144,7 @@ public class RdeIO {
       this.marshaller = new RdeMarshaller(validationMode);
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"EffectivelyPrivate", "unused"})
     @Setup
     public void setup() {
       Security.addProvider(new BouncyCastleProvider());

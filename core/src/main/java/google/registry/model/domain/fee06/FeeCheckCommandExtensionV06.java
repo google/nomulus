@@ -50,8 +50,8 @@ public class FeeCheckCommandExtensionV06 extends ImmutableObject
       ImmutableList<? extends FeeCheckResponseExtensionItem> items) {
     ImmutableList.Builder<FeeCheckResponseExtensionItemV06> builder = new ImmutableList.Builder<>();
     for (FeeCheckResponseExtensionItem item : items) {
-      if (item instanceof FeeCheckResponseExtensionItemV06) {
-        builder.add((FeeCheckResponseExtensionItemV06) item);
+      if (item instanceof FeeCheckResponseExtensionItemV06 feeCheckResponseExtensionItemV06) {
+        builder.add(feeCheckResponseExtensionItemV06);
       }
     }
     return FeeCheckResponseExtensionV06.create(builder.build());

@@ -365,9 +365,8 @@ class GenerateAllocationTokensCommand implements Command {
         getExistingTokenStrings(ImmutableSet.copyOf(tokenStrings));
     checkArgument(
         existingTokenStrings.isEmpty(),
-        String.format(
-            "Cannot create specified tokens; the following tokens already exist: %s",
-            existingTokenStrings));
+        "Cannot create specified tokens; the following tokens already exist: %s",
+        existingTokenStrings);
   }
 
   private Stream<String> getNextTokenBatch(int tokensSaved) {

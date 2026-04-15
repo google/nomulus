@@ -18,6 +18,7 @@ import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.JCommander;
@@ -83,9 +84,9 @@ public abstract class CommandTestCase<C extends Command> {
     // Capture standard output/error. Use a single-byte encoding to emulate platforms where default
     // charset is not UTF_8.
     oldStdout = System.out;
-    System.setOut(new PrintStream(new OutputSplitter(System.out, stdout), false, "US-ASCII"));
+    System.setOut(new PrintStream(new OutputSplitter(System.out, stdout), false, US_ASCII));
     oldStderr = System.err;
-    System.setErr(new PrintStream(new OutputSplitter(System.err, stderr), false, "US-ASCII"));
+    System.setErr(new PrintStream(new OutputSplitter(System.err, stderr), false, US_ASCII));
   }
 
   @AfterEach

@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 /**
@@ -65,15 +64,13 @@ public final class UriParameters {
 
   private static String decodeString(String str, int start, int end) {
     try {
-      return URLDecoder.decode(str.substring(start, end), UTF_8.name());
+      return URLDecoder.decode(str.substring(start, end), UTF_8);
     } catch (IllegalArgumentException iae) {
       // According to the javadoc of URLDecoder, when the input string is
       // illegal, it could either leave the illegal characters alone or throw
       // an IllegalArgumentException! To deal with both consistently, we
       // ignore IllegalArgumentException and just return the original string.
       return str.substring(start, end);
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
     }
   }
 

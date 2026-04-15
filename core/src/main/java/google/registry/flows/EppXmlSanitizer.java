@@ -23,6 +23,7 @@ import com.google.common.flogger.FluentLogger;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Locale;
@@ -140,7 +141,7 @@ public class EppXmlSanitizer {
       }
     }
     xmlEventWriter.flush();
-    return outputXmlBytes.toString(inputEncoding);
+    return outputXmlBytes.toString(Charset.forName(inputEncoding));
   }
 
   private static String maskSensitiveData(String original) {

@@ -76,7 +76,7 @@ public class SyncRegistrarsSheetAction implements Runnable {
       }};
 
     private final int statusCode;
-    protected final String message;
+    final String message;
 
     Result(int statusCode, String message) {
       this.statusCode = statusCode;
@@ -84,7 +84,7 @@ public class SyncRegistrarsSheetAction implements Runnable {
     }
 
     /** Log an error message. Results that use log levels other than info should override this. */
-    protected void log(@Nullable Exception cause) {
+    void log(@Nullable Exception cause) {
       logger.atInfo().withCause(cause).log(message);
     }
 

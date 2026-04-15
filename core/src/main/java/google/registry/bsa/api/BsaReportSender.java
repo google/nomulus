@@ -71,19 +71,19 @@ public class BsaReportSender {
   public void sendOrderStatusReport(String payload) {
     retrier.callWithRetry(
         () -> trySendData(this.orderStatusUrl, payload),
-        e -> e instanceof BsaException && ((BsaException) e).isRetriable());
+        e -> e instanceof BsaException bsaException && bsaException.isRetriable());
   }
 
   public void addUnblockableDomainsUpdates(String payload) {
     retrier.callWithRetry(
         () -> trySendData(this.addUnblockableDomainsUrl, payload),
-        e -> e instanceof BsaException && ((BsaException) e).isRetriable());
+        e -> e instanceof BsaException bsaException && bsaException.isRetriable());
   }
 
   public void removeUnblockableDomainsUpdates(String payload) {
     retrier.callWithRetry(
         () -> trySendData(this.removeUnblockableDomainsUrl, payload),
-        e -> e instanceof BsaException && ((BsaException) e).isRetriable());
+        e -> e instanceof BsaException bsaException && bsaException.isRetriable());
   }
 
   Void trySendData(String urlString, String payload) {

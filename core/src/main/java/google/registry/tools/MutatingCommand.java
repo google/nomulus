@@ -51,13 +51,13 @@ public abstract class MutatingCommand extends ConfirmingCommand {
   private static class EntityChange {
 
     /** The possible types of mutation that can be performed on an entity. */
-    public enum ChangeType {
+    enum ChangeType {
       CREATE,
       DELETE,
       UPDATE;
 
       /** Return the ChangeType corresponding to the given combination of version existences. */
-      public static ChangeType get(boolean hasOldVersion, boolean hasNewVersion) {
+      static ChangeType get(boolean hasOldVersion, boolean hasNewVersion) {
         checkArgument(
             hasOldVersion || hasNewVersion,
             "An entity change must have an old version or a new version (or both)");

@@ -33,6 +33,8 @@ import com.google.common.truth.Fact;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
 import com.google.common.truth.Subject;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
@@ -125,8 +127,9 @@ public class TextDiffSubject extends Subject {
     return assertThat(Resources.asCharSource(resourceUrl, UTF_8).readLines());
   }
 
+  @FormatMethod
   public static SimpleSubjectBuilder<TextDiffSubject, URL> assertWithMessageAboutUrlSource(
-      String format, Object... params) {
+      @FormatString String format, Object... params) {
     return assertWithMessage(format, params).about(urlFactory());
   }
 
@@ -192,7 +195,7 @@ public class TextDiffSubject extends Subject {
 
   private record SideBySideRowFormatter(int maxExpectedLineLength, int maxActualLineLength) {
 
-    public String formatRow(String expected, String actual, char padChar) {
+    String formatRow(String expected, String actual, char padChar) {
       return String.format(
           "|%s|%s|",
           Strings.padEnd(expected, maxExpectedLineLength, padChar),

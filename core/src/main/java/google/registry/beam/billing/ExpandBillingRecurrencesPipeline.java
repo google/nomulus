@@ -156,12 +156,12 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
   ExpandBillingRecurrencesPipeline(ExpandBillingRecurrencesPipelineOptions options, Clock clock) {
     startTime = Instant.parse(options.getStartTime());
     endTime = Instant.parse(options.getEndTime());
-    checkArgument(
-        !endTime.isAfter(clock.now()),
-        String.format("End time %s must be at or before now.", endTime));
+    checkArgument(!endTime.isAfter(clock.now()), "End time %s must be at or before now.", endTime);
     checkArgument(
         startTime.isBefore(endTime),
-        String.format("[%s, %s) is not a valid window of operation.", startTime, endTime));
+        "[%s, %s) is not a valid window of operation.",
+        startTime,
+        endTime);
     isDryRun = options.getIsDryRun();
     advanceCursor = options.getAdvanceCursor();
   }

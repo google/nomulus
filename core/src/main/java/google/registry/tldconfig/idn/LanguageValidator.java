@@ -21,13 +21,14 @@ import java.util.Optional;
 @Immutable
 abstract class LanguageValidator {
 
-  /** A registry of all known language validators keyed by their language code. */
-  private static final ImmutableMap<String, LanguageValidator> LANGUAGE_VALIDATORS =
-      ImmutableMap.of("ja", new JapaneseLanguageValidator());
-
   /** Return the language validator for the given language code (if one exists). */
   static Optional<LanguageValidator> get(String language) {
-    return Optional.ofNullable(LANGUAGE_VALIDATORS.get(language));
+    return Optional.ofNullable(ValidatorsHolder.LANGUAGE_VALIDATORS.get(language));
+  }
+
+  private static class ValidatorsHolder {
+    private static final ImmutableMap<String, LanguageValidator> LANGUAGE_VALIDATORS =
+        ImmutableMap.of("ja", new JapaneseLanguageValidator());
   }
 
   /** Returns true if the label meets the context rules for this language. */

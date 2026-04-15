@@ -89,9 +89,9 @@ public class LaunchPhase extends ImmutableObject {
   /** A special equals implementation that only considers the string value. */
   @Override
   public boolean equals(Object other) {
-    return other instanceof LaunchPhase
-        && Objects.equals(phase, ((LaunchPhase) other).phase)
-        && Objects.equals(subphase, ((LaunchPhase) other).subphase);
+    return other instanceof LaunchPhase launchPhase
+        && Objects.equals(phase, launchPhase.phase)
+        && Objects.equals(subphase, launchPhase.subphase);
   }
 
   /** A special hashCode implementation that only considers the string value. */

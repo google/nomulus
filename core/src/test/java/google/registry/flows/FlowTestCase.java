@@ -158,7 +158,7 @@ public abstract class FlowTestCase<F extends Flow> {
       assertThat(flowClass).isAssignableTo(MutatingFlow.class);
     } else {
       // There's no "isNotAssignableTo" in Truth.
-      assertWithMessage(flowClass.getSimpleName() + " implements MutatingFlow")
+      assertWithMessage("%s implements MutatingFlow", flowClass.getSimpleName())
           .that(MutatingFlow.class.isAssignableFrom(flowClass))
           .isFalse();
     }
@@ -192,7 +192,7 @@ public abstract class FlowTestCase<F extends Flow> {
   }
 
   private static BillingBase expandGracePeriod(GracePeriod gracePeriod) {
-    assertWithMessage("Billing event is present for grace period: " + gracePeriod)
+    assertWithMessage("Billing event is present for grace period: %s", gracePeriod)
         .that(gracePeriod.hasBillingEvent())
         .isTrue();
     return tm().transact(

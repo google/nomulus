@@ -45,15 +45,11 @@ abstract class RdapSearchResults {
     abstract ImmutableMap<String, URI> navigationLinks();
 
     @JsonableElement("notices") ImmutableList<Notice> getIncompletenessWarnings() {
-      switch (incompletenessWarningType()) {
-        case TRUNCATED:
-          return TRUNCATION_NOTICES;
-        case MIGHT_BE_INCOMPLETE:
-          return POSSIBLY_INCOMPLETE_NOTICES;
-        case COMPLETE:
-          break;
-      }
-      return ImmutableList.of();
+      return switch (incompletenessWarningType()) {
+        case TRUNCATED -> TRUNCATION_NOTICES;
+        case MIGHT_BE_INCOMPLETE -> POSSIBLY_INCOMPLETE_NOTICES;
+        case COMPLETE -> ImmutableList.of();
+      };
     }
 
     /**

@@ -99,14 +99,6 @@ tasks.withType(Test).configureEach {
     }
     systemProperty gcp_integration_env_property, targetEnv
   }
-
-  // This environment variable along with testcontainers 1.15.2 works around
-  // a race condition introduced in 1.15.0. This can be removed once httpclient5
-  // becomes the default transport type in testcontainers, which may happen
-  // in 1.16.x.
-  // See https://github.com/testcontainers/testcontainers-java/issues/3531
-  // for more information.
-  environment('TESTCONTAINERS_TRANSPORT_TYPE', 'httpclient5')
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -124,9 +116,7 @@ tasks.withType(JavaCompile).configureEach {
     // Allow unused methods in tests.
     options.errorprone.disable("UnusedMethod")
     // Allow unused variables in tests.
-    // TODO(b/498588847): uncomment below when the global suppression
-    // below is removed.
-    // options.errorprone.disable("UnusedVariable")
+    options.errorprone.disable("UnusedVariable")
   }
   // Allow using non-constant strings in log.
   options.errorprone.disable("FloggerLogString")
@@ -140,31 +130,8 @@ tasks.withType(JavaCompile).configureEach {
   options.errorprone.disable("LongDoubleConversion")
   // Allow import of commonly-used names such as "Type".
   options.errorprone.disable("BadImport")
-
-  // TODO(b/498588847): Review suppressed checks below
-  // Disable new checks in 2.48.0 that break the build with -Werror
-  options.errorprone.disable("ExpensiveLenientFormatString")
-  options.errorprone.disable("EnumOrdinal")
-  // Triggered by JapaneseLanguageValidator
-  options.errorprone.disable("ClassInitializationDeadlock")
-  // Allow unused variables globally.
-  options.errorprone.disable("UnusedVariable")
-  options.errorprone.disable("AnnotateFormatMethod")
-  options.errorprone.disable("EffectivelyPrivate")
-  options.errorprone.disable("JdkObsolete")
-  options.errorprone.disable("ImpossibleNullComparison")
+  // Allow assignment to injected variables: too many to fix.
   options.errorprone.disable("UnnecessaryAssignment")
-  options.errorprone.disable("PatternMatchingInstanceof")
-  options.errorprone.disable("IntLiteralCast")
-  options.errorprone.disable("SystemConsoleNull")
-  options.errorprone.disable("FormatStringShouldUsePlaceholders")
-  options.errorprone.disable("BooleanLiteral")
-  options.errorprone.disable("StatementSwitchToExpressionSwitch")
-  options.errorprone.disable("AssignmentExpression")
-  options.errorprone.disable("JavaDurationGetSecondsToToSeconds")
-  options.errorprone.disable("StringConcatToTextBlock")
-  options.errorprone.disable("TruthConstantAsserts")
-  options.errorprone.disable("NullArgumentForNonNullParameter")
 
   options.errorprone.disableWarningsInGeneratedCode = true
   options.errorprone.errorproneArgumentProviders.add([

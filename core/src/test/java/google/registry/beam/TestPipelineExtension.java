@@ -111,9 +111,9 @@ public class TestPipelineExtension extends Pipeline
   private static class PipelineRunEnforcement {
 
     @SuppressWarnings("WeakerAccess")
-    protected boolean enableAutoRunIfMissing;
+    boolean enableAutoRunIfMissing;
 
-    protected final Pipeline pipeline;
+    final Pipeline pipeline;
 
     boolean runAttempted;
 
@@ -129,9 +129,9 @@ public class TestPipelineExtension extends Pipeline
       runAttempted = true;
     }
 
-    protected void afterPipelineExecution() {}
+    void afterPipelineExecution() {}
 
-    protected void afterUserCodeFinished() {
+    void afterUserCodeFinished() {
       if (!runAttempted && enableAutoRunIfMissing) {
         pipeline.run().waitUntilFinish();
       }
@@ -346,8 +346,8 @@ public class TestPipelineExtension extends Pipeline
       verifyPAssertsSucceeded(this, pipelineResult);
     } catch (RuntimeException exc) {
       Throwable cause = exc.getCause();
-      if (cause instanceof AssertionError) {
-        throw (AssertionError) cause;
+      if (cause instanceof AssertionError assertionError) {
+        throw assertionError;
       } else {
         throw exc;
       }
@@ -504,7 +504,7 @@ public class TestPipelineExtension extends Pipeline
   private static class IsEmptyVisitor extends PipelineVisitor.Defaults {
     private boolean empty = true;
 
-    public boolean isEmpty() {
+    boolean isEmpty() {
       return empty;
     }
 

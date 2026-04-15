@@ -210,8 +210,8 @@ public class Spec11Pipeline implements Serializable {
                       String registrarId = kv.getKey();
                       checkArgument(
                           kv.getValue().iterator().hasNext(),
-                          String.format(
-                              "Registrar with ID %s had no corresponding threats", registrarId));
+                          "Registrar with ID %s had no corresponding threats",
+                          registrarId);
                       String email = kv.getValue().iterator().next().email();
                       JSONObject output = new JSONObject();
                       try {

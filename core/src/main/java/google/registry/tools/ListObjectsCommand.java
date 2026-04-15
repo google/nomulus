@@ -79,7 +79,7 @@ abstract class ListObjectsCommand implements CommandWithConnection {
       params.put(PRINT_HEADER_ROW_PARAM, printHeaderRow);
     }
     if (fullFieldNames) {
-      params.put(FULL_FIELD_NAMES_PARAM, Boolean.TRUE);
+      params.put(FULL_FIELD_NAMES_PARAM, true);
     }
     params.putAll(getParameterMap());
     // Call the server and get the response data.

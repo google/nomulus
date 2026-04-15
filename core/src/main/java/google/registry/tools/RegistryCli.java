@@ -220,8 +220,8 @@ final class RegistryCli implements CommandRunner {
   private void runCommand(Command command) throws Exception {
     injectReflectively(RegistryToolComponent.class, component, command);
 
-    if (command instanceof CommandWithConnection) {
-      ((CommandWithConnection) command).setConnection(getConnection());
+    if (command instanceof CommandWithConnection commandWithConnection) {
+      commandWithConnection.setConnection(getConnection());
     }
 
     // Reset the JPA transaction manager after every command to avoid a situation where a test can

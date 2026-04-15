@@ -90,8 +90,12 @@ public class FlowPicker {
     /** Get the flow associated with this {@link EppInput} or return null to signal no match. */
     Class<? extends Flow> get(EppInput eppInput) {
       InnerCommand innerCommand = eppInput.getCommandWrapper().getCommand();
-      return get(eppInput, innerCommand, (innerCommand instanceof ResourceCommandWrapper)
-          ? ((ResourceCommandWrapper) innerCommand).getResourceCommand() : null);
+      return get(
+          eppInput,
+          innerCommand,
+          (innerCommand instanceof ResourceCommandWrapper resourceCommandWrapper)
+              ? resourceCommandWrapper.getResourceCommand()
+              : null);
     }
 
     /**
@@ -129,10 +133,10 @@ public class FlowPicker {
         @Override
         Class<? extends Flow> get(
             EppInput eppInput, InnerCommand innerCommand, ResourceCommand resourceCommand) {
-          if (!(innerCommand instanceof Poll)) {
+          if (!(innerCommand instanceof Poll poll)) {
             return null;
           }
-          return switch (((Poll) innerCommand).getPollOp()) {
+          return switch (poll.getPollOp()) {
             case ACK -> PollAckFlow.class;
             case REQUEST -> PollRequestFlow.class;
           };
@@ -222,28 +226,51 @@ public class FlowPicker {
     }};
 
   /** Transfer flows have an {@link InnerCommand} of type {@link Transfer}. */
-  private static final FlowProvider TRANSFER_FLOW_PROVIDER = new FlowProvider() {
-    private final Table<Class<?>, TransferOp, Class<? extends Flow>> transferFlows = ImmutableTable
-        .<Class<?>, TransferOp, Class<? extends Flow>>builder()
-        .put(ContactCommand.Transfer.class, TransferOp.APPROVE, ContactTransferApproveFlow.class)
-        .put(ContactCommand.Transfer.class, TransferOp.CANCEL, ContactTransferCancelFlow.class)
-        .put(ContactCommand.Transfer.class, TransferOp.QUERY, ContactTransferQueryFlow.class)
-        .put(ContactCommand.Transfer.class, TransferOp.REJECT, ContactTransferRejectFlow.class)
-        .put(ContactCommand.Transfer.class, TransferOp.REQUEST, ContactTransferRequestFlow.class)
-        .put(DomainCommand.Transfer.class, TransferOp.APPROVE, DomainTransferApproveFlow.class)
-        .put(DomainCommand.Transfer.class, TransferOp.CANCEL, DomainTransferCancelFlow.class)
-        .put(DomainCommand.Transfer.class, TransferOp.QUERY, DomainTransferQueryFlow.class)
-        .put(DomainCommand.Transfer.class, TransferOp.REJECT, DomainTransferRejectFlow.class)
-        .put(DomainCommand.Transfer.class, TransferOp.REQUEST, DomainTransferRequestFlow.class)
-        .build();
+  private static final FlowProvider TRANSFER_FLOW_PROVIDER =
+      new FlowProvider() {
+        private final Table<Class<?>, TransferOp, Class<? extends Flow>> transferFlows =
+            ImmutableTable.<Class<?>, TransferOp, Class<? extends Flow>>builder()
+                .put(
+                    ContactCommand.Transfer.class,
+                    TransferOp.APPROVE,
+                    ContactTransferApproveFlow.class)
+                .put(
+                    ContactCommand.Transfer.class,
+                    TransferOp.CANCEL,
+                    ContactTransferCancelFlow.class)
+                .put(
+                    ContactCommand.Transfer.class, TransferOp.QUERY, ContactTransferQueryFlow.class)
+                .put(
+                    ContactCommand.Transfer.class,
+                    TransferOp.REJECT,
+                    ContactTransferRejectFlow.class)
+                .put(
+                    ContactCommand.Transfer.class,
+                    TransferOp.REQUEST,
+                    ContactTransferRequestFlow.class)
+                .put(
+                    DomainCommand.Transfer.class,
+                    TransferOp.APPROVE,
+                    DomainTransferApproveFlow.class)
+                .put(
+                    DomainCommand.Transfer.class, TransferOp.CANCEL, DomainTransferCancelFlow.class)
+                .put(DomainCommand.Transfer.class, TransferOp.QUERY, DomainTransferQueryFlow.class)
+                .put(
+                    DomainCommand.Transfer.class, TransferOp.REJECT, DomainTransferRejectFlow.class)
+                .put(
+                    DomainCommand.Transfer.class,
+                    TransferOp.REQUEST,
+                    DomainTransferRequestFlow.class)
+                .build();
 
-    @Override
-    Class<? extends Flow> get(
-        EppInput eppInput, InnerCommand innerCommand, ResourceCommand resourceCommand) {
-      return resourceCommand != null && innerCommand instanceof Transfer
-          ? transferFlows.get(resourceCommand.getClass(), ((Transfer) innerCommand).getTransferOp())
-          : null;
-    }};
+        @Override
+        Class<? extends Flow> get(
+            EppInput eppInput, InnerCommand innerCommand, ResourceCommand resourceCommand) {
+          return resourceCommand != null && innerCommand instanceof Transfer transfer
+              ? transferFlows.get(resourceCommand.getClass(), transfer.getTransferOp())
+              : null;
+        }
+      };
 
   private static final ImmutableList<FlowProvider> FLOW_PROVIDERS =
       ImmutableList.of(

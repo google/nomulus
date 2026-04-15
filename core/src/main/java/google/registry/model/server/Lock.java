@@ -140,19 +140,17 @@ public class Lock extends ImmutableObject implements Serializable {
       Lock lock = acquireResult.existingLock();
       DateTime now = acquireResult.transactionTime();
       switch (acquireResult.lockState()) {
-        case IN_USE:
-          logger.atInfo().log(
-              "Existing lock by request is still valid now %s (until %s) lock: %s",
-              now, lock.expirationTime, lock.lockId);
-          break;
-        case TIMED_OUT:
-          logger.atInfo().log(
-              "Existing lock by request is timed out now %s (was valid until %s) lock: %s",
-              now, lock.expirationTime, lock.lockId);
-          break;
-        case FREE:
+        case IN_USE ->
+            logger.atInfo().log(
+                "Existing lock by request is still valid now %s (until %s) lock: %s",
+                now, lock.expirationTime, lock.lockId);
+        case TIMED_OUT ->
+            logger.atInfo().log(
+                "Existing lock by request is timed out now %s (was valid until %s) lock: %s",
+                now, lock.expirationTime, lock.lockId);
+        case FREE -> {
           // There was no existing lock
-          break;
+        }
       }
       Lock newLock = acquireResult.newLock();
       if (acquireResult.newLock() != null) {

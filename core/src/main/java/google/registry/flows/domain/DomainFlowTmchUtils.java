@@ -60,10 +60,10 @@ public final class DomainFlowTmchUtils {
     if (signedMarks.size() > 1) {
       throw new TooManySignedMarksException();
     }
-    if (!(signedMarks.get(0) instanceof EncodedSignedMark)) {
+    if (!(signedMarks.get(0) instanceof EncodedSignedMark encodedSignedMark)) {
       throw new SignedMarksMustBeEncodedException();
     }
-    SignedMark signedMark = verifyEncodedSignedMark((EncodedSignedMark) signedMarks.get(0), now);
+    SignedMark signedMark = verifyEncodedSignedMark(encodedSignedMark, now);
     return verifySignedMarkValidForDomainLabel(signedMark, domainLabel);
   }
 

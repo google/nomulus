@@ -152,9 +152,8 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
                       PublicKey clientPublicKey = clientCertificate.getPublicKey();
                       // Note that for non-RSA keys the length would be -1.
                       int clientCertificateLength = -1;
-                      if (clientPublicKey instanceof RSAPublicKey) {
-                        clientCertificateLength =
-                            ((RSAPublicKey) clientPublicKey).getModulus().bitLength();
+                      if (clientPublicKey instanceof RSAPublicKey rsaPublicKey) {
+                        clientCertificateLength = rsaPublicKey.getModulus().bitLength();
                       }
                       logger.atInfo().log(
                           """

@@ -42,10 +42,10 @@ class XjcObjectTest {
     XjcRdeDeposit deposit = unmarshalFullDeposit();
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     deposit.marshal(out, UTF_8);
-    String xml = out.toString(UTF_8.toString());
+    String xml = out.toString(UTF_8);
     Pattern pat = Pattern.compile("^<\\?xml version=\"1\\.0\" encoding=\"UTF[-_]?8\"");
-    assertWithMessage("bad xml declaration: " + xml).that(pat.matcher(xml).find()).isTrue();
-    assertWithMessage("encode/decode didn't work: " + xml).that(xml).contains("jdoe@example.test");
+    assertWithMessage("bad xml declaration: %s", xml).that(pat.matcher(xml).find()).isTrue();
+    assertWithMessage("encode/decode didn't work: %s", xml).that(xml).contains("jdoe@example.test");
   }
 
   @Test
@@ -53,10 +53,10 @@ class XjcObjectTest {
     XjcRdeDeposit deposit = unmarshalFullDeposit();
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     deposit.marshal(out, UTF_16);
-    String xml = out.toString(UTF_16.toString());
+    String xml = out.toString(UTF_16);
     Pattern pat = Pattern.compile("^<\\?xml version=\"1\\.0\" encoding=\"UTF[-_]?16\"");
     assertWithMessage(xml).that(pat.matcher(xml).find()).isTrue();
-    assertWithMessage("encode/decode didn't work: " + xml).that(xml).contains("jdoe@example.test");
+    assertWithMessage("encode/decode didn't work: %s", xml).that(xml).contains("jdoe@example.test");
   }
 
   @Test

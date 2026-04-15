@@ -68,7 +68,7 @@ public class DirectoryGroupsConnection implements GroupsConnection {
   @VisibleForTesting
   static Groups getDefaultGroupPermissions() {
     Groups permissions = new Groups();
-    permissions.setAllowExternalMembers(Boolean.TRUE.toString());
+    permissions.setAllowExternalMembers("true");
     permissions.setWhoCanPostMessage("ALL_MANAGERS_CAN_POST");
     permissions.setWhoCanViewGroup("ALL_MANAGERS_CAN_VIEW");
     permissions.setWhoCanViewMembership("ALL_MANAGERS_CAN_VIEW");

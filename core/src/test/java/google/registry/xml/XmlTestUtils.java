@@ -210,7 +210,7 @@ public class XmlTestUtils {
       // an empty map, so normalize that here.
       return new AbstractMap.SimpleEntry<>(elementName, map.isEmpty() ? "" : map);
     }
-    if (obj instanceof JSONArray) {
+    if (obj instanceof JSONArray jsonArray) {
       // Another problem resulting from JSONification: If the array contains elements whose names
       // are the same before URI expansion, but different after URI expansion, because they use
       // xmlns attribute that define the namespaces differently, we will screw up. Again, hopefully
@@ -220,9 +220,9 @@ public class XmlTestUtils {
       // hands and just assume that the URI expansion of the first element holds for all others.
       Set<Object> set = new HashSet<>();
       String mappedKey = null;
-      for (int i = 0; i < ((JSONArray) obj).length(); ++i) {
+      for (int i = 0; i < jsonArray.length(); ++i) {
         Map.Entry<String, Object> simpleEntry =
-            normalize(null, ((JSONArray) obj).get(i), path, ignoredPaths, nsMap);
+            normalize(null, jsonArray.get(i), path, ignoredPaths, nsMap);
         if (i == 0) {
           mappedKey = simpleEntry.getKey();
         }
@@ -233,8 +233,8 @@ public class XmlTestUtils {
     if (obj instanceof Number) {
       return new AbstractMap.SimpleEntry<>(null, obj.toString());
     }
-    if (obj instanceof Boolean) {
-      return new AbstractMap.SimpleEntry<>(null, ((Boolean) obj) ? "1" : "0");
+    if (obj instanceof Boolean b) {
+      return new AbstractMap.SimpleEntry<>(null, b ? "1" : "0");
     }
     if (obj instanceof String) {
       // Turn stringified booleans into integers. Both are acceptable as xml boolean values, but

@@ -114,10 +114,10 @@ public final class MosApiModule {
     try (PEMParser pemParser = new PEMParser(new StringReader(tlsKey))) {
       Object parsedObj = pemParser.readObject();
       JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
-      if (parsedObj instanceof PEMKeyPair) {
-        return converter.getPrivateKey(((PEMKeyPair) parsedObj).getPrivateKeyInfo());
-      } else if (parsedObj instanceof PrivateKeyInfo) {
-        return converter.getPrivateKey((PrivateKeyInfo) parsedObj);
+      if (parsedObj instanceof PEMKeyPair pemKeyPair) {
+        return converter.getPrivateKey(pemKeyPair.getPrivateKeyInfo());
+      } else if (parsedObj instanceof PrivateKeyInfo privateKeyInfo) {
+        return converter.getPrivateKey(privateKeyInfo);
       }
       throw new IllegalArgumentException(
           String.format(

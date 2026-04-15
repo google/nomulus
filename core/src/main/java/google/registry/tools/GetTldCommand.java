@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import google.registry.model.tld.Tld;
 import jakarta.inject.Inject;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 /** Command to show a TLD record. */
@@ -39,11 +38,11 @@ final class GetTldCommand implements Command {
   @Inject ObjectMapper objectMapper;
 
   @Override
-  public void run() throws JsonProcessingException, UnsupportedEncodingException {
+  public void run() throws JsonProcessingException {
     // Don't use try-with-resources to manage standard output streams, closing the stream will
     // cause subsequent output to standard output or standard error to be lost
     // See: https://errorprone.info/bugpattern/ClosingStandardOutputStreams
-    PrintStream printStream = new PrintStream(System.out, false, UTF_8.name());
+    PrintStream printStream = new PrintStream(System.out, false, UTF_8);
     for (String tld : assertTldsExist(mainParameters)) {
         printStream.println(objectMapper.writeValueAsString(Tld.get(tld)));
       }

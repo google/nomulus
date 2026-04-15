@@ -123,7 +123,7 @@ public class ReservedListDaoTest {
     assertThat(ReservedListDao.getLatestRevision("testlist").isPresent()).isFalse();
     ReservedListDao.save(testReservedList);
     ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
-    assertThat(persistedList.getRevisionId()).isNotNull();
+    assertThat(persistedList.getRevisionId()).isAtLeast(1L);
     assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
@@ -143,7 +143,7 @@ public class ReservedListDaoTest {
             .build());
     ReservedListDao.save(testReservedList);
     ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
-    assertThat(persistedList.getRevisionId()).isNotNull();
+    assertThat(persistedList.getRevisionId()).isAtLeast(1L);
     assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);

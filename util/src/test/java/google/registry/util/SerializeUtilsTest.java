@@ -82,7 +82,7 @@ class SerializeUtilsTest {
 
   @Test
   void testStringifyParse_longValue_maintainsValue() {
-    assertThat(parse(Serializable.class, stringify((long) 12345))).isEqualTo((long) 12345);
+    assertThat(parse(Serializable.class, stringify(12345L))).isEqualTo(12345L);
   }
 
   @Test

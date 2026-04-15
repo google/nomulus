@@ -164,10 +164,10 @@ public final class TmchCertificateAuthority {
       root.checkValidity(clock.nowUtc().toDate());
       return root;
     } catch (Exception e) {
-      if (e instanceof GeneralSecurityException) {
-        throw (GeneralSecurityException) e;
-      } else if (e instanceof RuntimeException) {
-        throw (RuntimeException) e;
+      if (e instanceof GeneralSecurityException generalSecurityException) {
+        throw generalSecurityException;
+      } else if (e instanceof RuntimeException runtimeException) {
+        throw runtimeException;
       }
       throw new RuntimeException(e);
     }
@@ -177,10 +177,10 @@ public final class TmchCertificateAuthority {
     try {
       return CRL_CACHE.get(tmchCaMode);
     } catch (Exception e) {
-      if (e.getCause() instanceof GeneralSecurityException) {
-        throw (GeneralSecurityException) e.getCause();
-      } else if (e instanceof RuntimeException) {
-        throw (RuntimeException) e;
+      if (e.getCause() instanceof GeneralSecurityException generalSecurityException) {
+        throw generalSecurityException;
+      } else if (e instanceof RuntimeException runtimeException) {
+        throw runtimeException;
       }
       throw new RuntimeException(e);
     }

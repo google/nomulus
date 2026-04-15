@@ -302,8 +302,7 @@ class TokenStoreTest {
     // Verify that a task is scheduled.
     ArgumentCaptor<Runnable> argument = ArgumentCaptor.forClass(Runnable.class);
     verify(refreshExecutor)
-        .scheduleWithFixedDelay(
-            argument.capture(), eq((long) 5), eq((long) 5), eq(TimeUnit.SECONDS));
+        .scheduleWithFixedDelay(argument.capture(), eq(5L), eq(5L), eq(TimeUnit.SECONDS));
 
     // Verify that the scheduled task calls TokenStore.refresh().
     argument.getValue().run();

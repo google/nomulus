@@ -33,7 +33,6 @@ import google.registry.request.Parameter;
 import google.registry.request.ParameterMap;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.CriteriaBuilder;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -257,14 +256,10 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
 
   private void appendParameter(
       StringBuilder stringBuilder, String name, String value, boolean first) {
-    try {
-      stringBuilder.append(first ? '?' : '&');
-      stringBuilder.append(URLEncoder.encode(name, "UTF-8"));
-      stringBuilder.append('=');
-      stringBuilder.append(URLEncoder.encode(value, "UTF-8"));
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
+    stringBuilder.append(first ? '?' : '&');
+    stringBuilder.append(URLEncoder.encode(name, UTF_8));
+    stringBuilder.append('=');
+    stringBuilder.append(URLEncoder.encode(value, UTF_8));
   }
 
   /** Creates the URL for this same search with a different starting point cursor. */

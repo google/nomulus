@@ -127,11 +127,11 @@ public class FeesAndCredits extends ImmutableObject implements Buildable {
     }
 
     public Builder addFeeOrCredit(BaseFee feeOrCredit) {
-      if (feeOrCredit instanceof Credit) {
+      if (feeOrCredit instanceof Credit credit) {
         getInstance().credits =
             new ImmutableList.Builder<Credit>()
                 .addAll(nullToEmptyImmutableCopy(getInstance().credits))
-                .add((Credit) feeOrCredit)
+                .add(credit)
                 .build();
       } else {
         getInstance().fees =
@@ -147,8 +147,8 @@ public class FeesAndCredits extends ImmutableObject implements Buildable {
       ImmutableList.Builder<Fee> feeBuilder = new ImmutableList.Builder<>();
       ImmutableList.Builder<Credit> creditBuilder = new ImmutableList.Builder<>();
       for (BaseFee feeOrCredit : feesAndCredits) {
-        if (feeOrCredit instanceof Credit) {
-          creditBuilder.add((Credit) feeOrCredit);
+        if (feeOrCredit instanceof Credit credit) {
+          creditBuilder.add(credit);
         } else {
           feeBuilder.add((Fee) feeOrCredit);
         }

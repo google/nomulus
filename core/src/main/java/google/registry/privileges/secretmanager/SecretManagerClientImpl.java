@@ -173,7 +173,7 @@ public class SecretManagerClientImpl implements SecretManagerClient {
   }
 
   private static boolean isRetryableException(Throwable e) {
-    return e instanceof ApiException && ((ApiException) e).isRetryable();
+    return e instanceof ApiException apiException && apiException.isRetryable();
   }
 
   private static Replication defaultReplicationPolicy() {

@@ -19,9 +19,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableMap;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -147,11 +147,7 @@ final class RdeUploadUrl implements Comparable<RdeUploadUrl> {
    * @see URLEncoder#encode(String, String)
    */
   private static String urlencode(String str) {
-    try {
-      return URLEncoder.encode(str, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
+    return URLEncoder.encode(str, StandardCharsets.UTF_8);
   }
 
   /** @see java.net.URI#compareTo(java.net.URI) */
@@ -164,7 +160,7 @@ final class RdeUploadUrl implements Comparable<RdeUploadUrl> {
   @Override
   public boolean equals(@Nullable Object object) {
     return object == this
-        || (object instanceof RdeUploadUrl && Objects.equals(uri, ((RdeUploadUrl) object).uri));
+        || (object instanceof RdeUploadUrl rdeUploadUrl && Objects.equals(uri, rdeUploadUrl.uri));
   }
 
   /** @see java.net.URI#hashCode() */
@@ -199,9 +195,9 @@ final class RdeUploadUrl implements Comparable<RdeUploadUrl> {
     @Override
     public boolean equals(@Nullable Object object) {
       return object == this
-          || (object instanceof Protocol
-              && port == ((Protocol) object).port
-              && Objects.equals(name, ((Protocol) object).name));
+          || (object instanceof Protocol protocol
+              && port == protocol.port
+              && Objects.equals(name, protocol.name));
     }
 
     /** @see Object#hashCode() */

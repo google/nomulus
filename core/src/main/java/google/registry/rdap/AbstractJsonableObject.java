@@ -325,14 +325,14 @@ abstract class AbstractJsonableObject implements Jsonable {
       verifyAllowedJsonKeyName(name, member, jsonable.getClass());
       return jsonable.toJson();
     }
-    if (object instanceof String) {
-      return new JsonPrimitive((String) object);
+    if (object instanceof String string) {
+      return new JsonPrimitive(string);
     }
-    if (object instanceof Number) {
-      return new JsonPrimitive((Number) object);
+    if (object instanceof Number number) {
+      return new JsonPrimitive(number);
     }
-    if (object instanceof Boolean) {
-      return new JsonPrimitive((Boolean) object);
+    if (object instanceof Boolean b) {
+      return new JsonPrimitive(b);
     }
     if (object instanceof DateTime) {
       // According to RFC 9083 section 3, the syntax of dates and times is defined in RFC3339.
@@ -340,11 +340,11 @@ abstract class AbstractJsonableObject implements Jsonable {
       // According to RFC3339, we should use ISO8601, which is what DateTime.toString does!
       return new JsonPrimitive(object.toString());
     }
-    if (object instanceof Instant) {
+    if (object instanceof Instant instant) {
       // According to RFC 9083 section 3, the syntax of dates and times is defined in RFC3339.
       //
       // According to RFC3339, we should use ISO8601, so we use ISO_8601_FORMATTER.
-      return new JsonPrimitive(ISO_8601_FORMATTER.format((Instant) object));
+      return new JsonPrimitive(ISO_8601_FORMATTER.format(instant));
     }
     if (object == null) {
       return JsonNull.INSTANCE;

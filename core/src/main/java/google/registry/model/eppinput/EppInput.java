@@ -125,8 +125,8 @@ public class EppInput extends ImmutableObject {
   @Nullable
   private ResourceCommand getResourceCommand() {
     InnerCommand innerCommand = commandWrapper.getCommand();
-    return innerCommand instanceof ResourceCommandWrapper
-        ? ((ResourceCommandWrapper) innerCommand).getResourceCommand()
+    return innerCommand instanceof ResourceCommandWrapper resourceCommandWrapper
+        ? resourceCommandWrapper.getResourceCommand()
         : null;
   }
 
@@ -136,8 +136,8 @@ public class EppInput extends ImmutableObject {
    */
   public Optional<String> getSingleTargetId() {
     ResourceCommand resourceCommand = getResourceCommand();
-    return resourceCommand instanceof SingleResourceCommand
-        ? Optional.of(((SingleResourceCommand) resourceCommand).getTargetId())
+    return resourceCommand instanceof SingleResourceCommand singleResourceCommand
+        ? Optional.of(singleResourceCommand.getTargetId())
         : Optional.empty();
   }
 
@@ -147,10 +147,10 @@ public class EppInput extends ImmutableObject {
    */
   public ImmutableList<String> getTargetIds() {
     ResourceCommand resourceCommand = getResourceCommand();
-    if (resourceCommand instanceof SingleResourceCommand) {
-      return ImmutableList.of(((SingleResourceCommand) resourceCommand).getTargetId());
-    } else if (resourceCommand instanceof ResourceCheck) {
-      return ((ResourceCheck) resourceCommand).getTargetIds();
+    if (resourceCommand instanceof SingleResourceCommand singleResourceCommand) {
+      return ImmutableList.of(singleResourceCommand.getTargetId());
+    } else if (resourceCommand instanceof ResourceCheck resourceCheck) {
+      return resourceCheck.getTargetIds();
     } else {
       return ImmutableList.of();
     }

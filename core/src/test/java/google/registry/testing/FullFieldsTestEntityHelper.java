@@ -226,8 +226,8 @@ public final class FullFieldsTestEntityHelper {
             .setBySuperuser(false)
             .setReason(reason)
             .setRequestedByRegistrar(false);
-    if (builder instanceof DomainHistory.Builder) {
-      ((DomainHistory.Builder) builder).setPeriod(period);
+    if (builder instanceof DomainHistory.Builder domainHistoryBuilder) {
+      domainHistoryBuilder.setPeriod(period);
     }
     return builder.build();
   }

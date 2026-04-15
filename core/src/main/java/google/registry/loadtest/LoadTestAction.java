@@ -280,9 +280,9 @@ public class LoadTestAction implements Runnable {
                       "clientId",
                       registrarId,
                       "superuser",
-                      Boolean.FALSE.toString(),
+                      "false",
                       "dryRun",
-                      Boolean.FALSE.toString(),
+                      "false",
                       "xml",
                       xmls.get(i)))
               .toBuilder()

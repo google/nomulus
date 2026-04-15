@@ -81,9 +81,9 @@ public final class SqlTemplate {
       String key = matcher.group(2);
       String rightQuote = matcher.group(3);
       String value = substitutions.get(key);
-      checkArgumentNotNull(value, "%%s% found in template but no substitution specified", key);
+      checkArgumentNotNull(value, "%s found in template but no substitution specified", wholeMatch);
       checkArgument(leftQuote.equals(rightQuote), "Quote mismatch: %s", wholeMatch);
-      matcher.appendReplacement(result, String.format("%s%s%s", leftQuote, value, rightQuote));
+      matcher.appendReplacement(result, leftQuote + value + rightQuote);
       found.add(key);
     }
     matcher.appendTail(result);
