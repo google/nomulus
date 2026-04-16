@@ -41,7 +41,6 @@ import java.util.Collection;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.xml.XMLConstants;
-import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.OutputKeys;
@@ -69,7 +68,7 @@ public class XmlTransformer {
   private final JAXBContext jaxbContext;
 
   /** A factory for setting flags to disable XXE attacks. */
-  private static final XMLInputFactory XML_INPUT_FACTORY = createInputFactory();
+  private static final XMLInputFactory XML_INPUT_FACTORY = createXmlInputFactory();
 
   /** A {@link Schema} to validate XML. */
   private final Schema schema;
@@ -107,9 +106,13 @@ public class XmlTransformer {
     }
   }
 
-  private static XMLInputFactory createInputFactory() throws FactoryConfigurationError {
+  public static XMLInputFactory createXmlInputFactory() {
+    XMLInputFactory xmlInputFactory = XMLInputFactory.newDefaultFactory();
+    // Coalesce adjacent data, so that all chars in a string will be grouped as one item.
+    xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
+    // Preserve Name Space information.
+    xmlInputFactory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, true);
     // Prevent XXE attacks.
-    XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
     xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
     xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
     return xmlInputFactory;

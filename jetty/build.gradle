@@ -110,7 +110,8 @@ tasks.register('deployCloudScheduler', Exec) {
     commandLine './deployer',
         "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${rootProject.environment}.yaml",
         "${rootDir}/core/src/main/java/google/registry/config/files/tasks/cloud-scheduler-tasks-${rootProject.environment}.xml",
-        rootProject.gcpProject, '--gke'
+        rootProject.gcpProject == null ? "gcpProject" : rootProject.gcpProject,
+        '--gke'
     // Only deploy the tasks after Nomulus itself is deployed.
     mustRunAfter(tasks.named('deployToGke'))
 }
@@ -121,7 +122,8 @@ tasks.register('deployQueue', Exec) {
     commandLine './deployer',
         "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${rootProject.environment}.yaml",
         "${rootDir}/core/src/main/java/google/registry/config/files/cloud-tasks-queue.xml",
-        rootProject.gcpProject, '--gke'
+        rootProject.gcpProject == null ? "gcpProject" : rootProject.gcpProject,
+        '--gke'
     // Only deploy the queues after Nomulus itself is deployed.
     mustRunAfter(tasks.named('deployToGke'))
 }
