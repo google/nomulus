@@ -21,6 +21,8 @@ import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
@@ -63,9 +65,9 @@ class DomainTransferQueryFlowTest
         getGainingClientAutorenewEvent(),
         getLosingClientAutorenewEvent());
     // Look in the future and make sure the poll messages for implicit ack are there.
-    assertThat(getPollMessages("NewRegistrar", clock.nowUtc().plusYears(1)))
+    assertThat(getPollMessages("NewRegistrar", toDateTime(plusYears(clock.now(), 1))))
         .hasSize(numPollMessages);
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusYears(1))).hasSize(1);
+    assertThat(getPollMessages("TheRegistrar", toDateTime(plusYears(clock.now(), 1)))).hasSize(1);
   }
 
   private void doFailingTest(String commandFilename) throws Exception {
@@ -153,7 +155,11 @@ class DomainTransferQueryFlowTest
   void testFailure_pendingDeleteDomain() throws Exception {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     domain =
-        persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().plusDays(1)).build());
+        persistResource(
+            domain
+                .asBuilder()
+                .setDeletionTime(clock.now().plus(java.time.Duration.ofDays(1)))
+                .build());
     doSuccessfulTest(
         "domain_transfer_query.xml", "domain_transfer_query_response_server_cancelled.xml", 1);
   }
@@ -206,7 +212,11 @@ class DomainTransferQueryFlowTest
   @Test
   void testFailure_deletedDomain() throws Exception {
     domain =
-        persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+        persistResource(
+            domain
+                .asBuilder()
+                .setDeletionTime(clock.now().minus(java.time.Duration.ofDays(1)))
+                .build());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_query.xml"));
@@ -215,7 +225,7 @@ class DomainTransferQueryFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    deleteTestDomain(domain, clock.nowUtc());
+    deleteTestDomain(domain, toDateTime(clock.now()));
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_query.xml"));
@@ -234,8 +244,8 @@ class DomainTransferQueryFlowTest
     // Set the clock to just past the extended registration time.  We'd expect the domain to have
     // auto-renewed once, but the transfer query response should be the same.
     clock.setTo(EXTENDED_REGISTRATION_EXPIRATION_TIME.plusMillis(1));
-    assertThat(domain.cloneProjectedAtTime(clock.nowUtc()).getRegistrationExpirationDateTime())
-        .isEqualTo(EXTENDED_REGISTRATION_EXPIRATION_TIME.plusYears(1));
+    assertThat(domain.cloneProjectedAtTime(toDateTime(clock.now())).getRegistrationExpirationTime())
+        .isEqualTo(plusYears(EXTENDED_REGISTRATION_EXPIRATION_TIME, 1));
     doSuccessfulTest(
         "domain_transfer_query.xml", "domain_transfer_query_response_server_approved.xml", 2);
   }

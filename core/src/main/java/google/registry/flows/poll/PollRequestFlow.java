@@ -21,6 +21,7 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACK_MESSA
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAGES;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
@@ -77,7 +78,7 @@ public final class PollRequestFlow implements TransactionalFlow {
         .setResultFromCode(SUCCESS_WITH_ACK_MESSAGE)
         .setMessageQueueInfo(
             new MessageQueueInfo.Builder()
-                .setQueueDate(pollMessage.getEventTime())
+                .setQueueDate(toInstant(pollMessage.getEventTime()))
                 .setMsg(pollMessage.getMsg())
                 .setQueueLength(getPollMessageCount(registrarId, now))
                 .setMessageId(makePollMessageExternalId(pollMessage))

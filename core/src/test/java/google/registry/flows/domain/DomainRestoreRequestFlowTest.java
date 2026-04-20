@@ -29,8 +29,10 @@ import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -76,10 +78,10 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -108,16 +110,16 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
 
   Domain persistPendingDeleteDomain() throws Exception {
     // The domain is now past what had been its expiration date at the time of deletion.
-    return persistPendingDeleteDomain(clock.nowUtc().minusDays(5));
+    return persistPendingDeleteDomain(clock.now().minus(java.time.Duration.ofDays(5)));
   }
 
-  Domain persistPendingDeleteDomain(DateTime expirationTime) throws Exception {
+  Domain persistPendingDeleteDomain(Instant expirationTime) throws Exception {
     Domain domain = persistResource(DatabaseHelper.newDomain(getUniqueIdFromCommand()));
     HistoryEntry historyEntry =
         persistResource(
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_DELETE)
-                .setModificationTime(clock.nowUtc())
+                .setModificationTime(clock.now())
                 .setRegistrarId(domain.getCurrentSponsorRegistrarId())
                 .setDomain(domain)
                 .build());
@@ -126,12 +128,12 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             domain
                 .asBuilder()
                 .setRegistrationExpirationTime(expirationTime)
-                .setDeletionTime(clock.nowUtc().plusDays(35))
+                .setDeletionTime(clock.now().plus(java.time.Duration.ofDays(35)))
                 .addGracePeriod(
                     GracePeriod.create(
                         GracePeriodStatus.REDEMPTION,
                         domain.getRepoId(),
-                        clock.nowUtc().plusDays(1),
+                        clock.now().plus(java.time.Duration.ofDays(1)),
                         "TheRegistrar",
                         null))
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
@@ -139,7 +141,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
                     persistResource(
                             new PollMessage.OneTime.Builder()
                                 .setRegistrarId("TheRegistrar")
-                                .setEventTime(clock.nowUtc().plusDays(5))
+                                .setEventTime(clock.now().plus(java.time.Duration.ofDays(5)))
                                 .setHistoryEntry(historyEntry)
                                 .build())
                         .createVKey())
@@ -165,18 +167,18 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   @Test
   void testSuccess_expiryStillInFuture_notExtended() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
-    DateTime expirationTime = clock.nowUtc().plusYears(5).plusDays(45);
+    Instant expirationTime = plusYears(clock.now(), 5).plus(java.time.Duration.ofDays(45));
     persistPendingDeleteDomain(expirationTime);
     assertMutatingFlow(true);
     // Double check that we see a poll message in the future for when the delete happens.
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
+    assertThat(getPollMessages("TheRegistrar", toDateTime(clock.now()).plusMonths(1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     Domain domain = reloadResourceByForeignKey();
     DomainHistory historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE, DomainHistory.class);
     assertLastHistoryContainsResource(domain);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
-        .isEqualTo(expirationTime);
+        .isEqualTo(toDateTime(expirationTime));
     assertAboutDomains()
         .that(domain)
         // New expiration time should be the same as from before the deletion.
@@ -184,12 +186,12 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         .and()
         .doesNotHaveStatusValue(StatusValue.PENDING_DELETE)
         .and()
-        .hasDeletionTime(END_OF_TIME)
+        .hasDeletionTime(toDateTime(END_INSTANT))
         .and()
         .hasOneHistoryEntryEachOfTypes(
             HistoryEntry.Type.DOMAIN_DELETE, HistoryEntry.Type.DOMAIN_RESTORE)
         .and()
-        .hasLastEppUpdateTime(clock.nowUtc())
+        .hasLastEppUpdateTime(toDateTime(clock.now()))
         .and()
         .hasLastEppUpdateRegistrarId("TheRegistrar");
     assertThat(domain.getGracePeriods()).isEmpty();
@@ -202,7 +204,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationDateTime())
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(toDateTime(END_INSTANT))
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
             .build());
@@ -214,7 +216,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             .setEventTime(expirationTime)
-            .setRecurrenceEndTime(END_OF_TIME)
+            .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistory(historyEntryDomainRestore)
             .build(),
         new BillingEvent.Builder()
@@ -223,8 +225,8 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setRegistrarId("TheRegistrar")
             .setCost(Money.of(USD, 17))
             .setPeriodYears(1)
-            .setEventTime(clock.nowUtc())
-            .setBillingTime(clock.nowUtc())
+            .setEventTime(clock.now())
+            .setBillingTime(clock.now())
             .setDomainHistory(historyEntryDomainRestore)
             .build());
   }
@@ -232,19 +234,19 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   @Test
   void testSuccess_expiryInPast_extendedByOneYear() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
-    DateTime expirationTime = clock.nowUtc().minusDays(20);
-    DateTime newExpirationTime = expirationTime.plusYears(1);
+    Instant expirationTime = clock.now().minus(java.time.Duration.ofDays(20));
+    Instant newExpirationTime = plusYears(expirationTime, 1);
     persistPendingDeleteDomain(expirationTime);
     assertMutatingFlow(true);
     // Double check that we see a poll message in the future for when the delete happens.
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
+    assertThat(getPollMessages("TheRegistrar", toDateTime(clock.now()).plusMonths(1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     Domain domain = reloadResourceByForeignKey();
     DomainHistory historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE, DomainHistory.class);
     assertLastHistoryContainsResource(domain);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
-        .isEqualTo(newExpirationTime);
+        .isEqualTo(toDateTime(newExpirationTime));
     assertAboutDomains()
         .that(domain)
         // New expiration time should be exactly a year from now.
@@ -252,12 +254,12 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         .and()
         .doesNotHaveStatusValue(StatusValue.PENDING_DELETE)
         .and()
-        .hasDeletionTime(END_OF_TIME)
+        .hasDeletionTime(toDateTime(END_INSTANT))
         .and()
         .hasOneHistoryEntryEachOfTypes(
             HistoryEntry.Type.DOMAIN_DELETE, HistoryEntry.Type.DOMAIN_RESTORE)
         .and()
-        .hasLastEppUpdateTime(clock.nowUtc())
+        .hasLastEppUpdateTime(toDateTime(clock.now()))
         .and()
         .hasLastEppUpdateRegistrarId("TheRegistrar");
     assertThat(domain.getGracePeriods()).isEmpty();
@@ -270,7 +272,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationDateTime())
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(toDateTime(END_INSTANT))
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
             .build());
@@ -283,7 +285,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             .setEventTime(newExpirationTime)
-            .setRecurrenceEndTime(END_OF_TIME)
+            .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistory(historyEntryDomainRestore)
             .build(),
         new BillingEvent.Builder()
@@ -292,8 +294,8 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setRegistrarId("TheRegistrar")
             .setCost(Money.of(USD, 17))
             .setPeriodYears(1)
-            .setEventTime(clock.nowUtc())
-            .setBillingTime(clock.nowUtc())
+            .setEventTime(clock.now())
+            .setBillingTime(clock.now())
             .setDomainHistory(historyEntryDomainRestore)
             .build(),
         new BillingEvent.Builder()
@@ -302,8 +304,8 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setRegistrarId("TheRegistrar")
             .setCost(Money.of(USD, 11))
             .setPeriodYears(1)
-            .setEventTime(clock.nowUtc())
-            .setBillingTime(clock.nowUtc())
+            .setEventTime(clock.now())
+            .setBillingTime(clock.now())
             .setDomainHistory(historyEntryDomainRestore)
             .build());
   }
@@ -315,7 +317,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     persistResource(
         reloadResourceByForeignKey()
             .asBuilder()
-            .setAutorenewEndTime(Optional.of(clock.nowUtc().plusYears(2)))
+            .setAutorenewEndTimeInstant(Optional.of(plusYears(clock.now(), 2)))
             .build());
     assertThat(reloadResourceByForeignKey().getAutorenewEndTime()).isPresent();
     runFlowAssertResponse(
@@ -386,7 +388,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   void testSuccess_premiumNotBlocked_andNoRenewal_std_v1() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium_no_renewal.xml", FEE_STD_1_0_MAP);
-    persistPendingDeleteDomain(clock.nowUtc().plusYears(2));
+    persistPendingDeleteDomain(plusYears(clock.now(), 2));
     runFlowAssertResponse(
         loadFile("domain_update_restore_request_response_fee_no_renewal.xml", FEE_STD_1_0_MAP));
   }
@@ -475,11 +477,12 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 13)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
+            .setRenewBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 7)))
+            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 0))
             .build());
@@ -505,7 +508,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
-            .setDeletionTime(clock.nowUtc().plusDays(4))
+            .setDeletionTime(clock.now().plus(java.time.Duration.ofDays(4)))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());
     EppException thrown = assertThrows(DomainNotEligibleForRestoreException.class, this::runFlow);
@@ -521,7 +524,8 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
 
   @Test
   void testFailure_fullyDeleted() throws Exception {
-    persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    persistDeletedDomain(
+        getUniqueIdFromCommand(), toDateTime(clock.now().minus(java.time.Duration.ofDays(1))));
     EppException thrown = assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -593,11 +597,11 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
             .setRestoreBillingCost(Money.ofMajor(JPY, 800))
@@ -790,7 +794,8 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   @Test
   void testSuccess_fee_v06_noRenewal() throws Exception {
     setEppInput("domain_update_restore_request_fee_no_renewal.xml", FEE_06_MAP);
-    persistPendingDeleteDomain(clock.nowUtc().plusMonths(6));
+    persistPendingDeleteDomain(
+        clock.now().atZone(java.time.ZoneOffset.UTC).plusMonths(6).toInstant());
     runFlowAssertResponse(
         loadFile("domain_update_restore_request_response_fee_no_renewal.xml", FEE_06_MAP));
   }
@@ -887,7 +892,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   void testSuccess_premiumNotBlocked_andNoRenewal_v12() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium_no_renewal.xml", FEE_12_MAP);
-    persistPendingDeleteDomain(clock.nowUtc().plusYears(2));
+    persistPendingDeleteDomain(plusYears(clock.now(), 2));
     runFlowAssertResponse(
         loadFile("domain_update_restore_request_response_fee_no_renewal.xml", FEE_12_MAP));
   }

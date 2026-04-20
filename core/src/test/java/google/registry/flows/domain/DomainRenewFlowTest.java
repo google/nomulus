@@ -40,7 +40,11 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -100,10 +104,10 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
+import java.time.Instant;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -128,7 +132,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   private static final ImmutableMap<String, String> FEE_STD_1_0_MAP =
       updateSubstitutions(FEE_BASE_MAP, "FEE_VERSION", "epp:fee-1.0", "FEE_NS", "fee1_00");
 
-  private final DateTime expirationTime = DateTime.parse("2000-04-03T22:00:00.0Z");
+  private final Instant expirationTime = Instant.parse("2000-04-03T22:00:00.0Z");
 
   @BeforeEach
   void initDomainTest() {
@@ -157,7 +161,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
           new DomainHistory.Builder()
               .setDomain(domain)
               .setType(HistoryEntry.Type.DOMAIN_CREATE)
-              .setModificationTime(clock.nowUtc())
+              .setModificationTime(clock.now())
               .setRegistrarId(domain.getCreationRegistrarId())
               .build();
       BillingRecurrence autorenewEvent =
@@ -247,8 +251,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
       @Nullable Money renewalPrice)
       throws Exception {
     assertMutatingFlow(true);
-    DateTime currentExpiration = reloadResourceByForeignKey().getRegistrationExpirationDateTime();
-    DateTime newExpiration = currentExpiration.plusYears(renewalYears);
+    Instant currentExpiration = reloadResourceByForeignKey().getRegistrationExpirationTime();
+    Instant newExpiration = plusYears(currentExpiration, renewalYears);
     runFlowAssertResponse(
         CommitMode.LIVE, userPrivileges, loadFile(responseFilename, substitutions));
     Domain domain = reloadResourceByForeignKey();
@@ -256,17 +260,17 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     DomainHistory historyEntryDomainRenew =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW, DomainHistory.class);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
-        .isEqualTo(newExpiration);
+        .isEqualTo(toDateTime(newExpiration));
     assertAboutDomains()
         .that(domain)
-        .isActiveAt(clock.nowUtc())
+        .isActiveAt(toDateTime(clock.now()))
         .and()
         .hasRegistrationExpirationTime(newExpiration)
         .and()
         .hasOneHistoryEntryEachOfTypes(
             HistoryEntry.Type.DOMAIN_CREATE, HistoryEntry.Type.DOMAIN_RENEW)
         .and()
-        .hasLastEppUpdateTime(clock.nowUtc())
+        .hasLastEppUpdateTime(toDateTime(clock.now()))
         .and()
         .hasLastEppUpdateRegistrarId(renewalClientId);
     assertAboutHistoryEntries().that(historyEntryDomainRenew).hasPeriodYears(renewalYears);
@@ -277,8 +281,10 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setRegistrarId(renewalClientId)
             .setCost(totalRenewCost)
             .setPeriodYears(renewalYears)
-            .setEventTime(clock.nowUtc())
-            .setBillingTime(clock.nowUtc().plus(Tld.get("tld").getRenewGracePeriodLength()))
+            .setEventTime(clock.now())
+            .setBillingTime(
+                toDateTime(
+                    clock.now().plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis())))
             .setDomainHistory(historyEntryDomainRenew)
             .build();
     assertBillingEvents(
@@ -291,7 +297,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
             .setEventTime(expirationTime)
-            .setRecurrenceEndTime(clock.nowUtc())
+            .setRecurrenceEndTime(clock.now())
             .setDomainHistory(
                 getOnlyHistoryEntryOfType(
                     domain, HistoryEntry.Type.DOMAIN_CREATE, DomainHistory.class))
@@ -324,7 +330,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             GracePeriod.create(
                 GracePeriodStatus.RENEW,
                 domain.getRepoId(),
-                clock.nowUtc().plus(Tld.get("tld").getRenewGracePeriodLength()),
+                toDateTime(
+                    clock.now().plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis())),
                 renewalClientId,
                 null),
             renewBillingEvent));
@@ -659,11 +666,11 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusDays(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusDays(60), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(clock.now().plus(java.time.Duration.ofDays(1)), TokenStatus.VALID)
+                    .put(clock.now().plus(java.time.Duration.ofDays(60)), TokenStatus.ENDED)
                     .build())
             .build());
     assertAboutEppExceptions()
@@ -683,11 +690,11 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setTokenType(UNLIMITED_USE)
             .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(clock.now().minus(java.time.Duration.ofDays(1)), TokenStatus.VALID)
+                    .put(clock.now().plus(java.time.Duration.ofDays(1)), TokenStatus.ENDED)
                     .build())
             .build());
     assertAboutEppExceptions()
@@ -708,11 +715,11 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setTokenType(UNLIMITED_USE)
             .setAllowedTlds(ImmutableSet.of("example"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(clock.now().minus(java.time.Duration.ofDays(1)), TokenStatus.VALID)
+                    .put(clock.now().plus(java.time.Duration.ofDays(1)), TokenStatus.ENDED)
                     .build())
             .build());
     runFlowAssertResponse(
@@ -795,7 +802,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     persistResource(
         loadByKey(reloadResourceByForeignKey().getAutorenewPollMessage())
             .asBuilder()
-            .setEventTime(expirationTime.minusYears(1))
+            .setEventTime(minusYears(expirationTime, 1))
             .build());
     runFlowAssertResponse(
         loadFile(
@@ -807,8 +814,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(expirationTime.minusYears(1))
-            .setAutorenewEndTime(clock.nowUtc())
+            .setEventTime(minusYears(expirationTime, 1))
+            .setAutorenewEndTime(clock.now())
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(
                 getOnlyHistoryEntryOfType(
@@ -817,7 +824,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(reloadResourceByForeignKey().getRegistrationExpirationDateTime())
+            .setEventTime(reloadResourceByForeignKey().getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRenew)
@@ -882,7 +889,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
 
   @Test
   void testFailure_existedButWasDeleted() throws Exception {
-    persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    persistDeletedDomain(
+        getUniqueIdFromCommand(), toDateTime(clock.now().minus(java.time.Duration.ofDays(1))));
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -910,7 +918,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
             .setRegistrationExpirationTime(expirationTime)
-            .setDeletionTime(clock.nowUtc().plusDays(1))
+            .setDeletionTime(clock.now().plus(java.time.Duration.ofDays(1)))
             .addStatusValue(StatusValue.PENDING_DELETE)
             .build());
     ResourceStatusProhibitsOperationException thrown =
@@ -985,7 +993,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     persistWithPendingTransfer(
         reloadResourceByForeignKey()
             .asBuilder()
-            .setRegistrationExpirationTime(DateTime.parse("2001-09-08T22:00:00.0Z"))
+            .setRegistrationExpirationTime(Instant.parse("2001-09-08T22:00:00.0Z"))
             .build());
     ResourceStatusProhibitsOperationException thrown =
         assertThrows(ResourceStatusProhibitsOperationException.class, this::runFlow);
@@ -1015,7 +1023,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     persistResource(
         reloadResourceByForeignKey()
             .asBuilder()
-            .setRegistrationExpirationTime(DateTime.parse("2000-04-04T22:00:00.0Z"))
+            .setRegistrationExpirationTime(Instant.parse("2000-04-04T22:00:00.0Z"))
             .build());
     EppException thrown =
         assertThrows(IncorrectCurrentExpirationDateException.class, this::runFlow);

@@ -32,6 +32,7 @@ import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -55,7 +56,7 @@ import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,23 +99,23 @@ class DomainTransferCancelFlowTest
             domain,
             historyEntryDomainTransferRequest,
             "NewRegistrar",
-            TRANSFER_REQUEST_TIME,
-            TRANSFER_EXPIRATION_TIME,
-            EXTENDED_REGISTRATION_EXPIRATION_TIME));
+            toDateTime(TRANSFER_REQUEST_TIME),
+            toDateTime(TRANSFER_EXPIRATION_TIME),
+            toDateTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)));
     assertPollMessages(
         "TheRegistrar",
         createPollMessageForImplicitTransfer(
             domain,
             historyEntryDomainTransferRequest,
             "TheRegistrar",
-            TRANSFER_REQUEST_TIME,
-            TRANSFER_EXPIRATION_TIME,
-            EXTENDED_REGISTRATION_EXPIRATION_TIME));
+            toDateTime(TRANSFER_REQUEST_TIME),
+            toDateTime(TRANSFER_EXPIRATION_TIME),
+            toDateTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)));
     clock.advanceOneMilli();
 
     // Setup done; run the test.
     assertMutatingFlow(true);
-    DateTime originalExpirationTime = domain.getRegistrationExpirationDateTime();
+    Instant originalExpirationTime = domain.getRegistrationExpirationTime();
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
     DomainTransferData originalTransferData = domain.getTransferData();
     runFlowAssertResponse(loadFile("domain_transfer_cancel_response.xml"));
@@ -127,13 +128,13 @@ class DomainTransferCancelFlowTest
         .that(domain)
         .hasRegistrationExpirationTime(originalExpirationTime)
         .and()
-        .hasLastTransferTimeNotEqualTo(clock.nowUtc());
+        .hasLastTransferTimeNotEqualTo(clock.now());
     assertAboutDomains()
         .that(domain)
         .hasOneHistoryEntryEachOfTypes(
             DOMAIN_CREATE, DOMAIN_TRANSFER_REQUEST, DOMAIN_TRANSFER_CANCEL)
         .and()
-        .hasLastEppUpdateTime(clock.nowUtc())
+        .hasLastEppUpdateTime(toDateTime(clock.now()))
         .and()
         .hasLastEppUpdateRegistrarId("NewRegistrar");
     final HistoryEntry historyEntryTransferCancel =
@@ -147,7 +148,7 @@ class DomainTransferCancelFlowTest
     assertBillingEvents(
         getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_OF_TIME).build());
     // The poll message (in the future) to the gaining registrar for implicit ack should be gone.
-    assertThat(getPollMessages("NewRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();
+    assertThat(getPollMessages("NewRegistrar", toDateTime(clock.now()).plusMonths(1))).isEmpty();
     // The poll message in the future to the losing registrar should be gone too, but there should
     // be two at the current time to the losing registrar - one for the original autorenew event,
     // and another for the transfer being cancelled.
@@ -163,7 +164,7 @@ class DomainTransferCancelFlowTest
             .build(),
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
-            .setEventTime(clock.nowUtc())
+            .setEventTime(clock.now())
             .setResponseData(
                 ImmutableList.of(
                     new DomainTransferResponse.Builder()
@@ -172,7 +173,7 @@ class DomainTransferCancelFlowTest
                         .setTransferRequestTime(TRANSFER_REQUEST_TIME)
                         .setGainingRegistrarId("NewRegistrar")
                         .setLosingRegistrarId("TheRegistrar")
-                        .setPendingTransferExpirationTime(clock.nowUtc())
+                        .setPendingTransferExpirationTime(clock.now())
                         .build()))
             .setMsg("Transfer cancelled.")
             .setHistoryEntry(getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL))
@@ -313,7 +314,11 @@ class DomainTransferCancelFlowTest
   @Test
   void testFailure_deletedDomain() throws Exception {
     domain =
-        persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+        persistResource(
+            domain
+                .asBuilder()
+                .setDeletionTime(clock.now().minus(java.time.Duration.ofDays(1)))
+                .build());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_cancel.xml"));
@@ -322,7 +327,7 @@ class DomainTransferCancelFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    deleteTestDomain(domain, clock.nowUtc());
+    deleteTestDomain(domain, toDateTime(clock.now()));
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_cancel.xml"));
@@ -380,15 +385,17 @@ class DomainTransferCancelFlowTest
             .setTransferGracePeriodLength(Duration.standardDays(3))
             .build());
     DomainTransactionRecord previousSuccessRecord =
-        DomainTransactionRecord.create("tld", clock.nowUtc().plusDays(1), TRANSFER_SUCCESSFUL, 1);
+        DomainTransactionRecord.create(
+            "tld", clock.now().plus(java.time.Duration.ofDays(1)), TRANSFER_SUCCESSFUL, 1);
     // We only want to cancel TRANSFER_SUCCESSFUL records
     DomainTransactionRecord notCancellableRecord =
-        DomainTransactionRecord.create("tld", clock.nowUtc().plusDays(1), RESTORED_DOMAINS, 5);
+        DomainTransactionRecord.create(
+            "tld", clock.now().plus(java.time.Duration.ofDays(1)), RESTORED_DOMAINS, 5);
     persistResource(
         new DomainHistory.Builder()
             .setType(DOMAIN_TRANSFER_REQUEST)
             .setDomain(domain)
-            .setModificationTime(clock.nowUtc().minusDays(4))
+            .setModificationTime(clock.now().minus(java.time.Duration.ofDays(4)))
             .setRegistrarId("TheRegistrar")
             .setDomainTransactionRecords(
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))

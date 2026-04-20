@@ -475,7 +475,11 @@ public final class DatabaseHelper {
         .setBillingTime(eventTime.plus(Tld.get(domain.getTld()).getTransferGracePeriodLength()))
         .setRegistrarId("NewRegistrar")
         .setPeriodYears(1)
-        .setCost(getDomainRenewCost(domain.getDomainName(), costLookupTime, 1))
+        .setCost(
+            getDomainRenewCost(
+                domain.getDomainName(),
+                google.registry.util.DateTimeUtils.toInstant(costLookupTime),
+                1))
         .setDomainHistory(historyEntry)
         .build();
   }

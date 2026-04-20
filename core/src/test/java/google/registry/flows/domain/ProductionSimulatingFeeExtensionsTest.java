@@ -86,7 +86,7 @@ public class ProductionSimulatingFeeExtensionsTest
         FEE_EXTENSION_1_DOT_0_IN_PROD.name(),
         "--force",
         "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, fakeClock.nowUtc().plusMillis(1)));
+        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, fakeClock.now().plusMillis(1)));
     RegistryEnvironment.PRODUCTION.setup();
     ProtocolDefinition.reloadServiceExtensionUris();
     // prod shouldn't have the fee extension version 1.0
@@ -107,7 +107,7 @@ public class ProductionSimulatingFeeExtensionsTest
         FEE_EXTENSION_1_DOT_0_IN_PROD.name(),
         "--force",
         "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, fakeClock.nowUtc().minusMillis(1)));
+        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, fakeClock.now().minusMillis(1)));
     RegistryEnvironment.PRODUCTION.setup();
     ProtocolDefinition.reloadServiceExtensionUris();
     // prod should have the fee extension version 1.0

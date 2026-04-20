@@ -77,7 +77,6 @@ import java.time.Instant;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -106,7 +105,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   @BeforeEach
   void setup() {
     setEppInput("domain_info.xml");
-    clock.setTo(DateTime.parse("2005-03-03T22:00:00.000Z"));
+    clock.setTo(Instant.parse("2005-03-03T22:00:00.000Z"));
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     persistResource(
@@ -127,10 +126,10 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .setCreationRegistrarId("TheRegistrar")
                 .setLastEppUpdateRegistrarId("NewRegistrar")
-                .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
-                .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
-                .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
-                .setRegistrationExpirationTime(DateTime.parse("2005-04-03T22:00:00.0Z"))
+                .setCreationTimeForTest(Instant.parse("1999-04-03T22:00:00.0Z"))
+                .setLastEppUpdateTime(Instant.parse("1999-12-03T09:00:00.0Z"))
+                .setLastTransferTime(Instant.parse("2000-04-08T09:00:00.0Z"))
+                .setRegistrationExpirationTime(Instant.parse("2005-04-03T22:00:00.0Z"))
                 .setNameservers(
                     inactive ? null : ImmutableSet.of(host1.createVKey(), host2.createVKey()))
                 .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
@@ -331,12 +330,12 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 GracePeriod.create(
                     gracePeriodStatus,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    clock.now().plus(java.time.Duration.ofDays(1)),
                     "TheRegistrar",
                     null))
             .setCreationRegistrarId("NewRegistrar")
-            .setCreationTimeForTest(DateTime.parse("2003-11-26T22:00:00.0Z"))
-            .setRegistrationExpirationTime(DateTime.parse("2005-11-26T22:00:00.0Z"))
+            .setCreationTimeForTest(Instant.parse("2003-11-26T22:00:00.0Z"))
+            .setRegistrationExpirationTime(Instant.parse("2005-11-26T22:00:00.0Z"))
             .setLastTransferTime((Instant) null)
             .setLastEppUpdateTime((Instant) null)
             .setLastEppUpdateRegistrarId(null)
@@ -357,7 +356,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             new DomainHistory.Builder()
                 .setDomain(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setModificationTime(clock.nowUtc())
+                .setModificationTime(clock.now())
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
     BillingRecurrence renewEvent =
@@ -367,7 +366,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(getUniqueIdFromCommand())
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(clock.nowUtc())
+                .setEventTime(clock.now())
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setDomainHistory(historyEntry)
                 .build());
@@ -380,7 +379,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 GracePeriod.createForRecurrence(
                     GracePeriodStatus.AUTO_RENEW,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    clock.now().plus(java.time.Duration.ofDays(1)),
                     "TheRegistrar",
                     recurrenceVKey))
             .build());
@@ -399,7 +398,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 GracePeriod.create(
                     GracePeriodStatus.REDEMPTION,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    clock.now().plus(java.time.Duration.ofDays(1)),
                     "TheRegistrar",
                     null))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
@@ -418,7 +417,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 GracePeriod.create(
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    clock.now().plus(java.time.Duration.ofDays(1)),
                     "TheRegistrar",
                     null))
             .build());
@@ -436,14 +435,14 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 GracePeriod.create(
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    clock.now().plus(java.time.Duration.ofDays(1)),
                     "TheRegistrar",
                     null))
             .addGracePeriod(
                 GracePeriod.create(
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(2),
+                    clock.now().plus(java.time.Duration.ofDays(2)),
                     "TheRegistrar",
                     null))
             .build());
@@ -461,7 +460,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 GracePeriod.create(
                     GracePeriodStatus.TRANSFER,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    clock.now().plus(java.time.Duration.ofDays(1)),
                     "TheRegistrar",
                     null))
             .build());
@@ -489,14 +488,14 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 GracePeriod.create(
                     GracePeriodStatus.ADD,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    clock.now().plus(java.time.Duration.ofDays(1)),
                     "TheRegistrar",
                     null))
             .addGracePeriod(
                 GracePeriod.create(
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(2),
+                    clock.now().plus(java.time.Duration.ofDays(2)),
                     "TheRegistrar",
                     null))
             .build());
@@ -514,7 +513,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 GracePeriod.create(
                     GracePeriodStatus.ADD,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    clock.now().plus(java.time.Duration.ofDays(1)),
                     "TheRegistrar",
                     null))
             .setDsData(
@@ -536,7 +535,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     persistResource(
         DatabaseHelper.newDomain("example.tld")
             .asBuilder()
-            .setDeletionTime(clock.nowUtc().minusDays(1))
+            .setDeletionTime(clock.now().minus(java.time.Duration.ofDays(1)))
             .build());
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -588,7 +587,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(TokenType.BULK_PRICING)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
@@ -610,7 +609,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(TokenType.BULK_PRICING)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
@@ -644,7 +643,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(TokenType.BULK_PRICING)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
@@ -673,8 +672,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     persistResource(
         domain
             .asBuilder()
-            .setDeletionTime(clock.nowUtc().plusDays(25))
-            .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))
+            .setDeletionTime(clock.now().plus(java.time.Duration.ofDays(25)))
+            .setRegistrationExpirationTime(clock.now().minus(java.time.Duration.ofDays(1)))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());
     doSuccessfulTest(
@@ -762,7 +761,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     persistResource(
         domain
             .asBuilder()
-            .setDeletionTime(clock.nowUtc().plusDays(25))
+            .setDeletionTime(clock.now().plus(java.time.Duration.ofDays(25)))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());
     doSuccessfulTest(

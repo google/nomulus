@@ -16,14 +16,14 @@ package google.registry.model.mark;
 
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /** Common fields for {@link CourtMark} and {@link TreatyOrStatuteMark}. */
 @XmlTransient
 public abstract class ProtectedMark extends CommonMarkFields {
   /** The date of protection of the mark. */
   @XmlElement(name = "proDate")
-  DateTime protectionDate;
+  Instant protectionDate;
 
   /**
    * The reference number of the court's opinion for a court mark, or the number of the mark of the
@@ -32,7 +32,7 @@ public abstract class ProtectedMark extends CommonMarkFields {
   @XmlElement(name = "refNum")
   String referenceNumber;
 
-  public DateTime getProtectionDate() {
+  public Instant getProtectionDate() {
     return protectionDate;
   }
 
