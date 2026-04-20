@@ -15,7 +15,6 @@
 package google.registry.tmch;
 
 import static google.registry.testing.TestDataHelper.loadFile;
-import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.flows.EppException;
@@ -24,7 +23,7 @@ import google.registry.model.smd.EncodedSignedMark;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.util.SystemClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -57,7 +56,7 @@ class TmchTestDataExpirationTest {
     String tmchData = loadFile(TmchTestDataExpirationTest.class, filePath);
     EncodedSignedMark smd = TmchData.readEncodedSignedMark(tmchData);
     try {
-      tmchUtils.verifyEncodedSignedMark(smd, DateTime.now(UTC));
+      tmchUtils.verifyEncodedSignedMark(smd, Instant.now());
     } catch (EppException e) {
       throw new AssertionError("Error verifying signed mark " + filePath, e);
     }

@@ -37,6 +37,6 @@ public final class HelloFlow implements Flow {
   @Override
   public Greeting run() throws EppException {
     extensionManager.validate(); // There are no legal extensions for this flow.
-    return Greeting.create(clock.nowUtc(), greetingServerId);
+    return Greeting.create(clock.now(), greetingServerId);
   }
 }

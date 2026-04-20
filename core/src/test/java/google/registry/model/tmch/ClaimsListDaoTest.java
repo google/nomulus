@@ -69,8 +69,8 @@ public class ClaimsListDaoTest {
               }
             });
     ClaimsList insertedClaimsList = ClaimsListDao.get();
-    assertThat(insertedClaimsList.getTmdbGenerationTimeInstant())
-        .isEqualTo(claimsList.getTmdbGenerationTimeInstant());
+    assertThat(insertedClaimsList.getTmdbGenerationTime())
+        .isEqualTo(claimsList.getTmdbGenerationTime());
     assertThat(insertedClaimsList.getLabelsToKeys()).isEqualTo(claimsList.getLabelsToKeys());
     assertThat(insertedClaimsList.getCreationTime()).isEqualTo(fakeClock.now());
   }
@@ -140,7 +140,7 @@ public class ClaimsListDaoTest {
 
   private void assertClaimsListEquals(ClaimsList left, ClaimsList right) {
     assertThat(left.getRevisionId()).isEqualTo(right.getRevisionId());
-    assertThat(left.getTmdbGenerationTimeInstant()).isEqualTo(right.getTmdbGenerationTimeInstant());
+    assertThat(left.getTmdbGenerationTime()).isEqualTo(right.getTmdbGenerationTime());
     assertThat(left.getLabelsToKeys()).isEqualTo(right.getLabelsToKeys());
   }
 }

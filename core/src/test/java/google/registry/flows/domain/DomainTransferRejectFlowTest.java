@@ -57,7 +57,7 @@ import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +88,7 @@ class DomainTransferRejectFlowTest
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     // Setup done; run the test.
     assertMutatingFlow(true);
-    DateTime originalExpirationTime = domain.getRegistrationExpirationDateTime();
+    Instant originalExpirationTime = domain.getRegistrationExpirationTime();
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
     DomainTransferData originalTransferData = domain.getTransferData();
     runFlowAssertResponse(loadFile(expectedXmlFilename));
@@ -99,7 +99,7 @@ class DomainTransferRejectFlowTest
         .that(domain)
         .hasRegistrationExpirationTime(originalExpirationTime)
         .and()
-        .hasLastTransferTimeNotEqualTo(clock.nowUtc())
+        .hasLastTransferTimeNotEqualTo(clock.now())
         .and()
         .hasOneHistoryEntryEachOfTypes(
             DOMAIN_CREATE, DOMAIN_TRANSFER_REQUEST, DOMAIN_TRANSFER_REJECT)
@@ -298,7 +298,11 @@ class DomainTransferRejectFlowTest
   @Test
   void testFailure_deletedDomain() throws Exception {
     domain =
-        persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+        persistResource(
+            domain
+                .asBuilder()
+                .setDeletionTime(clock.now().minus(java.time.Duration.ofDays(1)))
+                .build());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_reject.xml"));
@@ -341,22 +345,24 @@ class DomainTransferRejectFlowTest
         (DomainHistory) getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REJECT);
     // We should only produce transfer nacked records, reported now
     assertThat(persistedEntry.getDomainTransactionRecords())
-        .containsExactly(DomainTransactionRecord.create("tld", clock.nowUtc(), TRANSFER_NACKED, 1));
+        .containsExactly(DomainTransactionRecord.create("tld", clock.now(), TRANSFER_NACKED, 1));
   }
 
   @Test
   void testIcannTransactionRecord_cancelsPreviousRecords() throws Exception {
     setUpGracePeriodDurations();
     DomainTransactionRecord previousSuccessRecord =
-        DomainTransactionRecord.create("tld", clock.nowUtc().plusDays(1), TRANSFER_SUCCESSFUL, 1);
+        DomainTransactionRecord.create(
+            "tld", clock.now().plus(java.time.Duration.ofDays(1)), TRANSFER_SUCCESSFUL, 1);
     // We only want to cancel TRANSFER_SUCCESSFUL records
     DomainTransactionRecord notCancellableRecord =
-        DomainTransactionRecord.create("tld", clock.nowUtc().plusDays(1), NET_RENEWS_3_YR, 5);
+        DomainTransactionRecord.create(
+            "tld", clock.now().plus(java.time.Duration.ofDays(1)), NET_RENEWS_3_YR, 5);
     persistResource(
         new DomainHistory.Builder()
             .setType(DOMAIN_TRANSFER_REQUEST)
             .setDomain(domain)
-            .setModificationTime(clock.nowUtc().minusDays(4))
+            .setModificationTime(clock.now().minus(java.time.Duration.ofDays(4)))
             .setRegistrarId("TheRegistrar")
             .setDomainTransactionRecords(
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))
@@ -368,6 +374,6 @@ class DomainTransferRejectFlowTest
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
             previousSuccessRecord.asBuilder().setReportAmount(-1).build(),
-            DomainTransactionRecord.create("tld", clock.nowUtc(), TRANSFER_NACKED, 1));
+            DomainTransactionRecord.create("tld", clock.now(), TRANSFER_NACKED, 1));
   }
 }
