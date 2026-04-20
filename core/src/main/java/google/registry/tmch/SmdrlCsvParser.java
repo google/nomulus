@@ -15,7 +15,6 @@
 package google.registry.tmch;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -23,11 +22,11 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.smd.SignedMarkRevocationList;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.joda.time.DateTime;
 
 /**
  * Signed Mark Data Revocation List (SMDRL) CSV Parser
@@ -39,7 +38,7 @@ public final class SmdrlCsvParser {
 
   /** Converts the lines from the DNL CSV file into a data structure. */
   public static SignedMarkRevocationList parse(List<String> lines) throws IOException {
-    ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
+    ImmutableMap.Builder<String, Instant> revokes = new ImmutableMap.Builder<>();
 
     // First line: <version>,<SMD Revocation List creation datetime>
     List<String> firstLine = Splitter.on(',').splitToList(lines.get(0));
@@ -48,7 +47,7 @@ public final class SmdrlCsvParser {
         String.format("Line 1: Expected 2 elements, found %d", firstLine.size()));
     int version = Integer.parseInt(firstLine.get(0));
     checkArgument(version == 1, String.format("Line 1: Expected version 1, found %d", version));
-    DateTime creationTime = DateTime.parse(firstLine.get(1)).withZone(UTC);
+    Instant creationTime = Instant.parse(firstLine.get(1));
 
     // Note: we have to skip the first line because it contains the version metadata
     CSVParser csv =
@@ -60,7 +59,7 @@ public final class SmdrlCsvParser {
 
     for (CSVRecord record : csv) {
       String smdId = record.get("smd-id");
-      DateTime revokedTime = DateTime.parse(record.get("insertion-datetime"));
+      Instant revokedTime = Instant.parse(record.get("insertion-datetime"));
       revokes.put(smdId, revokedTime);
     }
     return SignedMarkRevocationList.create(creationTime, revokes.build());

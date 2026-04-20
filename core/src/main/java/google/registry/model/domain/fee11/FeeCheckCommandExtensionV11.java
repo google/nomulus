@@ -27,9 +27,9 @@ import google.registry.model.domain.fee11.FeeCheckCommandExtensionV11.FeeCheckCo
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
-import org.joda.time.DateTime;
 
 /**
  * Version 0.11 of the fee extension that may be present on domain check commands. Unlike other
@@ -138,7 +138,7 @@ public class FeeCheckCommandExtensionV11 extends ImmutableObject
     }
 
     @Override
-    public Optional<DateTime> getEffectiveDate() {
+    public Optional<Instant> getEffectiveDate() {
       return Optional.empty();
     }
   }

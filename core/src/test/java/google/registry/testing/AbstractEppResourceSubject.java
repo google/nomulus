@@ -32,6 +32,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.TruthChainer.And;
 import google.registry.testing.TruthChainer.Which;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -153,12 +154,26 @@ abstract class AbstractEppResourceSubject<
     return hasValue(deletionTime, actual.getDeletionDateTime(), "getDeletionTime()");
   }
 
+  public And<S> hasDeletionTime(Instant deletionTime) {
+    return hasValue(deletionTime, actual.getDeletionTime(), "getDeletionTime()");
+  }
+
   public And<S> hasLastEppUpdateTime(DateTime lastUpdateTime) {
     return hasValue(lastUpdateTime, actual.getLastEppUpdateDateTime(), "has lastEppUpdateTime");
   }
 
+  public And<S> hasLastEppUpdateTime(Instant lastUpdateTime) {
+    return hasValue(lastUpdateTime, actual.getLastEppUpdateTime(), "has lastEppUpdateTime");
+  }
+
   public And<S> hasLastEppUpdateTimeAtLeast(DateTime before) {
     DateTime lastEppUpdateTime = actual.getLastEppUpdateDateTime();
+    check("getLastEppUpdateTime()").that(lastEppUpdateTime).isAtLeast(before);
+    return andChainer();
+  }
+
+  public And<S> hasLastEppUpdateTimeAtLeast(Instant before) {
+    Instant lastEppUpdateTime = actual.getLastEppUpdateTime();
     check("getLastEppUpdateTime()").that(lastEppUpdateTime).isAtLeast(before);
     return andChainer();
   }
@@ -182,9 +197,23 @@ abstract class AbstractEppResourceSubject<
     return andChainer();
   }
 
+  public And<S> isActiveAt(Instant time) {
+    if (!isActive(actual, DateTime.parse(time.toString()))) {
+      failWithActual("expected to be active at", time);
+    }
+    return andChainer();
+  }
+
   public And<S> isNotActiveAt(DateTime time) {
     if (isActive(actual, time)) {
-      failWithActual("expected not to be active at", time);
+      failWithActual("expected to not be active at", time);
+    }
+    return andChainer();
+  }
+
+  public And<S> isNotActiveAt(Instant time) {
+    if (isActive(actual, DateTime.parse(time.toString()))) {
+      failWithActual("expected to not be active at", time);
     }
     return andChainer();
   }

@@ -15,7 +15,7 @@
 package google.registry.model.smd;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
@@ -41,7 +41,7 @@ public class SignedMarkRevocationListDao {
                       .getResultStream()
                       .findFirst();
                 });
-    return smdrl.orElseGet(() -> SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
+    return smdrl.orElseGet(() -> SignedMarkRevocationList.create(START_INSTANT, ImmutableMap.of()));
   }
 
   /**
@@ -51,7 +51,7 @@ public class SignedMarkRevocationListDao {
    * {@code revisionId} are needed.
    */
   public static SignedMarkRevocationList save(SignedMarkRevocationList signedMarkRevocationList) {
-    var persisted =
+    SignedMarkRevocationList persisted =
         tm().transact(
                 () -> {
                   var entity =

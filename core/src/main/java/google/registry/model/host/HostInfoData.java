@@ -23,8 +23,8 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 import java.net.InetAddress;
+import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned for an EPP info flow on a host. */
 @XmlRootElement(name = "infData")
@@ -64,7 +64,7 @@ public abstract class HostInfoData implements ResponseData {
   abstract String getCreationRegistrarId();
 
   @XmlElement(name = "crDate")
-  abstract DateTime getCreationTime();
+  abstract Instant getCreationTime();
 
   @XmlElement(name = "upID")
   @Nullable
@@ -72,11 +72,11 @@ public abstract class HostInfoData implements ResponseData {
 
   @XmlElement(name = "upDate")
   @Nullable
-  abstract DateTime getLastEppUpdateTime();
+  abstract Instant getLastEppUpdateTime();
 
   @XmlElement(name = "trDate")
   @Nullable
-  abstract DateTime getLastTransferTime();
+  abstract Instant getLastTransferTime();
 
   /** Builder for {@link HostInfoData}. */
   @AutoValue.Builder
@@ -91,12 +91,14 @@ public abstract class HostInfoData implements ResponseData {
 
     public abstract Builder setCreationRegistrarId(String creationRegistrarId);
 
-    public abstract Builder setCreationTime(DateTime creationTime);
+    public abstract Builder setCreationTime(Instant creationTime);
 
     public abstract Builder setLastEppUpdateRegistrarId(@Nullable String lastEppUpdateRegistrarId);
 
-    public abstract Builder setLastEppUpdateTime(@Nullable DateTime lastEppUpdateTime);
-    public abstract Builder setLastTransferTime(@Nullable DateTime lastTransferTime);
+    public abstract Builder setLastEppUpdateTime(@Nullable Instant lastEppUpdateTime);
+
+    public abstract Builder setLastTransferTime(@Nullable Instant lastTransferTime);
+
     public abstract HostInfoData build();
   }
 

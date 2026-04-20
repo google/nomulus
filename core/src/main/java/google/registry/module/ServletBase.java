@@ -24,6 +24,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Security;
+import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.joda.time.DateTime;
@@ -49,17 +50,14 @@ public class ServletBase extends HttpServlet {
     // credential, etc.), we log the error but keep the main thread running. Also, the shutdown hook
     // will only be registered if the metric reporter starts up correctly.
     try {
-      metricReporter.get().startAsync().awaitRunning(java.time.Duration.ofSeconds(10));
+      metricReporter.get().startAsync().awaitRunning(Duration.ofSeconds(10));
       logger.atInfo().log("Started up MetricReporter.");
       Runtime.getRuntime()
           .addShutdownHook(
               new Thread(
                   () -> {
                     try {
-                      metricReporter
-                          .get()
-                          .stopAsync()
-                          .awaitTerminated(java.time.Duration.ofSeconds(10));
+                      metricReporter.get().stopAsync().awaitTerminated(Duration.ofSeconds(10));
                       logger.atInfo().log("Shut down MetricReporter.");
                     } catch (TimeoutException e) {
                       logger.atSevere().withCause(e).log("Failed to stop MetricReporter.");
