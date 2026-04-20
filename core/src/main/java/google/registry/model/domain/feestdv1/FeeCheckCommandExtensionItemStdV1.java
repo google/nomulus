@@ -19,10 +19,10 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCheckCommandExtensionItem;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlType;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
-import org.joda.time.DateTime;
 
 /**
  * An individual price check item in version 1.0 of the fee extension on domain check commands.
@@ -100,7 +100,7 @@ public class FeeCheckCommandExtensionItemStdV1 extends FeeCheckCommandExtensionI
   }
 
   @Override
-  public Optional<DateTime> getEffectiveDate() {
+  public Optional<Instant> getEffectiveDate() {
     return Optional.empty();
   }
 }

@@ -408,7 +408,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .and()
         .hasLastSuperordinateChange(clock.nowUtc());
     assertThat(renamedHost.getLastTransferTime()).isEqualTo(oneDayAgo);
-    Domain reloadedDomain = loadByEntity(domain).cloneProjectedAtTime(clock.nowUtc());
+    Domain reloadedDomain = loadByEntity(domain).cloneProjectedAtInstant(clock.now());
     assertThat(reloadedDomain.getSubordinateHosts()).isEmpty();
     assertHostDnsRequests("ns1.example.foo");
   }

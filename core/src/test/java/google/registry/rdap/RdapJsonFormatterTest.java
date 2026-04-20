@@ -151,7 +151,7 @@ class RdapJsonFormatterTest {
             makeDomain("fish.みんな", null, null, registrar)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc())
-                .setLastEppUpdateTime((java.time.Instant) null)
+                .setLastEppUpdateTime((Instant) null)
                 .build());
 
     // history entries

@@ -345,7 +345,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
     Host deletedHost = reloadResourceByForeignKey(clock.nowUtc().minusMillis(1));
     assertAboutHosts()
         .that(deletedHost)
-        .isNotActiveAt(clock.nowUtc())
+        .isNotActiveAt(clock.now())
         .and()
         .hasExactlyStatusValues(StatusValue.OK)
         .and()

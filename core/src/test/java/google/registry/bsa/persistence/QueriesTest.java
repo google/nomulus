@@ -44,6 +44,7 @@ import google.registry.bsa.persistence.Queries.DomainLifeSpan;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -208,14 +209,14 @@ class QueriesTest {
     createTlds("tld");
     persistNewRegistrar("TheRegistrar");
     // time 0:
-    persistActiveDomain("d1.tld", toDateTime(fakeClock.now()));
+    persistActiveDomain("d1.tld", fakeClock.nowUtc());
     // time 0, deletion time 1
     persistDomainAsDeleted(
         newDomain("will-delete.tld").asBuilder().setCreationTimeForTest(fakeClock.now()).build(),
-        toDateTime(fakeClock.now().plusMillis(1)));
+        fakeClock.now().plusMillis(1));
     fakeClock.advanceOneMilli();
     // time 1
-    persistActiveDomain("d2.tld", toDateTime(fakeClock.now()));
+    persistActiveDomain("d2.tld", fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
     // Now is time 2
     assertThat(
@@ -232,14 +233,14 @@ class QueriesTest {
     createTlds("tld");
     persistNewRegistrar("TheRegistrar");
     // time 0:
-    persistActiveDomain("d1.tld", toDateTime(fakeClock.now()));
+    persistActiveDomain("d1.tld", fakeClock.nowUtc());
     // time 0, deletion time 1
     persistDomainAsDeleted(
         newDomain("will-delete.tld").asBuilder().setCreationTimeForTest(fakeClock.now()).build(),
-        toDateTime(fakeClock.now().plusMillis(1)));
+        fakeClock.now().plusMillis(1));
     fakeClock.advanceOneMilli();
     // time 1
-    persistActiveDomain("d2.tld", toDateTime(fakeClock.now()));
+    persistActiveDomain("d2.tld", fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
     // Now is time 2, ask for domains created since time 1
     assertThat(
@@ -255,8 +256,8 @@ class QueriesTest {
     Instant testStartTime = fakeClock.now();
     createTlds("tld", "tld2");
     persistNewRegistrar("TheRegistrar");
-    persistActiveDomain("d1.tld", toDateTime(fakeClock.now()));
-    persistActiveDomain("d2.tld2", toDateTime(fakeClock.now()));
+    persistActiveDomain("d1.tld", fakeClock.nowUtc());
+    persistActiveDomain("d2.tld2", fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
     assertThat(
             bsaQuery(
@@ -271,19 +272,19 @@ class QueriesTest {
     createTlds("tld", "tld2");
     persistNewRegistrar("TheRegistrar");
     Instant time1 = fakeClock.now();
-    persistActiveDomain("unblocked1.tld", toDateTime(fakeClock.now()));
-    persistActiveDomain("unblocked2.tld2", toDateTime(fakeClock.now()));
-    persistActiveDomain("label1.tld", toDateTime(fakeClock.now()));
-    persistActiveDomain("label2.tld2", toDateTime(fakeClock.now()));
+    persistActiveDomain("unblocked1.tld", fakeClock.nowUtc());
+    persistActiveDomain("unblocked2.tld2", fakeClock.nowUtc());
+    persistActiveDomain("label1.tld", fakeClock.nowUtc());
+    persistActiveDomain("label2.tld2", fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
     Instant time2 = fakeClock.now();
     persistDomainAsDeleted(
         newDomain("label3.tld").asBuilder().setCreationTimeForTest(fakeClock.now()).build(),
-        toDateTime(fakeClock.now().plusMillis(1)));
+        fakeClock.now().plusMillis(1));
     // Deleted in the future
     persistDomainAsDeleted(
         newDomain("label3.tld2").asBuilder().setCreationTimeForTest(fakeClock.now()).build(),
-        toDateTime(fakeClock.now().plus(java.time.Duration.ofHours(1))));
+        toDateTime(fakeClock.now().plus(Duration.ofHours(1))));
     fakeClock.advanceOneMilli();
     assertThat(
             (ImmutableList<DomainLifeSpan>)
@@ -294,7 +295,7 @@ class QueriesTest {
                 bsaQuery(() -> queryMissedRegisteredUnblockables("tld2", fakeClock.now())))
         .containsExactly(
             new DomainLifeSpan("label2.tld2", time1, END_INSTANT),
-            new DomainLifeSpan("label3.tld2", time2, time2.plus(java.time.Duration.ofHours(1))));
+            new DomainLifeSpan("label3.tld2", time2, time2.plus(Duration.ofHours(1))));
 
     BsaTestingUtils.persistUnblockableDomain(
         UnblockableDomain.of("label2", "tld2", UnblockableDomain.Reason.REGISTERED));
@@ -303,8 +304,7 @@ class QueriesTest {
     assertThat(
             (ImmutableList<DomainLifeSpan>)
                 bsaQuery(() -> queryMissedRegisteredUnblockables("tld2", fakeClock.now())))
-        .containsExactly(
-            new DomainLifeSpan("label3.tld2", time2, time2.plus(java.time.Duration.ofHours(1))));
+        .containsExactly(new DomainLifeSpan("label3.tld2", time2, time2.plus(Duration.ofHours(1))));
   }
 
   @Test

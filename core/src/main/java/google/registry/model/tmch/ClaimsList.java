@@ -19,8 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -43,7 +41,6 @@ import jakarta.persistence.Transient;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * A list of TMCH claims labels and their associated claims keys.
@@ -141,31 +138,14 @@ public class ClaimsList extends ImmutableObject {
    *
    * @see <a href="https://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.1">DNL List
    *     creation datetime</a>
-   * @deprecated Use {@link #getTmdbGenerationTimeInstant()}
    */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getTmdbGenerationTime() {
-    return toDateTime(tmdbGenerationTime);
-  }
-
-  /** Returns the time when the external TMDB service generated this revision of the claims list. */
-  public Instant getTmdbGenerationTimeInstant() {
+  public Instant getTmdbGenerationTime() {
     return tmdbGenerationTime;
   }
 
   /** Returns the creation time of this claims list. */
   public Instant getCreationTime() {
     return creationTimestamp.getTimestamp();
-  }
-
-  /**
-   * @deprecated Use {@link #getCreationTime()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getCreationDateTime() {
-    return toDateTime(creationTimestamp.getTimestamp());
   }
 
   /**
@@ -239,15 +219,5 @@ public class ClaimsList extends ImmutableObject {
     instance.tmdbGenerationTime = checkNotNull(tmdbGenerationTime);
     instance.labelsToKeys = checkNotNull(labelsToKeys);
     return instance;
-  }
-
-  /**
-   * @deprecated Use {@link #create(Instant, ImmutableMap)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static ClaimsList create(
-      DateTime tmdbGenerationTime, ImmutableMap<String, String> labelsToKeys) {
-    return create(toInstant(tmdbGenerationTime), labelsToKeys);
   }
 }

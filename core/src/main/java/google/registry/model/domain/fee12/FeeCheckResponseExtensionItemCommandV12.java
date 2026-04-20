@@ -26,8 +26,8 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
+import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
 
 /** The version 0.12 response command entity for a domain check on a single resource. */
 @XmlType(propOrder = {"period", "fee", "feeClass", "effectiveDate", "notAfterDate"})
@@ -65,12 +65,11 @@ public class FeeCheckResponseExtensionItemCommandV12 extends ImmutableObject {
 
   /** The effective date that the check is to be performed on (if specified in the query). */
   @XmlElement(name = "date")
-  DateTime effectiveDate;
+  Instant effectiveDate;
 
   /** The date after which the quoted fee is no longer valid (if applicable). */
   @XmlElement(name = "notAfter")
-  DateTime notAfterDate;
-
+  Instant notAfterDate;
 
   public String getFeeClass() {
     return feeClass;
@@ -99,12 +98,12 @@ public class FeeCheckResponseExtensionItemCommandV12 extends ImmutableObject {
       return this;
     }
 
-    public Builder setEffectiveDate(DateTime effectiveDate) {
+    public Builder setEffectiveDate(Instant effectiveDate) {
       getInstance().effectiveDate = effectiveDate;
       return this;
     }
 
-    public Builder setNotAfterDate(DateTime notAfterDate) {
+    public Builder setNotAfterDate(Instant notAfterDate) {
       getInstance().notAfterDate = notAfterDate;
       return this;
     }
