@@ -21,14 +21,14 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /** Information about the message queue for the currently logged in registrar. */
 public class MessageQueueInfo extends ImmutableObject {
 
   /** The date and time that the current message was enqueued. */
   @XmlElement(name = "qDate")
-  DateTime queueDate;
+  Instant queueDate;
 
   /** A human-readable message. */
   String msg;
@@ -43,7 +43,7 @@ public class MessageQueueInfo extends ImmutableObject {
 
   /** A builder for constructing a {@link MessageQueueInfo}, since it's immutable. */
   public static class Builder extends Buildable.Builder<MessageQueueInfo> {
-    public Builder setQueueDate(DateTime queueDate) {
+    public Builder setQueueDate(Instant queueDate) {
       getInstance().queueDate = queueDate;
       return this;
     }

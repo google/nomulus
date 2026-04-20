@@ -15,7 +15,7 @@
 package google.registry.model.smd;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -34,22 +34,21 @@ public class SignedMarkRevocationListTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2013-01-01T00:00:00Z"));
 
   @Test
   void testEmpty() {
     // When Cloud SQL is empty, it should give us an empty thing.
     assertThat(SignedMarkRevocationList.get())
-        .isEqualTo(SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
+        .isEqualTo(SignedMarkRevocationList.create(START_INSTANT, ImmutableMap.of()));
   }
 
   private SignedMarkRevocationList createSaveGetHelper(int rows) {
-    ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
+    ImmutableMap.Builder<String, Instant> revokes = new ImmutableMap.Builder<>();
     for (int i = 0; i < rows; i++) {
-      revokes.put(Integer.toString(i), clock.nowUtc());
+      revokes.put(Integer.toString(i), clock.now());
     }
-    SignedMarkRevocationListDao.save(
-        SignedMarkRevocationList.create(clock.nowUtc(), revokes.build()));
+    SignedMarkRevocationListDao.save(SignedMarkRevocationList.create(clock.now(), revokes.build()));
     SignedMarkRevocationList res = SignedMarkRevocationList.get();
     assertThat(res.size()).isEqualTo(rows);
     return res;
@@ -60,36 +59,36 @@ public class SignedMarkRevocationListTest {
     assertThrows(
         NullPointerException.class,
         () ->
-            SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of())
-                .isSmdRevoked(null, clock.nowUtc()));
+            SignedMarkRevocationList.create(START_INSTANT, ImmutableMap.of())
+                .isSmdRevoked(null, clock.now()));
   }
 
   @Test
   void test_isSmdRevoked_garbage() {
     SignedMarkRevocationList smdrl = createSaveGetHelper(100);
-    assertThat(smdrl.getCreationTime()).isEqualTo(clock.nowUtc());
-    assertThat(smdrl.isSmdRevoked("rofl", clock.nowUtc())).isFalse();
-    assertThat(smdrl.isSmdRevoked("31337", clock.nowUtc())).isFalse();
+    assertThat(smdrl.getCreationTime()).isEqualTo(clock.now());
+    assertThat(smdrl.isSmdRevoked("rofl", clock.now())).isFalse();
+    assertThat(smdrl.isSmdRevoked("31337", clock.now())).isFalse();
   }
 
   @Test
   void test_getCreationTime() {
-    clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     createSaveGetHelper(5);
     assertThat(SignedMarkRevocationList.get().getCreationTime())
-        .isEqualTo(DateTime.parse("2000-01-01T00:00:00Z"));
+        .isEqualTo(Instant.parse("2000-01-01T00:00:00Z"));
     clock.advanceBy(standardDays(1));
     assertThat(SignedMarkRevocationList.get().getCreationTime())
-        .isEqualTo(DateTime.parse("2000-01-01T00:00:00Z"));
+        .isEqualTo(Instant.parse("2000-01-01T00:00:00Z"));
   }
 
   @Test
   void test_isSmdRevoked_present() {
     final int rows = 100;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
-    assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isTrue();
-    assertThat(smdrl.isSmdRevoked(Integer.toString(rows - 1), clock.nowUtc())).isTrue();
-    assertThat(smdrl.isSmdRevoked(Integer.toString(rows), clock.nowUtc())).isFalse();
+    assertThat(smdrl.isSmdRevoked("0", clock.now())).isTrue();
+    assertThat(smdrl.isSmdRevoked(Integer.toString(rows - 1), clock.now())).isTrue();
+    assertThat(smdrl.isSmdRevoked(Integer.toString(rows), clock.now())).isFalse();
   }
 
   @Test
@@ -97,18 +96,18 @@ public class SignedMarkRevocationListTest {
     final int rows = 100;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     clock.advanceOneMilli();
-    assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isTrue();
-    assertThat(smdrl.isSmdRevoked(Integer.toString(rows - 1), clock.nowUtc())).isTrue();
-    assertThat(smdrl.isSmdRevoked(Integer.toString(rows), clock.nowUtc())).isFalse();
+    assertThat(smdrl.isSmdRevoked("0", clock.now())).isTrue();
+    assertThat(smdrl.isSmdRevoked(Integer.toString(rows - 1), clock.now())).isTrue();
+    assertThat(smdrl.isSmdRevoked(Integer.toString(rows), clock.now())).isFalse();
   }
 
   @Test
   void test_isSmdRevoked_past() {
     final int rows = 100;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
-    clock.setTo(clock.nowUtc().minusMillis(1));
-    assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isFalse();
-    assertThat(smdrl.isSmdRevoked(Integer.toString(rows - 1), clock.nowUtc())).isFalse();
-    assertThat(smdrl.isSmdRevoked(Integer.toString(rows), clock.nowUtc())).isFalse();
+    clock.setTo(clock.now().minusMillis(1));
+    assertThat(smdrl.isSmdRevoked("0", clock.now())).isFalse();
+    assertThat(smdrl.isSmdRevoked(Integer.toString(rows - 1), clock.now())).isFalse();
+    assertThat(smdrl.isSmdRevoked(Integer.toString(rows), clock.now())).isFalse();
   }
 }

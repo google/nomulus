@@ -45,6 +45,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.util.BatchedStreams;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -95,7 +96,7 @@ public final class DomainsRefresher {
   public DomainsRefresher(
       Instant prevRefreshStartTime,
       Instant now,
-      java.time.Duration domainTxnMaxDuration,
+      Duration domainTxnMaxDuration,
       int transactionBatchSize) {
     this.prevRefreshStartTime = prevRefreshStartTime.minus(domainTxnMaxDuration);
     this.now = now;

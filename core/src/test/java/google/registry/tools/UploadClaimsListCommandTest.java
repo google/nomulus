@@ -22,7 +22,9 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.testing.TestCacheExtension;
 import java.io.FileNotFoundException;
-import org.joda.time.DateTime;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -31,7 +33,7 @@ class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsListComman
 
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =
-      new TestCacheExtension.Builder().withClaimsListCache(java.time.Duration.ofHours(6)).build();
+      new TestCacheExtension.Builder().withClaimsListCache(Duration.ofHours(6)).build();
 
   @Test
   void testSuccess() throws Exception {
@@ -45,7 +47,7 @@ class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsListComman
 
     ClaimsList claimsList = ClaimsListDao.get();
     assertThat(claimsList.getTmdbGenerationTime())
-        .isEqualTo(DateTime.parse("2012-08-16T00:00:00.0Z"));
+        .isEqualTo(Instant.parse("2012-08-16T00:00:00.0Z"));
     assertThat(tm().transact(() -> claimsList.getClaimKey("example")))
         .hasValue("2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001");
     assertThat(tm().transact(() -> claimsList.getClaimKey("another-example")))
@@ -84,73 +86,79 @@ class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsListComman
       "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
       "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
       "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
-    assertThrows(IllegalArgumentException.class, () -> runCommand("--force", filename));
+    assertThrows(DateTimeParseException.class, () -> runCommand("--force", filename));
   }
 
   @Test
   void testFailure_badFirstHeader() throws Exception {
-    String filename = writeToTmpFile(
-      "1,foo",
-      "SNL,lookup-key,insertion-datetime",
-      "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
-      "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
-      "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
+    String filename =
+        writeToTmpFile(
+            "1,2010-01-01T00:00:00.0Z",
+            "SNL,lookup-key,insertion-datetime",
+            "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
+            "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
+            "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
     assertThrows(IllegalArgumentException.class, () -> runCommand("--force", filename));
   }
 
   @Test
   void testFailure_badSecondHeader() throws Exception {
-    String filename = writeToTmpFile(
-      "1,foo",
-      "DNL,lookup-keys,insertion-datetime",
-      "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
-      "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
-      "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
+    String filename =
+        writeToTmpFile(
+            "1,2010-01-01T00:00:00.0Z",
+            "DNL,lookup-keys,insertion-datetime",
+            "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
+            "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
+            "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
     assertThrows(IllegalArgumentException.class, () -> runCommand("--force", filename));
   }
 
   @Test
   void testFailure_badThirdHeader() throws Exception {
-    String filename = writeToTmpFile(
-      "1,foo",
-      "DNL,lookup-key,insertion-datetimes",
-      "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
-      "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
-      "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
+    String filename =
+        writeToTmpFile(
+            "1,2010-01-01T00:00:00.0Z",
+            "DNL,lookup-key,insertion-datetimes",
+            "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
+            "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
+            "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
     assertThrows(IllegalArgumentException.class, () -> runCommand("--force", filename));
   }
 
   @Test
   void testFailure_wrongNumberOfHeaders() throws Exception {
-    String filename = writeToTmpFile(
-      "1,foo",
-      "DNL,lookup-key,insertion-datetime,extra-field",
-      "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
-      "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
-      "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
+    String filename =
+        writeToTmpFile(
+            "1,2010-01-01T00:00:00.0Z",
+            "DNL,lookup-key,insertion-datetime,extra-field",
+            "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
+            "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
+            "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
     assertThrows(IllegalArgumentException.class, () -> runCommand("--force", filename));
   }
 
   @Test
   void testFailure_wrongNumberOfFields() throws Exception {
-    String filename = writeToTmpFile(
-      "1,foo",
-      "DNL,lookup-key,insertion-datetime",
-      "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z,extra",
-      "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
-      "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
+    String filename =
+        writeToTmpFile(
+            "1,2010-01-01T00:00:00.0Z",
+            "DNL,lookup-key,insertion-datetime",
+            "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z,extra",
+            "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,2012-08-16T00:00:00.0Z",
+            "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
     assertThrows(IllegalArgumentException.class, () -> runCommand("--force", filename));
   }
 
   @Test
   void testFailure_badInsertionTime() throws Exception {
-    String filename = writeToTmpFile(
-      "1,foo",
-      "DNL,lookup-key,insertion-datetime",
-      "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
-      "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,foo",
-      "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
-    assertThrows(IllegalArgumentException.class, () -> runCommand("--force", filename));
+    String filename =
+        writeToTmpFile(
+            "1,2010-01-01T00:00:00.0Z",
+            "DNL,lookup-key,insertion-datetime",
+            "example,2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001,2010-07-14T00:00:00.0Z",
+            "another-example,2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002,foo",
+            "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
+    assertThrows(DateTimeParseException.class, () -> runCommand("--force", filename));
   }
 
   @Test

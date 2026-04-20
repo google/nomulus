@@ -422,7 +422,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
       // If we updated the autorenew billing event, reuse it.
       DateTime autoRenewTime =
           billingRecurrence.getRecurrenceTimeOfYear().getLastInstanceBeforeOrAt(now);
-      return getDomainRenewCost(targetId, autoRenewTime, 1);
+      return getDomainRenewCost(targetId, toInstant(autoRenewTime), 1);
     }
     return tm().loadByKey(checkNotNull(gracePeriod.getBillingEvent())).getCost();
   }

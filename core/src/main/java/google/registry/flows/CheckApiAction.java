@@ -35,6 +35,7 @@ import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.STANDARD;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static org.json.simple.JSONValue.toJSONString;
 
@@ -165,7 +166,7 @@ public class CheckApiAction implements Runnable {
       metricBuilder.status(SUCCESS).availability(availability);
       responseBuilder.put("status", "success").put("available", availability.equals(AVAILABLE));
 
-      boolean isPremium = isDomainPremium(domainString, now);
+      boolean isPremium = isDomainPremium(domainString, toInstant(now));
       metricBuilder.tier(isPremium ? PREMIUM : STANDARD);
       responseBuilder.put("tier", isPremium ? "premium" : "standard");
       if (!AVAILABLE.equals(availability)) {

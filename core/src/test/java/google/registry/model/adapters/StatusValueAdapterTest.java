@@ -15,7 +15,7 @@
 package google.registry.model.adapters;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableMap;
@@ -46,7 +46,7 @@ public class StatusValueAdapterTest {
                         .setResData(
                             HostInfoData.newBuilder()
                                 .setCreationRegistrarId("")
-                                .setCreationTime(START_OF_TIME)
+                                .setCreationTime(START_INSTANT)
                                 .setCurrentSponsorRegistrarId("")
                                 .setHostName("")
                                 .setInetAddresses(ImmutableSet.of())

@@ -16,7 +16,7 @@ package google.registry.model.tmch;
 
 import static google.registry.config.RegistryConfig.getClaimsListCacheDuration;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -83,7 +83,7 @@ public class ClaimsListDao {
                     .setMaxResults(1)
                     .getResultStream()
                     .findFirst())
-        .orElse(ClaimsList.create(START_OF_TIME, ImmutableMap.of()));
+        .orElse(ClaimsList.create(START_INSTANT, ImmutableMap.of()));
   }
 
   private ClaimsListDao() {}

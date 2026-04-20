@@ -62,7 +62,7 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand {
     for (String domain : domains) {
       String currency = null;
       String cost = null;
-      DomainPrices prices = getPricesForDomainName(domain, clock.nowUtc());
+      DomainPrices prices = getPricesForDomainName(domain, clock.now());
 
       // Check if the domain is premium and set the fee on the create command if so.
       if (prices.isPremium()) {
