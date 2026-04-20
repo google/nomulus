@@ -14,6 +14,8 @@
 
 package google.registry.rdap;
 
+import static com.google.monitoring.metrics.EventMetric.DEFAULT_FITTER;
+
 import com.google.auto.value.AutoBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
@@ -141,7 +143,7 @@ public class RdapMetrics {
               "RDAP Request Time",
               "milliseconds",
               LABEL_DESCRIPTORS_FOR_RESPONSES,
-              EventMetric.DEFAULT_FITTER);
+              DEFAULT_FITTER);
 
   @Inject
   public RdapMetrics() {}
