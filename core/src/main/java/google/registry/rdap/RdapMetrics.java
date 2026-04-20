@@ -204,7 +204,6 @@ public class RdapMetrics {
     }
   }
 
-
   /**
    * Information on RDAP metrics.
    *

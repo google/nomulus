@@ -183,7 +183,7 @@ public abstract class RdapActionBase implements Runnable {
     }
     long processingTime = Duration.between(startTime, clock.now()).toMillis();
     metricInformationBuilder.setProcessingTime(processingTime);
-    
+
     rdapMetrics.updateMetrics(metricInformationBuilder.build());
   }
 
