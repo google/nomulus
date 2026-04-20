@@ -20,8 +20,8 @@ import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
+import java.time.Instant;
 import java.util.Set;
-import org.joda.time.DateTime;
 
 /**
  * A greeting, defined in <a href="http://tools.ietf.org/html/rfc5730">RFC5730</a>.
@@ -32,7 +32,7 @@ import org.joda.time.DateTime;
 public class Greeting extends ImmutableObject implements ResponseOrGreeting {
 
   String svID;
-  DateTime svDate;
+  Instant svDate;
 
   /** This is never changed, so it might as well be static for efficiency. */
   @XmlElement
@@ -42,7 +42,7 @@ public class Greeting extends ImmutableObject implements ResponseOrGreeting {
   @XmlElement
   static Dcp dcp = new Dcp();
 
-  public static Greeting create(DateTime svDate, String svID) {
+  public static Greeting create(Instant svDate, String svID) {
     Greeting instance = new Greeting();
     instance.svID = svID;
     instance.svDate = svDate;

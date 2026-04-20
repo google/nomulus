@@ -53,6 +53,7 @@ import static google.registry.model.tld.label.ReservationType.NAME_COLLISION;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -313,7 +314,7 @@ public final class DomainCreateFlow implements MutatingFlow {
       // at this point so that we can verify it before the "after validation" extension point.
       signedMarkId =
           tmchUtils
-              .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, now)
+              .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, toInstant(now))
               .getId();
     }
     verifyNotBlockedByBsa(domainName, tld, now, allocationToken);
@@ -327,7 +328,7 @@ public final class DomainCreateFlow implements MutatingFlow {
         eppInput.getSingleExtension(FeeCreateCommandExtension.class);
     FeesAndCredits feesAndCredits =
         pricingLogic.getCreatePrice(
-            tld, targetId, now, years, isAnchorTenant, isSunriseCreate, allocationToken);
+            tld, targetId, toInstant(now), years, isAnchorTenant, isSunriseCreate, allocationToken);
     validateFeeChallenge(feeCreate, feesAndCredits, defaultTokenUsed);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
@@ -434,13 +435,21 @@ public final class DomainCreateFlow implements MutatingFlow {
     FeesAndCredits responseFeesAndCredits =
         shouldShowDefaultPrice
             ? pricingLogic.getCreatePrice(
-                tld, targetId, now, years, isAnchorTenant, isSunriseCreate, Optional.empty())
+                tld,
+                targetId,
+                toInstant(now),
+                years,
+                isAnchorTenant,
+                isSunriseCreate,
+                Optional.empty())
             : feesAndCredits;
 
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
-                .setResData(DomainCreateData.create(targetId, now, registrationExpirationTime))
+                .setResData(
+                    DomainCreateData.create(
+                        targetId, toInstant(now), toInstant(registrationExpirationTime)))
                 .setResponseExtensions(createResponseExtensions(feeCreate, responseFeesAndCredits))
                 .build());
     return responseBuilder

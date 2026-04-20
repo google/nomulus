@@ -176,6 +176,18 @@ public abstract class DateTimeUtils {
         : now.atZone(ZoneOffset.UTC).plusYears(1).plusYears(years - 1).toInstant();
   }
 
+  /** Adds months to a date. */
+  public static Instant plusMonths(Instant now, int months) {
+    checkArgument(months >= 0);
+    return now.atZone(ZoneOffset.UTC).plusMonths(months).toInstant();
+  }
+
+  /** Subtracts months from a date. */
+  public static Instant minusMonths(Instant now, int months) {
+    checkArgument(months >= 0);
+    return now.atZone(ZoneOffset.UTC).minusMonths(months).toInstant();
+  }
+
   /**
    * Subtracts years from a date, in the {@code Duration} sense of semantic years. Use this instead
    * of {@link DateTime#minusYears} to ensure that we never end up on February 29.

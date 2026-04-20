@@ -17,10 +17,10 @@
     xmlns = @XmlNs(prefix = "smd", namespaceURI = "urn:ietf:params:xml:ns:signedMark-1.0"),
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlJavaTypeAdapter(UtcDateTimeAdapter.class)
+@XmlJavaTypeAdapter(UtcInstantAdapter.class)
 package google.registry.model.smd;
 
-import google.registry.xml.UtcDateTimeAdapter;
+import google.registry.xml.UtcInstantAdapter;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlNs;
