@@ -28,7 +28,6 @@ import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.minusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -49,6 +48,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.RegistryEnvironment;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
@@ -238,7 +238,7 @@ class DeleteProberDataActionTest {
     persistResource(
         DatabaseHelper.newDomain("blah.ib-any.test")
             .asBuilder()
-            .setCreationTimeForTest(clock.now().minus(java.time.Duration.ofSeconds(1)))
+            .setCreationTimeForTest(clock.now().minus(Duration.ofSeconds(1)))
             .build());
     action.run();
     Optional<Domain> domain =
@@ -263,15 +263,14 @@ class DeleteProberDataActionTest {
   @Test
   void test_domainWithSubordinateHosts_isSkipped() throws Exception {
     persistActiveHost("ns1.blah.ib-any.test");
-    Domain nakedDomain =
-        persistDeletedDomain("todelete.ib-any.test", toDateTime(minusYears(clock.now(), 1)));
+    Domain nakedDomain = persistDeletedDomain("todelete.ib-any.test", clock.nowUtc().minusYears(1));
     Domain domainWithSubord =
         persistDomainAsDeleted(
             DatabaseHelper.newDomain("blah.ib-any.test")
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.blah.ib-any.test"))
                 .build(),
-            toDateTime(minusYears(clock.now(), 1)));
+            clock.nowUtc().minusYears(1));
     action.run();
 
     assertAllExist(ImmutableSet.of(domainWithSubord));

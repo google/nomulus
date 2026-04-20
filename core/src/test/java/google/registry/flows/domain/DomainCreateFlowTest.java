@@ -57,7 +57,12 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusMonths;
+import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -184,7 +189,6 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -197,12 +201,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   private static final String CLAIMS_KEY = "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001";
   // This is a time when SMD itself is not valid, but its signing certificates are. It will
   // trigger a different exception than when any signing cert is not valid yet.
-  private static final DateTime SMD_NOT_YET_VALID_TIME = DateTime.parse("2022-11-20T12:34:56Z");
-  private static final DateTime SMD_VALID_TIME = DateTime.parse("2023-01-02T12:34:56Z");
+  private static final Instant SMD_NOT_YET_VALID_TIME = Instant.parse("2022-11-20T12:34:56Z");
+  private static final Instant SMD_VALID_TIME = Instant.parse("2023-01-02T12:34:56Z");
   // This is a time when the imtermediate certificate in the SMD signature chain has expired. The
   // SMD itself has not expired yet. It will trigger a different exception than when the SMD itself
   // has expired.
-  private static final DateTime SMD_CERT_EXPIRED_TIME = DateTime.parse("2027-11-02T12:34:56Z");
+  private static final Instant SMD_CERT_EXPIRED_TIME = Instant.parse("2027-11-02T12:34:56Z");
   private static final String SMD_ID = "000000851669081693741-65535";
   private static final String SMD_FILE_PATH = "smd/active.smd";
   private static final String ENCODED_SMD =
@@ -224,7 +228,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   DomainCreateFlowTest() {
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
-    clock.setTo(DateTime.parse("1999-04-03T22:00:00.0Z").minus(Duration.millis(2)));
+    clock.setTo(Instant.parse("1999-04-03T22:00:00.0Z").minusMillis(2));
   }
 
   @BeforeEach
@@ -257,7 +261,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTime(Optional.of(clock.nowUtc().minusSeconds(1)))
+            .setBsaEnrollStartTimeInstant(Optional.of(clock.now().minusSeconds(1)))
             .build());
   }
 
@@ -314,16 +318,18 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
     boolean isAnchorTenant = expectedBillingFlags.contains(ANCHOR_TENANT);
     // Set up the creation cost.
-    boolean isDomainPremium = isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc());
+    boolean isDomainPremium = isDomainPremium(getUniqueIdFromCommand(), clock.now());
 
     Money eapFee =
         Money.of(
             Tld.get(domainTld).getCurrency(),
-            Tld.get(domainTld).getEapFeeFor(clock.nowUtc()).getCost());
-    DateTime billingTime =
+            Tld.get(domainTld).getEapFeeFor(clock.now()).getCost());
+    Instant billingTime =
         isAnchorTenant
-            ? clock.nowUtc().plus(Tld.get(domainTld).getAnchorTenantAddGracePeriodLength())
-            : clock.nowUtc().plus(Tld.get(domainTld).getAddGracePeriodLength());
+            ? clock
+                .now()
+                .plusMillis(Tld.get(domainTld).getAnchorTenantAddGracePeriodLength().getMillis())
+            : clock.now().plusMillis(Tld.get(domainTld).getAddGracePeriodLength().getMillis());
     assertLastHistoryContainsResource(domain);
     DomainHistory historyEntry = getHistoryEntries(domain, DomainHistory.class).get(0);
     VKey<BillingRecurrence> autorenewVKey = domain.getAutorenewBillingEvent();
@@ -351,7 +357,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setRegistrarId("TheRegistrar")
             .setCost(Money.of(USD, BigDecimal.valueOf(createCost)))
             .setPeriodYears(2)
-            .setEventTime(clock.nowUtc())
+            .setEventTime(clock.now())
             .setBillingTime(billingTime)
             .setFlags(expectedBillingFlags)
             .setDomainHistory(historyEntry)
@@ -387,7 +393,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
               .setRegistrarId("TheRegistrar")
               .setPeriodYears(1)
               .setCost(eapFee)
-              .setEventTime(clock.nowUtc())
+              .setEventTime(clock.now())
               .setBillingTime(billingTime)
               .setFlags(expectedBillingFlags)
               .setDomainHistory(historyEntry)
@@ -443,8 +449,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             LaunchNotice.create(
                 "370d0b7c9223372036854775807",
                 "tmch",
-                DateTime.parse("2010-08-16T09:00:00.0Z"),
-                DateTime.parse("2009-08-16T09:00:00.0Z")))
+                Instant.parse("2010-08-16T09:00:00.0Z"),
+                Instant.parse("2009-08-16T09:00:00.0Z")))
         .and()
         .hasLordnPhase(LordnPhase.CLAIMS);
   }
@@ -576,11 +582,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             new AllocationToken.Builder()
                 .setTokenType(UNLIMITED_USE)
                 .setToken("abc123")
-                .setTokenStatusTransitions(
-                    ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                        .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                        .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
-                        .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                .setTokenStatusTransitionsInstant(
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                        .put(minusDays(clock.now(), 1), TokenStatus.VALID)
+                        .put(plusDays(clock.now(), 1), TokenStatus.ENDED)
                         .build())
                 .build());
     clock.advanceOneMilli();
@@ -628,7 +634,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testFailure_generalAvailability_withEncodedSignedMark() {
     createTld("tld", GENERAL_AVAILABILITY);
-    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    clock.setTo(Instant.parse("2014-09-09T09:09:09Z"));
     setEppInput(
         "domain_create_registration_encoded_signed_mark.xml",
         ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "open", "SMD", ENCODED_SMD));
@@ -726,13 +732,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("example")
             .asBuilder()
-            .setEapFeeSchedule(
+            .setEapFeeScheduleInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 0),
-                    clock.nowUtc().minusDays(1),
+                    minusDays(clock.now(), 1),
                     Money.of(USD, 100),
-                    clock.nowUtc().plusDays(1),
+                    plusDays(clock.now(), 1),
                     Money.of(USD, 0)))
             .build());
     assertMutatingFlow(true);
@@ -829,7 +835,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "epp.response.resData.creData.exDate"); // Ignore expiration date; we verify it below
     assertAboutDomains()
         .that(reloadResourceByForeignKey())
-        .hasRegistrationExpirationTime(clock.nowUtc().plusYears(1));
+        .hasRegistrationExpirationTime(plusYears(clock.now(), 1));
     assertDomainDnsRequests("example.tld");
   }
 
@@ -843,7 +849,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testSuccess_claimsNotice() throws Exception {
-    clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
+    clock.setTo(Instant.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_claim_notice.xml");
     persistHosts();
     runFlowAssertResponse(loadFile("domain_create_response_claims.xml"));
@@ -864,15 +870,15 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(
+            .setTldStateTransitionsInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     PREDELEGATION,
-                    DateTime.parse("1999-01-01T00:00:00Z"),
+                    Instant.parse("1999-01-01T00:00:00Z"),
                     QUIET_PERIOD))
             .setReservedLists(persistReservedList("res1", "example-one,RESERVED_FOR_SPECIFIC_USE"))
             .build());
-    clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
+    clock.setTo(Instant.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_allocationtoken_claims.xml");
     persistHosts();
     runFlowAssertResponse(loadFile("domain_create_response_claims.xml"));
@@ -886,7 +892,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testSuccess_noClaimsNotice_forClaimsListName_afterClaimsPeriodEnd() throws Exception {
     persistClaimsList(ImmutableMap.of("example", CLAIMS_KEY));
     persistHosts();
-    persistResource(Tld.get("tld").asBuilder().setClaimsPeriodEnd(clock.nowUtc()).build());
+    persistResource(Tld.get("tld").asBuilder().setClaimsPeriodEndInstant(clock.now()).build());
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
     assertSuccessfulCreate("tld", ImmutableSet.of());
@@ -915,7 +921,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_claim_notice.xml");
     persistClaimsList(ImmutableMap.of("example-one", CLAIMS_KEY));
     persistHosts();
-    persistResource(Tld.get("tld").asBuilder().setClaimsPeriodEnd(clock.nowUtc()).build());
+    persistResource(Tld.get("tld").asBuilder().setClaimsPeriodEndInstant(clock.now()).build());
     EppException thrown = assertThrows(ClaimsPeriodEndedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -974,8 +980,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -988,7 +994,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_STD_1_0_MAP);
@@ -1003,8 +1010,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 100)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_STD_1_0_MAP);
@@ -1139,7 +1146,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 persistReservedList("anchor-with-claims", "example-one,RESERVED_FOR_ANCHOR_TENANT"))
             .build());
     setEppInput("domain_create_allocationtoken_claims.xml");
-    clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
+    clock.setTo(Instant.parse("2009-08-16T09:00:00.0Z"));
     persistHosts();
     runFlowAssertResponse(loadFile("domain_create_response_claims.xml"));
     assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken, 0);
@@ -1189,7 +1196,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "CREATE_TIME",
                 SMD_VALID_TIME.toString(),
                 "EXPIRATION_TIME",
-                SMD_VALID_TIME.plusYears(2).toString())));
+                plusYears(SMD_VALID_TIME, 2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT), 0);
   }
 
@@ -1207,7 +1214,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .asBuilder()
             .setReservedLists(
                 persistReservedList("anchor_tenants", "test-validate,RESERVED_FOR_ANCHOR_TENANT"))
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, START_DATE_SUNRISE))
+            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, START_DATE_SUNRISE))
             .build());
     setEppInput("domain_create_anchor_tenant_signed_mark.xml", ImmutableMap.of("SMD", ENCODED_SMD));
     clock.setTo(SMD_VALID_TIME);
@@ -1221,7 +1228,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "CREATE_TIME",
                 SMD_VALID_TIME.toString(),
                 "EXPIRATION_TIME",
-                SMD_VALID_TIME.plusYears(2).toString())));
+                plusYears(SMD_VALID_TIME, 2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT, SUNRISE), allocationToken, 0);
     assertDomainDnsRequests("test-validate.tld");
     assertSunriseLordn();
@@ -1233,12 +1240,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(
-                new ImmutableSortedMap.Builder<DateTime, TldState>(Ordering.natural())
-                    .put(START_OF_TIME, PREDELEGATION)
-                    .put(DateTime.parse("1999-01-01T00:00:00Z"), QUIET_PERIOD)
-                    .put(DateTime.parse("1999-07-01T00:00:00Z"), START_DATE_SUNRISE)
-                    .put(DateTime.parse("2000-01-01T00:00:00Z"), GENERAL_AVAILABILITY)
+            .setTldStateTransitionsInstant(
+                new ImmutableSortedMap.Builder<Instant, TldState>(Ordering.natural())
+                    .put(START_INSTANT, PREDELEGATION)
+                    .put(Instant.parse("1999-01-01T00:00:00Z"), QUIET_PERIOD)
+                    .put(Instant.parse("1999-07-01T00:00:00Z"), START_DATE_SUNRISE)
+                    .put(Instant.parse("2000-01-01T00:00:00Z"), GENERAL_AVAILABILITY)
                     .build())
             .build());
     // The anchor tenant is created during the quiet period, on 1999-04-03.
@@ -1276,7 +1283,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     allocationToken =
         persistResource(
@@ -1319,11 +1326,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(clock.now().plusMillis(1), TokenStatus.VALID)
+                    .put(clock.now().plusSeconds(1), TokenStatus.ENDED)
                     .build())
             .build());
     clock.advanceOneMilli();
@@ -1363,11 +1370,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDiscountFraction(discountFraction)
             .setDiscountYears(discountYears)
             .setDiscountPremiums(discountPremiums)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(clock.now().plusMillis(1), TokenStatus.VALID)
+                    .put(clock.now().plusSeconds(1), TokenStatus.ENDED)
                     .build())
             .build());
     clock.advanceOneMilli();
@@ -1400,11 +1407,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDiscountFraction(0.98)
             .setDiscountYears(2)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(clock.now().plusMillis(1), TokenStatus.VALID)
+                    .put(clock.now().plusSeconds(1), TokenStatus.ENDED)
                     .build())
             .build());
     clock.advanceOneMilli();
@@ -1439,11 +1446,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDomainName("rich.example")
             .setDiscountFraction(0.95555)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(clock.now().plusMillis(1), TokenStatus.VALID)
+                    .put(clock.now().plusSeconds(1), TokenStatus.ENDED)
                     .build())
             .build());
     clock.advanceOneMilli();
@@ -1496,11 +1503,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusDays(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusDays(60), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(plusDays(clock.now(), 1), TokenStatus.VALID)
+                    .put(plusDays(clock.now(), 60), TokenStatus.ENDED)
                     .build())
             .build());
     setEppInput(
@@ -1520,11 +1527,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setTokenType(UNLIMITED_USE)
             .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(minusDays(clock.now(), 1), TokenStatus.VALID)
+                    .put(plusDays(clock.now(), 1), TokenStatus.ENDED)
                     .build())
             .build());
     setEppInput(
@@ -1607,11 +1614,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         setupDefaultTokenWithDiscount()
             .asBuilder()
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().minusDays(2), TokenStatus.VALID)
-                    .put(clock.nowUtc().minusDays(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(minusDays(clock.now(), 2), TokenStatus.VALID)
+                    .put(minusDays(clock.now(), 1), TokenStatus.ENDED)
                     .build())
             .build());
     doSuccessfulTest();
@@ -1672,7 +1679,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, START_DATE_SUNRISE))
+            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, START_DATE_SUNRISE))
             .build());
     clock.setTo(SMD_VALID_TIME);
     setEppInput(
@@ -1688,7 +1695,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "CREATE_TIME",
                 SMD_VALID_TIME.toString(),
                 "EXPIRATION_TIME",
-                SMD_VALID_TIME.plusYears(2).toString())));
+                plusYears(SMD_VALID_TIME, 2).toString())));
 
     assertSunriseLordn();
 
@@ -1735,7 +1742,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setResponseData(
                 ImmutableList.of(
                     DomainPendingActionNotificationResponse.create(
-                        domain.getDomainName(), true, historyEntry.getTrid(), clock.nowUtc())))
+                        domain.getDomainName(), true, historyEntry.getTrid(), clock.now())))
             .setId(1L)
             .build());
   }
@@ -1913,7 +1920,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_expiredClaim() {
-    clock.setTo(DateTime.parse("2010-08-17T09:00:00.0Z"));
+    clock.setTo(Instant.parse("2010-08-17T09:00:00.0Z"));
     setEppInput("domain_create_claim_notice.xml");
     persistHosts();
     EppException thrown = assertThrows(ExpiredClaimException.class, this::runFlow);
@@ -1922,7 +1929,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_expiredAcceptance() {
-    clock.setTo(DateTime.parse("2009-09-16T09:00:00.0Z"));
+    clock.setTo(Instant.parse("2009-09-16T09:00:00.0Z"));
     setEppInput("domain_create_claim_notice.xml");
     persistHosts();
     EppException thrown = assertThrows(AcceptedTooLongAgoException.class, this::runFlow);
@@ -1931,7 +1938,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_malformedTcnIdWrongLength() {
-    clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
+    clock.setTo(Instant.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_malformed_claim_notice1.xml");
     persistHosts();
     EppException thrown = assertThrows(MalformedTcnIdException.class, this::runFlow);
@@ -1940,7 +1947,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_malformedTcnIdBadChar() {
-    clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
+    clock.setTo(Instant.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_malformed_claim_notice2.xml");
     persistHosts();
     EppException thrown = assertThrows(MalformedTcnIdException.class, this::runFlow);
@@ -1949,7 +1956,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_badTcnIdChecksum() {
-    clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
+    clock.setTo(Instant.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_bad_checksum_claim_notice.xml");
     persistHosts();
     EppException thrown = assertThrows(InvalidTcnIdChecksumException.class, this::runFlow);
@@ -2045,7 +2052,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTime(Optional.of(clock.nowUtc().plusSeconds(1)))
+            .setBsaEnrollStartTimeInstant(Optional.of(clock.now().plusSeconds(1)))
             .build());
     persistBsaLabel("example");
     persistHosts();
@@ -2111,7 +2118,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), token);
@@ -2296,7 +2303,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "CREATE_TIME",
                 SMD_VALID_TIME.toString(),
                 "EXPIRATION_TIME",
-                SMD_VALID_TIME.plusYears(2).toString())));
+                plusYears(SMD_VALID_TIME, 2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE), 20.40);
     assertSunriseLordn();
   }
@@ -2319,7 +2326,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "CREATE_TIME",
                 SMD_VALID_TIME.toString(),
                 "EXPIRATION_TIME",
-                SMD_VALID_TIME.plusYears(2).toString())));
+                plusYears(SMD_VALID_TIME, 2).toString())));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE), 20.40);
     assertSunriseLordn();
   }
@@ -2409,7 +2416,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testFailure_startDateSunriseRegistration_withClaimsNotice() {
     createTld("tld", START_DATE_SUNRISE);
-    clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
+    clock.setTo(Instant.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_registration_start_date_sunrise_claims_notice.xml");
     persistHosts();
     EppException thrown =
@@ -2437,11 +2444,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
             .setRestoreBillingCost(Money.ofMajor(JPY, 800))
@@ -2628,13 +2635,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get(tld)
             .asBuilder()
-            .setEapFeeSchedule(
+            .setEapFeeScheduleInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 0),
-                    clock.nowUtc().minusDays(1),
+                    minusDays(clock.now(), 1),
                     Money.of(USD, 100),
-                    clock.nowUtc().plusDays(1),
+                    plusDays(clock.now(), 1),
                     Money.of(USD, 0)))
             .build());
   }
@@ -2645,13 +2652,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setEapFeeSchedule(
+            .setEapFeeScheduleInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 0),
-                    clock.nowUtc().plusDays(1),
+                    plusDays(clock.now(), 1),
                     Money.of(USD, 10),
-                    clock.nowUtc().plusDays(2),
+                    plusDays(clock.now(), 2),
                     Money.of(USD, 0)))
             .build());
     doSuccessfulTest("tld", "domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld"));
@@ -2663,13 +2670,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setEapFeeSchedule(
+            .setEapFeeScheduleInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 0),
-                    clock.nowUtc().minusDays(2),
+                    minusDays(clock.now(), 2),
                     Money.of(USD, 100),
-                    clock.nowUtc().minusDays(1),
+                    minusDays(clock.now(), 1),
                     Money.of(USD, 0)))
             .build());
     doSuccessfulTest("tld", "domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld"));
@@ -2804,7 +2811,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), token);
@@ -2826,7 +2833,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), token);
@@ -2860,7 +2867,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     assertThrows(NoGeneralRegistrationsInCurrentPhaseException.class, this::runFlow);
   }
@@ -2879,9 +2886,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(
+            .setTldStateTransitionsInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME, QUIET_PERIOD, clock.nowUtc().plusYears(1), START_DATE_SUNRISE))
+                    START_INSTANT, QUIET_PERIOD, plusYears(clock.now(), 1), START_DATE_SUNRISE))
             .build());
     persistHosts();
     setEppInput("domain_create_allocationtoken_claims.xml");
@@ -2902,13 +2909,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(
+            .setTldStateTransitionsInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     QUIET_PERIOD,
-                    clock.nowUtc().minusYears(1),
+                    minusYears(clock.now(), 1),
                     START_DATE_SUNRISE,
-                    clock.nowUtc().minusMonths(1),
+                    minusMonths(clock.now(), 1),
                     QUIET_PERIOD))
             .build());
     persistHosts();
@@ -3050,13 +3057,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(
+            .setTldStateTransitionsInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     QUIET_PERIOD,
-                    clock.nowUtc().minusYears(1),
+                    minusYears(clock.now(), 1),
                     START_DATE_SUNRISE,
-                    clock.nowUtc().minusMonths(1),
+                    minusMonths(clock.now(), 1),
                     QUIET_PERIOD))
             .build());
     AllocationToken token =
@@ -3081,13 +3088,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(
+            .setTldStateTransitionsInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     QUIET_PERIOD,
-                    clock.nowUtc().minusYears(1),
+                    minusYears(clock.now(), 1),
                     START_DATE_SUNRISE,
-                    clock.nowUtc().minusMonths(1),
+                    minusMonths(clock.now(), 1),
                     QUIET_PERIOD))
             .build());
     persistResource(
@@ -3107,13 +3114,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(
+            .setTldStateTransitionsInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     QUIET_PERIOD,
-                    clock.nowUtc().minusYears(1),
+                    minusYears(clock.now(), 1),
                     START_DATE_SUNRISE,
-                    clock.nowUtc().minusMonths(1),
+                    minusMonths(clock.now(), 1),
                     QUIET_PERIOD))
             .build());
     persistResource(
@@ -3279,11 +3286,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         setupDefaultTokenWithDiscount("NewRegistrar")
             .asBuilder()
-            .setTokenStatusTransitions(
+            .setTokenStatusTransitionsInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     TokenStatus.NOT_STARTED,
-                    clock.nowUtc().plusDays(1),
+                    plusDays(clock.now(), 1),
                     TokenStatus.VALID))
             .build());
 
@@ -3305,8 +3312,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -3319,8 +3326,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -3333,8 +3340,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -3347,7 +3354,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_06_MAP);
@@ -3362,7 +3370,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_11_MAP);
@@ -3377,7 +3386,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_12_MAP);
@@ -3518,8 +3528,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 100)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_06_MAP);
@@ -3534,8 +3544,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 100)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_11_MAP);
@@ -3550,8 +3560,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 100)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_12_MAP);
@@ -3868,11 +3878,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDiscountFraction(0.98)
             .setDiscountYears(2)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(clock.now().plusMillis(1), TokenStatus.VALID)
+                    .put(clock.now().plusSeconds(1), TokenStatus.ENDED)
                     .build())
             .build());
     clock.advanceOneMilli();
@@ -3937,13 +3947,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("example")
             .asBuilder()
-            .setEapFeeSchedule(
+            .setEapFeeScheduleInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 0),
-                    clock.nowUtc().minusDays(1),
+                    minusDays(clock.now(), 1),
                     Money.of(USD, 100),
-                    clock.nowUtc().plusDays(1),
+                    plusDays(clock.now(), 1),
                     Money.of(USD, 0)))
             .build());
     assertMutatingFlow(true);
@@ -3977,11 +3987,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDomainName("rich.example")
             .setDiscountFraction(0.95555)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(clock.now().plusMillis(1), TokenStatus.VALID)
+                    .put(clock.now().plusSeconds(1), TokenStatus.ENDED)
                     .build())
             .build());
     clock.advanceOneMilli();
@@ -4008,11 +4018,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         setupDefaultTokenWithDiscount("NewRegistrar")
             .asBuilder()
-            .setTokenStatusTransitions(
+            .setTokenStatusTransitionsInstant(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     TokenStatus.NOT_STARTED,
-                    clock.nowUtc().plusDays(1),
+                    plusDays(clock.now(), 1),
                     TokenStatus.VALID))
             .build());
 

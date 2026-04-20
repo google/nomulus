@@ -21,9 +21,9 @@ import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import google.registry.model.pricing.PremiumPricingEngine;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
 import google.registry.model.tld.Tld;
+import java.time.Instant;
 import java.util.Map;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /**
  * A global proxy providing static methods for getting premium prices that dispatches requests
@@ -35,19 +35,19 @@ public final class PricingEngineProxy {
       premiumPricingEngines = DaggerPricingComponent.create().premiumPricingEngines();
 
   /** Returns the billing cost for registering the specified domain name for this many years. */
-  public static Money getDomainCreateCost(String domainName, DateTime priceTime, int years) {
+  public static Money getDomainCreateCost(String domainName, Instant priceTime, int years) {
     checkArgument(years > 0, "Number of years must be positive");
     return getPricesForDomainName(domainName, priceTime).getCreateCost().multipliedBy(years);
   }
 
   /** Returns the billing cost for renewing the specified domain name for this many years. */
-  public static Money getDomainRenewCost(String domainName, DateTime priceTime, int years) {
+  public static Money getDomainRenewCost(String domainName, Instant priceTime, int years) {
     checkArgument(years > 0, "Number of years must be positive");
     return getPricesForDomainName(domainName, priceTime).getRenewCost().multipliedBy(years);
   }
 
   /** Returns true if the specified domain name is premium. */
-  public static boolean isDomainPremium(String domainName, DateTime priceTime) {
+  public static boolean isDomainPremium(String domainName, Instant priceTime) {
     return getPricesForDomainName(domainName, priceTime).isPremium();
   }
 
@@ -56,7 +56,7 @@ public final class PricingEngineProxy {
    * appropriate {@link PremiumPricingEngine} based on what is configured for the TLD that the
    * domain is under.
    */
-  public static DomainPrices getPricesForDomainName(String domainName, DateTime priceTime) {
+  public static DomainPrices getPricesForDomainName(String domainName, Instant priceTime) {
     String tld = getTldFromDomainName(domainName);
     String clazz = Tld.get(tld).getPricingEngineClassName();
     PremiumPricingEngine engine = premiumPricingEngines.get(clazz);

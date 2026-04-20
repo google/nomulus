@@ -163,7 +163,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                             .getTransferPrice(
                                 Tld.get(tldStr),
                                 targetId,
-                                transferData.getTransferRequestTime(),
+                                transferData.getTransferRequestTimeInstant(),
                                 // When removing a domain from bulk pricing it should return to the
                                 // default recurrence billing behavior so the existing recurrence
                                 // billing event should not be passed in.

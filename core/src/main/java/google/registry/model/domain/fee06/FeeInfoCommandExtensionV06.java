@@ -19,9 +19,9 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
-import org.joda.time.DateTime;
 
 /** A fee extension that may be present on domain info commands. */
 @XmlRootElement(name = "info")
@@ -65,7 +65,7 @@ public class FeeInfoCommandExtensionV06
   }
 
   @Override
-  public Optional<DateTime> getEffectiveDate() {
+  public Optional<Instant> getEffectiveDate() {
     return Optional.empty();
   }
 }

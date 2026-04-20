@@ -23,7 +23,7 @@ import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import jakarta.xml.bind.annotation.XmlType;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * The version 0.12 response for a domain check on a single resource.
@@ -110,13 +110,13 @@ public class FeeCheckResponseExtensionItemV12 extends FeeCheckResponseExtensionI
     }
 
     @Override
-    public Builder setEffectiveDateIfSupported(DateTime effectiveDate) {
+    public Builder setEffectiveDateIfSupported(Instant effectiveDate) {
       commandBuilder.setEffectiveDate(effectiveDate);
       return this;
     }
 
     @Override
-    public Builder setNotAfterDateIfSupported(DateTime notAfterDate) {
+    public Builder setNotAfterDateIfSupported(Instant notAfterDate) {
       commandBuilder.setNotAfterDate(notAfterDate);
       return this;
     }

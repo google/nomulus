@@ -28,6 +28,7 @@ import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
 
 import com.google.common.collect.ImmutableList;
@@ -131,7 +132,7 @@ public class DomainSqlTest {
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, NOT_STARTED)
                     .put(fakeClock.now(), TokenStatus.VALID)
-                    .put(fakeClock.now().plus(java.time.Duration.ofDays(56)), TokenStatus.ENDED)
+                    .put(plusDays(fakeClock.now(), 56), TokenStatus.ENDED)
                     .build())
             .build();
   }

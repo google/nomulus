@@ -238,7 +238,7 @@ public class BsaValidateActionTest {
   @Test
   void isStalenessAllowed_newDomain_allowed() {
     persistBsaLabel("label");
-    Domain domain = persistActiveDomain("label.app", toDateTime(fakeClock.now()));
+    Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
     fakeClock.advanceBy(
         org.joda.time.Duration.millis(MAX_STALENESS.minus(Duration.ofSeconds(1)).toMillis()));
     assertThat(action.isStalenessAllowed(domain)).isTrue();
@@ -247,7 +247,7 @@ public class BsaValidateActionTest {
   @Test
   void isStalenessAllowed_newDomain_notAllowed() {
     persistBsaLabel("label");
-    Domain domain = persistActiveDomain("label.app", toDateTime(fakeClock.now()));
+    Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
     fakeClock.advanceBy(org.joda.time.Duration.millis(MAX_STALENESS.toMillis()));
     assertThat(action.isStalenessAllowed(domain)).isFalse();
   }

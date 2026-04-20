@@ -19,14 +19,14 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /** The {@link ResponseData} returned when creating a resource. */
 @XmlTransient
 public abstract class CreateData implements ResponseData {
 
   @XmlElement(name = "crDate")
-  protected DateTime creationDate;
+  protected Instant creationDate;
 
   /** An acknowledgment message indicating that a contact was created. */
   @XmlRootElement(name = "creData", namespace = "urn:ietf:params:xml:ns:contact-1.0")
@@ -35,7 +35,7 @@ public abstract class CreateData implements ResponseData {
 
     String id;
 
-    public static ContactCreateData create(String id, DateTime creationDate) {
+    public static ContactCreateData create(String id, Instant creationDate) {
       ContactCreateData instance = new ContactCreateData();
       instance.id = id;
       instance.creationDate = creationDate;
@@ -53,10 +53,10 @@ public abstract class CreateData implements ResponseData {
     String name;
 
     @XmlElement(name = "exDate")
-    DateTime expirationDate;
+    Instant expirationDate;
 
     public static DomainCreateData create(
-        String name, DateTime creationDate, DateTime expirationDate) {
+        String name, Instant creationDate, Instant expirationDate) {
       DomainCreateData instance = new DomainCreateData();
       instance.name = name;
       instance.creationDate = creationDate;
@@ -68,11 +68,11 @@ public abstract class CreateData implements ResponseData {
       return name;
     }
 
-    public DateTime creationDate() {
+    public Instant creationDate() {
       return creationDate;
     }
 
-    public DateTime expirationDate() {
+    public Instant expirationDate() {
       return expirationDate;
     }
   }
@@ -84,7 +84,7 @@ public abstract class CreateData implements ResponseData {
 
     String name;
 
-    public static HostCreateData create(String name, DateTime creationDate) {
+    public static HostCreateData create(String name, Instant creationDate) {
       HostCreateData instance = new HostCreateData();
       instance.name = name;
       instance.creationDate = creationDate;

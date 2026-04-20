@@ -77,7 +77,7 @@ public final class PollRequestFlow implements TransactionalFlow {
         .setResultFromCode(SUCCESS_WITH_ACK_MESSAGE)
         .setMessageQueueInfo(
             new MessageQueueInfo.Builder()
-                .setQueueDate(pollMessage.getEventTime())
+                .setQueueDate(pollMessage.getEventTimeInstant())
                 .setMsg(pollMessage.getMsg())
                 .setQueueLength(getPollMessageCount(registrarId, now))
                 .setMessageId(makePollMessageExternalId(pollMessage))

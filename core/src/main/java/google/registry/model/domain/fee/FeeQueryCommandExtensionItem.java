@@ -19,9 +19,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Period;
 import jakarta.xml.bind.annotation.XmlTransient;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
-import org.joda.time.DateTime;
 
 /**
  * Abstract base class for the fee request query items used in Check and Info commands. It handles
@@ -86,7 +86,7 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
   public abstract CurrencyUnit getCurrency();
 
   /** The as-of date for the fee extension to run. */
-  public abstract Optional<DateTime> getEffectiveDate();
+  public abstract Optional<Instant> getEffectiveDate();
 
   /** The name of the command being checked. */
   public abstract CommandName getCommandName();

@@ -39,6 +39,7 @@ import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX_REGEX;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
@@ -475,7 +476,7 @@ public final class DatabaseHelper {
         .setBillingTime(eventTime.plus(Tld.get(domain.getTld()).getTransferGracePeriodLength()))
         .setRegistrarId("NewRegistrar")
         .setPeriodYears(1)
-        .setCost(getDomainRenewCost(domain.getDomainName(), costLookupTime, 1))
+        .setCost(getDomainRenewCost(domain.getDomainName(), toInstant(costLookupTime), 1))
         .setDomainHistory(historyEntry)
         .build();
   }
