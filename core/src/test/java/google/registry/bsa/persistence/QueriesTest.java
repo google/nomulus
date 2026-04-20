@@ -44,6 +44,7 @@ import google.registry.bsa.persistence.Queries.DomainLifeSpan;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -283,7 +284,7 @@ class QueriesTest {
     // Deleted in the future
     persistDomainAsDeleted(
         newDomain("label3.tld2").asBuilder().setCreationTimeForTest(fakeClock.now()).build(),
-        toDateTime(fakeClock.now().plus(java.time.Duration.ofHours(1))));
+        toDateTime(fakeClock.now().plus(Duration.ofHours(1))));
     fakeClock.advanceOneMilli();
     assertThat(
             (ImmutableList<DomainLifeSpan>)
@@ -294,7 +295,7 @@ class QueriesTest {
                 bsaQuery(() -> queryMissedRegisteredUnblockables("tld2", fakeClock.now())))
         .containsExactly(
             new DomainLifeSpan("label2.tld2", time1, END_INSTANT),
-            new DomainLifeSpan("label3.tld2", time2, time2.plus(java.time.Duration.ofHours(1))));
+            new DomainLifeSpan("label3.tld2", time2, time2.plus(Duration.ofHours(1))));
 
     BsaTestingUtils.persistUnblockableDomain(
         UnblockableDomain.of("label2", "tld2", UnblockableDomain.Reason.REGISTERED));
@@ -303,8 +304,7 @@ class QueriesTest {
     assertThat(
             (ImmutableList<DomainLifeSpan>)
                 bsaQuery(() -> queryMissedRegisteredUnblockables("tld2", fakeClock.now())))
-        .containsExactly(
-            new DomainLifeSpan("label3.tld2", time2, time2.plus(java.time.Duration.ofHours(1))));
+        .containsExactly(new DomainLifeSpan("label3.tld2", time2, time2.plus(Duration.ofHours(1))));
   }
 
   @Test

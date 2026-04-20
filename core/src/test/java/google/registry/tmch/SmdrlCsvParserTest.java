@@ -24,7 +24,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharSource;
 import google.registry.model.smd.SignedMarkRevocationList;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link SmdrlCsvParser}. */
@@ -39,38 +40,38 @@ class SmdrlCsvParserTest {
   void testParse() throws Exception {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(SMDRL_LATEST_CSV.readLines());
     assertThat(smdrl.size()).isEqualTo(150);
-    assertThat(smdrl.getCreationTime()).isEqualTo(DateTime.parse("2013-11-24T23:30:04.3Z"));
+    assertThat(smdrl.getCreationTime()).isEqualTo(Instant.parse("2013-11-24T23:30:04.3Z"));
   }
 
   @Test
   void testFirstRow() throws Exception {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(SMDRL_LATEST_CSV.readLines());
-    clock.setTo(DateTime.parse("2013-08-09T12:00:00.0Z"));
-    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.nowUtc())).isTrue();
-    clock.setTo(clock.nowUtc().minusMillis(1));
-    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.nowUtc())).isFalse();
+    clock.setTo(Instant.parse("2013-08-09T12:00:00.0Z"));
+    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.now())).isTrue();
+    clock.setTo(clock.now().minusMillis(1));
+    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.now())).isFalse();
     clock.advanceBy(millis(2));
-    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.nowUtc())).isTrue();
+    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.now())).isTrue();
   }
 
   @Test
   void testLastRow() throws Exception {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(SMDRL_LATEST_CSV.readLines());
-    clock.setTo(DateTime.parse("2013-08-09T12:00:00.0Z"));
-    assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.nowUtc())).isTrue();
-    clock.setTo(clock.nowUtc().minusMillis(1));
-    assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.nowUtc())).isFalse();
+    clock.setTo(Instant.parse("2013-08-09T12:00:00.0Z"));
+    assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.now())).isTrue();
+    clock.setTo(clock.now().minusMillis(1));
+    assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.now())).isFalse();
     clock.advanceBy(millis(2));
-    assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.nowUtc())).isTrue();
+    assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.now())).isTrue();
   }
 
   @Test
   void testRowWithDifferentDate() throws Exception {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(SMDRL_LATEST_CSV.readLines());
-    clock.setTo(DateTime.parse("2013-08-09T12:00:00.0Z"));
-    assertThat(smdrl.isSmdRevoked("0000002101376042766438-65535", clock.nowUtc())).isFalse();
+    clock.setTo(Instant.parse("2013-08-09T12:00:00.0Z"));
+    assertThat(smdrl.isSmdRevoked("0000002101376042766438-65535", clock.now())).isFalse();
     clock.advanceBy(standardDays(1));
-    assertThat(smdrl.isSmdRevoked("0000002101376042766438-65535", clock.nowUtc())).isTrue();
+    assertThat(smdrl.isSmdRevoked("0000002101376042766438-65535", clock.now())).isTrue();
   }
 
   @Test
@@ -82,9 +83,9 @@ class SmdrlCsvParserTest {
                 "smd-id,insertion-datetime",
                 "0000001681375789102250-65535,2013-08-09T12:00:00.0Z"));
     assertThat(smdrl.size()).isEqualTo(1);
-    assertThat(smdrl.getCreationTime()).isEqualTo(DateTime.parse("2013-11-24T23:30:04.3Z"));
-    clock.setTo(DateTime.parse("2020-08-09T12:00:00.0Z"));
-    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.nowUtc())).isTrue();
+    assertThat(smdrl.getCreationTime()).isEqualTo(Instant.parse("2013-11-24T23:30:04.3Z"));
+    clock.setTo(Instant.parse("2020-08-09T12:00:00.0Z"));
+    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.now())).isTrue();
   }
 
   @Test
@@ -93,9 +94,9 @@ class SmdrlCsvParserTest {
         SmdrlCsvParser.parse(
             ImmutableList.of("1,2014-11-24T23:30:04.3Z", "smd-id,insertion-datetime"));
     assertThat(smdrl.size()).isEqualTo(0);
-    assertThat(smdrl.getCreationTime()).isEqualTo(DateTime.parse("2014-11-24T23:30:04.3Z"));
-    clock.setTo(DateTime.parse("2020-08-09T12:00:00.0Z"));
-    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.nowUtc())).isFalse();
+    assertThat(smdrl.getCreationTime()).isEqualTo(Instant.parse("2014-11-24T23:30:04.3Z"));
+    clock.setTo(Instant.parse("2020-08-09T12:00:00.0Z"));
+    assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.now())).isFalse();
   }
 
   @Test
@@ -130,15 +131,15 @@ class SmdrlCsvParserTest {
 
   @Test
   void testFail_tooManyColumns() {
-    IllegalArgumentException thrown =
+    DateTimeParseException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            DateTimeParseException.class,
             () ->
                 SmdrlCsvParser.parse(
                     ImmutableList.of(
                         "1,2013-11-24T23:30:04.3Z",
                         "smd-id,insertion-datetime",
                         "0000001681375789102250-65535,haha,2013-08-09T12:00:00.0Z")));
-    assertThat(thrown).hasMessageThat().isEqualTo("Invalid format: \"haha\"");
+    assertThat(thrown).hasMessageThat().contains("Text 'haha' could not be parsed at index 0");
   }
 }

@@ -49,6 +49,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.SerializeUtils;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import org.joda.money.CurrencyUnit;
@@ -131,7 +132,7 @@ public class DomainSqlTest {
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, NOT_STARTED)
                     .put(fakeClock.now(), TokenStatus.VALID)
-                    .put(fakeClock.now().plus(java.time.Duration.ofDays(56)), TokenStatus.ENDED)
+                    .put(fakeClock.now().plus(Duration.ofDays(56)), TokenStatus.ENDED)
                     .build())
             .build();
   }

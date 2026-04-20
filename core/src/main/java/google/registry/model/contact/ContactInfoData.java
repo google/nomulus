@@ -25,8 +25,8 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned for an EPP info flow on a contact. */
 @XmlRootElement(name = "infData")
@@ -84,7 +84,7 @@ public abstract class ContactInfoData implements ResponseData {
   abstract String getCreationRegistrarId();
 
   @XmlElement(name = "crDate")
-  abstract DateTime getCreationTime();
+  abstract Instant getCreationTime();
 
   @XmlElement(name = "upID")
   @Nullable
@@ -92,11 +92,11 @@ public abstract class ContactInfoData implements ResponseData {
 
   @XmlElement(name = "upDate")
   @Nullable
-  abstract DateTime getLastEppUpdateTime();
+  abstract Instant getLastEppUpdateTime();
 
   @XmlElement(name = "trDate")
   @Nullable
-  abstract DateTime getLastTransferTime();
+  abstract Instant getLastTransferTime();
 
   @XmlElement(name = "authInfo")
   @Nullable
@@ -121,12 +121,14 @@ public abstract class ContactInfoData implements ResponseData {
 
     public abstract Builder setCreationRegistrarId(String creationRegistrarId);
 
-    public abstract Builder setCreationTime(DateTime creationTime);
+    public abstract Builder setCreationTime(Instant creationTime);
 
     public abstract Builder setLastEppUpdateRegistrarId(@Nullable String lastEppUpdateRegistrarId);
 
-    public abstract Builder setLastEppUpdateTime(@Nullable DateTime lastEppUpdateTime);
-    public abstract Builder setLastTransferTime(@Nullable DateTime lastTransferTime);
+    public abstract Builder setLastEppUpdateTime(@Nullable Instant lastEppUpdateTime);
+
+    public abstract Builder setLastTransferTime(@Nullable Instant lastTransferTime);
+
     public abstract Builder setAuthInfo(@Nullable ContactAuthInfo authInfo);
     public abstract Builder setDisclose(@Nullable Disclose disclose);
     public abstract ContactInfoData build();

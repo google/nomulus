@@ -23,7 +23,9 @@ import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.latestOf;
+import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.plusMonths;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
@@ -106,6 +108,24 @@ class DateTimeUtilsTest {
   void test_minusYears_worksWithInstants() {
     Instant startDate = Instant.parse("2012-02-29T00:00:00Z");
     assertThat(minusYears(startDate, 4)).isEqualTo(Instant.parse("2008-02-28T00:00:00Z"));
+  }
+
+  @Test
+  void test_plusMonths_worksWithInstants() {
+    Instant startDate = Instant.parse("2012-02-29T00:00:00Z");
+    assertThat(plusMonths(startDate, 4)).isEqualTo(Instant.parse("2012-06-29T00:00:00Z"));
+
+    Instant startLeapYear = Instant.parse("2012-01-31T00:00:00Z");
+    assertThat(plusMonths(startLeapYear, 1)).isEqualTo(Instant.parse("2012-02-29T00:00:00Z"));
+  }
+
+  @Test
+  void test_minusMonths_worksWithInstants() {
+    Instant startDate = Instant.parse("2012-06-29T00:00:00Z");
+    assertThat(minusMonths(startDate, 4)).isEqualTo(Instant.parse("2012-02-29T00:00:00Z"));
+
+    Instant startLeapYear = Instant.parse("2012-03-31T00:00:00Z");
+    assertThat(minusMonths(startLeapYear, 1)).isEqualTo(Instant.parse("2012-02-29T00:00:00Z"));
   }
 
   @Test

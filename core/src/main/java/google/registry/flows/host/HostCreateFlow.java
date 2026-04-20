@@ -25,6 +25,7 @@ import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig.Config;
@@ -141,7 +142,7 @@ public final class HostCreateFlow implements MutatingFlow {
       requestHostDnsRefresh(targetId);
     }
     tm().insertAll(entitiesToInsert);
-    return responseBuilder.setResData(HostCreateData.create(targetId, now)).build();
+    return responseBuilder.setResData(HostCreateData.create(targetId, toInstant(now))).build();
   }
 
   /** Subordinate hosts must have an ip address. */

@@ -24,9 +24,9 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
+import java.time.Instant;
 import java.util.List;
 import org.joda.money.CurrencyUnit;
-import org.joda.time.DateTime;
 
 /**
  * Abstract base class for the fee request query items used in Check and Info responses. It handles
@@ -110,11 +110,11 @@ public class FeeQueryResponseExtensionItem extends ImmutableObject {
       return thisCastToDerived();  // Default impl is a noop.
     }
 
-    public B setEffectiveDateIfSupported(@SuppressWarnings("unused") DateTime effectiveDate) {
+    public B setEffectiveDateIfSupported(@SuppressWarnings("unused") Instant effectiveDate) {
       return thisCastToDerived();  // Default impl is a noop.
     }
 
-    public B setNotAfterDateIfSupported(@SuppressWarnings("unused") DateTime notAfterDate) {
+    public B setNotAfterDateIfSupported(@SuppressWarnings("unused") Instant notAfterDate) {
       return thisCastToDerived();  // Default impl is a noop.
     }
 

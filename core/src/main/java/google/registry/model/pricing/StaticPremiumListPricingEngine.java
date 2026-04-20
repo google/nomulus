@@ -21,9 +21,9 @@ import com.google.common.net.InternetDomainName;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumListDao;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /** A premium list pricing engine that stores static pricing information in database entities. */
 public final class StaticPremiumListPricingEngine implements PremiumPricingEngine {
@@ -34,7 +34,7 @@ public final class StaticPremiumListPricingEngine implements PremiumPricingEngin
   @Inject StaticPremiumListPricingEngine() {}
 
   @Override
-  public DomainPrices getDomainPrices(String domainName, DateTime priceTime) {
+  public DomainPrices getDomainPrices(String domainName, Instant priceTime) {
     String tldStr = getTldFromDomainName(domainName);
     String label = InternetDomainName.from(domainName).parts().get(0);
     Tld tld = Tld.get(checkNotNull(tldStr, "tld"));
