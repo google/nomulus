@@ -30,8 +30,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapKeyColumn;
+import java.time.Instant;
 import java.util.Map;
-import org.joda.time.DateTime;
 
 /**
  * Signed Mark Data Revocation List (SMDRL).
@@ -52,7 +52,7 @@ public class SignedMarkRevocationList extends ImmutableObject {
   Long revisionId;
 
   /** Time when this list was last updated, as specified in the first line of the CSV file. */
-  DateTime creationTime;
+  Instant creationTime;
 
   /** A map from SMD IDs to revocation time. */
   @ElementCollection
@@ -61,7 +61,7 @@ public class SignedMarkRevocationList extends ImmutableObject {
       joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
   @MapKeyColumn(name = "smdId")
   @Column(name = "revocationTime", nullable = false)
-  Map</*@MatchesPattern("[0-9]+-[0-9]+")*/ String, DateTime> revokes;
+  Map</*@MatchesPattern("[0-9]+-[0-9]+")*/ String, Instant> revokes;
 
   /** A cached supplier that fetches the {@link SignedMarkRevocationList} object. */
   private static final Supplier<SignedMarkRevocationList> CACHE =
@@ -73,7 +73,7 @@ public class SignedMarkRevocationList extends ImmutableObject {
 
   /** Create a new {@link SignedMarkRevocationList} without saving it. */
   public static SignedMarkRevocationList create(
-      DateTime creationTime, ImmutableMap<String, DateTime> revokes) {
+      Instant creationTime, ImmutableMap<String, Instant> revokes) {
     SignedMarkRevocationList instance = new SignedMarkRevocationList();
     instance.creationTime = checkNotNull(creationTime, "creationTime");
     instance.revokes = checkNotNull(revokes, "revokes");
@@ -81,13 +81,13 @@ public class SignedMarkRevocationList extends ImmutableObject {
   }
 
   /** Returns {@code true} if the SMD ID has been revoked at the given point in time. */
-  public boolean isSmdRevoked(String smdId, DateTime now) {
-    DateTime revoked = revokes.get(checkNotNull(smdId, "smdId"));
+  public boolean isSmdRevoked(String smdId, Instant now) {
+    Instant revoked = revokes.get(checkNotNull(smdId, "smdId"));
     return revoked != null && isBeforeOrAt(revoked, now);
   }
 
   /** Returns the creation timestamp specified at the top of the SMDRL CSV file. */
-  public DateTime getCreationTime() {
+  public Instant getCreationTime() {
     return creationTime;
   }
 

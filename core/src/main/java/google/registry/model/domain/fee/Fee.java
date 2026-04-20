@@ -44,22 +44,10 @@ public class Fee extends BaseFee {
       BigDecimal cost,
       FeeType type,
       boolean isPremium,
-      Range<DateTime> validDateRange,
-      Object... descriptionArgs) {
-    Fee instance = create(cost, type, isPremium, descriptionArgs);
-    instance.validDateRange = validDateRange;
-    return instance;
-  }
-
-  /** Creates a Fee for the given cost, type, and valid date range with the default description. */
-  public static Fee createInstant(
-      BigDecimal cost,
-      FeeType type,
-      boolean isPremium,
       Range<Instant> validDateRange,
       Object... descriptionArgs) {
     Fee instance = create(cost, type, isPremium, descriptionArgs);
-    instance.validDateRangeInstant = validDateRange;
+    instance.validDateRange = validDateRange;
     return instance;
   }
 

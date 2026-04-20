@@ -104,7 +104,7 @@ import google.registry.testing.LogsSubject;
 import java.util.Map;
 import java.util.logging.Level;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -115,9 +115,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   private Domain domain;
   private DomainHistory earlierHistoryEntry;
 
-  private static final DateTime TIME_BEFORE_FLOW = DateTime.parse("2000-06-06T22:00:00.0Z");
-  private static final DateTime A_MONTH_AGO = TIME_BEFORE_FLOW.minusMonths(1);
-  private static final DateTime A_MONTH_FROM_NOW = TIME_BEFORE_FLOW.plusMonths(1);
+  private static final Instant TIME_BEFORE_FLOW = Instant.parse("2000-06-06T22:00:00.0Z");
+  private static final Instant A_MONTH_AGO = TIME_BEFORE_FLOW.minusMonths(1);
+  private static final Instant A_MONTH_FROM_NOW = TIME_BEFORE_FLOW.plusMonths(1);
 
   private static final ImmutableMap<String, String> FEE_06_MAP =
       ImmutableMap.of("FEE_VERSION", "fee-0.6", "FEE_NS", "fee");
@@ -156,7 +156,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertMutatingFlow(true);
   }
 
-  private void createReferencedEntities(DateTime expirationTime) throws Exception {
+  private void createReferencedEntities(Instant expirationTime) throws Exception {
     domain =
         persistResource(
             DatabaseHelper.newDomain(getUniqueIdFromCommand())
@@ -169,7 +169,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             new DomainHistory.Builder()
                 .setType(DOMAIN_CREATE)
                 .setDomain(domain)
-                .setModificationTime(clock.nowUtc())
+                .setModificationTime(clock.now())
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
   }
@@ -221,11 +221,11 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   private void assertAutorenewClosedAndCancellationCreatedFor(
       BillingEvent graceBillingEvent, DomainHistory historyEntryDomainDelete) {
     assertAutorenewClosedAndCancellationCreatedFor(
-        graceBillingEvent, historyEntryDomainDelete, clock.nowUtc());
+        graceBillingEvent, historyEntryDomainDelete, clock.now());
   }
 
   private void assertAutorenewClosedAndCancellationCreatedFor(
-      BillingEvent graceBillingEvent, DomainHistory historyEntryDomainDelete, DateTime eventTime) {
+      BillingEvent graceBillingEvent, DomainHistory historyEntryDomainDelete, Instant eventTime) {
     assertBillingEvents(
         createAutorenewBillingEvent("TheRegistrar").setRecurrenceEndTime(eventTime).build(),
         graceBillingEvent,
@@ -244,7 +244,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // There should be no billing events (even timed to when the transfer would have expired) except
     // for the now closed autorenew one.
     assertBillingEvents(
-        createAutorenewBillingEvent(registrarId).setRecurrenceEndTime(clock.nowUtc()).build());
+        createAutorenewBillingEvent(registrarId).setRecurrenceEndTime(clock.now()).build());
   }
 
   private BillingEvent createBillingEvent(Reason reason, Money cost) {
@@ -307,9 +307,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, domain.createVKey().stringify())
-            .param(PARAM_REQUESTED_TIME, clock.nowUtc().toString())
-            .param(PARAM_RESAVE_TIMES, clock.nowUtc().plusDays(5).toString())
-            .scheduleTime(clock.nowUtc().plus(when)));
+            .param(PARAM_REQUESTED_TIME, clock.now().toString())
+            .param(PARAM_RESAVE_TIMES, clock.now().plusDays(5).toString())
+            .scheduleTime(clock.now().plus(when)));
   }
 
   @Test
@@ -376,7 +376,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
 
     Domain domain = reloadResourceByForeignKey();
-    DateTime redemptionEndTime = domain.getLastEppUpdateDateTime().plusDays(3);
+    Instant redemptionEndTime = domain.getLastEppUpdateDateTime().plusDays(3);
     Domain domainAtRedemptionTime = domain.cloneProjectedAtTime(redemptionEndTime);
     assertAboutDomains()
         .that(domainAtRedemptionTime)
@@ -418,7 +418,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             null));
     // We should see exactly one poll message, which is for the autorenew 1 month in the future.
     assertPollMessages(createAutorenewPollMessage("TheRegistrar").build());
-    DateTime expectedExpirationTime = domain.getRegistrationExpirationDateTime().minusYears(2);
+    Instant expectedExpirationTime = domain.getRegistrationExpirationDateTime().minusYears(2);
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile(responseFilename, substitutions));
     Domain resource = reloadResourceByForeignKey();
@@ -429,7 +429,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .and()
         .hasDeletionTime(
             clock
-                .nowUtc()
+                .now()
                 .plus(Tld.get("tld").getRedemptionGracePeriodLength())
                 .plus(Tld.get("tld").getPendingDeleteLength()))
         .and()
@@ -451,7 +451,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),
-                clock.nowUtc().plus(Tld.get("tld").getRedemptionGracePeriodLength()),
+                clock.now().plus(Tld.get("tld").getRedemptionGracePeriodLength()),
                 "TheRegistrar",
                 null,
                 resource.getGracePeriods().iterator().next().getGracePeriodId()));
@@ -462,7 +462,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // There should be a future poll message at the deletion time. The previous autorenew poll
     // message should now be deleted.
     assertAboutDomains().that(domain).hasDeletePollMessage();
-    DateTime deletionTime = domain.getDeletionDateTime();
+    Instant deletionTime = domain.getDeletionDateTime();
     assertThat(getPollMessages("TheRegistrar", deletionTime.minusMinutes(1))).isEmpty();
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(1);
     assertThat(domain.getDeletePollMessage())
@@ -496,7 +496,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
     // There should now be two poll messages; one for the delete of the domain (in the future), and
     // another for the unacked autorenew messages.
-    DateTime deletionTime = reloadResourceByForeignKey().getDeletionDateTime();
+    Instant deletionTime = reloadResourceByForeignKey().getDeletionDateTime();
     assertThat(getPollMessages("TheRegistrar", deletionTime.minusMinutes(1))).hasSize(1);
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(2);
   }
@@ -572,7 +572,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .and()
         .hasDeletionTime(
             clock
-                .nowUtc()
+                .now()
                 .plus(Tld.get("tld").getRedemptionGracePeriodLength())
                 .plus(Tld.get("tld").getPendingDeleteLength()))
         .and()
@@ -583,16 +583,16 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),
-                clock.nowUtc().plus(Tld.get("tld").getRedemptionGracePeriodLength()),
+                clock.now().plus(Tld.get("tld").getRedemptionGracePeriodLength()),
                 "TheRegistrar",
                 null,
                 domain.getGracePeriods().iterator().next().getGracePeriodId()));
     // The poll message (in the future) to the losing registrar for implicit ack should be gone.
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();
+    assertThat(getPollMessages("TheRegistrar", clock.now().plusMonths(1))).isEmpty();
     // The poll message in the future to the gaining registrar should be gone too, but there
     // should be one at the current time to the gaining registrar.
     PollMessage gainingPollMessage = getOnlyPollMessage("NewRegistrar");
-    assertThat(gainingPollMessage.getEventTime()).isEqualTo(clock.nowUtc());
+    assertThat(gainingPollMessage.getEventTime()).isEqualTo(clock.now());
     assertThat(
             gainingPollMessage
                 .getResponseData()
@@ -613,7 +613,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .isEqualTo(Trid.create("transferClient-trid", "transferServer-trid"));
     assertThat(panData.getActionResult()).isFalse();
     // There should be a future poll message to the losing registrar at the deletion time.
-    DateTime deletionTime = domain.getDeletionDateTime();
+    Instant deletionTime = domain.getDeletionDateTime();
     assertThat(getPollMessages("TheRegistrar", deletionTime.minusMinutes(1))).isEmpty();
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(1);
     assertOnlyBillingEventIsClosedAutorenew("TheRegistrar");
@@ -624,7 +624,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             oldTransferData
                 .copyConstantFieldsToBuilder()
                 .setTransferStatus(TransferStatus.SERVER_CANCELLED)
-                .setPendingTransferExpirationTime(clock.nowUtc())
+                .setPendingTransferExpirationTime(clock.now())
                 .build());
     // The server-approve entities should all be deleted.
     assertThat(loadByKeyIfPresent(oldTransferData.getServerApproveBillingEvent())).isEmpty();
@@ -648,7 +648,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // Add a nameserver.
     Host host = persistResource(newHost("ns1.example.tld"));
     persistResource(
-        ForeignKeyUtils.loadResource(Domain.class, getUniqueIdFromCommand(), clock.nowUtc())
+        ForeignKeyUtils.loadResource(Domain.class, getUniqueIdFromCommand(), clock.now())
             .get()
             .asBuilder()
             .setNameservers(ImmutableSet.of(host.createVKey()))
@@ -660,7 +660,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setNameservers(ImmutableSet.of(host.createVKey()))
             .setDeletionTime(START_OF_TIME)
             .build());
-    DateTime eventTime = clock.nowUtc();
+    Instant eventTime = clock.now();
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     assertDomainDnsRequests("example.tld");
     assertAutorenewClosedAndCancellationCreatedFor(
@@ -676,7 +676,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         newHost("ns1." + getUniqueIdFromCommand())
             .asBuilder()
             .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
-            .setDeletionTime(clock.nowUtc().minusDays(1))
+            .setDeletionTime(clock.now().minusDays(1))
             .build());
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
@@ -710,7 +710,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   @Test
   void testFailure_existedButWasDeleted() throws Exception {
-    persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    persistDeletedDomain(getUniqueIdFromCommand(), clock.now().minusDays(1));
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -747,7 +747,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_delete_response_pending.xml"));
 
     HistoryEntry deleteHistoryEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     assertPollMessages(
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
@@ -764,7 +764,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
             .setHistoryEntry(deleteHistoryEntry)
-            .setEventTime(DateTime.parse("2000-07-11T22:00:00.010Z"))
+            .setEventTime(Instant.parse("2000-07-11T22:00:00.010Z"))
             .setMsg("Deleted by registry administrator.")
             .setResponseData(
                 ImmutableList.of(
@@ -772,7 +772,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                         "example.tld",
                         true,
                         deleteHistoryEntry.getTrid(),
-                        DateTime.parse("2000-07-11T22:00:00.010Z"))))
+                        Instant.parse("2000-07-11T22:00:00.010Z"))))
             .build());
   }
 
@@ -888,7 +888,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .that(reloadResourceByForeignKey())
         .hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_DELETE)
         .and()
-        .hasLastEppUpdateTime(clock.nowUtc())
+        .hasLastEppUpdateTime(clock.now())
         .and()
         .hasLastEppUpdateRegistrarId("TheRegistrar");
     assertAboutHistoryEntries()
@@ -962,7 +962,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
             DomainTransactionRecord.create(
-                "tld", clock.nowUtc().plusHours(3), DELETED_DOMAINS_NOGRACE, 1));
+                "tld", clock.now().plusHours(3), DELETED_DOMAINS_NOGRACE, 1));
   }
 
   @Test
@@ -988,7 +988,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
             DomainTransactionRecord.create(
-                "tld", clock.nowUtc().plusHours(3), DELETED_DOMAINS_NOGRACE, 1));
+                "tld", clock.now().plusHours(3), DELETED_DOMAINS_NOGRACE, 1));
   }
 
   /** Verifies that if there's no add grace period, we still cancel out valid renew records */
@@ -1016,7 +1016,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
             DomainTransactionRecord.create(
-                "tld", clock.nowUtc().plusHours(3), DELETED_DOMAINS_NOGRACE, 1),
+                "tld", clock.now().plusHours(3), DELETED_DOMAINS_NOGRACE, 1),
             renewRecord.asBuilder().setReportAmount(-1).build());
   }
 
@@ -1037,7 +1037,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // Transaction record should just be the grace period delete
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
-            DomainTransactionRecord.create("tld", clock.nowUtc(), DELETED_DOMAINS_GRACE, 1));
+            DomainTransactionRecord.create("tld", clock.now(), DELETED_DOMAINS_GRACE, 1));
   }
 
   @Test
@@ -1079,7 +1079,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // Transaction record should be the grace period delete, and the more recent cancellation record
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
-            DomainTransactionRecord.create("tld", clock.nowUtc(), DELETED_DOMAINS_GRACE, 1),
+            DomainTransactionRecord.create("tld", clock.now(), DELETED_DOMAINS_GRACE, 1),
             // The cancellation record is the same as the original, except with a -1 counter
             existingRecord.asBuilder().setReportAmount(-1).build());
   }
@@ -1099,13 +1099,13 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .that(resource)
         .hasExactlyStatusValues(StatusValue.INACTIVE, StatusValue.PENDING_DELETE)
         .and()
-        .hasDeletionTime(clock.nowUtc().plus(standardDays(19)));
+        .hasDeletionTime(clock.now().plus(standardDays(19)));
     assertThat(resource.getGracePeriods())
         .containsExactly(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),
-                clock.nowUtc().plus(standardDays(15)),
+                clock.now().plus(standardDays(15)),
                 "TheRegistrar",
                 null,
                 resource.getGracePeriods().iterator().next().getGracePeriodId()));
@@ -1127,7 +1127,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .that(resource)
         .hasExactlyStatusValues(StatusValue.INACTIVE, StatusValue.PENDING_DELETE)
         .and()
-        .hasDeletionTime(clock.nowUtc().plus(standardDays(4)));
+        .hasDeletionTime(clock.now().plus(standardDays(4)));
     assertThat(resource.getGracePeriods()).isEmpty();
     assertDeletionPollMessageFor(resource, "Deleted by registry administrator.");
   }
@@ -1147,13 +1147,13 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .that(resource)
         .hasExactlyStatusValues(StatusValue.INACTIVE, StatusValue.PENDING_DELETE)
         .and()
-        .hasDeletionTime(clock.nowUtc().plus(standardDays(15)));
+        .hasDeletionTime(clock.now().plus(standardDays(15)));
     assertThat(resource.getGracePeriods())
         .containsExactly(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),
-                clock.nowUtc().plus(standardDays(15)),
+                clock.now().plus(standardDays(15)),
                 "TheRegistrar",
                 null,
                 resource.getGracePeriods().iterator().next().getGracePeriodId()));

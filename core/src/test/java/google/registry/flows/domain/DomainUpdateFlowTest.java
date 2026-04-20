@@ -105,7 +105,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -138,7 +138,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   private Domain persistDomain() throws Exception {
-    Host host = loadResource(Host.class, "ns1.example.foo", clock.nowUtc()).get();
+    Host host = loadResource(Host.class, "ns1.example.foo", clock.now()).get();
     Domain domain =
         persistResource(
             DatabaseHelper.newDomain(getUniqueIdFromCommand())
@@ -148,7 +148,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         new DomainHistory.Builder()
             .setType(DOMAIN_CREATE)
-            .setModificationTime(clock.nowUtc())
+            .setModificationTime(clock.now())
             .setRegistrarId(domain.getCreationRegistrarId())
             .setDomain(domain)
             .build());
@@ -173,7 +173,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         .and()
         .hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_UPDATE)
         .and()
-        .hasLastEppUpdateTime(clock.nowUtc())
+        .hasLastEppUpdateTime(clock.now())
         .and()
         .hasLastEppUpdateRegistrarId("TheRegistrar")
         .and()
@@ -234,7 +234,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         .and()
         .hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_UPDATE)
         .and()
-        .hasLastEppUpdateTime(clock.nowUtc())
+        .hasLastEppUpdateTime(clock.now())
         .and()
         .hasLastEppUpdateRegistrarId("TheRegistrar")
         .and()
@@ -286,7 +286,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     for (int i = 1; i < 15; i++) {
       if (i != 2) { // Skip 2 since that's the one that the tests will add.
         nameservers.add(
-            loadResource(Host.class, String.format("ns%d.example.foo", i), clock.nowUtc())
+            loadResource(Host.class, String.format("ns%d.example.foo", i), clock.now())
                 .get()
                 .createVKey());
       }
@@ -378,7 +378,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .addSubordinateHost("ns2.example.tld")
             .setNameservers(
                 ImmutableSet.of(
-                    loadResource(Host.class, "ns1.example.tld", clock.nowUtc()).get().createVKey()))
+                    loadResource(Host.class, "ns1.example.tld", clock.now()).get().createVKey()))
             .build());
     clock.advanceOneMilli();
     assertMutatingFlow(true);
@@ -386,8 +386,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     domain = reloadResourceByForeignKey();
     assertThat(domain.getNameservers()).containsExactly(addedHost.createVKey());
     assertThat(domain.getSubordinateHosts()).containsExactly("ns1.example.tld", "ns2.example.tld");
-    Host existingHost = loadResource(Host.class, "ns1.example.tld", clock.nowUtc()).get();
-    addedHost = loadResource(Host.class, "ns2.example.tld", clock.nowUtc()).get();
+    Host existingHost = loadResource(Host.class, "ns1.example.tld", clock.now()).get();
+    addedHost = loadResource(Host.class, "ns2.example.tld", clock.now()).get();
     assertThat(existingHost.getSuperordinateDomain()).isEqualTo(domain.createVKey());
     assertThat(addedHost.getSuperordinateDomain()).isEqualTo(domain.createVKey());
   }
@@ -797,8 +797,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
               .setTargetId("example.tld")
               .setRegistrarId("TheRegistrar")
               .setCost(Money.of(USD, 19))
-              .setEventTime(clock.nowUtc())
-              .setBillingTime(clock.nowUtc())
+              .setEventTime(clock.now())
+              .setBillingTime(clock.now())
               .setDomainHistory(
                   getOnlyHistoryEntryOfType(
                       reloadResourceByForeignKey(), DOMAIN_UPDATE, DomainHistory.class))
@@ -1044,7 +1044,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   @Test
   void testFailure_existedButWasDeleted() throws Exception {
     persistReferencedEntities();
-    persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    persistDeletedDomain(getUniqueIdFromCommand(), clock.now().minusDays(1));
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -1095,7 +1095,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertPollMessagesForResource(
         updatedDomain,
         new PollMessage.OneTime.Builder()
-            .setEventTime(clock.nowUtc())
+            .setEventTime(clock.now())
             .setHistoryEntry(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
             .setRegistrarId("NewRegistrar")
             .setMsg("The registry administrator has added the status(es) [serverHold].")
@@ -1105,7 +1105,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                         "example.tld",
                         true,
                         Trid.create("ABC-12345", "server-trid"),
-                        clock.nowUtc())))
+                        clock.now())))
             .build());
   }
 
@@ -1134,7 +1134,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertPollMessagesForResource(
         updatedDomain,
         new PollMessage.OneTime.Builder()
-            .setEventTime(clock.nowUtc())
+            .setEventTime(clock.now())
             .setHistoryEntry(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
             .setRegistrarId("NewRegistrar")
             .setMsg(
@@ -1146,7 +1146,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                         "example.tld",
                         true,
                         Trid.create("ABC-12345", "server-trid"),
-                        clock.nowUtc())))
+                        clock.now())))
             .build());
   }
 
@@ -1172,7 +1172,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertPollMessagesForResource(
         updatedDomain,
         new PollMessage.OneTime.Builder()
-            .setEventTime(clock.nowUtc())
+            .setEventTime(clock.now())
             .setHistoryEntry(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
             .setRegistrarId("NewRegistrar")
             .setMsg(
@@ -1185,7 +1185,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                         "example.tld",
                         true,
                         Trid.create("ABC-12345", "server-trid"),
-                        clock.nowUtc())))
+                        clock.now())))
             .build());
   }
 
@@ -1262,7 +1262,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
-            .setDeletionTime(clock.nowUtc().plusDays(1))
+            .setDeletionTime(clock.now().plusDays(1))
             .addStatusValue(PENDING_DELETE)
             .build());
     ResourceStatusProhibitsOperationException thrown =
@@ -1319,7 +1319,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .asBuilder()
             .setNameservers(
                 ImmutableSet.of(
-                    loadResource(Host.class, "ns1.example.foo", clock.nowUtc()).get().createVKey()))
+                    loadResource(Host.class, "ns1.example.foo", clock.now()).get().createVKey()))
             .build());
     EppException thrown = assertThrows(AddRemoveSameValueException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1387,7 +1387,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     persistResource(
-        loadResource(Host.class, "ns2.example.foo", clock.nowUtc())
+        loadResource(Host.class, "ns2.example.foo", clock.now())
             .get()
             .asBuilder()
             .addStatusValue(PENDING_DELETE)
@@ -1422,7 +1422,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         reloadResourceByForeignKey()
             .asBuilder()
             .addNameserver(
-                loadResource(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey())
+                loadResource(Host.class, "ns2.example.foo", clock.now()).get().createVKey())
             .build());
     persistResource(
         Tld.get("tld")
@@ -1431,12 +1431,12 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 ImmutableSet.of("ns1.example.foo", "ns2.example.foo"))
             .build());
     assertThat(reloadResourceByForeignKey().getNameservers())
-        .contains(loadResource(Host.class, "ns1.example.foo", clock.nowUtc()).get().createVKey());
+        .contains(loadResource(Host.class, "ns1.example.foo", clock.now()).get().createVKey());
     clock.advanceOneMilli();
     runFlow();
     assertThat(reloadResourceByForeignKey().getNameservers())
         .doesNotContain(
-            loadResource(Host.class, "ns1.example.foo", clock.nowUtc())
+            loadResource(Host.class, "ns1.example.foo", clock.now())
                 .map(ImmutableObject::createVKey)
                 .get());
   }
@@ -1491,7 +1491,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   void testSuperuserExtension_turnsOffAutorenew() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput("domain_update_superuser_extension.xml", ImmutableMap.of("AUTORENEWS", "false"));
-    DateTime expirationTime = clock.nowUtc().plusYears(3);
+    Instant expirationTime = clock.now().plusYears(3);
     persistReferencedEntities();
     persistResource(
         persistDomain().asBuilder().setRegistrationExpirationTime(expirationTime).build());
@@ -1504,7 +1504,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   void testSuperuserExtension_turnsOnAutorenew() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput("domain_update_superuser_extension.xml", ImmutableMap.of("AUTORENEWS", "true"));
-    DateTime expirationTime = clock.nowUtc().plusYears(3);
+    Instant expirationTime = clock.now().plusYears(3);
     persistReferencedEntities();
     persistResource(
         persistDomain()

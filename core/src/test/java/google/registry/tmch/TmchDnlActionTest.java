@@ -25,8 +25,8 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import java.io.ByteArrayInputStream;
 import java.net.URL;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TmchDnlAction}. */
@@ -57,7 +57,7 @@ class TmchDnlActionTest extends TmchActionTestCase {
     // Make sure the contents of testdata/dnl-latest.csv got inserted into the database.
     ClaimsList claimsList = ClaimsListDao.get();
     assertThat(claimsList.getTmdbGenerationTime())
-        .isEqualTo(DateTime.parse("2013-11-24T23:15:37.4Z"));
+        .isEqualTo(Instant.parse("2013-11-24T23:15:37.4Z"));
     assertThat(tm().transact(() -> claimsList.getClaimKey("xn----7sbejwbn3axu3d")))
         .hasValue("2013112500/7/4/8/dIHW0DiuybvhdP8kIz");
     assertThat(tm().transact(() -> claimsList.getClaimKey("lolcat"))).isEmpty();

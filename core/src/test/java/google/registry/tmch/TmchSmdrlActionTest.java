@@ -24,14 +24,14 @@ import static org.mockito.Mockito.when;
 import google.registry.model.smd.SignedMarkRevocationList;
 import java.io.ByteArrayInputStream;
 import java.net.URL;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TmchSmdrlAction}. */
 class TmchSmdrlActionTest extends TmchActionTestCase {
 
-  private static final DateTime now = DateTime.parse("2014-01-01T00:00:00Z");
+  private static final Instant now = Instant.parse("2014-01-01T00:00:00Z");
 
   private TmchSmdrlAction newTmchSmdrlAction() {
     TmchSmdrlAction action = new TmchSmdrlAction();

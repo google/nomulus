@@ -56,9 +56,9 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.util.Clock;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -72,7 +72,7 @@ public class DomainPricingLogicTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  Clock clock = new FakeClock(DateTime.parse("2023-05-13T00:00:00.000Z"));
+  Clock clock = new FakeClock(Instant.parse("2023-05-13T00:00:00.000Z"));
   @Mock EppInput eppInput;
   SessionMetadata sessionMetadata;
   Tld tld;
@@ -90,7 +90,7 @@ public class DomainPricingLogicTest {
                 .asBuilder()
                 .setRenewBillingCostTransitions(
                     ImmutableSortedMap.of(
-                        START_OF_TIME, Money.of(USD, 1), clock.nowUtc(), Money.of(USD, 10)))
+                        START_OF_TIME, Money.of(USD, 1), clock.now(), Money.of(USD, 10)))
                 .setPremiumList(persistPremiumList("tld2", USD, "premium,USD 100"))
                 .build());
   }
@@ -102,14 +102,14 @@ public class DomainPricingLogicTest {
         persistResource(
             DatabaseHelper.newDomain(domainName)
                 .asBuilder()
-                .setCreationTimeForTest(DateTime.parse("1999-01-05T00:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("1999-01-05T00:00:00Z"))
                 .build());
     DomainHistory historyEntry =
         persistResource(
             new DomainHistory.Builder()
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .setType(DOMAIN_CREATE)
-                .setModificationTime(DateTime.parse("1999-01-05T00:00:00Z"))
+                .setModificationTime(Instant.parse("1999-01-05T00:00:00Z"))
                 .setDomain(domain)
                 .build());
     BillingRecurrence billingRecurrence =
@@ -117,7 +117,7 @@ public class DomainPricingLogicTest {
             new BillingRecurrence.Builder()
                 .setDomainHistory(historyEntry)
                 .setRegistrarId(domain.getCreationRegistrarId())
-                .setEventTime(DateTime.parse("1999-01-05T00:00:00Z"))
+                .setEventTime(Instant.parse("1999-01-05T00:00:00Z"))
                 .setFlags(ImmutableSet.of(AUTO_RENEW))
                 .setId(2L)
                 .setReason(Reason.RENEW)
@@ -133,16 +133,16 @@ public class DomainPricingLogicTest {
 
   @Test
   void testGetDomainCreatePrice_sunrise_appliesDiscount() throws EppException {
-    ImmutableSortedMap<DateTime, TldState> transitions =
-        ImmutableSortedMap.<DateTime, TldState>naturalOrder()
+    ImmutableSortedMap<Instant, TldState> transitions =
+        ImmutableSortedMap.<Instant, TldState>naturalOrder()
             .put(START_OF_TIME, TldState.PREDELEGATION)
-            .put(clock.nowUtc().minusHours(1), TldState.START_DATE_SUNRISE)
-            .put(clock.nowUtc().plusHours(1), TldState.GENERAL_AVAILABILITY)
+            .put(clock.now().minusHours(1), TldState.START_DATE_SUNRISE)
+            .put(clock.now().plusHours(1), TldState.GENERAL_AVAILABILITY)
             .build();
     Tld sunriseTld = createTld("sunrise", transitions);
     assertThat(
             domainPricingLogic.getCreatePrice(
-                sunriseTld, "domain.sunrise", clock.nowUtc(), 2, false, true, Optional.empty()))
+                sunriseTld, "domain.sunrise", clock.now(), 2, false, true, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -166,13 +166,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld,
-                "default.example",
-                clock.nowUtc(),
-                1,
-                false,
-                false,
-                Optional.of(allocationToken)))
+                tld, "default.example", clock.now(), 1, false, false, Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -197,13 +191,7 @@ public class DomainPricingLogicTest {
     // 3 year create should be 5 (discount price) + 10*2 (regular price) = 25.
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld,
-                "default.example",
-                clock.nowUtc(),
-                3,
-                false,
-                false,
-                Optional.of(allocationToken)))
+                tld, "default.example", clock.now(), 3, false, false, Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -216,7 +204,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                tld, "standard.example", clock.nowUtc(), 1, null, Optional.empty()))
+                tld, "standard.example", clock.now(), 1, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -229,7 +217,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                tld, "standard.example", clock.nowUtc(), 5, null, Optional.empty()))
+                tld, "standard.example", clock.now(), 5, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -242,7 +230,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                tld, "premium.example", clock.nowUtc(), 1, null, Optional.empty()))
+                tld, "premium.example", clock.now(), 1, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -255,7 +243,7 @@ public class DomainPricingLogicTest {
       throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
-                tld, "premium.example", clock.nowUtc(), 5, null, Optional.empty()))
+                tld, "premium.example", clock.now(), 5, null, Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -269,7 +257,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.empty()))
@@ -295,7 +283,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
@@ -312,7 +300,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.empty()))
@@ -339,7 +327,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
@@ -357,7 +345,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.empty()))
@@ -383,7 +371,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
@@ -410,7 +398,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
@@ -428,7 +416,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.empty()))
@@ -455,7 +443,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
@@ -485,7 +473,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
@@ -503,7 +491,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty()),
                 Optional.empty()))
@@ -530,7 +518,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty()),
                 Optional.of(allocationToken)))
@@ -548,7 +536,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty()),
                 Optional.empty()))
@@ -576,7 +564,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty()),
                 Optional.of(allocationToken)))
@@ -594,7 +582,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence("standard.example", NONPREMIUM, Optional.empty()),
                 Optional.empty()))
@@ -612,7 +600,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence("standard.example", NONPREMIUM, Optional.empty()),
                 Optional.empty()))
@@ -630,7 +618,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
@@ -658,7 +646,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
@@ -688,7 +676,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
@@ -719,7 +707,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
@@ -744,7 +732,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
@@ -772,7 +760,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
@@ -800,7 +788,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
@@ -819,7 +807,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence(
                     "premium.example", SPECIFIED, Optional.of(Money.of(USD, 17))),
@@ -838,7 +826,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 5,
                 persistDomainAndSetRecurrence(
                     "premium.example", SPECIFIED, Optional.of(Money.of(USD, 17))),
@@ -857,14 +845,14 @@ public class DomainPricingLogicTest {
             IllegalArgumentException.class,
             () ->
                 domainPricingLogic.getRenewPrice(
-                    tld, "standard.example", clock.nowUtc(), -1, null, Optional.empty()));
+                    tld, "standard.example", clock.now(), -1, null, Optional.empty()));
     assertThat(thrown).hasMessageThat().isEqualTo("Number of years must be positive");
   }
 
   @Test
   void testGetDomainTransferPrice_standardDomain_default_noBilling_defaultRenewalPrice()
       throws EppException {
-    assertThat(domainPricingLogic.getTransferPrice(tld, "standard.example", clock.nowUtc(), null))
+    assertThat(domainPricingLogic.getTransferPrice(tld, "standard.example", clock.now(), null))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -875,7 +863,7 @@ public class DomainPricingLogicTest {
   @Test
   void testGetDomainTransferPrice_premiumDomain_default_noBilling_premiumRenewalPrice()
       throws EppException {
-    assertThat(domainPricingLogic.getTransferPrice(tld, "premium.example", clock.nowUtc(), null))
+    assertThat(domainPricingLogic.getTransferPrice(tld, "premium.example", clock.now(), null))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -889,7 +877,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getTransferPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty())))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -904,7 +892,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getTransferPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty())))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -920,7 +908,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getTransferPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 persistDomainAndSetRecurrence("standard.example", NONPREMIUM, Optional.empty())))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -936,7 +924,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getTransferPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 persistDomainAndSetRecurrence("premium.example", NONPREMIUM, Optional.empty())))
         .isEqualTo(
             new FeesAndCredits.Builder()
@@ -952,7 +940,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getTransferPrice(
                 tld,
                 "standard.example",
-                clock.nowUtc(),
+                clock.now(),
                 persistDomainAndSetRecurrence(
                     "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1.23)))))
         .isEqualTo(
@@ -969,7 +957,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getTransferPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 persistDomainAndSetRecurrence(
                     "premium.example", SPECIFIED, Optional.of(Money.of(USD, 1.23)))))
         .isEqualTo(
@@ -991,13 +979,7 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                1,
-                false,
-                false,
-                Optional.of(allocationToken)))
+                tld, "premium.example", clock.now(), 1, false, false, Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1006,13 +988,7 @@ public class DomainPricingLogicTest {
     // Two-year create should be 13 (standard price) + 100 (premium price), and it's premium
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                2,
-                false,
-                false,
-                Optional.of(allocationToken)))
+                tld, "premium.example", clock.now(), 2, false, false, Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1022,7 +998,7 @@ public class DomainPricingLogicTest {
             domainPricingLogic.getRenewPrice(
                 tld,
                 "premium.example",
-                clock.nowUtc(),
+                clock.now(),
                 1,
                 persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
                 Optional.of(allocationToken)))
@@ -1048,13 +1024,7 @@ public class DomainPricingLogicTest {
     // are standard
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                2,
-                false,
-                false,
-                Optional.of(allocationToken)))
+                tld, "premium.example", clock.now(), 2, false, false, Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1063,13 +1033,7 @@ public class DomainPricingLogicTest {
     // Similarly, 3 years should be 13 + 10 + 10
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                3,
-                false,
-                false,
-                Optional.of(allocationToken)))
+                tld, "premium.example", clock.now(), 3, false, false, Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1090,13 +1054,7 @@ public class DomainPricingLogicTest {
     // Two-year create should be 100 (premium 1st year) plus 10 (nonpremium 2nd year)
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                2,
-                false,
-                false,
-                Optional.of(allocationToken)))
+                tld, "premium.example", clock.now(), 2, false, false, Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1105,13 +1063,7 @@ public class DomainPricingLogicTest {
     // Similarly, 3 years should be 100 + 10 + 10
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                3,
-                false,
-                false,
-                Optional.of(allocationToken)))
+                tld, "premium.example", clock.now(), 3, false, false, Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1133,7 +1085,7 @@ public class DomainPricingLogicTest {
     assertThat(
             domainPricingLogic
                 .getRenewPrice(
-                    tld, "premium.example", clock.nowUtc(), 1, null, Optional.of(allocationToken))
+                    tld, "premium.example", clock.now(), 1, null, Optional.of(allocationToken))
                 .getRenewCost())
         .isEqualTo(Money.of(USD, 5));
   }

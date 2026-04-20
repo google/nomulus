@@ -129,7 +129,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -183,9 +183,9 @@ class DomainTransferRequestFlowTest
 
   private void assertTransferRequested(
       Domain domain,
-      DateTime automaticTransferTime,
+      Instant automaticTransferTime,
       Period expectedPeriod,
-      DateTime expectedExpirationTime)
+      Instant expectedExpirationTime)
       throws Exception {
     assertAboutDomains()
         .that(domain)
@@ -193,7 +193,7 @@ class DomainTransferRequestFlowTest
         .and()
         .hasStatusValue(StatusValue.PENDING_TRANSFER)
         .and()
-        .hasLastEppUpdateTime(clock.nowUtc())
+        .hasLastEppUpdateTime(clock.now())
         .and()
         .hasLastEppUpdateRegistrarId("NewRegistrar");
     Trid expectedTrid =
@@ -211,7 +211,7 @@ class DomainTransferRequestFlowTest
                 .setGainingRegistrarId("NewRegistrar")
                 .setLosingRegistrarId("TheRegistrar")
                 .setTransferRequestTrid(expectedTrid)
-                .setTransferRequestTime(clock.nowUtc())
+                .setTransferRequestTime(clock.now())
                 .setTransferPeriod(expectedPeriod)
                 .setTransferStatus(TransferStatus.PENDING)
                 .setPendingTransferExpirationTime(automaticTransferTime)
@@ -222,7 +222,7 @@ class DomainTransferRequestFlowTest
   }
 
   private void assertTransferApproved(
-      Domain domain, DateTime automaticTransferTime, Period expectedPeriod) throws Exception {
+      Domain domain, Instant automaticTransferTime, Period expectedPeriod) throws Exception {
     assertAboutDomains()
         .that(domain)
         .hasCurrentSponsorRegistrarId("NewRegistrar")
@@ -240,7 +240,7 @@ class DomainTransferRequestFlowTest
                 .setGainingRegistrarId("NewRegistrar")
                 .setLosingRegistrarId("TheRegistrar")
                 .setTransferRequestTrid(expectedTrid)
-                .setTransferRequestTime(clock.nowUtc())
+                .setTransferRequestTime(clock.now())
                 .setTransferPeriod(expectedPeriod)
                 .setTransferStatus(TransferStatus.SERVER_APPROVED)
                 .setPendingTransferExpirationTime(automaticTransferTime)
@@ -251,8 +251,8 @@ class DomainTransferRequestFlowTest
   }
 
   private void assertHistoryEntriesContainBillingEventsAndGracePeriods(
-      DateTime expectedExpirationTime,
-      DateTime implicitTransferTime,
+      Instant expectedExpirationTime,
+      Instant implicitTransferTime,
       Optional<Money> transferCost,
       ImmutableSet<GracePeriod> originalGracePeriods,
       boolean expectTransferBillingEvent,
@@ -357,12 +357,12 @@ class DomainTransferRequestFlowTest
   }
 
   private void assertPollMessagesEmitted(
-      DateTime expectedExpirationTime, DateTime implicitTransferTime) {
+      Instant expectedExpirationTime, Instant implicitTransferTime) {
     // Assert that there exists a poll message to notify the losing registrar that a transfer was
     // requested. If the implicit transfer time is now (i.e. the automatic transfer length is zero)
     // then also expect a server approved poll message.
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc()))
-        .hasSize(implicitTransferTime.equals(clock.nowUtc()) ? 2 : 1);
+    assertThat(getPollMessages("TheRegistrar", clock.now()))
+        .hasSize(implicitTransferTime.equals(clock.now()) ? 2 : 1);
 
     // Two poll messages on the gaining registrar's side at the expected expiration time: a
     // (OneTime) transfer approved message, and an Autorenew poll message.
@@ -392,14 +392,14 @@ class DomainTransferRequestFlowTest
     // transfer pending message, and a transfer approved message (both OneTime messages).
     assertThat(getPollMessages("TheRegistrar", implicitTransferTime)).hasSize(2);
     PollMessage losingTransferPendingPollMessage =
-        getPollMessages("TheRegistrar", clock.nowUtc()).stream()
+        getPollMessages("TheRegistrar", clock.now()).stream()
             .filter(pollMessage -> TransferStatus.PENDING.getMessage().equals(pollMessage.getMsg()))
             .collect(onlyElement());
     PollMessage losingTransferApprovedPollMessage =
         getPollMessages("TheRegistrar", implicitTransferTime).stream()
             .filter(Predicates.not(Predicates.equalTo(losingTransferPendingPollMessage)))
             .collect(onlyElement());
-    assertThat(losingTransferPendingPollMessage.getEventTime()).isEqualTo(clock.nowUtc());
+    assertThat(losingTransferPendingPollMessage.getEventTime()).isEqualTo(clock.now());
     assertThat(losingTransferApprovedPollMessage.getEventTime()).isEqualTo(implicitTransferTime);
     assertThat(
             losingTransferPendingPollMessage.getResponseData().stream()
@@ -430,7 +430,7 @@ class DomainTransferRequestFlowTest
   }
 
   private void assertAboutDomainAfterAutomaticTransfer(
-      DateTime expectedExpirationTime, DateTime implicitTransferTime, Period expectedPeriod)
+      Instant expectedExpirationTime, Instant implicitTransferTime, Period expectedPeriod)
       throws Exception {
     Tld registry = Tld.get(domain.getTld());
     Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
@@ -448,7 +448,7 @@ class DomainTransferRequestFlowTest
     Domain afterGracePeriod =
         domain.cloneProjectedAtTime(
             clock
-                .nowUtc()
+                .now()
                 .plus(registry.getAutomaticTransferLength())
                 .plus(registry.getTransferGracePeriodLength()));
     assertThat(afterGracePeriod.getGracePeriods()).isEmpty();
@@ -462,7 +462,7 @@ class DomainTransferRequestFlowTest
   private void doSuccessfulTest(
       String commandFilename,
       String expectedXmlFilename,
-      DateTime expectedExpirationTime,
+      Instant expectedExpirationTime,
       Map<String, String> substitutions,
       Optional<Money> transferCost,
       BillingCancellation.Builder... extraExpectedBillingEvents)
@@ -473,7 +473,7 @@ class DomainTransferRequestFlowTest
     // for the request test we want that same 'now' to be the initial request time, so we shift
     // the transfer timeline 3 days later by adjusting the implicit transfer time here.
     Tld registry = Tld.get(domain.getTld());
-    DateTime implicitTransferTime = clock.nowUtc().plus(registry.getAutomaticTransferLength());
+    Instant implicitTransferTime = clock.now().plus(registry.getAutomaticTransferLength());
     // Setup done; run the test.
     assertMutatingFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename, substitutions));
@@ -495,7 +495,7 @@ class DomainTransferRequestFlowTest
     assertTransferRequested(
         domain, implicitTransferTime, Period.create(1, Unit.YEARS), expectedExpirationTime);
 
-    subordinateHost = reloadResourceAndCloneAtTime(subordinateHost, clock.nowUtc());
+    subordinateHost = reloadResourceAndCloneAtTime(subordinateHost, clock.now());
     assertAboutHosts().that(subordinateHost).hasNoHistoryEntries();
 
     assertHistoryEntriesContainBillingEventsAndGracePeriods(
@@ -517,14 +517,14 @@ class DomainTransferRequestFlowTest
             .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, domain.createVKey().stringify())
-            .param(PARAM_REQUESTED_TIME, clock.nowUtc().toString())
-            .scheduleTime(clock.nowUtc().plus(registry.getAutomaticTransferLength())));
+            .param(PARAM_REQUESTED_TIME, clock.now().toString())
+            .scheduleTime(clock.now().plus(registry.getAutomaticTransferLength())));
   }
 
   private void doSuccessfulTest(
       String commandFilename,
       String expectedXmlFilename,
-      DateTime expectedExpirationTime,
+      Instant expectedExpirationTime,
       BillingCancellation.Builder... extraExpectedBillingEvents)
       throws Exception {
     doSuccessfulTest(
@@ -560,7 +560,7 @@ class DomainTransferRequestFlowTest
   private void doSuccessfulSuperuserExtensionTest(
       String commandFilename,
       String expectedXmlFilename,
-      DateTime expectedExpirationTime,
+      Instant expectedExpirationTime,
       Map<String, String> substitutions,
       Optional<Money> transferCost,
       Period expectedPeriod,
@@ -573,7 +573,7 @@ class DomainTransferRequestFlowTest
     // For all of the other transfer flow tests, 'now' corresponds to day 3 of the transfer, but
     // for the request test we want that same 'now' to be the initial request time, so we shift
     // the transfer timeline 3 days later by adjusting the implicit transfer time here.
-    DateTime implicitTransferTime = clock.nowUtc().plus(expectedAutomaticTransferLength);
+    Instant implicitTransferTime = clock.now().plus(expectedAutomaticTransferLength);
     // Setup done; run the test.
     assertMutatingFlow(true);
     runFlowAssertResponse(
@@ -602,7 +602,7 @@ class DomainTransferRequestFlowTest
     // Verify correct fields were set.
     assertTransferRequested(domain, implicitTransferTime, expectedPeriod, expectedExpirationTime);
 
-    subordinateHost = reloadResourceAndCloneAtTime(subordinateHost, clock.nowUtc());
+    subordinateHost = reloadResourceAndCloneAtTime(subordinateHost, clock.now());
     assertAboutHosts().that(subordinateHost).hasNoHistoryEntries();
 
     boolean expectTransferBillingEvent = expectedPeriod.getValue() != 0;
@@ -857,8 +857,8 @@ class DomainTransferRequestFlowTest
     VKey<BillingRecurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.
-    DateTime autorenewTime = clock.nowUtc().minusDays(1);
-    DateTime expirationTime = autorenewTime.plusYears(1);
+    Instant autorenewTime = clock.now().minusDays(1);
+    Instant expirationTime = autorenewTime.plusYears(1);
     domain =
         persistResource(
             domain
@@ -955,7 +955,7 @@ class DomainTransferRequestFlowTest
     // Set the domain to expire 10 years from now (as if it were just created with a 10-year term).
     domain =
         persistResource(
-            domain.asBuilder().setRegistrationExpirationTime(clock.nowUtc().plusYears(10)).build());
+            domain.asBuilder().setRegistrationExpirationTime(clock.now().plusYears(10)).build());
     // New expiration time should be capped at exactly 10 years from the transfer server-approve
     // time, so the domain only ends up gaining the 5-day transfer window's worth of extra
     // registration time.
@@ -963,7 +963,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulTest(
         "domain_transfer_request.xml",
         "domain_transfer_request_response_10_year_cap.xml",
-        clock.nowUtc().plus(Tld.get("tld").getAutomaticTransferLength()).plusYears(10));
+        clock.now().plus(Tld.get("tld").getAutomaticTransferLength()).plusYears(10));
   }
 
   @Test
@@ -1046,9 +1046,9 @@ class DomainTransferRequestFlowTest
     setupDomain("example", "tld");
     // Set the domain to have auto-renewed long enough ago that it is still in the autorenew grace
     // period at the transfer request time, but will have exited it by the automatic transfer time.
-    DateTime autorenewTime =
-        clock.nowUtc().minus(Tld.get("tld").getAutoRenewGracePeriodLength()).plusDays(1);
-    DateTime expirationTime = autorenewTime.plusYears(1);
+    Instant autorenewTime =
+        clock.now().minus(Tld.get("tld").getAutoRenewGracePeriodLength()).plusDays(1);
+    Instant expirationTime = autorenewTime.plusYears(1);
     domain =
         persistResource(
             domain
@@ -1077,8 +1077,8 @@ class DomainTransferRequestFlowTest
     VKey<BillingRecurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.
-    DateTime autorenewTime = clock.nowUtc().minusDays(1);
-    DateTime expirationTime = autorenewTime.plusYears(1);
+    Instant autorenewTime = clock.now().minusDays(1);
+    Instant expirationTime = autorenewTime.plusYears(1);
     domain =
         persistResource(
             domain
@@ -1104,7 +1104,7 @@ class DomainTransferRequestFlowTest
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             // The cancellation happens at the moment of transfer.
-            .setEventTime(clock.nowUtc().plus(Tld.get("tld").getAutomaticTransferLength()))
+            .setEventTime(clock.now().plus(Tld.get("tld").getAutomaticTransferLength()))
             .setBillingTime(autorenewTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
             .setBillingRecurrence(existingAutorenewEvent));
@@ -1116,7 +1116,7 @@ class DomainTransferRequestFlowTest
     VKey<BillingRecurrence> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to expire in 1 day, so that it will be in the autorenew grace period by the
     // automatic transfer time, even though it isn't yet.
-    DateTime expirationTime = clock.nowUtc().plusDays(1);
+    Instant expirationTime = clock.now().plusDays(1);
     domain =
         persistResource(domain.asBuilder().setRegistrationExpirationTime(expirationTime).build());
     clock.advanceOneMilli();
@@ -1131,7 +1131,7 @@ class DomainTransferRequestFlowTest
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             // The cancellation happens at the moment of transfer.
-            .setEventTime(clock.nowUtc().plus(Tld.get("tld").getAutomaticTransferLength()))
+            .setEventTime(clock.now().plus(Tld.get("tld").getAutomaticTransferLength()))
             .setBillingTime(expirationTime.plus(Tld.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
             .setBillingRecurrence(existingAutorenewEvent));
@@ -1175,7 +1175,7 @@ class DomainTransferRequestFlowTest
             .asBuilder()
             .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
             .build());
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
 
     // This ensures that the transfer has non-premium cost, as otherwise, the fee extension would be
     // required to ack the premium price.
@@ -1232,7 +1232,7 @@ class DomainTransferRequestFlowTest
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("18.79")))
             .build());
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
 
     setEppInput("domain_transfer_request.xml");
     runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
@@ -1293,7 +1293,7 @@ class DomainTransferRequestFlowTest
     domain =
         persistResource(
             domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
 
     setEppInput("domain_transfer_request.xml");
     runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
@@ -1353,7 +1353,7 @@ class DomainTransferRequestFlowTest
     domain =
         persistResource(
             domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
 
     setEppInput("domain_transfer_request.xml");
     runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
@@ -1559,7 +1559,7 @@ class DomainTransferRequestFlowTest
                         .getTransferData()
                         .asBuilder()
                         .setTransferStatus(TransferStatus.PENDING)
-                        .setPendingTransferExpirationTime(clock.nowUtc().plusDays(1))
+                        .setPendingTransferExpirationTime(clock.now().plusDays(1))
                         .build())
                 .build());
     EppException thrown =
@@ -1601,7 +1601,7 @@ class DomainTransferRequestFlowTest
   void testFailure_deletedDomain() throws Exception {
     setupDomain("example", "tld");
     domain =
-        persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+        persistResource(domain.asBuilder().setDeletionTime(clock.now().minusDays(1)).build());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class,
@@ -1738,7 +1738,7 @@ class DomainTransferRequestFlowTest
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
             DomainTransactionRecord.create(
-                "tld", clock.nowUtc().plusDays(5), TRANSFER_SUCCESSFUL, 1));
+                "tld", clock.now().plusDays(5), TRANSFER_SUCCESSFUL, 1));
   }
 
   @Test
@@ -1773,10 +1773,10 @@ class DomainTransferRequestFlowTest
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
             .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusDays(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusDays(60), TokenStatus.ENDED)
+                    .put(clock.now().plusDays(1), TokenStatus.VALID)
+                    .put(clock.now().plusDays(60), TokenStatus.ENDED)
                     .build())
             .build());
     setEppInput("domain_transfer_request_allocation_token.xml", ImmutableMap.of("TOKEN", "abc123"));
@@ -1794,10 +1794,10 @@ class DomainTransferRequestFlowTest
             .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
             .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .put(clock.now().minusDays(1), TokenStatus.VALID)
+                    .put(clock.now().plusDays(1), TokenStatus.ENDED)
                     .build())
             .build());
     setEppInput("domain_transfer_request_allocation_token.xml", ImmutableMap.of("TOKEN", "abc123"));

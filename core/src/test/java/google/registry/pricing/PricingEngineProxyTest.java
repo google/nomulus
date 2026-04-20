@@ -33,7 +33,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeClock;
 import google.registry.util.Clock;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -54,39 +54,39 @@ public class PricingEngineProxyTest {
             "premium list", USD, "rich,USD 100", "richer,USD 999", "fraction,USD 20.50");
     createTld("moka");
     persistResource(Tld.get("moka").asBuilder().setPremiumList(premiumList).build());
-    clock = new FakeClock(DateTime.parse("2016-03-17T12:01:00Z"));
+    clock = new FakeClock(Instant.parse("2016-03-17T12:01:00Z"));
   }
 
   @Test
   void test_getDomainCreateCost_multipleYears() {
-    assertThat(getDomainCreateCost("espresso.moka", clock.nowUtc(), 1))
+    assertThat(getDomainCreateCost("espresso.moka", clock.now(), 1))
         .isEqualTo(Money.parse("USD 13"));
-    assertThat(getDomainCreateCost("espresso.moka", clock.nowUtc(), 5))
+    assertThat(getDomainCreateCost("espresso.moka", clock.now(), 5))
         .isEqualTo(Money.parse("USD 65"));
-    assertThat(getDomainCreateCost("fraction.moka", clock.nowUtc(), 1))
+    assertThat(getDomainCreateCost("fraction.moka", clock.now(), 1))
         .isEqualTo(Money.parse("USD 20.50"));
-    assertThat(getDomainCreateCost("fraction.moka", clock.nowUtc(), 3))
+    assertThat(getDomainCreateCost("fraction.moka", clock.now(), 3))
         .isEqualTo(Money.parse("USD 61.50"));
   }
 
   @Test
   void test_getDomainRenewCost_multipleYears() {
-    assertThat(getDomainRenewCost("espresso.moka", clock.nowUtc(), 1))
+    assertThat(getDomainRenewCost("espresso.moka", clock.now(), 1))
         .isEqualTo(Money.parse("USD 11"));
-    assertThat(getDomainRenewCost("espresso.moka", clock.nowUtc(), 5))
+    assertThat(getDomainRenewCost("espresso.moka", clock.now(), 5))
         .isEqualTo(Money.parse("USD 55"));
-    assertThat(getDomainRenewCost("fraction.moka", clock.nowUtc(), 1))
+    assertThat(getDomainRenewCost("fraction.moka", clock.now(), 1))
         .isEqualTo(Money.parse("USD 20.50"));
-    assertThat(getDomainRenewCost("fraction.moka", clock.nowUtc(), 3))
+    assertThat(getDomainRenewCost("fraction.moka", clock.now(), 3))
         .isEqualTo(Money.parse("USD 61.50"));
   }
 
   @Test
   void testIsPremiumDomain() {
     createTld("example");
-    assertThat(isDomainPremium("poor.example", clock.nowUtc())).isFalse();
-    assertThat(isDomainPremium("rich.example", clock.nowUtc())).isTrue();
-    assertThat(isDomainPremium("richer.example", clock.nowUtc())).isTrue();
+    assertThat(isDomainPremium("poor.example", clock.now())).isFalse();
+    assertThat(isDomainPremium("rich.example", clock.now())).isTrue();
+    assertThat(isDomainPremium("richer.example", clock.now())).isTrue();
   }
 
   @Test
@@ -94,11 +94,11 @@ public class PricingEngineProxyTest {
     // The example tld has a premium price for "rich".
     createTld("example");
     // The default value of 17 is set in createTld().
-    assertThat(getDomainCreateCost("poor.example", clock.nowUtc(), 1)).isEqualTo(Money.of(USD, 13));
-    assertThat(getDomainCreateCost("poor.example", clock.nowUtc(), 2)).isEqualTo(Money.of(USD, 26));
-    assertThat(getDomainCreateCost("rich.example", clock.nowUtc(), 1))
+    assertThat(getDomainCreateCost("poor.example", clock.now(), 1)).isEqualTo(Money.of(USD, 13));
+    assertThat(getDomainCreateCost("poor.example", clock.now(), 2)).isEqualTo(Money.of(USD, 26));
+    assertThat(getDomainCreateCost("rich.example", clock.now(), 1))
         .isEqualTo(Money.of(USD, 100));
-    assertThat(getDomainCreateCost("rich.example", clock.nowUtc(), 2))
+    assertThat(getDomainCreateCost("rich.example", clock.now(), 2))
         .isEqualTo(Money.of(USD, 200));
   }
 
@@ -111,16 +111,16 @@ public class PricingEngineProxyTest {
             .asBuilder()
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
-                    START_OF_TIME, Money.of(USD, 8), clock.nowUtc(), Money.of(USD, 10)))
+                    START_OF_TIME, Money.of(USD, 8), clock.now(), Money.of(USD, 10)))
             .build());
     assertThat(getDomainRenewCost("poor.example", START_OF_TIME, 1)).isEqualTo(Money.of(USD, 8));
     assertThat(getDomainRenewCost("poor.example", START_OF_TIME, 2)).isEqualTo(Money.of(USD, 16));
-    assertThat(getDomainRenewCost("poor.example", clock.nowUtc(), 1)).isEqualTo(Money.of(USD, 10));
-    assertThat(getDomainRenewCost("poor.example", clock.nowUtc(), 2)).isEqualTo(Money.of(USD, 20));
+    assertThat(getDomainRenewCost("poor.example", clock.now(), 1)).isEqualTo(Money.of(USD, 10));
+    assertThat(getDomainRenewCost("poor.example", clock.now(), 2)).isEqualTo(Money.of(USD, 20));
     assertThat(getDomainRenewCost("rich.example", START_OF_TIME, 1)).isEqualTo(Money.of(USD, 100));
     assertThat(getDomainRenewCost("rich.example", START_OF_TIME, 2)).isEqualTo(Money.of(USD, 200));
-    assertThat(getDomainRenewCost("rich.example", clock.nowUtc(), 1)).isEqualTo(Money.of(USD, 100));
-    assertThat(getDomainRenewCost("rich.example", clock.nowUtc(), 2)).isEqualTo(Money.of(USD, 200));
+    assertThat(getDomainRenewCost("rich.example", clock.now(), 1)).isEqualTo(Money.of(USD, 100));
+    assertThat(getDomainRenewCost("rich.example", clock.now(), 2)).isEqualTo(Money.of(USD, 200));
   }
 
   @Test
@@ -130,7 +130,7 @@ public class PricingEngineProxyTest {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
-            () -> getDomainCreateCost("bad.example", clock.nowUtc(), 1));
+            () -> getDomainCreateCost("bad.example", clock.now(), 1));
     assertThat(thrown)
         .hasMessageThat()
         .contains("Could not load pricing engine fake for TLD example");

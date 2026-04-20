@@ -19,7 +19,6 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -81,14 +80,14 @@ public final class HostInfoFlow implements TransactionalFlow {
           tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now);
       hostInfoDataBuilder
           .setCurrentSponsorRegistrarId(superordinateDomain.getCurrentSponsorRegistrarId())
-          .setLastTransferTime(toDateTime(host.computeLastTransferTime(superordinateDomain)));
+          .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));
       if (superordinateDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
         statusValues.add(StatusValue.PENDING_TRANSFER);
       }
     } else {
       hostInfoDataBuilder
           .setCurrentSponsorRegistrarId(host.getPersistedCurrentSponsorRegistrarId())
-          .setLastTransferTime(host.getLastTransferTime());
+          .setLastTransferTime(host.getLastTransferTimeInstant());
     }
     return responseBuilder
         .setResData(
@@ -98,9 +97,9 @@ public final class HostInfoFlow implements TransactionalFlow {
                 .setStatusValues(statusValues.build())
                 .setInetAddresses(host.getInetAddresses())
                 .setCreationRegistrarId(host.getCreationRegistrarId())
-                .setCreationTime(host.getCreationTime())
+                .setCreationTime(host.getCreationTimeInstant())
                 .setLastEppUpdateRegistrarId(host.getLastEppUpdateRegistrarId())
-                .setLastEppUpdateTime(host.getLastEppUpdateDateTime())
+                .setLastEppUpdateTime(host.getLastEppUpdateTime())
                 .build())
         .build();
   }

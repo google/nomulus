@@ -53,6 +53,7 @@ import static google.registry.model.tld.label.ReservationType.NAME_COLLISION;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -313,7 +314,7 @@ public final class DomainCreateFlow implements MutatingFlow {
       // at this point so that we can verify it before the "after validation" extension point.
       signedMarkId =
           tmchUtils
-              .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, now)
+              .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, toInstant(now))
               .getId();
     }
     verifyNotBlockedByBsa(domainName, tld, now, allocationToken);
@@ -440,7 +441,9 @@ public final class DomainCreateFlow implements MutatingFlow {
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
-                .setResData(DomainCreateData.create(targetId, now, registrationExpirationTime))
+                .setResData(
+                    DomainCreateData.create(
+                        targetId, toInstant(now), toInstant(registrationExpirationTime)))
                 .setResponseExtensions(createResponseExtensions(feeCreate, responseFeesAndCredits))
                 .build());
     return responseBuilder

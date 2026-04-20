@@ -50,7 +50,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -58,7 +58,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link AllocationTokenFlowUtils}. */
 class AllocationTokenFlowUtilsTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2025-01-10T01:00:00.000Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2025-01-10T01:00:00.000Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -122,7 +122,7 @@ class AllocationTokenFlowUtilsTest {
             AllocationTokenFlowUtils.loadAllocationTokenFromExtension(
                 "TheRegistrar",
                 "example.tld",
-                clock.nowUtc(),
+                clock.now(),
                 Optional.of(allocationTokenExtension)))
         .hasValue(token);
   }
@@ -141,7 +141,7 @@ class AllocationTokenFlowUtilsTest {
     assertThat(
             AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
                 "TheRegistrar",
-                clock.nowUtc(),
+                clock.now(),
                 Optional.of(allocationTokenExtension),
                 tld,
                 "example.tld",
@@ -157,7 +157,7 @@ class AllocationTokenFlowUtilsTest {
     assertThat(
             AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
                 "TheRegistrar",
-                clock.nowUtc(),
+                clock.now(),
                 Optional.empty(),
                 tld,
                 "example.tld",
@@ -181,7 +181,7 @@ class AllocationTokenFlowUtilsTest {
     assertThat(
             AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
                 "TheRegistrar",
-                clock.nowUtc(),
+                clock.now(),
                 Optional.of(allocationTokenExtension),
                 tld,
                 "example.tld",
@@ -196,7 +196,7 @@ class AllocationTokenFlowUtilsTest {
     AllocationToken token = singleUseTokenBuilder().setDiscountPremiums(true).build();
     assertThat(
             AllocationTokenFlowUtils.tokenIsValidAgainstDomain(
-                InternetDomainName.from("rich.tld"), token, CommandName.CREATE, clock.nowUtc()))
+                InternetDomainName.from("rich.tld"), token, CommandName.CREATE, clock.now()))
         .isTrue();
   }
 
@@ -205,7 +205,7 @@ class AllocationTokenFlowUtilsTest {
     AllocationToken token = singleUseTokenBuilder().build();
     assertThat(
             AllocationTokenFlowUtils.tokenIsValidAgainstDomain(
-                InternetDomainName.from("rich.tld"), token, CommandName.CREATE, clock.nowUtc()))
+                InternetDomainName.from("rich.tld"), token, CommandName.CREATE, clock.now()))
         .isFalse();
   }
 
@@ -215,7 +215,7 @@ class AllocationTokenFlowUtilsTest {
         singleUseTokenBuilder().setAllowedEppActions(ImmutableSet.of(CommandName.RESTORE)).build();
     assertThat(
             AllocationTokenFlowUtils.tokenIsValidAgainstDomain(
-                InternetDomainName.from("domain.tld"), token, CommandName.CREATE, clock.nowUtc()))
+                InternetDomainName.from("domain.tld"), token, CommandName.CREATE, clock.now()))
         .isFalse();
   }
 
@@ -228,7 +228,7 @@ class AllocationTokenFlowUtilsTest {
                 InternetDomainName.from("domain.othertld"),
                 token,
                 CommandName.CREATE,
-                clock.nowUtc()))
+                clock.now()))
         .isFalse();
   }
 
@@ -237,7 +237,7 @@ class AllocationTokenFlowUtilsTest {
     AllocationToken token = singleUseTokenBuilder().setDomainName("anchor.tld").build();
     assertThat(
             AllocationTokenFlowUtils.tokenIsValidAgainstDomain(
-                InternetDomainName.from("domain.tld"), token, CommandName.CREATE, clock.nowUtc()))
+                InternetDomainName.from("domain.tld"), token, CommandName.CREATE, clock.now()))
         .isFalse();
   }
 
@@ -247,7 +247,7 @@ class AllocationTokenFlowUtilsTest {
         IllegalArgumentException.class,
         () ->
             AllocationTokenFlowUtils.redeemToken(
-                createOneMonthPromoTokenBuilder(clock.nowUtc()).build(),
+                createOneMonthPromoTokenBuilder(clock.now()).build(),
                 new HistoryEntryId("repoId", 10L)));
   }
 
@@ -265,7 +265,7 @@ class AllocationTokenFlowUtilsTest {
   @Test
   void testFailure_tokenInvalidForRegistrar() {
     persistResource(
-        createOneMonthPromoTokenBuilder(clock.nowUtc().minusDays(1))
+        createOneMonthPromoTokenBuilder(clock.now().minusDays(1))
             .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
             .build());
     assertLoadTokenFromExtensionThrowsException(AllocationTokenNotValidForRegistrarException.class);
@@ -273,13 +273,13 @@ class AllocationTokenFlowUtilsTest {
 
   @Test
   void testFailure_beforePromoStart() {
-    persistResource(createOneMonthPromoTokenBuilder(clock.nowUtc().plusDays(1)).build());
+    persistResource(createOneMonthPromoTokenBuilder(clock.now().plusDays(1)).build());
     assertLoadTokenFromExtensionThrowsException(AllocationTokenNotInPromotionException.class);
   }
 
   @Test
   void testFailure_afterPromoEnd() {
-    persistResource(createOneMonthPromoTokenBuilder(clock.nowUtc().minusMonths(2)).build());
+    persistResource(createOneMonthPromoTokenBuilder(clock.now().minusMonths(2)).build());
     assertLoadTokenFromExtensionThrowsException(AllocationTokenNotInPromotionException.class);
   }
 
@@ -287,12 +287,12 @@ class AllocationTokenFlowUtilsTest {
   void testFailure_promoCancelled() {
     // the promo would be valid, but it was cancelled 12 hours ago
     persistResource(
-        createOneMonthPromoTokenBuilder(clock.nowUtc().minusDays(1))
+        createOneMonthPromoTokenBuilder(clock.now().minusDays(1))
             .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_OF_TIME, NOT_STARTED)
-                    .put(clock.nowUtc().minusMonths(1), VALID)
-                    .put(clock.nowUtc().minusHours(12), CANCELLED)
+                    .put(clock.now().minusMonths(1), VALID)
+                    .put(clock.now().minusHours(12), CANCELLED)
                     .build())
             .build());
     assertLoadTokenFromExtensionThrowsException(AllocationTokenNotInPromotionException.class);
@@ -306,7 +306,7 @@ class AllocationTokenFlowUtilsTest {
         () ->
             AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
                 "TheRegistrar",
-                clock.nowUtc(),
+                clock.now(),
                 Optional.of(allocationTokenExtension),
                 tld,
                 "example.tld",
@@ -320,7 +320,7 @@ class AllocationTokenFlowUtilsTest {
     assertThat(
             AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
                 "TheRegistrar",
-                clock.nowUtc(),
+                clock.now(),
                 Optional.empty(),
                 tld,
                 "example.tld",
@@ -340,7 +340,7 @@ class AllocationTokenFlowUtilsTest {
         () ->
             AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
                 "TheRegistrar",
-                clock.nowUtc(),
+                clock.now(),
                 Optional.of(allocationTokenExtension),
                 tld,
                 "example.tld",
@@ -380,7 +380,7 @@ class AllocationTokenFlowUtilsTest {
     assertThat(
             AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
                 "TheRegistrar",
-                clock.nowUtc(),
+                clock.now(),
                 Optional.empty(),
                 tld,
                 "example.tld",
@@ -423,7 +423,7 @@ class AllocationTokenFlowUtilsTest {
     assertThat(
             AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
                 "TheRegistrar",
-                clock.nowUtc(),
+                clock.now(),
                 Optional.empty(),
                 tld,
                 "example.tld",
@@ -460,7 +460,7 @@ class AllocationTokenFlowUtilsTest {
                     AllocationTokenFlowUtils.loadAllocationTokenFromExtension(
                         "TheRegistrar",
                         "example.tld",
-                        clock.nowUtc(),
+                        clock.now(),
                         Optional.of(allocationTokenExtension))))
         .marshalsToXml();
   }
@@ -475,13 +475,13 @@ class AllocationTokenFlowUtilsTest {
         .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"));
   }
 
-  private AllocationToken.Builder createOneMonthPromoTokenBuilder(DateTime promoStart) {
+  private AllocationToken.Builder createOneMonthPromoTokenBuilder(Instant promoStart) {
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     return new AllocationToken.Builder()
         .setToken("tokeN")
         .setTokenType(UNLIMITED_USE)
         .setTokenStatusTransitions(
-            ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+            ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                 .put(START_OF_TIME, NOT_STARTED)
                 .put(promoStart, VALID)
                 .put(promoStart.plusMonths(1), ENDED)

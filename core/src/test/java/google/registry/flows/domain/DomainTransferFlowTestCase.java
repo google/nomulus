@@ -44,7 +44,7 @@ import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -60,14 +60,14 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   // Transfer is requested on the 6th and expires on the 11th.
   // The "now" of this flow is on the 9th, 3 days in.
 
-  static final DateTime TRANSFER_REQUEST_TIME = DateTime.parse("2000-06-06T22:00:00.0Z");
-  static final DateTime TRANSFER_EXPIRATION_TIME =
+  static final Instant TRANSFER_REQUEST_TIME = Instant.parse("2000-06-06T22:00:00.0Z");
+  static final Instant TRANSFER_EXPIRATION_TIME =
       TRANSFER_REQUEST_TIME.plus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
   private static final Duration TIME_SINCE_REQUEST = Duration.standardDays(3);
   private static final int EXTENDED_REGISTRATION_YEARS = 1;
-  private static final DateTime REGISTRATION_EXPIRATION_TIME =
-      DateTime.parse("2001-09-08T22:00:00.0Z");
-  static final DateTime EXTENDED_REGISTRATION_EXPIRATION_TIME =
+  private static final Instant REGISTRATION_EXPIRATION_TIME =
+      Instant.parse("2001-09-08T22:00:00.0Z");
+  static final Instant EXTENDED_REGISTRATION_EXPIRATION_TIME =
       REGISTRATION_EXPIRATION_TIME.plusYears(EXTENDED_REGISTRATION_YEARS);
 
   protected Domain domain;
@@ -105,8 +105,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         persistDomainWithDependentResources(
             label,
             tld,
-            clock.nowUtc(),
-            DateTime.parse("1999-04-03T22:00:00.0Z"),
+            clock.now(),
+            Instant.parse("1999-04-03T22:00:00.0Z"),
             REGISTRATION_EXPIRATION_TIME);
     subordinateHost =
         persistResource(
@@ -115,7 +115,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
                 .setHostName("ns1." + label + "." + tld)
                 .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
                 .setCreationRegistrarId("TheRegistrar")
-                .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
+                .setCreationTimeForTest(Instant.parse("1999-04-03T22:00:00.0Z"))
                 .setSuperordinateDomain(domain.createVKey())
                 .build());
     domain =
@@ -174,7 +174,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .isEqualTo(
             oldTransferData.copyConstantFieldsToBuilder()
                 .setTransferStatus(status)
-                .setPendingTransferExpirationTime(clock.nowUtc())
+                .setPendingTransferExpirationTime(clock.now())
                 .build());
   }
 

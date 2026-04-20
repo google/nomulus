@@ -21,6 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.EntityTestCase;
 import jakarta.persistence.OptimisticLockException;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +35,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   void testSave_success() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
-            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
+            fakeClock.now(), ImmutableMap.of("mark", fakeClock.now().minus(Duration.ofHours(1))));
     list = SignedMarkRevocationListDao.save(list);
     SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.load();
     assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list);
@@ -44,7 +45,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   void testSave_retrySuccess() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
-            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
+            fakeClock.now(), ImmutableMap.of("mark", fakeClock.now().minus(Duration.ofHours(1))));
     AtomicBoolean isFirstAttempt = new AtomicBoolean(true);
     tm().transact(
             () -> {
@@ -61,7 +62,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   @Test
   void testSaveAndLoad_emptyList() {
     SignedMarkRevocationList list =
-        SignedMarkRevocationList.create(fakeClock.nowUtc(), ImmutableMap.of());
+        SignedMarkRevocationList.create(fakeClock.now(), ImmutableMap.of());
     SignedMarkRevocationListDao.save(list);
     SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.load();
     assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list, "revisionId");
@@ -71,17 +72,14 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   void testSave_multipleVersions() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
-            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
+            fakeClock.now(), ImmutableMap.of("mark", fakeClock.now().minus(Duration.ofHours(1))));
     SignedMarkRevocationListDao.save(list);
-    assertThat(SignedMarkRevocationListDao.load().isSmdRevoked("mark", fakeClock.nowUtc()))
-        .isTrue();
+    assertThat(SignedMarkRevocationListDao.load().isSmdRevoked("mark", fakeClock.now())).isTrue();
 
     // Now remove the revocation
     SignedMarkRevocationList secondList =
-        SignedMarkRevocationList.create(fakeClock.nowUtc(), ImmutableMap.of());
+        SignedMarkRevocationList.create(fakeClock.now(), ImmutableMap.of());
     SignedMarkRevocationListDao.save(secondList);
-    assertThat(SignedMarkRevocationListDao.load().isSmdRevoked("mark", fakeClock.nowUtc()))
-        .isFalse();
+    assertThat(SignedMarkRevocationListDao.load().isSmdRevoked("mark", fakeClock.now())).isFalse();
   }
-
 }

@@ -19,8 +19,8 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import com.google.common.collect.ImmutableList;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
+import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
 
 /** Holds information about a registered trademark. */
 @XmlType(propOrder = {
@@ -52,7 +52,7 @@ public class Trademark extends CommonMarkFields {
 
   /** The date that the trademark was applied for. */
   @XmlElement(name = "apDate")
-  DateTime applicationDate;
+  Instant applicationDate;
 
   /** The trademark registration number registered in the trademark office. */
   @XmlElement(name = "regNum")
@@ -60,11 +60,11 @@ public class Trademark extends CommonMarkFields {
 
   /** The date the trademark was registered. */
   @XmlElement(name = "regDate")
-  DateTime registrationDate;
+  Instant registrationDate;
 
   /** Expiration date of the trademark. */
   @XmlElement(name = "exDate")
-  DateTime expirationDate;
+  Instant expirationDate;
 
   public String getJurisdiction() {
     return jurisdiction;
@@ -78,7 +78,7 @@ public class Trademark extends CommonMarkFields {
     return applicationId;
   }
 
-  public DateTime getApplicationDate() {
+  public Instant getApplicationDate() {
     return applicationDate;
   }
 
@@ -86,11 +86,11 @@ public class Trademark extends CommonMarkFields {
     return registrationNumber;
   }
 
-  public DateTime getRegistrationDate() {
+  public Instant getRegistrationDate() {
     return registrationDate;
   }
 
-  public DateTime getExpirationDate() {
+  public Instant getExpirationDate() {
     return expirationDate;
   }
 }

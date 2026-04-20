@@ -32,7 +32,6 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
 import org.joda.time.Period;
 
 /** Base class for the fee and credit types. */
@@ -104,9 +103,7 @@ public abstract class BaseFee extends ImmutableObject {
 
   @XmlTransient FeeType type;
 
-  @XmlTransient Range<DateTime> validDateRange;
-
-  @XmlTransient Range<Instant> validDateRangeInstant;
+  @XmlTransient Range<Instant> validDateRange;
 
   @XmlTransient boolean isPremium;
 
@@ -149,42 +146,13 @@ public abstract class BaseFee extends ImmutableObject {
 
   @JsonIgnore
   public boolean hasValidDateRange() {
-    return validDateRange != null || validDateRangeInstant != null;
+    return validDateRange != null;
   }
 
   @JsonIgnore
-  public Range<DateTime> getValidDateRange() {
+  public Range<Instant> getValidDateRange() {
     checkState(hasValidDateRange());
-    if (validDateRange != null) {
-      return validDateRange;
-    }
-    return convertRange(validDateRangeInstant, google.registry.util.DateTimeUtils::toDateTime);
-  }
-
-  @JsonIgnore
-  public Range<Instant> getValidDateRangeInstant() {
-    checkState(hasValidDateRange());
-    if (validDateRangeInstant != null) {
-      return validDateRangeInstant;
-    }
-    return convertRange(validDateRange, google.registry.util.DateTimeUtils::toInstant);
-  }
-
-  private static <S extends Comparable<? super S>, T extends Comparable<? super T>>
-      Range<T> convertRange(Range<S> range, java.util.function.Function<S, T> converter) {
-    if (range.hasLowerBound() && range.hasUpperBound()) {
-      return Range.range(
-          converter.apply(range.lowerEndpoint()),
-          range.lowerBoundType(),
-          converter.apply(range.upperEndpoint()),
-          range.upperBoundType());
-    } else if (range.hasLowerBound()) {
-      return Range.downTo(converter.apply(range.lowerEndpoint()), range.lowerBoundType());
-    } else if (range.hasUpperBound()) {
-      return Range.upTo(converter.apply(range.upperEndpoint()), range.upperBoundType());
-    } else {
-      return Range.all();
-    }
+    return validDateRange;
   }
 
   public boolean hasZeroCost() {

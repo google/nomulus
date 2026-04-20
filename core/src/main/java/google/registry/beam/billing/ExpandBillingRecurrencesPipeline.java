@@ -402,7 +402,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                       .getRenewPrice(
                           tld,
                           billingRecurrence.getTargetId(),
-                          toDateTime(eventTime),
+                          eventTime,
                           1,
                           billingRecurrence,
                           Optional.empty())
