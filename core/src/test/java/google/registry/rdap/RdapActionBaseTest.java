@@ -172,4 +172,13 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
     assertThat(payload).contains("\n");
     assertThat(parseJsonObject(payload)).isEqualTo(loadJsonFile("rdapjson_toplevel.json"));
   }
+
+  @Test
+  void testMetrics_recordsProcessingTime() {
+    generateActualJson("no.thing");
+    verify(rdapMetrics)
+        .recordProcessingTime(
+            org.mockito.ArgumentMatchers.any(RdapMetrics.RdapMetricInformation.class),
+            org.mockito.ArgumentMatchers.anyLong());
+  }
 }

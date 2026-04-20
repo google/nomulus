@@ -133,6 +133,16 @@ public class RdapMetrics {
               LABEL_DESCRIPTORS_FOR_RETRIEVAL_COUNTS,
               FIBONACCI_FITTER);
 
+  @VisibleForTesting
+  static final EventMetric requestTime =
+      MetricRegistryImpl.getDefault()
+          .newEventMetric(
+              "/rdap/request_time",
+              "RDAP Request Time",
+              "milliseconds",
+              LABEL_DESCRIPTORS_FOR_RESPONSES,
+              EventMetric.DEFAULT_FITTER);
+
   @Inject
   public RdapMetrics() {}
 
@@ -181,6 +191,18 @@ public class RdapMetrics {
           getLabelStringForPrefixLength(rdapMetricInformation.prefixLength()),
           rdapMetricInformation.includeDeleted() ? "YES" : "NO");
     }
+  }
+
+  /** Records the processing time for an RDAP request. */
+  public void recordProcessingTime(
+      RdapMetricInformation rdapMetricInformation, long processingTime) {
+    requestTime.record(
+        processingTime,
+        rdapMetricInformation.endpointType().toString(),
+        rdapMetricInformation.searchType().toString(),
+        rdapMetricInformation.wildcardType().toString(),
+        String.valueOf(rdapMetricInformation.statusCode()),
+        rdapMetricInformation.incompletenessWarningType().toString());
   }
 
   /**

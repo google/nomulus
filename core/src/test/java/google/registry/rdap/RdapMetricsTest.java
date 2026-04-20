@@ -37,6 +37,7 @@ class RdapMetricsTest {
     RdapMetrics.responses.reset();
     RdapMetrics.numberOfDomainsRetrieved.reset();
     RdapMetrics.numberOfHostsRetrieved.reset();
+    RdapMetrics.requestTime.reset();
   }
 
   private RdapMetrics.RdapMetricInformation.Builder getBuilder() {
@@ -273,5 +274,14 @@ class RdapMetricsTest {
         .hasNoOtherValues();
     assertThat(RdapMetrics.numberOfDomainsRetrieved).hasNoOtherValues();
     assertThat(RdapMetrics.numberOfHostsRetrieved).hasNoOtherValues();
+  }
+
+  @Test
+  void testRecordProcessingTime() {
+    rdapMetrics.recordProcessingTime(getBuilder().build(), 100L);
+    assertThat(RdapMetrics.requestTime)
+        .hasDataSetForLabels(ImmutableSet.of(100L), "DOMAINS", "NONE", "INVALID", "200", "COMPLETE")
+        .and()
+        .hasNoOtherValues();
   }
 }
