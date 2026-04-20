@@ -21,6 +21,7 @@ import static google.registry.rdap.RdapTestHelper.parseJsonObject;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static org.joda.time.Duration.millis;
 import static org.mockito.Mockito.verify;
 
 import google.registry.rdap.RdapMetrics.EndpointType;
@@ -31,6 +32,7 @@ import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
+import google.registry.testing.FakeClock;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,6 +64,9 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
       }
       if (pathSearchString.equals("RuntimeException")) {
         throw new RuntimeException();
+      }
+      if (pathSearchString.equals("advanceClock")) {
+        ((FakeClock) clock).advanceBy(millis(50));
       }
       return new ReplyPayloadBase(BoilerplateType.OTHER) {
         @JsonableElement public String key = "value";
@@ -175,10 +180,21 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
 
   @Test
   void testMetrics_recordsProcessingTime() {
-    generateActualJson("no.thing");
+    generateActualJson("advanceClock");
     verify(rdapMetrics)
         .recordProcessingTime(
-            org.mockito.ArgumentMatchers.any(RdapMetrics.RdapMetricInformation.class),
-            org.mockito.ArgumentMatchers.anyLong());
+            RdapMetrics.RdapMetricInformation.builder()
+                .setEndpointType(EndpointType.HELP)
+                .setSearchType(SearchType.NONE)
+                .setWildcardType(WildcardType.INVALID)
+                .setPrefixLength(0)
+                .setIncludeDeleted(false)
+                .setRegistrarSpecified(false)
+                .setRole(RdapAuthorization.Role.PUBLIC)
+                .setRequestMethod(Action.Method.GET)
+                .setStatusCode(200)
+                .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE)
+                .build(),
+            50L);
   }
 }
