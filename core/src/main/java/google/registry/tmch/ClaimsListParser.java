@@ -18,15 +18,16 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.tmch.ClaimsList;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.joda.time.DateTime;
 
 /**
  * Claims List (MarksDB DNL CSV) Parser.
@@ -35,6 +36,9 @@ import org.joda.time.DateTime;
  *     TMCH functional specifications - DNL List file</a>
  */
 public class ClaimsListParser {
+
+  private static final ImmutableList<String> EXPECTED_CSV_HEADERS =
+      ImmutableList.of("DNL", "lookup-key", "insertion-datetime");
 
   /**
    * Converts the lines from the DNL CSV file into a {@link ClaimsList} object.
@@ -50,7 +54,7 @@ public class ClaimsListParser {
         "Line 1: Expected 2 elements, found %d", firstLine.size()));
 
     int version = Integer.parseInt(firstLine.get(0));
-    DateTime creationTime = DateTime.parse(firstLine.get(1));
+    Instant creationTime = Instant.parse(firstLine.get(1));
     checkArgument(version == 1, String.format(
         "Line 1: Expected version 1, found %d", version));
 
@@ -61,9 +65,18 @@ public class ClaimsListParser {
             .setSkipHeaderRecord(true)
             .build()
             .parse(new StringReader(Joiner.on('\n').join(lines.subList(1, lines.size()))));
+
+    checkArgument(
+        csv.getHeaderNames().equals(EXPECTED_CSV_HEADERS),
+        "Expected CSV headers %s, found %s",
+        EXPECTED_CSV_HEADERS,
+        csv.getHeaderNames());
+
     for (CSVRecord record : csv) {
+      checkArgument(record.isConsistent(), "Inconsistent number of fields in record");
       String label = record.get("DNL");
       String lookupKey = record.get("lookup-key");
+      Instant.parse(record.get("insertion-datetime")); // Validate the format
       builder.put(label, lookupKey);
     }
 

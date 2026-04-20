@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
@@ -166,7 +167,8 @@ public class AllocationTokenFlowUtils {
   @VisibleForTesting
   static boolean tokenIsValidAgainstDomain(
       InternetDomainName domainName, AllocationToken token, CommandName commandName, DateTime now) {
-    if (discountTokenInvalidForPremiumName(token, isDomainPremium(domainName.toString(), now))) {
+    if (discountTokenInvalidForPremiumName(
+        token, isDomainPremium(domainName.toString(), toInstant(now)))) {
       return false;
     }
     if (!token.getAllowedEppActions().isEmpty()
@@ -242,12 +244,13 @@ public class AllocationTokenFlowUtils {
       case CREATE ->
           pricingLogic
               .getCreatePrice(
-                  tld, domainName, now, yearsForAction, false, false, Optional.of(token))
+                  tld, domainName, toInstant(now), yearsForAction, false, false, Optional.of(token))
               .getTotalCost()
               .getAmount();
       case RENEW ->
           pricingLogic
-              .getRenewPrice(tld, domainName, now, yearsForAction, null, Optional.of(token))
+              .getRenewPrice(
+                  tld, domainName, toInstant(now), yearsForAction, null, Optional.of(token))
               .getTotalCost()
               .getAmount();
       default -> BigDecimal.ZERO;

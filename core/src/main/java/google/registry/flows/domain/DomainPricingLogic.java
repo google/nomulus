@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.flows.domain.DomainFlowUtils.zeroInCurrency;
 import static google.registry.flows.domain.token.AllocationTokenFlowUtils.discountTokenInvalidForPremiumName;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.google.common.net.InternetDomainName;
@@ -41,11 +42,11 @@ import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
 import google.registry.model.tld.Tld;
 import jakarta.inject.Inject;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /**
  * Provides pricing for create, renew, etc, operations, with call-outs that can be customized by
@@ -70,7 +71,7 @@ public final class DomainPricingLogic {
   public FeesAndCredits getCreatePrice(
       Tld tld,
       String domainName,
-      DateTime dateTime,
+      Instant dateTime,
       int years,
       boolean isAnchorTenant,
       boolean isSunriseCreate,
@@ -116,7 +117,7 @@ public final class DomainPricingLogic {
             .setFeesAndCredits(feesBuilder.build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(dateTime)
+            .setAsOfDate(toDateTime(dateTime))
             .setYears(years)
             .build());
   }
@@ -125,7 +126,7 @@ public final class DomainPricingLogic {
   public FeesAndCredits getRenewPrice(
       Tld tld,
       String domainName,
-      DateTime dateTime,
+      Instant dateTime,
       int years,
       @Nullable BillingRecurrence billingRecurrence,
       Optional<AllocationToken> allocationToken) {
@@ -187,14 +188,14 @@ public final class DomainPricingLogic {
                     .build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(dateTime)
+            .setAsOfDate(toDateTime(dateTime))
             .setYears(years)
             .build());
   }
 
   /** Returns a new restore price for the pricer. */
   public FeesAndCredits getRestorePrice(
-      Tld tld, String domainName, DateTime dateTime, boolean isExpired) throws EppException {
+      Tld tld, String domainName, Instant dateTime, boolean isExpired) throws EppException {
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
     FeesAndCredits.Builder feesAndCredits =
         new FeesAndCredits.Builder()
@@ -211,13 +212,13 @@ public final class DomainPricingLogic {
             .setFeesAndCredits(feesAndCredits.build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(dateTime)
+            .setAsOfDate(toDateTime(dateTime))
             .build());
   }
 
   /** Returns a new transfer price for the pricer. */
   public FeesAndCredits getTransferPrice(
-      Tld tld, String domainName, DateTime dateTime, @Nullable BillingRecurrence billingRecurrence)
+      Tld tld, String domainName, Instant dateTime, @Nullable BillingRecurrence billingRecurrence)
       throws EppException {
     FeesAndCredits renewPrice =
         getRenewPrice(tld, domainName, dateTime, 1, billingRecurrence, Optional.empty());
@@ -234,12 +235,12 @@ public final class DomainPricingLogic {
                     .build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(dateTime)
+            .setAsOfDate(toDateTime(dateTime))
             .build());
   }
 
   /** Returns a new update price for the pricer. */
-  public FeesAndCredits getUpdatePrice(Tld tld, String domainName, DateTime dateTime)
+  public FeesAndCredits getUpdatePrice(Tld tld, String domainName, Instant dateTime)
       throws EppException {
     CurrencyUnit currency = tld.getCurrency();
     BaseFee feeOrCredit = Fee.create(zeroInCurrency(currency), FeeType.UPDATE, false);
@@ -252,7 +253,7 @@ public final class DomainPricingLogic {
                     .build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(dateTime)
+            .setAsOfDate(toDateTime(dateTime))
             .build());
   }
 
@@ -272,7 +273,7 @@ public final class DomainPricingLogic {
   private Money getDomainRenewCostWithDiscount(
       Tld tld,
       DomainPrices domainPrices,
-      DateTime dateTime,
+      Instant dateTime,
       int years,
       Optional<AllocationToken> allocationToken) {
     // Short-circuit if the user sent an anchor-tenant or otherwise NONPREMIUM-renewal token
@@ -349,7 +350,7 @@ public final class DomainPricingLogic {
   }
 
   private DomainPrices applyTokenToDomainPrices(
-      DomainPrices domainPrices, Tld tld, DateTime dateTime, int years, AllocationToken token) {
+      DomainPrices domainPrices, Tld tld, Instant dateTime, int years, AllocationToken token) {
     // Convert to nonpremium iff no premium charges are included (either in create or any renewal)
     boolean convertToNonPremium =
         token.getRegistrationBehavior().equals(RegistrationBehavior.NONPREMIUM_CREATE)

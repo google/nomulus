@@ -19,11 +19,13 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -34,7 +36,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Tests for {@link DomainDeletionTimeCache}. */
 public class DomainDeletionTimeCacheTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2025-10-01T00:00:00.000Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2025-10-01T00:00:00.000Z"));
   private final DomainDeletionTimeCache cache = DomainDeletionTimeCache.create();
 
   @RegisterExtension
@@ -85,10 +87,10 @@ public class DomainDeletionTimeCacheTest {
   void testCache_expires() {
     Domain domain = persistActiveDomain("domain.tld");
     assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_OF_TIME);
-    DateTime elevenMinutesFromNow = clock.nowUtc().plusMinutes(11);
-    persistDomainAsDeleted(domain, elevenMinutesFromNow);
+    Instant elevenMinutesFromNow = clock.now().plus(java.time.Duration.ofMinutes(11));
+    persistDomainAsDeleted(domain, toDateTime(elevenMinutesFromNow));
     clock.advanceBy(Duration.standardMinutes(30));
-    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(elevenMinutesFromNow);
+    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(toDateTime(elevenMinutesFromNow));
   }
 
   private Optional<DateTime> getDeletionTimeFromCache(String domainName) {

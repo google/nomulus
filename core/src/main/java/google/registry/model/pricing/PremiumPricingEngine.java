@@ -14,8 +14,8 @@
 
 package google.registry.model.pricing;
 
+import java.time.Instant;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /**
  * A plugin interface for premium pricing engines.
@@ -31,7 +31,7 @@ public interface PremiumPricingEngine {
    * <p>Note that the domainName must only contain a single part left of the TLD, i.e. subdomains
    * are not allowed, but multi-part TLDs are.
    */
-  DomainPrices getDomainPrices(String domainName, DateTime priceTime);
+  DomainPrices getDomainPrices(String domainName, Instant priceTime);
 
   /**
    * A class containing information on premium prices for a specific domain name.

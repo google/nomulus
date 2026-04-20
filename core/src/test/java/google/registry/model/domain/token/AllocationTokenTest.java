@@ -28,6 +28,7 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -77,7 +78,7 @@ public class AllocationTokenTest extends EntityTestCase {
                     ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                         .put(START_INSTANT, NOT_STARTED)
                         .put(fakeClock.now(), TokenStatus.VALID)
-                        .put(fakeClock.now().plus(java.time.Duration.ofDays(56)), TokenStatus.ENDED)
+                        .put(plusDays(fakeClock.now(), 56), TokenStatus.ENDED)
                         .build())
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
                 .build());
@@ -114,7 +115,7 @@ public class AllocationTokenTest extends EntityTestCase {
                     ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                         .put(START_INSTANT, NOT_STARTED)
                         .put(fakeClock.now(), TokenStatus.VALID)
-                        .put(fakeClock.now().plus(java.time.Duration.ofDays(56)), TokenStatus.ENDED)
+                        .put(plusDays(fakeClock.now(), 56), TokenStatus.ENDED)
                         .build())
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
                 .build());
@@ -422,12 +423,8 @@ public class AllocationTokenTest extends EntityTestCase {
                     .setTokenStatusTransitionsInstant(
                         ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                             .put(fakeClock.now(), NOT_STARTED)
-                            .put(
-                                fakeClock.now().plus(java.time.Duration.ofDays(1)),
-                                TokenStatus.VALID)
-                            .put(
-                                fakeClock.now().plus(java.time.Duration.ofDays(2)),
-                                TokenStatus.ENDED)
+                            .put(plusDays(fakeClock.now(), 1), TokenStatus.VALID)
+                            .put(plusDays(fakeClock.now(), 2), TokenStatus.ENDED)
                             .build()));
     assertThat(thrown)
         .hasMessageThat()
@@ -465,7 +462,7 @@ public class AllocationTokenTest extends EntityTestCase {
         ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
             .put(START_INSTANT, NOT_STARTED)
             .put(fakeClock.now(), VALID)
-            .put(fakeClock.now().plus(java.time.Duration.ofDays(1)), VALID)
+            .put(plusDays(fakeClock.now(), 1), VALID)
             .build(),
         VALID,
         VALID);
@@ -473,7 +470,7 @@ public class AllocationTokenTest extends EntityTestCase {
         ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
             .put(START_INSTANT, NOT_STARTED)
             .put(fakeClock.now(), VALID)
-            .put(fakeClock.now().plus(java.time.Duration.ofDays(1)), NOT_STARTED)
+            .put(plusDays(fakeClock.now(), 1), NOT_STARTED)
             .build(),
         VALID,
         NOT_STARTED);
@@ -741,8 +738,8 @@ public class AllocationTokenTest extends EntityTestCase {
                         ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                             .put(START_INSTANT, NOT_STARTED)
                             .put(fakeClock.now(), VALID)
-                            .put(fakeClock.now().plus(java.time.Duration.ofDays(1)), status)
-                            .put(fakeClock.now().plus(java.time.Duration.ofDays(2)), CANCELLED)
+                            .put(plusDays(fakeClock.now(), 1), status)
+                            .put(plusDays(fakeClock.now(), 2), CANCELLED)
                             .build()));
     assertThat(thrown)
         .hasMessageThat()

@@ -38,6 +38,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNot
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -227,7 +228,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
     Tld tld = Tld.get(tldStr);
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
-    FeesAndCredits feesAndCredits = pricingLogic.getUpdatePrice(tld, targetId, now);
+    FeesAndCredits feesAndCredits = pricingLogic.getUpdatePrice(tld, targetId, toInstant(now));
     validateFeesAckedIfPresent(feeUpdate, feesAndCredits, false);
     verifyNotInPendingDelete(add.getNameservers());
     validateNameserversAllowedOnTld(tldStr, add.getNameserverHostNames());

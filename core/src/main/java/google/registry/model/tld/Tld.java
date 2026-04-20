@@ -806,7 +806,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
         Range.closedOpen(
             periodStart != null ? periodStart : START_INSTANT,
             periodEnd != null ? periodEnd : END_INSTANT);
-    return Fee.createInstant(
+    return Fee.create(
         eapFeeSchedule.getValueAtTime(now).getAmount(),
         FeeType.EAP,
         // An EAP fee does not count as premium -- it's a separate one-time fee, independent of
