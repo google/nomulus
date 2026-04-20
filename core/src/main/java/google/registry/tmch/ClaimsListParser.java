@@ -22,11 +22,11 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.tmch.ClaimsList;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.joda.time.DateTime;
 
 /**
  * Claims List (MarksDB DNL CSV) Parser.
@@ -50,7 +50,7 @@ public class ClaimsListParser {
         "Line 1: Expected 2 elements, found %d", firstLine.size()));
 
     int version = Integer.parseInt(firstLine.get(0));
-    DateTime creationTime = DateTime.parse(firstLine.get(1));
+    Instant creationTime = Instant.parse(firstLine.get(1));
     checkArgument(version == 1, String.format(
         "Line 1: Expected version 1, found %d", version));
 

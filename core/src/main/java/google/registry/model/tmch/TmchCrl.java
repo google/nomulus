@@ -16,12 +16,13 @@ package google.registry.model.tmch;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.common.CrossTldSingleton;
 import jakarta.persistence.Column;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
-import org.joda.time.DateTime;
 
 /** Singleton for ICANN's TMCH CA certificate revocation list (CRL). */
 @jakarta.persistence.Entity
@@ -32,7 +33,7 @@ public final class TmchCrl extends CrossTldSingleton {
   String crl;
 
   @Column(name = "updateTimestamp", nullable = false)
-  DateTime updated;
+  Instant updated;
 
   @Column(nullable = false)
   String url;
@@ -53,7 +54,7 @@ public final class TmchCrl extends CrossTldSingleton {
     tm().transact(
             () -> {
               TmchCrl tmchCrl = new TmchCrl();
-              tmchCrl.updated = tm().getTransactionTime();
+              tmchCrl.updated = toInstant(tm().getTransactionTime());
               tmchCrl.crl = checkNotNull(crl, "crl");
               tmchCrl.url = checkNotNull(url, "url");
               tm().put(tmchCrl);
@@ -71,7 +72,7 @@ public final class TmchCrl extends CrossTldSingleton {
   }
 
   /** Time we last updated the Database with a newer ICANN CRL. */
-  public DateTime getUpdated() {
+  public Instant getUpdated() {
     return updated;
   }
 }

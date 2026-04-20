@@ -56,6 +56,7 @@ This document outlines foundational mandates, architectural patterns, and projec
 ## Performance and Efficiency
 - **Turn Minimization:** Aim for "perfect" code in the first iteration. Iterative fixes for checkstyle or compilation errors consume significant context and time.
 - **Context Management:** Use sub-agents for batch refactoring or high-volume output tasks to keep the main session history lean and efficient.
+- **Code Formatting:** Do not write custom Python scripts or manual regex replacements to fix code formatting issues (e.g., unused imports, import ordering, line length). Instead, use the project's built-in formatting tools: run `./gradlew spotlessApply` to fix unused/unordered imports and `./gradlew javaIncrementalFormatApply` (or `google-java-format --replace <files>`) to automatically fix Java formatting and indentation errors.
 
 ## General Code Review Lessons & Avoidable Mistakes
 Based on historical PR reviews, avoid the following common mistakes:

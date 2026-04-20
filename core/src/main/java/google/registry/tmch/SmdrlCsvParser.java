@@ -15,6 +15,7 @@
 package google.registry.tmch;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Joiner;
@@ -23,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.smd.SignedMarkRevocationList;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -39,7 +41,7 @@ public final class SmdrlCsvParser {
 
   /** Converts the lines from the DNL CSV file into a data structure. */
   public static SignedMarkRevocationList parse(List<String> lines) throws IOException {
-    ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
+    ImmutableMap.Builder<String, Instant> revokes = new ImmutableMap.Builder<>();
 
     // First line: <version>,<SMD Revocation List creation datetime>
     List<String> firstLine = Splitter.on(',').splitToList(lines.get(0));
@@ -61,8 +63,8 @@ public final class SmdrlCsvParser {
     for (CSVRecord record : csv) {
       String smdId = record.get("smd-id");
       DateTime revokedTime = DateTime.parse(record.get("insertion-datetime"));
-      revokes.put(smdId, revokedTime);
+      revokes.put(smdId, toInstant(revokedTime));
     }
-    return SignedMarkRevocationList.create(creationTime, revokes.build());
+    return SignedMarkRevocationList.create(toInstant(creationTime), revokes.build());
   }
 }

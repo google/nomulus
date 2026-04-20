@@ -19,8 +19,8 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import com.google.common.collect.ImmutableList;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
+import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
 
 /** Information about a mark derived from a treaty or statute. */
 @XmlType(propOrder = {
@@ -46,7 +46,7 @@ public class TreatyOrStatuteMark extends ProtectedMark {
 
   /** Execution date of the treaty or statute. */
   @XmlElement(name = "execDate")
-  DateTime executionDate;
+  Instant executionDate;
 
   public ImmutableList<MarkProtection> getMarkProtections() {
     return nullToEmptyImmutableCopy(markProtections);
@@ -56,7 +56,7 @@ public class TreatyOrStatuteMark extends ProtectedMark {
     return title;
   }
 
-  public DateTime getExecutionDate() {
+  public Instant getExecutionDate() {
     return executionDate;
   }
 }

@@ -38,10 +38,10 @@ import java.security.SignatureException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateRevokedException;
+import java.time.Instant;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.parsers.ParserConfigurationException;
-import org.joda.time.DateTime;
 import org.xml.sax.SAXException;
 
 /** TMCH utility functions for domain flows. */
@@ -55,7 +55,7 @@ public final class DomainFlowTmchUtils {
   }
 
   public SignedMark verifySignedMarks(
-      ImmutableList<AbstractSignedMark> signedMarks, String domainLabel, DateTime now)
+      ImmutableList<AbstractSignedMark> signedMarks, String domainLabel, Instant now)
       throws EppException {
     if (signedMarks.size() > 1) {
       throw new TooManySignedMarksException();
@@ -75,7 +75,7 @@ public final class DomainFlowTmchUtils {
     return signedMark;
   }
 
-  public SignedMark verifyEncodedSignedMark(EncodedSignedMark encodedSignedMark, DateTime now)
+  public SignedMark verifyEncodedSignedMark(EncodedSignedMark encodedSignedMark, Instant now)
       throws EppException {
     if (!encodedSignedMark.getEncoding().equals("base64")) {
       throw new Base64RequiredForEncodedSignedMarksException();
