@@ -19,7 +19,6 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -43,10 +42,10 @@ import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
@@ -125,7 +124,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
   }
 
   private void runLocked() {
-    DateTime runTime = clock.nowUtc();
+    Instant runTime = clock.now();
     logger.atInfo().log(
         "Deleting non-renewing domains with autorenew end times up through %s.", runTime);
 
@@ -134,7 +133,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
                 () ->
                     tm().createQueryComposer(Domain.class)
                         .where("autorenewEndTime", Comparator.LTE, runTime)
-                        .where("deletionTime", Comparator.EQ, END_OF_TIME)
+                        .where("deletionTime", Comparator.EQ, END_INSTANT)
                         .list());
     if (domainsToDelete.isEmpty()) {
       logger.atInfo().log("Found 0 domains to delete.");

@@ -17,8 +17,9 @@ package google.registry.model.reporting;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -32,7 +33,7 @@ import google.registry.model.host.HostHistory;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -49,9 +50,21 @@ public class HistoryEntryDao {
               Host.class,
               HostHistory.class);
 
-  /** Loads all history objects in the times specified, including all types. */
+  /**
+   * Loads all history objects in the times specified, including all types.
+   *
+   * @deprecated Use {@link #loadAllHistoryObjects(Instant, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static ImmutableList<HistoryEntry> loadAllHistoryObjects(
       DateTime afterTime, DateTime beforeTime) {
+    return loadAllHistoryObjects(toInstant(afterTime), toInstant(beforeTime));
+  }
+
+  /** Loads all history objects in the times specified, including all types. */
+  public static ImmutableList<HistoryEntry> loadAllHistoryObjects(
+      Instant afterTime, Instant beforeTime) {
     return tm().transact(
             () ->
                 new ImmutableList.Builder<HistoryEntry>()
@@ -63,7 +76,7 @@ public class HistoryEntryDao {
   /** Loads all history objects corresponding to the given {@link EppResource}. */
   public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
       VKey<? extends EppResource> resourceKey) {
-    return loadHistoryObjectsForResource(resourceKey, START_OF_TIME, END_OF_TIME);
+    return loadHistoryObjectsForResource(resourceKey, START_INSTANT, END_INSTANT);
   }
 
   /**
@@ -72,14 +85,38 @@ public class HistoryEntryDao {
    */
   public static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
       VKey<? extends EppResource> resourceKey, Class<T> subclazz) {
-    return loadHistoryObjectsForResource(resourceKey, START_OF_TIME, END_OF_TIME, subclazz);
+    return loadHistoryObjectsForResource(resourceKey, START_INSTANT, END_INSTANT, subclazz);
+  }
+
+  /**
+   * @deprecated Use {@link #loadHistoryObjectsForResource(VKey, Instant, Instant)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
+      VKey<? extends EppResource> resourceKey, DateTime afterTime, DateTime beforeTime) {
+    return loadHistoryObjectsForResource(resourceKey, toInstant(afterTime), toInstant(beforeTime));
   }
 
   /** Loads all history objects in the time period specified for the given {@link EppResource}. */
   public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
-      VKey<? extends EppResource> resourceKey, DateTime afterTime, DateTime beforeTime) {
+      VKey<? extends EppResource> resourceKey, Instant afterTime, Instant beforeTime) {
     return tm().transact(
             () -> loadHistoryObjectsForResourceInternal(resourceKey, afterTime, beforeTime));
+  }
+
+  /**
+   * @deprecated Use {@link #loadHistoryObjectsForResource(VKey, Instant, Instant, Class)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
+      VKey<? extends EppResource> resourceKey,
+      DateTime afterTime,
+      DateTime beforeTime,
+      Class<T> subclazz) {
+    return loadHistoryObjectsForResource(
+        resourceKey, toInstant(afterTime), toInstant(beforeTime), subclazz);
   }
 
   /**
@@ -91,11 +128,12 @@ public class HistoryEntryDao {
    * #getHistoryClassFromParent(Class)} to obtain it, which we also did to confirm that the provided
    * subclass is indeed correct.
    */
-  private static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
+  public static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
       VKey<? extends EppResource> resourceKey,
-      DateTime afterTime,
-      DateTime beforeTime,
+      Instant afterTime,
+      Instant beforeTime,
       Class<T> subclazz) {
+
     Class<? extends HistoryEntry> expectedSubclazz =
         getHistoryClassFromParent(resourceKey.getKind());
     checkArgument(
@@ -132,20 +170,22 @@ public class HistoryEntryDao {
   }
 
   private static ImmutableList<HistoryEntry> loadHistoryObjectsForResourceInternal(
-      VKey<? extends EppResource> resourceKey, DateTime afterTime, DateTime beforeTime) {
+      VKey<? extends EppResource> resourceKey, Instant afterTime, Instant beforeTime) {
     // The class we're searching from is based on which resource type (e.g. Domain) we have
     Class<? extends HistoryEntry> historyClass = getHistoryClassFromParent(resourceKey.getKind());
-    CriteriaBuilder criteriaBuilder = tm().getEntityManager().getCriteriaBuilder();
-    CriteriaQuery<? extends HistoryEntry> criteriaQuery =
-        CriteriaQueryBuilder.create(historyClass)
-            .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
-            .where("modificationTime", criteriaBuilder::lessThanOrEqualTo, beforeTime)
-            .where("repoId", criteriaBuilder::equal, resourceKey.getKey().toString())
-            .orderByAsc("revisionId")
-            .orderByAsc("modificationTime")
-            .build();
-
-    return ImmutableList.copyOf(tm().criteriaQuery(criteriaQuery).getResultList());
+    return ImmutableList.copyOf(
+        tm().getEntityManager()
+            .createQuery(
+                String.format(
+                    "FROM %s WHERE repoId = :repoId AND modificationTime >= :afterTime AND"
+                        + " modificationTime <= :beforeTime ORDER BY revisionId ASC,"
+                        + " modificationTime ASC",
+                    historyClass.getName()),
+                historyClass)
+            .setParameter("repoId", resourceKey.getKey().toString())
+            .setParameter("afterTime", afterTime)
+            .setParameter("beforeTime", beforeTime)
+            .getResultList());
   }
 
   public static Class<? extends HistoryEntry> getHistoryClassFromParent(
@@ -158,7 +198,7 @@ public class HistoryEntryDao {
   }
 
   private static <T extends HistoryEntry> List<T> loadAllHistoryObjects(
-      Class<T> historyClass, DateTime afterTime, DateTime beforeTime) {
+      Class<T> historyClass, Instant afterTime, Instant beforeTime) {
     CriteriaBuilder criteriaBuilder = tm().getEntityManager().getCriteriaBuilder();
     return tm().criteriaQuery(
             CriteriaQueryBuilder.create(historyClass)

@@ -22,8 +22,6 @@ import static google.registry.bsa.DownloadStage.MAKE_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.bsa.persistence.DownloadScheduler.fetchTwoMostRecentDownloads;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.Duration.standardDays;
-import static org.joda.time.Duration.standardMinutes;
 import static org.joda.time.Duration.standardSeconds;
 
 import com.google.common.collect.ImmutableMap;
@@ -35,8 +33,8 @@ import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,10 +44,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link DownloadScheduler} */
 class DownloadSchedulerTest {
 
-  static final Duration DOWNLOAD_INTERVAL = standardMinutes(30);
-  static final Duration MAX_NOP_INTERVAL = standardDays(1);
+  static final Duration DOWNLOAD_INTERVAL = Duration.standardMinutes(30);
+  static final Duration MAX_NOP_INTERVAL = Duration.standardDays(1);
 
-  FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
+  FakeClock fakeClock = new FakeClock(Instant.parse("2023-11-09T02:08:57.880Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =

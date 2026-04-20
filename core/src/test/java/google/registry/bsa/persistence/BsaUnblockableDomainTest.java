@@ -40,7 +40,7 @@ public class BsaUnblockableDomainTest {
 
   @Test
   void persist() {
-    tm().transact(() -> tm().put(new BsaLabel("label", fakeClock.nowUtc())));
+    tm().transact(() -> tm().put(new BsaLabel("label", fakeClock.now())));
     tm().transact(() -> tm().put(new BsaUnblockableDomain("label", "tld", Reason.REGISTERED)));
     BsaUnblockableDomain persisted =
         tm().transact(() -> tm().loadByKey(BsaUnblockableDomain.vKey("label", "tld")));
@@ -51,7 +51,7 @@ public class BsaUnblockableDomainTest {
 
   @Test
   void cascadeDeletion() {
-    tm().transact(() -> tm().put(new BsaLabel("label", fakeClock.nowUtc())));
+    tm().transact(() -> tm().put(new BsaLabel("label", fakeClock.now())));
     tm().transact(() -> tm().put(new BsaUnblockableDomain("label", "tld", Reason.REGISTERED)));
     assertThat(
             tm().transact(() -> tm().loadByKeyIfPresent(BsaUnblockableDomain.vKey("label", "tld"))))

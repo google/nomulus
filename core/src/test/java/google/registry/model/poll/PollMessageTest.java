@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -79,7 +80,7 @@ public class PollMessageTest extends EntityTestCase {
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
             .setHistoryEntry(historyEntry)
-            .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+            .setAutorenewEndTime(plusYears(fakeClock.nowUtc(), 1))
             .setTargetId("foobar.foo")
             .build();
   }
@@ -158,7 +159,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
-                .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+                .setAutorenewEndTime(plusYears(fakeClock.nowUtc(), 1))
                 .setTargetId("foobar.foo")
                 .build());
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
@@ -173,7 +174,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
-                .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+                .setAutorenewEndTime(plusYears(fakeClock.nowUtc(), 1))
                 .setTargetId("foobar.foo")
                 .build());
     PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));

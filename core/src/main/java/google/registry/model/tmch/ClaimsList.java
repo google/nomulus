@@ -19,6 +19,8 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -38,6 +40,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -64,7 +67,7 @@ public class ClaimsList extends ImmutableObject {
         name = "creationTime",
         column = @Column(name = "creationTimestamp", nullable = false))
   })
-  CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create((Instant) null);
 
   /**
    * When the claims list was last updated.
@@ -74,7 +77,7 @@ public class ClaimsList extends ImmutableObject {
    * the DNL List creation datetime from the rfc.
    */
   @Column(nullable = false)
-  DateTime tmdbGenerationTime;
+  Instant tmdbGenerationTime;
 
   /**
    * A map from labels to claims keys.
@@ -138,14 +141,31 @@ public class ClaimsList extends ImmutableObject {
    *
    * @see <a href="https://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.1">DNL List
    *     creation datetime</a>
+   * @deprecated Use {@link #getTmdbGenerationTimeInstant()}
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getTmdbGenerationTime() {
+    return toDateTime(tmdbGenerationTime);
+  }
+
+  /** Returns the time when the external TMDB service generated this revision of the claims list. */
+  public Instant getTmdbGenerationTimeInstant() {
     return tmdbGenerationTime;
   }
 
   /** Returns the creation time of this claims list. */
-  public DateTime getCreationTimestamp() {
+  public Instant getCreationTime() {
     return creationTimestamp.getTimestamp();
+  }
+
+  /**
+   * @deprecated Use {@link #getCreationTime()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getCreationDateTime() {
+    return toDateTime(creationTimestamp.getTimestamp());
   }
 
   /**
@@ -214,10 +234,20 @@ public class ClaimsList extends ImmutableObject {
   }
 
   public static ClaimsList create(
-      DateTime tmdbGenerationTime, ImmutableMap<String, String> labelsToKeys) {
+      Instant tmdbGenerationTime, ImmutableMap<String, String> labelsToKeys) {
     ClaimsList instance = new ClaimsList();
     instance.tmdbGenerationTime = checkNotNull(tmdbGenerationTime);
     instance.labelsToKeys = checkNotNull(labelsToKeys);
     return instance;
+  }
+
+  /**
+   * @deprecated Use {@link #create(Instant, ImmutableMap)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static ClaimsList create(
+      DateTime tmdbGenerationTime, ImmutableMap<String, String> labelsToKeys) {
+    return create(toInstant(tmdbGenerationTime), labelsToKeys);
   }
 }

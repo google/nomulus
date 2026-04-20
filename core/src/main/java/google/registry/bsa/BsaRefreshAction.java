@@ -36,9 +36,9 @@ import google.registry.request.auth.Auth;
 import google.registry.util.BatchedStreams;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.joda.time.Duration;
 
 @Action(
     service = Action.Service.BACKEND,
@@ -67,7 +67,7 @@ public class BsaRefreshAction implements Runnable {
       GcsClient gcsClient,
       BsaReportSender bsaReportSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
-      @Config("domainCreateTxnCommitTimeLag") Duration domainCreateTxnCommitTimeLag,
+      @Config("domainCreateTxnCommitTimeLag") org.joda.time.Duration domainCreateTxnCommitTimeLag,
       BsaEmailSender emailSender,
       BsaLock bsaLock,
       Clock clock,
@@ -76,7 +76,7 @@ public class BsaRefreshAction implements Runnable {
     this.gcsClient = gcsClient;
     this.bsaReportSender = bsaReportSender;
     this.transactionBatchSize = transactionBatchSize;
-    this.domainCreateTxnCommitTimeLag = domainCreateTxnCommitTimeLag;
+    this.domainCreateTxnCommitTimeLag = Duration.ofMillis(domainCreateTxnCommitTimeLag.getMillis());
     this.emailSender = emailSender;
     this.bsaLock = bsaLock;
     this.clock = clock;
@@ -103,7 +103,7 @@ public class BsaRefreshAction implements Runnable {
   /** Executes the refresh action while holding the BSA lock. */
   Void runWithinLock() {
     // Cannot enroll new TLDs after download starts. This may change if b/309175410 is fixed.
-    if (!Tlds.hasActiveBsaEnrollment(clock.nowUtc())) {
+    if (!Tlds.hasActiveBsaEnrollment(clock.now())) {
       logger.atInfo().log("No TLDs enrolled with BSA. Quitting.");
       return null;
     }
@@ -116,7 +116,7 @@ public class BsaRefreshAction implements Runnable {
     DomainsRefresher refresher =
         new DomainsRefresher(
             schedule.prevRefreshTime(),
-            clock.nowUtc(),
+            clock.now(),
             domainCreateTxnCommitTimeLag,
             transactionBatchSize);
     switch (schedule.stage()) {

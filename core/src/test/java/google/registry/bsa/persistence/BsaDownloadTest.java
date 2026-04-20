@@ -43,7 +43,7 @@ public class BsaDownloadTest {
   void saveJob() {
     BsaDownload persisted = tm().transact(() -> tm().getEntityManager().merge(new BsaDownload()));
     assertThat(persisted.jobId).isNotNull();
-    assertThat(persisted.creationTime.getTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persisted.creationTime.getTimestamp()).isEqualTo(fakeClock.now());
     assertThat(persisted.stage).isEqualTo(DOWNLOAD_BLOCK_LISTS);
   }
 

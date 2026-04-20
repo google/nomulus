@@ -40,10 +40,7 @@ public class UtcDateTimeAdapter extends XmlAdapter<String, DateTime> {
 
   /** Same as {@link #marshal(DateTime)}, but in a convenient static format. */
   public static String getFormattedString(@Nullable DateTime timestamp) {
-    if (timestamp == null) {
-      return "";
-    }
-    return MARSHAL_FORMAT.print(timestamp.toDateTime(UTC));
+    return (timestamp == null) ? "" : MARSHAL_FORMAT.print(timestamp.toDateTime(UTC));
   }
 
   /**

@@ -17,10 +17,18 @@
     xmlns = @XmlNs(prefix = "", namespaceURI = "urn:ietf:params:xml:ns:epp-1.0"),
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
+@XmlJavaTypeAdapters({
+  @XmlJavaTypeAdapter(UtcDateTimeAdapter.class),
+  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+})
 package google.registry.model.eppinput;
 
+import google.registry.xml.UtcDateTimeAdapter;
+import google.registry.xml.UtcInstantAdapter;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlNs;
 import jakarta.xml.bind.annotation.XmlNsForm;
 import jakarta.xml.bind.annotation.XmlSchema;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapters;

@@ -21,10 +21,12 @@ import static google.registry.model.domain.Period.Unit.YEARS;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.union;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DateTimeUtils.latestOf;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.apache.beam.sdk.values.TypeDescriptors.voids;
 
 import com.google.common.collect.ImmutableMap;
@@ -54,6 +56,8 @@ import google.registry.util.Clock;
 import google.registry.util.SystemClock;
 import jakarta.inject.Singleton;
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.beam.sdk.Pipeline;
@@ -73,7 +77,6 @@ import org.apache.beam.sdk.transforms.Wait;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
-import org.joda.time.DateTime;
 
 /**
  * Definition of a Dataflow Flex pipeline template, which expands {@link BillingRecurrence} to
@@ -134,9 +137,9 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
   }
 
   // Inclusive lower bound of the expansion window.
-  private final DateTime startTime;
+  private final Instant startTime;
   // Exclusive lower bound of the expansion window.
-  private final DateTime endTime;
+  private final Instant endTime;
   private final boolean isDryRun;
   private final boolean advanceCursor;
   private final Counter recurrencesInScopeCounter =
@@ -151,10 +154,10 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
       Metrics.counter("ExpandBilling", "OneTimes that would be expanded");
 
   ExpandBillingRecurrencesPipeline(ExpandBillingRecurrencesPipelineOptions options, Clock clock) {
-    startTime = DateTime.parse(options.getStartTime());
-    endTime = DateTime.parse(options.getEndTime());
+    startTime = Instant.parse(options.getStartTime());
+    endTime = Instant.parse(options.getEndTime());
     checkArgument(
-        !endTime.isAfter(clock.nowUtc()),
+        !endTime.isAfter(clock.now()),
         String.format("End time %s must be at or before now.", endTime));
     checkArgument(
         startTime.isBefore(endTime),
@@ -199,7 +202,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                     "startTime",
                     startTime,
                     "oneYearAgo",
-                    endTime.minusYears(1)),
+                    minusYears(endTime, 1)),
                 true,
                 (Long id) -> {
                   recurrencesInScopeCounter.inc();
@@ -268,18 +271,18 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
     // The best way to handle any unexpected behavior is to simply drop the recurrence from
     // expansion, if its new state still calls for an expansion, it would be picked up the next time
     // the pipeline runs.
-    ImmutableSet<DateTime> eventTimes;
+    ImmutableSet<Instant> eventTimes;
     try {
       eventTimes =
           ImmutableSet.copyOf(
               billingRecurrence
                   .getRecurrenceTimeOfYear()
-                  .getInstancesInRange(
+                  .getInstancesInRangeInstant(
                       Range.closedOpen(
                           latestOf(
-                              billingRecurrence.getRecurrenceLastExpansion().plusYears(1),
+                              plusYears(billingRecurrence.getRecurrenceLastExpansionInstant(), 1),
                               startTime),
-                          earliestOf(billingRecurrence.getRecurrenceEndTime(), endTime))));
+                          earliestOf(billingRecurrence.getRecurrenceEndTimeInstant(), endTime))));
     } catch (IllegalArgumentException e) {
       return;
     }
@@ -289,28 +292,29 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
     // Find the times for which the OneTime billing event are already created, making this expansion
     // idempotent. There is no need to match to the domain repo ID as the cancellation matching
     // billing event itself can only be for a single domain.
-    ImmutableSet<DateTime> existingEventTimes =
+    ImmutableSet<Instant> existingEventTimes =
         ImmutableSet.copyOf(
             tm().query(
                     "SELECT eventTime FROM BillingEvent WHERE cancellationMatchingBillingEvent ="
                         + " :key",
-                    DateTime.class)
+                    Instant.class)
                 .setParameter("key", billingRecurrence.createVKey())
                 .getResultList());
 
-    Set<DateTime> eventTimesToExpand = difference(eventTimes, existingEventTimes);
+    Set<Instant> eventTimesToExpand = difference(eventTimes, existingEventTimes);
 
     if (eventTimesToExpand.isEmpty()) {
       return;
     }
 
-    DateTime recurrenceLastExpansionTime = billingRecurrence.getRecurrenceLastExpansion();
+    Instant recurrenceLastExpansionTime = billingRecurrence.getRecurrenceLastExpansionInstant();
 
     // Create new OneTime and DomainHistory for EventTimes that needs to be expanded.
-    for (DateTime eventTime : eventTimesToExpand) {
+    for (Instant eventTime : eventTimesToExpand) {
       recurrenceLastExpansionTime = latestOf(recurrenceLastExpansionTime, eventTime);
       oneTimesToExpandCounter.inc();
-      DateTime billingTime = eventTime.plus(tld.getAutoRenewGracePeriodLength());
+      Instant billingTime =
+          eventTime.plus(Duration.ofMillis(tld.getAutoRenewGracePeriodLength().getMillis()));
       // Note that the DomainHistory is created as of transaction time, as opposed to event time.
       // This might be counterintuitive because other DomainHistories are created at the time
       // mutation events occur, such as in DomainDeleteFlow or DomainRenewFlow. Therefore, it is
@@ -337,7 +341,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
           new DomainHistory.Builder()
               .setBySuperuser(false)
               .setRegistrarId(billingRecurrence.getRegistrarId())
-              .setModificationTime(tm().getTransactionTime())
+              .setModificationTime(tm().getTxTime())
               .setDomain(domain)
               .setPeriod(Period.create(1, YEARS))
               .setReason("Domain autorenewal by ExpandRecurringBillingEventsPipeline")
@@ -373,7 +377,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                   // during ARGP).
                   //
                   // See: DomainFlowUtils#createCancellingRecords
-                  domain.getDeletionTime().isBefore(toInstant(billingTime))
+                  domain.getDeletionTime().isBefore(billingTime)
                       ? ImmutableSet.of()
                       : ImmutableSet.of(
                           DomainTransactionRecord.create(
@@ -398,7 +402,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                       .getRenewPrice(
                           tld,
                           billingRecurrence.getTargetId(),
-                          eventTime,
+                          toDateTime(eventTime),
                           1,
                           billingRecurrence,
                           Optional.empty())
@@ -439,12 +443,12 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                       public void processElement() {
                         tm().transact(
                                 () -> {
-                                  DateTime currentCursorTime =
+                                  Instant currentCursorTime =
                                       tm().loadByKeyIfPresent(
                                               Cursor.createGlobalVKey(RECURRING_BILLING))
                                           .orElse(
-                                              Cursor.createGlobal(RECURRING_BILLING, START_OF_TIME))
-                                          .getCursorTime();
+                                              Cursor.createGlobal(RECURRING_BILLING, START_INSTANT))
+                                          .getCursorTimeInstant();
                                   if (!currentCursorTime.equals(startTime)) {
                                     throw new IllegalStateException(
                                         String.format(

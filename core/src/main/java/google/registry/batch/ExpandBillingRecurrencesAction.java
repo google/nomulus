@@ -19,7 +19,7 @@ import static google.registry.beam.BeamUtils.createJobName;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
@@ -42,8 +42,9 @@ import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Locale;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An action that kicks off a {@link ExpandBillingRecurrencesPipeline} dataflow job to expand {@link
@@ -74,11 +75,11 @@ public class ExpandBillingRecurrencesAction implements Runnable {
 
   @Inject
   @Parameter(PARAM_START_TIME)
-  Optional<DateTime> startTimeParam;
+  Optional<Instant> startTimeParam;
 
   @Inject
   @Parameter(PARAM_END_TIME)
-  Optional<DateTime> endTimeParam;
+  Optional<Instant> endTimeParam;
 
   @Inject
   @Config("projectId")
@@ -102,16 +103,15 @@ public class ExpandBillingRecurrencesAction implements Runnable {
   @Override
   public void run() {
     checkArgument(!(isDryRun && advanceCursor), "Cannot advance the cursor in a dry run.");
-    DateTime endTime = endTimeParam.orElse(clock.nowUtc());
-    checkArgument(
-        !endTime.isAfter(clock.nowUtc()), "End time (%s) must be at or before now", endTime);
-    DateTime startTime =
+    Instant endTime = endTimeParam.orElse(clock.now());
+    checkArgument(!endTime.isAfter(clock.now()), "End time (%s) must be at or before now", endTime);
+    Instant startTime =
         startTimeParam.orElse(
             tm().transact(
                     () ->
                         tm().loadByKeyIfPresent(Cursor.createGlobalVKey(RECURRING_BILLING))
-                            .orElse(Cursor.createGlobal(RECURRING_BILLING, START_OF_TIME))
-                            .getCursorTime()));
+                            .orElse(Cursor.createGlobal(RECURRING_BILLING, START_INSTANT))
+                            .getCursorTimeInstant()));
     checkArgument(
         startTime.isBefore(endTime),
         String.format("Start time (%s) must be before end time (%s)", startTime, endTime));
@@ -120,15 +120,17 @@ public class ExpandBillingRecurrencesAction implements Runnable {
             .setJobName(
                 createJobName(
                     String.format(
-                        "expand-billing-%s", startTime.toString("yyyy-MM-dd't'HH-mm-ss'z'")),
+                            "expand-billing-%s",
+                            startTime.toString().replace(':', '-').replace('.', '-'))
+                        .toLowerCase(Locale.ROOT),
                     clock))
             .setContainerSpecGcsPath(
                 String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
             .setParameters(
                 new ImmutableMap.Builder<String, String>()
                     .put("registryEnvironment", RegistryEnvironment.get().name())
-                    .put("startTime", startTime.toString("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
-                    .put("endTime", endTime.toString("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
+                    .put("startTime", startTime.toString())
+                    .put("endTime", endTime.toString())
                     .put("isDryRun", Boolean.toString(isDryRun))
                     .put("advanceCursor", Boolean.toString(advanceCursor))
                     .build());

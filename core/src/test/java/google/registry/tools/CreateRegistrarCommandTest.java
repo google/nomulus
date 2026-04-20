@@ -22,7 +22,8 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -42,6 +43,7 @@ import google.registry.flows.certs.CertificateChecker.InsecureCertificateExcepti
 import google.registry.model.registrar.Registrar;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -62,7 +64,11 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     command.setConnection(connection);
     command.certificateChecker =
         new CertificateChecker(
-            ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+            ImmutableSortedMap.of(
+                toDateTime(START_INSTANT),
+                825,
+                toDateTime(Instant.parse("2020-09-01T00:00:00Z")),
+                398),
             30,
             15,
             2048,
@@ -73,7 +79,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Test
   void testSuccess() throws Exception {
-    DateTime before = fakeClock.nowUtc();
+    Instant before = fakeClock.now();
     runCommandForced(
         "--name=blobio",
         "--password=some_password",
@@ -87,7 +93,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--zip 00351",
         "--cc US",
         "clientz");
-    DateTime after = fakeClock.nowUtc();
+    Instant after = fakeClock.now();
 
     Optional<Registrar> registrarOptional = Registrar.loadByRegistrarId("clientz");
     assertThat(registrarOptional).isPresent();
@@ -101,7 +107,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.getClientCertificateHash()).isEmpty();
     assertThat(registrar.getPhonePasscode()).isEqualTo("01234");
     assertThat(registrar.getCreationTime()).isIn(Range.closed(before, after));
-    assertThat(registrar.getLastUpdateTime()).isEqualTo(registrar.getCreationTime());
+    assertThat(registrar.getLastUpdateTimeInstant()).isEqualTo(registrar.getCreationTime());
     assertThat(registrar.getBlockPremiumNames()).isFalse();
     assertThat(registrar.isRegistryLockAllowed()).isFalse();
     assertThat(registrar.getPoNumber()).isEmpty();
@@ -594,14 +600,14 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         newTld("foo", "FOO")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1300))))
+            .setCreateBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(JPY, new BigDecimal(1300))))
             .setRestoreBillingCost(Money.of(JPY, new BigDecimal(1700)))
             .setServerStatusChangeBillingCost(Money.of(JPY, new BigDecimal(1900)))
             .setRegistryLockOrUnlockBillingCost(Money.of(JPY, new BigDecimal(2700)))
-            .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1100))))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(JPY)))
+            .setRenewBillingCostTransitionsInstant(
+                ImmutableSortedMap.of(START_INSTANT, Money.of(JPY, new BigDecimal(1100))))
+            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.zero(JPY)))
             .setPremiumList(null)
             .build());
 

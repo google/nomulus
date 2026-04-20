@@ -19,12 +19,15 @@ import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.util.DateTimeUtils.parseInstant;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import google.registry.request.HttpException.BadRequestException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -251,6 +254,40 @@ public final class RequestParameters {
    */
   public static boolean extractBooleanParameter(HttpServletRequest req, String name) {
     return req.getParameterMap().containsKey(name) && !equalsFalse(req.getParameter(name));
+  }
+
+  /**
+   * Returns first request parameter associated with {@code name} parsed as an <a
+   * href="https://goo.gl/pk5Q2k">ISO 8601</a> timestamp, e.g. {@code 1984-12-18TZ}, {@code
+   * 2000-01-01T16:20:00Z}.
+   *
+   * @throws BadRequestException if request parameter named {@code name} is absent, empty, or could
+   *     not be parsed as an ISO 8601 timestamp
+   */
+  public static Instant extractRequiredInstantParameter(HttpServletRequest req, String name) {
+    String stringValue = extractRequiredParameter(req, name);
+    try {
+      return parseInstant(stringValue);
+    } catch (DateTimeParseException | IllegalArgumentException e) {
+      throw new BadRequestException("Bad ISO 8601 timestamp: " + name);
+    }
+  }
+
+  /**
+   * Returns first request parameter associated with {@code name} parsed as an <a
+   * href="https://goo.gl/pk5Q2k">ISO 8601</a> timestamp, e.g. {@code 1984-12-18TZ}, {@code
+   * 2000-01-01T16:20:00Z}.
+   *
+   * @throws BadRequestException if request parameter is present but not a valid {@link Instant}.
+   */
+  public static Optional<Instant> extractOptionalInstantParameter(
+      HttpServletRequest req, String name) {
+    String stringParam = req.getParameter(name);
+    try {
+      return isNullOrEmpty(stringParam) ? Optional.empty() : Optional.of(parseInstant(stringParam));
+    } catch (DateTimeParseException | IllegalArgumentException e) {
+      throw new BadRequestException("Bad ISO 8601 timestamp: " + name);
+    }
   }
 
   /**

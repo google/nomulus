@@ -21,6 +21,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.Duration.standardDays;
 
@@ -154,9 +155,11 @@ class GenerateZoneFilesActionTest {
         action.handleJsonRequest(
             ImmutableMap.<String, Object>of("tlds", ImmutableList.of("tld"), "exportTime", now));
     assertThat(response)
-        .containsEntry("filenames", ImmutableList.of("gs://zonefiles-bucket/tld-" + now + ".zone"));
+        .containsEntry(
+            "filenames", ImmutableList.of("gs://zonefiles-bucket/tld-" + toInstant(now) + ".zone"));
 
-    BlobId gcsFilename = BlobId.of("zonefiles-bucket", String.format("tld-%s.zone", now));
+    BlobId gcsFilename =
+        BlobId.of("zonefiles-bucket", String.format("tld-%s.zone", toInstant(now)));
     String generatedFile = new String(gcsUtils.readBytesFrom(gcsFilename), UTF_8);
     // The generated file contains spaces and tabs, but the golden file contains only spaces, as
     // files with literal tabs irritate our build tools.

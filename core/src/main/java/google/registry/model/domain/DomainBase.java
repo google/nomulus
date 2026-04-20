@@ -28,10 +28,9 @@ import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.union;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
@@ -39,7 +38,6 @@ import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.time.ZoneOffset.UTC;
-import static java.time.temporal.ChronoUnit.YEARS;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
@@ -84,7 +82,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -183,7 +183,7 @@ public class DomainBase extends EppResource {
   @Expose Set<String> subordinateHosts;
 
   /** When this domain's registration will expire. */
-  @Expose DateTime registrationExpirationTime;
+  @Expose Instant registrationExpirationTime;
 
   /**
    * The poll message associated with this domain being deleted.
@@ -238,12 +238,12 @@ public class DomainBase extends EppResource {
    *
    * <p>Can be null if the resource has never been transferred.
    */
-  @Expose DateTime lastTransferTime;
+  @Expose Instant lastTransferTime;
 
   /**
    * When the domain's autorenewal status will expire.
    *
-   * <p>This will be {@link DateTimeUtils#END_OF_TIME} for the vast majority of domains because all
+   * <p>This will be {@link DateTimeUtils#END_INSTANT} for the vast majority of domains because all
    * domains autorenew indefinitely by default and autorenew can only be countermanded by
    * administrators, typically for reasons of the URS process or termination of a registrar for
    * nonpayment.
@@ -255,7 +255,7 @@ public class DomainBase extends EppResource {
    * difference domains that have reached their life and must be deleted now, and domains that
    * happen to be in the autorenew grace period now but should be deleted in roughly a year.
    */
-  DateTime autorenewEndTime;
+  Instant autorenewEndTime;
 
   /**
    * Which Lordn phase the domain is in after it is created but before the Nordn upload has
@@ -290,13 +290,17 @@ public class DomainBase extends EppResource {
     return nullToEmptyImmutableCopy(subordinateHosts);
   }
 
+  /**
+   * @deprecated Use {@link #getRegistrationExpirationTime()}
+   */
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getRegistrationExpirationDateTime() {
-    return registrationExpirationTime;
+    return toDateTime(registrationExpirationTime);
   }
 
   public Instant getRegistrationExpirationTime() {
-    return toInstant(registrationExpirationTime);
+    return registrationExpirationTime;
   }
 
   public VKey<OneTime> getDeletePollMessage() {
@@ -326,19 +330,37 @@ public class DomainBase extends EppResource {
   /**
    * Returns the autorenew end time if there is one, otherwise empty.
    *
-   * <p>Note that {@link DateTimeUtils#END_OF_TIME} is used as a sentinel value in the database
+   * <p>Note that {@link DateTimeUtils#END_INSTANT} is used as a sentinel value in the database
    * representation to signify that autorenew doesn't end, and is mapped to empty here for the
    * purposes of more legible business logic.
+   *
+   * @deprecated Use {@link #getAutorenewEndTimeInstant()}
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public Optional<DateTime> getAutorenewEndTime() {
-    return Optional.ofNullable(autorenewEndTime.equals(END_OF_TIME) ? null : autorenewEndTime);
+    return getAutorenewEndTimeInstant().map(DateTimeUtils::toDateTime);
+  }
+
+  /** Returns the autorenew end time if there is one, otherwise empty. */
+  public Optional<Instant> getAutorenewEndTimeInstant() {
+    return Optional.ofNullable(autorenewEndTime.equals(END_INSTANT) ? null : autorenewEndTime);
   }
 
   public DomainTransferData getTransferData() {
     return Optional.ofNullable(transferData).orElse(DomainTransferData.EMPTY);
   }
 
+  /**
+   * @deprecated Use {@link #getLastTransferTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastTransferTime() {
+    return toDateTime(lastTransferTime);
+  }
+
+  public Instant getLastTransferTimeInstant() {
     return lastTransferTime;
   }
 
@@ -507,8 +529,9 @@ public class DomainBase extends EppResource {
                 GracePeriod.create(
                     GracePeriodStatus.TRANSFER,
                     domain.getRepoId(),
-                    toDateTime(transferExpirationTime)
-                        .plus(Tld.get(domain.getTld()).getTransferGracePeriodLength()),
+                    transferExpirationTime.plus(
+                        Duration.ofMillis(
+                            Tld.get(domain.getTld()).getTransferGracePeriodLength().getMillis())),
                     transferData.getGainingRegistrarId(),
                     transferData.getServerApproveBillingEvent())));
       } else {
@@ -530,12 +553,13 @@ public class DomainBase extends EppResource {
 
     Builder builder = domain.asBuilder();
     if (isBeforeOrAt(domain.getRegistrationExpirationTime(), now)
-        && END_OF_TIME.equals(domain.getDeletionDateTime())) {
+        && END_INSTANT.equals(domain.getDeletionTime())) {
       // Autorenew by the number of years between the old expiration time and now.
       Instant lastAutorenewTime =
-          leapSafeAddYears(
+          plusYears(
               domain.getRegistrationExpirationTime(),
-              YEARS.between(domain.getRegistrationExpirationTime().atZone(UTC), now.atZone(UTC)));
+              ChronoUnit.YEARS.between(
+                  domain.getRegistrationExpirationTime().atZone(UTC), now.atZone(UTC)));
       Instant newExpirationTime = plusYears(lastAutorenewTime, 1);
       builder
           .setRegistrationExpirationTime(toDateTime(newExpirationTime))
@@ -543,8 +567,9 @@ public class DomainBase extends EppResource {
               GracePeriod.createForRecurrence(
                   GracePeriodStatus.AUTO_RENEW,
                   domain.getRepoId(),
-                  toDateTime(lastAutorenewTime)
-                      .plus(Tld.get(domain.getTld()).getAutoRenewGracePeriodLength()),
+                  lastAutorenewTime.plus(
+                      Duration.ofMillis(
+                          Tld.get(domain.getTld()).getAutoRenewGracePeriodLength().getMillis())),
                   domain.getCurrentSponsorRegistrarId(),
                   domain.getAutorenewBillingEvent()));
       newLastEppUpdateTime = Optional.of(lastAutorenewTime);
@@ -587,9 +612,8 @@ public class DomainBase extends EppResource {
       Instant now, Instant currentExpirationTime, @Nullable Integer extendedRegistrationYears) {
     // We must cap registration at the max years (aka 10), even if that truncates the last year.
     return earliestOf(
-        leapSafeAddYears(
-            currentExpirationTime, Optional.ofNullable(extendedRegistrationYears).orElse(0)),
-        leapSafeAddYears(now, MAX_REGISTRATION_YEARS));
+        plusYears(currentExpirationTime, Optional.ofNullable(extendedRegistrationYears).orElse(0)),
+        plusYears(now, MAX_REGISTRATION_YEARS));
   }
 
   /** Loads and returns the fully qualified host names of all linked nameservers. */
@@ -645,8 +669,8 @@ public class DomainBase extends EppResource {
       } else { // There are nameservers, so make sure INACTIVE isn't there.
         removeStatusValue(StatusValue.INACTIVE);
       }
-      // If there is no autorenew end time, set it to END_OF_TIME.
-      instance.autorenewEndTime = firstNonNull(getInstance().autorenewEndTime, END_OF_TIME);
+      // If there is no autorenew end time, set it to END_INSTANT.
+      instance.autorenewEndTime = firstNonNull(getInstance().autorenewEndTime, END_INSTANT);
 
       checkArgumentNotNull(emptyToNull(instance.domainName), "Missing domainName");
       instance.tld = getTldFromDomainName(instance.domainName);
@@ -741,9 +765,18 @@ public class DomainBase extends EppResource {
               CollectionUtils.difference(getInstance().getSubordinateHosts(), hostToRemove)));
     }
 
-    public B setRegistrationExpirationTime(DateTime registrationExpirationTime) {
+    public B setRegistrationExpirationTime(Instant registrationExpirationTime) {
       getInstance().registrationExpirationTime = registrationExpirationTime;
       return thisCastToDerived();
+    }
+
+    /**
+     * @deprecated Use {@link #setRegistrationExpirationTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setRegistrationExpirationTime(DateTime registrationExpirationTime) {
+      return setRegistrationExpirationTime(toInstant(registrationExpirationTime));
     }
 
     public B setDeletePollMessage(VKey<OneTime> deletePollMessage) {
@@ -797,8 +830,17 @@ public class DomainBase extends EppResource {
      * representation to signify that autorenew doesn't end, and is mapped to empty here for the
      * purposes of more legible business logic.
      */
+    /**
+     * @deprecated Use {@link #setAutorenewEndTimeInstant(Optional)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public B setAutorenewEndTime(Optional<DateTime> autorenewEndTime) {
-      getInstance().autorenewEndTime = autorenewEndTime.orElse(END_OF_TIME);
+      return setAutorenewEndTimeInstant(autorenewEndTime.map(DateTimeUtils::toInstant));
+    }
+
+    public B setAutorenewEndTimeInstant(Optional<Instant> autorenewEndTime) {
+      getInstance().autorenewEndTime = autorenewEndTime.orElse(END_INSTANT);
       return thisCastToDerived();
     }
 
@@ -807,9 +849,18 @@ public class DomainBase extends EppResource {
       return thisCastToDerived();
     }
 
-    public B setLastTransferTime(DateTime lastTransferTime) {
+    public B setLastTransferTime(Instant lastTransferTime) {
       getInstance().lastTransferTime = lastTransferTime;
       return thisCastToDerived();
+    }
+
+    /**
+     * @deprecated Use {@link #setLastTransferTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public B setLastTransferTime(DateTime lastTransferTime) {
+      return setLastTransferTime(toInstant(lastTransferTime));
     }
 
     public B setCurrentBulkToken(@Nullable VKey<AllocationToken> currentBulkToken) {

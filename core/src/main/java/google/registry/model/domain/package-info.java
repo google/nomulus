@@ -18,12 +18,15 @@
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlJavaTypeAdapters({
-    @XmlJavaTypeAdapter(UtcDateTimeAdapter.class),
-    @XmlJavaTypeAdapter(DateAdapter.class)})
+  @XmlJavaTypeAdapter(UtcDateTimeAdapter.class),
+  @XmlJavaTypeAdapter(UtcInstantAdapter.class),
+  @XmlJavaTypeAdapter(DateAdapter.class)
+})
 package google.registry.model.domain;
 
 import google.registry.xml.DateAdapter;
 import google.registry.xml.UtcDateTimeAdapter;
+import google.registry.xml.UtcInstantAdapter;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlNs;

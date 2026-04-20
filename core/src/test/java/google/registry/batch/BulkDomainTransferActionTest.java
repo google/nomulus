@@ -36,6 +36,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import google.registry.util.DateTimeUtils;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,39 +90,39 @@ public class BulkDomainTransferActionTest {
     assertThat(alreadyTransferredDomain.getCurrentSponsorRegistrarId()).isEqualTo("NewRegistrar");
     assertThat(pendingDeleteDomain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(deletedDomain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
-    DateTime preRunTime = fakeClock.nowUtc();
+    Instant preRunTime = fakeClock.now();
 
     BulkDomainTransferAction action =
         createAction("active.tld", "alreadytransferred.tld", "pendingdelete.tld", "deleted.tld");
     fakeClock.advanceOneMilli();
 
-    DateTime runTime = fakeClock.nowUtc();
+    Instant runTime = fakeClock.now();
     action.run();
 
     fakeClock.advanceOneMilli();
-    DateTime now = fakeClock.nowUtc();
+    Instant now = fakeClock.now();
 
     // The active domain should have a new update timestamp and current registrar
     // The cloneProjectedAtTime calls are necessary to resolve the transfers, even though the
     // transfers have a time period of 0
     activeDomain = loadByEntity(activeDomain);
-    assertThat(activeDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
+    assertThat(activeDomain.cloneProjectedAtInstant(now).getCurrentSponsorRegistrarId())
         .isEqualTo("NewRegistrar");
     assertThat(activeDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(runTime);
 
     // The other three domains shouldn't change
     alreadyTransferredDomain = loadByEntity(alreadyTransferredDomain);
-    assertThat(alreadyTransferredDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
+    assertThat(alreadyTransferredDomain.cloneProjectedAtInstant(now).getCurrentSponsorRegistrarId())
         .isEqualTo("NewRegistrar");
     assertThat(alreadyTransferredDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
 
     pendingDeleteDomain = loadByEntity(pendingDeleteDomain);
-    assertThat(pendingDeleteDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
+    assertThat(pendingDeleteDomain.cloneProjectedAtInstant(now).getCurrentSponsorRegistrarId())
         .isEqualTo("TheRegistrar");
     assertThat(pendingDeleteDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
 
     deletedDomain = loadByEntity(deletedDomain);
-    assertThat(deletedDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
+    assertThat(deletedDomain.cloneProjectedAtInstant(now).getCurrentSponsorRegistrarId())
         .isEqualTo("TheRegistrar");
     assertThat(deletedDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
   }

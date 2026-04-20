@@ -25,7 +25,8 @@ import static google.registry.bsa.persistence.BsaTestingUtils.persistUnblockable
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -56,10 +57,10 @@ import google.registry.testing.FakeClock;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -75,9 +76,9 @@ public class BsaValidateActionTest {
 
   private static final String DOWNLOAD_JOB_NAME = "job";
 
-  private static final Duration MAX_STALENESS = Duration.standardMinutes(1);
+  private static final Duration MAX_STALENESS = Duration.ofMinutes(1);
 
-  FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
+  FakeClock fakeClock = new FakeClock(Instant.parse("2023-11-09T02:08:57.880Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -107,7 +108,7 @@ public class BsaValidateActionTest {
             idnChecker,
             new BsaEmailSender(gmailClient, emailRecipient),
             /* transactionBatchSize= */ 500,
-            MAX_STALENESS,
+            org.joda.time.Duration.millis(MAX_STALENESS.toMillis()),
             fakeClock,
             response);
     createTld("app");
@@ -237,16 +238,17 @@ public class BsaValidateActionTest {
   @Test
   void isStalenessAllowed_newDomain_allowed() {
     persistBsaLabel("label");
-    Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
-    fakeClock.advanceBy(MAX_STALENESS.minus(Duration.standardSeconds(1)));
+    Domain domain = persistActiveDomain("label.app", toDateTime(fakeClock.now()));
+    fakeClock.advanceBy(
+        org.joda.time.Duration.millis(MAX_STALENESS.minus(Duration.ofSeconds(1)).toMillis()));
     assertThat(action.isStalenessAllowed(domain)).isTrue();
   }
 
   @Test
   void isStalenessAllowed_newDomain_notAllowed() {
     persistBsaLabel("label");
-    Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
-    fakeClock.advanceBy(MAX_STALENESS);
+    Domain domain = persistActiveDomain("label.app", toDateTime(fakeClock.now()));
+    fakeClock.advanceBy(org.joda.time.Duration.millis(MAX_STALENESS.toMillis()));
     assertThat(action.isStalenessAllowed(domain)).isFalse();
   }
 
@@ -276,9 +278,15 @@ public class BsaValidateActionTest {
   @Test
   void checkForMissingReservedUnblockables_success() {
     persistResource(
-        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("app")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(toDateTime(START_INSTANT)))
+            .build());
     persistResource(
-        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("dev")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(toDateTime(START_INSTANT)))
+            .build());
     persistBsaLabel("registered-reserved");
     persistBsaLabel("reserved-only");
     persistBsaLabel("reserved-missing");
@@ -294,7 +302,7 @@ public class BsaValidateActionTest {
             .collect(toImmutableMap(x -> x, x -> ReservationType.RESERVED_FOR_SPECIFIC_USE)));
     addReservedListsToTld("app", ImmutableList.of("rl"));
 
-    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.nowUtc());
+    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.now());
     assertThat(errors)
         .containsExactly("Missing unblockable domain: reserved-missing.app is reserved.");
   }
@@ -302,9 +310,15 @@ public class BsaValidateActionTest {
   @Test
   void checkForMissingReservedUnblockablesInOneTld_success() {
     persistResource(
-        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("app")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(toDateTime(START_INSTANT)))
+            .build());
     persistResource(
-        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("dev")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(toDateTime(START_INSTANT)))
+            .build());
     persistBsaLabel("reserved-missing-in-app");
     persistUnblockableDomain(
         UnblockableDomain.of("reserved-missing-in-app", "dev", Reason.REGISTERED));
@@ -316,7 +330,7 @@ public class BsaValidateActionTest {
     addReservedListsToTld("app", ImmutableList.of("rl"));
     addReservedListsToTld("dev", ImmutableList.of("rl"));
 
-    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.nowUtc());
+    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.now());
     assertThat(errors)
         .containsExactly("Missing unblockable domain: reserved-missing-in-app.app is reserved.");
   }
@@ -324,7 +338,10 @@ public class BsaValidateActionTest {
   @Test
   void checkForMissingReservedUnblockables_unblockedReservedNotReported() {
     persistResource(
-        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("app")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(toDateTime(START_INSTANT)))
+            .build());
 
     createReservedList(
         "rl",
@@ -332,14 +349,17 @@ public class BsaValidateActionTest {
             .collect(toImmutableMap(x -> x, x -> ReservationType.RESERVED_FOR_SPECIFIC_USE)));
     addReservedListsToTld("app", ImmutableList.of("rl"));
 
-    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.nowUtc());
+    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.now());
     assertThat(errors).isEmpty();
   }
 
   @Test
   void checkForMissingRegisteredUnblockables_success() {
     persistResource(
-        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("app")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(toDateTime(START_INSTANT)))
+            .build());
     persistBsaLabel("registered");
     persistBsaLabel("registered-missing");
     persistUnblockableDomain(UnblockableDomain.of("registered", "app", Reason.REGISTERED));
@@ -347,7 +367,7 @@ public class BsaValidateActionTest {
     persistActiveDomain("registered.app");
     persistActiveDomain("registered-missing.app");
 
-    ImmutableList<String> errors = action.checkForMissingRegisteredUnblockables(fakeClock.nowUtc());
+    ImmutableList<String> errors = action.checkForMissingRegisteredUnblockables(fakeClock.now());
     assertThat(errors)
         .containsExactly(
             "Registered domain registered-missing.app missing or not recorded as REGISTERED");

@@ -15,6 +15,8 @@
 package google.registry.model.reporting;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
@@ -31,6 +33,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import org.joda.time.DateTime;
 
 /**
@@ -81,7 +84,7 @@ public class DomainTransactionRecord extends ImmutableObject
    *     Grace period spec</a>
    */
   @Column(nullable = false)
-  DateTime reportingTime;
+  Instant reportingTime;
 
   /** The transaction report field we add reportAmount to for this registrar. */
   @Column(nullable = false)
@@ -189,10 +192,6 @@ public class DomainTransactionRecord extends ImmutableObject
     return new HistoryEntryId(domainRepoId, historyRevisionId);
   }
 
-  public DateTime getReportingTime() {
-    return reportingTime;
-  }
-
   public String getTld() {
     return tld;
   }
@@ -205,10 +204,23 @@ public class DomainTransactionRecord extends ImmutableObject
     return reportAmount;
   }
 
+  /**
+   * @deprecated Use {@link #getReportingTimeInstant()}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public DateTime getReportingTime() {
+    return toDateTime(reportingTime);
+  }
+
+  public Instant getReportingTimeInstant() {
+    return reportingTime;
+  }
+
   /** An alternative construction method when the builder is not necessary. */
   public static DomainTransactionRecord create(
       String tld,
-      DateTime reportingTime,
+      Instant reportingTime,
       TransactionReportField transactionReportField,
       int reportAmount) {
     return new DomainTransactionRecord.Builder()
@@ -218,6 +230,19 @@ public class DomainTransactionRecord extends ImmutableObject
         .setReportField(transactionReportField)
         .setReportAmount(reportAmount)
         .build();
+  }
+
+  /**
+   * @deprecated Use {@link #create(String, Instant, TransactionReportField, int)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static DomainTransactionRecord create(
+      String tld,
+      DateTime reportingTime,
+      TransactionReportField transactionReportField,
+      int reportAmount) {
+    return create(tld, toInstant(reportingTime), transactionReportField, reportAmount);
   }
 
   @Override
@@ -241,10 +266,19 @@ public class DomainTransactionRecord extends ImmutableObject
       return this;
     }
 
-    public Builder setReportingTime(DateTime reportingTime) {
-      checkArgumentNotNull(reportingTime, "reportingTime must not be mull");
+    public Builder setReportingTime(Instant reportingTime) {
+      checkArgumentNotNull(reportingTime, "reportingTime must not be null");
       getInstance().reportingTime = reportingTime;
       return this;
+    }
+
+    /**
+     * @deprecated Use {@link #setReportingTime(Instant)}
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public Builder setReportingTime(DateTime reportingTime) {
+      return setReportingTime(toInstant(reportingTime));
     }
 
     public Builder setReportField(TransactionReportField reportField) {

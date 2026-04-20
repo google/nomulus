@@ -18,6 +18,7 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import javax.annotation.concurrent.ThreadSafe;
 import org.joda.time.DateTime;
 
@@ -42,6 +43,6 @@ public class SystemClock implements Clock {
     // (which uses millisecond precision via DateTimeConverter). This prevents subtle comparison
     // bugs where a high-precision Instant would be considered "after" a truncated database
     // timestamp.
-    return Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+    return Instant.now().truncatedTo(ChronoUnit.MILLIS);
   }
 }

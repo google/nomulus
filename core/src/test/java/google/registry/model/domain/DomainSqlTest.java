@@ -26,9 +26,9 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.plusYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -49,10 +49,10 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.SerializeUtils;
+import java.time.Instant;
 import java.util.Arrays;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -60,7 +60,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Verify that we can store/retrieve Domain objects from a SQL database. */
 public class DomainSqlTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  protected FakeClock fakeClock = new FakeClock(Instant.parse("2024-01-01T00:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -83,9 +83,9 @@ public class DomainSqlTest {
             .setDomainName("example.com")
             .setRepoId("4-COM")
             .setCreationRegistrarId("registrar1")
-            .setLastEppUpdateTime(fakeClock.nowUtc())
+            .setLastEppUpdateTime(fakeClock.now())
             .setLastEppUpdateRegistrarId("registrar2")
-            .setLastTransferTime(fakeClock.nowUtc())
+            .setLastTransferTime(fakeClock.now())
             .setNameservers(host1VKey)
             .setStatusValues(
                 ImmutableSet.of(
@@ -97,15 +97,15 @@ public class DomainSqlTest {
                     StatusValue.SERVER_HOLD))
             .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
             .setPersistedCurrentSponsorRegistrarId("registrar3")
-            .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
+            .setRegistrationExpirationTime(plusYears(fakeClock.now(), 1))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
             .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .setLaunchNotice(
-                LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
+                LaunchNotice.create("tcnid", "validatorId", START_INSTANT, START_INSTANT))
             .setSmdId("smdid")
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null, 100L))
+                    GracePeriodStatus.ADD, "4-COM", END_INSTANT, "registrar1", null, 100L))
             .build();
 
     host =
@@ -121,17 +121,17 @@ public class DomainSqlTest {
             .setToken("abc123Unlimited")
             .setTokenType(BULK_PRICING)
             .setDiscountFraction(1.0)
-            .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+            .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("dev", "app"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(CurrencyUnit.USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, NOT_STARTED)
-                    .put(DateTime.now(UTC), TokenStatus.VALID)
-                    .put(DateTime.now(UTC).plusWeeks(8), TokenStatus.ENDED)
+            .setTokenStatusTransitionsInstant(
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, NOT_STARTED)
+                    .put(fakeClock.now(), TokenStatus.VALID)
+                    .put(fakeClock.now().plus(java.time.Duration.ofDays(56)), TokenStatus.ENDED)
                     .build())
             .build();
   }
@@ -221,7 +221,7 @@ public class DomainSqlTest {
                           GracePeriod.create(
                               GracePeriodStatus.RENEW,
                               "4-COM",
-                              END_OF_TIME,
+                              END_INSTANT,
                               "registrar1",
                               null,
                               200L))
@@ -235,9 +235,9 @@ public class DomainSqlTest {
               assertThat(persisted.getGracePeriods())
                   .containsExactly(
                       GracePeriod.create(
-                          GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null, 100L),
+                          GracePeriodStatus.ADD, "4-COM", END_INSTANT, "registrar1", null, 100L),
                       GracePeriod.create(
-                          GracePeriodStatus.RENEW, "4-COM", END_OF_TIME, "registrar1", null, 200L));
+                          GracePeriodStatus.RENEW, "4-COM", END_INSTANT, "registrar1", null, 200L));
               assertEqualDomainExcept(persisted, "gracePeriods");
             });
 
@@ -281,7 +281,7 @@ public class DomainSqlTest {
                           GracePeriod.create(
                               GracePeriodStatus.ADD,
                               "4-COM",
-                              END_OF_TIME,
+                              END_INSTANT,
                               "registrar1",
                               null,
                               100L))
@@ -295,7 +295,7 @@ public class DomainSqlTest {
               assertThat(persisted.getGracePeriods())
                   .containsExactly(
                       GracePeriod.create(
-                          GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null, 100L));
+                          GracePeriodStatus.ADD, "4-COM", END_INSTANT, "registrar1", null, 100L));
               assertEqualDomainExcept(persisted, "gracePeriods");
             });
   }
@@ -387,7 +387,7 @@ public class DomainSqlTest {
   void testUpdateTimeAfterNameserverUpdate() {
     persistDomain();
     Domain persisted = loadByKey(domain.createVKey());
-    DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
+    Instant originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     Host host2 =
         new Host.Builder()
@@ -408,7 +408,7 @@ public class DomainSqlTest {
   void testUpdateTimeAfterDsDataUpdate() {
     persistDomain();
     Domain persisted = loadByKey(domain.createVKey());
-    DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
+    Instant originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
     domain =
         persisted
