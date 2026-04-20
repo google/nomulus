@@ -101,7 +101,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   /** Persists a testing claims list to Cloud SQL. */
   protected void persistClaimsList(ImmutableMap<String, String> labelsToKeys) {
-    ClaimsListDao.save(ClaimsList.create(clock.nowUtc(), labelsToKeys));
+    ClaimsListDao.save(ClaimsList.create(clock.now(), labelsToKeys));
   }
 
   protected void assertClientIdFieldLogged(String registrarId) {

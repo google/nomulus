@@ -181,7 +181,7 @@ public class DomainClaimsCheckFlowTest extends ResourceFlowTestCase<DomainClaims
   void testFailure_multipleTlds_oneHasEndedClaims() {
     createTlds("tld1", "tld2");
     persistResource(
-        Tld.get("tld2").asBuilder().setClaimsPeriodEnd(clock.nowUtc().minusMillis(1)).build());
+        Tld.get("tld2").asBuilder().setClaimsPeriodEndInstant(clock.now().minusMillis(1)).build());
     setEppInput("domain_check_claims_multiple_tlds.xml");
     EppException thrown = assertThrows(ClaimsPeriodEndedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();

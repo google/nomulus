@@ -31,6 +31,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActi
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RESTORE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -140,7 +141,8 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     boolean isExpired = existingDomain.getRegistrationExpirationDateTime().isBefore(now);
     FeesAndCredits feesAndCredits =
-        pricingLogic.getRestorePrice(Tld.get(existingDomain.getTld()), targetId, now, isExpired);
+        pricingLogic.getRestorePrice(
+            Tld.get(existingDomain.getTld()), targetId, toInstant(now), isExpired);
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);

@@ -23,7 +23,7 @@ import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -64,11 +64,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     command.setConnection(connection);
     command.certificateChecker =
         new CertificateChecker(
-            ImmutableSortedMap.of(
-                toDateTime(START_INSTANT),
-                825,
-                toDateTime(Instant.parse("2020-09-01T00:00:00Z")),
-                398),
+            ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
             30,
             15,
             2048,
