@@ -193,19 +193,17 @@ public class RdapMetrics {
           getLabelStringForPrefixLength(rdapMetricInformation.prefixLength()),
           rdapMetricInformation.includeDeleted() ? "YES" : "NO");
     }
+    if (rdapMetricInformation.processingTime().isPresent()) {
+      requestTime.record(
+          rdapMetricInformation.processingTime().get(),
+          rdapMetricInformation.endpointType().toString(),
+          rdapMetricInformation.searchType().toString(),
+          rdapMetricInformation.wildcardType().toString(),
+          String.valueOf(rdapMetricInformation.statusCode()),
+          rdapMetricInformation.incompletenessWarningType().toString());
+    }
   }
 
-  /** Records the processing time for an RDAP request. */
-  public void recordProcessingTime(
-      RdapMetricInformation rdapMetricInformation, long processingTime) {
-    requestTime.record(
-        processingTime,
-        rdapMetricInformation.endpointType().toString(),
-        rdapMetricInformation.searchType().toString(),
-        rdapMetricInformation.wildcardType().toString(),
-        String.valueOf(rdapMetricInformation.statusCode()),
-        rdapMetricInformation.incompletenessWarningType().toString());
-  }
 
   /**
    * Information on RDAP metrics.
@@ -226,6 +224,8 @@ public class RdapMetrics {
    *     than were actually returned in the response; absent if a search was not performed.
    * @param numHostsRetrieved Number of hosts retrieved from the database; this might be more than
    *     were actually returned in the response; absent if a search was not performed.
+   * @param processingTime The processing time for the request in milliseconds; absent if not
+   *     recorded.
    */
   public record RdapMetricInformation(
       EndpointType endpointType,
@@ -239,7 +239,8 @@ public class RdapMetrics {
       int statusCode,
       IncompletenessWarningType incompletenessWarningType,
       Optional<Long> numDomainsRetrieved,
-      Optional<Long> numHostsRetrieved) {
+      Optional<Long> numHostsRetrieved,
+      Optional<Long> processingTime) {
 
     @AutoBuilder
     interface Builder {
@@ -267,8 +268,11 @@ public class RdapMetrics {
 
       Builder setNumHostsRetrieved(long numHostsRetrieved);
 
+      Builder setProcessingTime(long processingTime);
+
       RdapMetricInformation build();
     }
+
 
     static Builder builder() {
       return new AutoBuilder_RdapMetrics_RdapMetricInformation_Builder()

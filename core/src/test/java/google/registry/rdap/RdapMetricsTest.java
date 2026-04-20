@@ -278,7 +278,7 @@ class RdapMetricsTest {
 
   @Test
   void testRecordProcessingTime() {
-    rdapMetrics.recordProcessingTime(getBuilder().build(), 100L);
+    rdapMetrics.updateMetrics(getBuilder().setProcessingTime(100L).build());
     assertThat(RdapMetrics.requestTime)
         .hasDataSetForLabels(ImmutableSet.of(100L), "DOMAINS", "NONE", "INVALID", "200", "COMPLETE")
         .and()

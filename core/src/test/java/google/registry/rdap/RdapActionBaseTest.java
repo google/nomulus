@@ -135,6 +135,7 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
                 .setRequestMethod(Action.Method.GET)
                 .setStatusCode(200)
                 .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE)
+                .setProcessingTime(0L)
                 .build());
   }
 
@@ -154,6 +155,7 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
                 .setRequestMethod(Action.Method.GET)
                 .setStatusCode(400)
                 .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE)
+                .setProcessingTime(0L)
                 .build());
   }
 
@@ -182,7 +184,7 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
   void testMetrics_recordsProcessingTime() {
     generateActualJson("advanceClock");
     verify(rdapMetrics)
-        .recordProcessingTime(
+        .updateMetrics(
             RdapMetrics.RdapMetricInformation.builder()
                 .setEndpointType(EndpointType.HELP)
                 .setSearchType(SearchType.NONE)
@@ -194,7 +196,7 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
                 .setRequestMethod(Action.Method.GET)
                 .setStatusCode(200)
                 .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE)
-                .build(),
-            50L);
+                .setProcessingTime(50L)
+                .build());
   }
 }

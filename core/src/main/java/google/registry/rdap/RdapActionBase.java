@@ -182,9 +182,9 @@ public abstract class RdapActionBase implements Runnable {
       logger.atSevere().withCause(e).log("Exception encountered while processing RDAP command.");
     }
     long processingTime = Duration.between(startTime, clock.now()).toMillis();
-    RdapMetrics.RdapMetricInformation metricInfo = metricInformationBuilder.build();
-    rdapMetrics.updateMetrics(metricInfo);
-    rdapMetrics.recordProcessingTime(metricInfo, processingTime);
+    metricInformationBuilder.setProcessingTime(processingTime);
+    
+    rdapMetrics.updateMetrics(metricInformationBuilder.build());
   }
 
   void setError(int status, String title, String description) {
