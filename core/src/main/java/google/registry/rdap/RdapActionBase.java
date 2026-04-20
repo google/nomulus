@@ -52,6 +52,8 @@ import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -132,7 +134,7 @@ public abstract class RdapActionBase implements Runnable {
 
   @Override
   public void run() {
-    java.time.Instant startTime = clock.now();
+    Instant startTime = clock.now();
     metricInformationBuilder.setIncludeDeleted(includeDeletedParam.orElse(false));
     metricInformationBuilder.setRole(rdapAuthorization.role());
     metricInformationBuilder.setRequestMethod(requestMethod);
@@ -181,7 +183,7 @@ public abstract class RdapActionBase implements Runnable {
       setError(SC_INTERNAL_SERVER_ERROR, "Internal Server Error", "An error was encountered");
       logger.atSevere().withCause(e).log("Exception encountered while processing RDAP command.");
     }
-    long processingTime = java.time.Duration.between(startTime, clock.now()).toMillis();
+    long processingTime = Duration.between(startTime, clock.now()).toMillis();
     RdapMetrics.RdapMetricInformation metricInfo = metricInformationBuilder.build();
     rdapMetrics.updateMetrics(metricInfo);
     rdapMetrics.recordProcessingTime(metricInfo, processingTime);
