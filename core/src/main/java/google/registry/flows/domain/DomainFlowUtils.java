@@ -40,7 +40,7 @@ import static google.registry.model.tld.label.ReservationType.RESERVED_FOR_SPECI
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.CollectionUtils.nullToEmpty;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toInstant;
@@ -124,6 +124,7 @@ import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.tools.DigestType;
 import google.registry.util.Idn;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -474,7 +475,7 @@ public class DomainFlowUtils {
    */
   static void verifyPremiumNameIsNotBlocked(
       String domainName, DateTime priceTime, String registrarId) throws EppException {
-    if (isDomainPremium(domainName, priceTime)) {
+    if (isDomainPremium(domainName, toInstant(priceTime))) {
       if (Registrar.loadByRegistrarIdCached(registrarId).get().getBlockPremiumNames()) {
         throw new PremiumNameBlockedException();
       }
@@ -504,7 +505,7 @@ public class DomainFlowUtils {
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-        .setEventTime(domain.getRegistrationExpirationDateTime());
+        .setEventTime(domain.getRegistrationExpirationTime());
   }
 
   /**
@@ -515,7 +516,7 @@ public class DomainFlowUtils {
     return new Autorenew.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-        .setEventTime(domain.getRegistrationExpirationDateTime())
+        .setEventTime(domain.getRegistrationExpirationTime())
         .setMsg("Domain was auto-renewed.");
   }
 
@@ -587,7 +588,7 @@ public class DomainFlowUtils {
       boolean isAvailable,
       @Nullable BillingRecurrence billingRecurrence)
       throws EppException {
-    DateTime now = currentDate;
+    Instant now = toInstant(currentDate);
     // Use the custom effective date specified in the fee check request, if there is one.
     if (feeRequest.getEffectiveDate().isPresent()) {
       now = feeRequest.getEffectiveDate().get();
@@ -659,7 +660,7 @@ public class DomainFlowUtils {
         // process, don't count as expired for the purposes of requiring an added year of renewal on
         // restore because they can't be restored in the first place.
         boolean isExpired =
-            domain.isPresent() && domain.get().getRegistrationExpirationDateTime().isBefore(now);
+            domain.isPresent() && domain.get().getRegistrationExpirationTime().isBefore(now);
         fees = pricingLogic.getRestorePrice(tld, domainNameString, now, isExpired).getFees();
       }
       case TRANSFER -> {
@@ -700,16 +701,16 @@ public class DomainFlowUtils {
     // Set the fees, and based on the validDateRange of the fees, set the notAfterDate.
     if (!fees.isEmpty()) {
       builder.setFees(fees);
-      DateTime notAfterDate = null;
+      Instant notAfterDate = null;
       for (Fee fee : fees) {
         if (fee.hasValidDateRange()) {
-          DateTime endDate = fee.getValidDateRange().upperEndpoint();
+          Instant endDate = fee.getValidDateRange().upperEndpoint();
           if (notAfterDate == null || notAfterDate.isAfter(endDate)) {
             notAfterDate = endDate;
           }
         }
       }
-      if (notAfterDate != null && !notAfterDate.equals(END_OF_TIME)) {
+      if (notAfterDate != null && !notAfterDate.equals(END_INSTANT)) {
         builder.setNotAfterDateIfSupported(notAfterDate);
       }
     }

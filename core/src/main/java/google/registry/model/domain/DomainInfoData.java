@@ -25,8 +25,8 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned for an EPP info flow on a domain. */
 @XmlRootElement(name = "infData")
@@ -88,7 +88,7 @@ public abstract class DomainInfoData implements ResponseData {
 
   @XmlElement(name = "crDate")
   @Nullable
-  abstract DateTime getCreationTime();
+  abstract Instant getCreationTime();
 
   @XmlElement(name = "upID")
   @Nullable
@@ -96,15 +96,15 @@ public abstract class DomainInfoData implements ResponseData {
 
   @XmlElement(name = "upDate")
   @Nullable
-  abstract DateTime getLastEppUpdateTime();
+  abstract Instant getLastEppUpdateTime();
 
   @XmlElement(name = "exDate")
   @Nullable
-  abstract DateTime getRegistrationExpirationTime();
+  abstract Instant getRegistrationExpirationTime();
 
   @XmlElement(name = "trDate")
   @Nullable
-  abstract DateTime getLastTransferTime();
+  abstract Instant getLastTransferTime();
 
   @XmlElement(name = "authInfo")
   @Nullable
@@ -127,14 +127,17 @@ public abstract class DomainInfoData implements ResponseData {
 
     public abstract Builder setCreationRegistrarId(@Nullable String creationRegistrarId);
 
-    public abstract Builder setCreationTime(@Nullable DateTime creationTime);
+    public abstract Builder setCreationTime(@Nullable Instant creationTime);
 
     public abstract Builder setLastEppUpdateRegistrarId(@Nullable String lastEppUpdateRegistrarId);
 
-    public abstract Builder setLastEppUpdateTime(@Nullable DateTime lastEppUpdateTime);
+    public abstract Builder setLastEppUpdateTime(@Nullable Instant lastEppUpdateTime);
+
     public abstract Builder setRegistrationExpirationTime(
-        @Nullable DateTime registrationExpirationTime);
-    public abstract Builder setLastTransferTime(@Nullable DateTime lastTransferTime);
+        @Nullable Instant registrationExpirationTime);
+
+    public abstract Builder setLastTransferTime(@Nullable Instant lastTransferTime);
+
     public abstract Builder setAuthInfo(@Nullable DomainAuthInfo authInfo);
 
     /** Internal accessor for use in {@link #build}. */

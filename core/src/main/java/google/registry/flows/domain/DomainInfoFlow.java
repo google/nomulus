@@ -121,10 +121,10 @@ public final class DomainInfoFlow implements MutatingFlow {
             .setStatusValues(domain.getStatusValues())
             .setNameservers(
                 hostsRequest.requestDelegated() ? domain.loadNameserverHostNames() : null)
-            .setCreationTime(domain.getCreationTime())
-            .setLastEppUpdateTime(domain.getLastEppUpdateDateTime())
-            .setRegistrationExpirationTime(domain.getRegistrationExpirationDateTime())
-            .setLastTransferTime(domain.getLastTransferTime());
+            .setCreationTime(domain.getCreationTimeInstant())
+            .setLastEppUpdateTime(domain.getLastEppUpdateTime())
+            .setRegistrationExpirationTime(domain.getRegistrationExpirationTime())
+            .setLastTransferTime(domain.getLastTransferTimeInstant());
 
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.

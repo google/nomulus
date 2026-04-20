@@ -26,7 +26,6 @@ import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DateTimeUtils.latestOf;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.apache.beam.sdk.values.TypeDescriptors.voids;
 
 import com.google.common.collect.ImmutableMap;
@@ -402,7 +401,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                       .getRenewPrice(
                           tld,
                           billingRecurrence.getTargetId(),
-                          toDateTime(eventTime),
+                          eventTime,
                           1,
                           billingRecurrence,
                           Optional.empty())

@@ -198,7 +198,9 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
       feesAndCredits = Optional.empty();
     } else if (existingDomain.getCurrentBulkToken().isEmpty()) {
       feesAndCredits =
-          Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, existingBillingRecurrence));
+          Optional.of(
+              pricingLogic.getTransferPrice(
+                  tld, targetId, toInstant(now), existingBillingRecurrence));
     } else {
       // If existing domain is in a bulk pricing package, calculate the transfer price with default
       // renewal price
@@ -206,7 +208,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
       feesAndCredits =
           period.getValue() == 0
               ? Optional.empty()
-              : Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, null));
+              : Optional.of(pricingLogic.getTransferPrice(tld, targetId, toInstant(now), null));
     }
 
     if (feesAndCredits.isPresent()) {

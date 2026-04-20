@@ -35,6 +35,7 @@ import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verify
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -201,7 +202,7 @@ public final class DomainRenewFlow implements MutatingFlow {
         pricingLogic.getRenewPrice(
             Tld.get(existingDomain.getTld()),
             targetId,
-            now,
+            toInstant(now),
             years,
             existingBillingRecurrence,
             allocationToken);

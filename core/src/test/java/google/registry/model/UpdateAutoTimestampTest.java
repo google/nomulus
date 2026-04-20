@@ -17,6 +17,7 @@ package google.registry.model;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.minusDays;
 
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.persistence.VKey;
@@ -25,7 +26,6 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExte
 import google.registry.testing.FakeClock;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -75,8 +75,7 @@ public class UpdateAutoTimestampTest {
                 () -> {
                   clock.advanceOneMilli();
                   UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
-                  object.updateTime =
-                      UpdateAutoTimestamp.create(clock.now().minus(Duration.ofDays(1)));
+                  object.updateTime = UpdateAutoTimestamp.create(minusDays(clock.now(), 1));
                   tm().insert(object);
                   return tm().getTxTime();
                 });

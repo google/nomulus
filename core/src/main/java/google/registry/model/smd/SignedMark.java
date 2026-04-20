@@ -20,7 +20,7 @@ import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * Represents an XML fragment that is digitally signed by the TMCH to prove ownership over a mark.
@@ -43,11 +43,11 @@ public class SignedMark extends ImmutableObject implements AbstractSignedMark {
 
   /** Creation time of this signed mark. */
   @XmlElement(name = "notBefore")
-  DateTime creationTime;
+  Instant creationTime;
 
   /** Expiration time of this signed mark. */
   @XmlElement(name = "notAfter")
-  DateTime expirationTime;
+  Instant expirationTime;
 
   /** Mark information. */
   @XmlElementRef(type = Mark.class)
@@ -66,11 +66,11 @@ public class SignedMark extends ImmutableObject implements AbstractSignedMark {
     return id;
   }
 
-  public DateTime getCreationTime() {
+  public Instant getCreationTime() {
     return creationTime;
   }
 
-  public DateTime getExpirationTime() {
+  public Instant getExpirationTime() {
     return expirationTime;
   }
 
