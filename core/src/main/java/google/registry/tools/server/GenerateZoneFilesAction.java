@@ -19,6 +19,7 @@ import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.util.DateTimeUtils.minusMinutes;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.cloud.storage.BlobId;
@@ -123,11 +124,10 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     // We can only reliably call loadAtPointInTime at times that are UTC midnight and >
     // databaseRetention ago in the past.
     Instant now = clock.now();
-    if (exportTime.isAfter(now.minus(java.time.Duration.ofMinutes(2)))) {
+    if (exportTime.isAfter(minusMinutes(now, 2))) {
       throw new BadRequestException("Invalid export time: must be > 2 minutes ago");
     }
-    if (exportTime.isBefore(
-        now.minus(java.time.Duration.ofMillis(databaseRetention.getMillis())))) {
+    if (exportTime.isBefore(now.minusMillis(databaseRetention.getMillis()))) {
       throw new BadRequestException(
           String.format(
               "Invalid export time: must be < %d days ago", databaseRetention.getStandardDays()));

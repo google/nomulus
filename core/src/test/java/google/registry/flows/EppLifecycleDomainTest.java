@@ -31,6 +31,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppMetricSubject.assertThat;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.collect.ImmutableMap;
@@ -533,8 +534,8 @@ class EppLifecycleDomainTest extends EppTestCase {
             .setRegistrarId("NewRegistrar")
             .setPeriodYears(1)
             .setCost(Money.parse("USD 100.00"))
-            .setEventTime(createTime)
-            .setBillingTime(createTime.plus(Tld.get("tld").getRenewGracePeriodLength()))
+            .setEventTime(toInstant(createTime))
+            .setBillingTime(toInstant(createTime.plus(Tld.get("tld").getRenewGracePeriodLength())))
             .setDomainHistory(
                 getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
             .build();

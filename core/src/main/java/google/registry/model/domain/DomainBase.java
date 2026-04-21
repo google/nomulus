@@ -541,7 +541,7 @@ public class DomainBase extends EppResource {
       // Set all remaining transfer properties.
       setAutomaticTransferSuccessProperties(builder, transferData);
       builder
-          .setLastEppUpdateTime(toDateTime(transferExpirationTime))
+          .setLastEppUpdateTime(transferExpirationTime)
           .setLastEppUpdateRegistrarId(transferData.getGainingRegistrarId());
       // Finish projecting to now.
       return (T) builder.build().cloneProjectedAtInstant(now);
@@ -592,10 +592,10 @@ public class DomainBase extends EppResource {
     // id, so we have to do the comparison instead of having one variable just storing the most
     // recent time.
     if (newLastEppUpdateTime.isPresent()) {
-      if (domain.getLastEppUpdateDateTime() == null
+      if (domain.getLastEppUpdateTime() == null
           || newLastEppUpdateTime.get().isAfter(domain.getLastEppUpdateTime())) {
         builder
-            .setLastEppUpdateTime(toDateTime(newLastEppUpdateTime.get()))
+            .setLastEppUpdateTime(newLastEppUpdateTime.get())
             .setLastEppUpdateRegistrarId(domain.getCurrentSponsorRegistrarId());
       }
     }
@@ -893,13 +893,13 @@ public class DomainBase extends EppResource {
           .setDomainName(domainBase.getDomainName())
           .setDeletePollMessage(domainBase.getDeletePollMessage())
           .setDsData(domainBase.getDsData())
-          .setDeletionTime(domainBase.getDeletionDateTime())
+          .setDeletionTime(domainBase.getDeletionTime())
           .setGracePeriods(domainBase.getGracePeriods())
           .setIdnTableName(domainBase.getIdnTableName())
           .setLastTransferTime(domainBase.getLastTransferTime())
           .setLaunchNotice(domainBase.getLaunchNotice())
           .setLastEppUpdateRegistrarId(domainBase.getLastEppUpdateRegistrarId())
-          .setLastEppUpdateTime(domainBase.getLastEppUpdateDateTime())
+          .setLastEppUpdateTime(domainBase.getLastEppUpdateTime())
           .setNameservers(domainBase.getNameservers())
           .setPersistedCurrentSponsorRegistrarId(domainBase.getPersistedCurrentSponsorRegistrarId())
           .setRegistrationExpirationTime(domainBase.getRegistrationExpirationDateTime())

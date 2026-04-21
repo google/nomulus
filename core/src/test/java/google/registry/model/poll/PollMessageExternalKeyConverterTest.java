@@ -59,7 +59,7 @@ public class PollMessageExternalKeyConverterTest {
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setPeriod(Period.create(1, Period.Unit.YEARS))
                 .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-                .setModificationTime(clock.nowUtc())
+                .setModificationTime(clock.now())
                 .setRegistrarId("TheRegistrar")
                 .setTrid(Trid.create("ABC-123", "server-trid"))
                 .setBySuperuser(false)

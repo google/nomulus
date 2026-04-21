@@ -28,6 +28,7 @@ import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.DatabaseHelper;
+import java.time.Instant;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,7 +79,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
         persistResource(
             DatabaseHelper.newDomain("domain3.tld")
                 .asBuilder()
-                .setCreationTimeForTest(DateTime.parse("2015-01-05T05:05:05Z"))
+                .setCreationTimeForTest(Instant.parse("2015-01-05T05:05:05Z"))
                 .setRegistrationExpirationTime(DateTime.parse("2016-01-05T05:05:05Z"))
                 .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build()));

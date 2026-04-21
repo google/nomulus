@@ -28,6 +28,7 @@ import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -300,25 +301,25 @@ class DeleteProberDataActionTest {
                 .setDomain(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setRegistrarId("TheRegistrar")
-                .setModificationTime(DELETION_TIME.minusYears(3))
+                .setModificationTime(toInstant(DELETION_TIME.minusYears(3)))
                 .build());
     BillingEvent billingEvent =
         persistResource(
             new BillingEvent.Builder()
                 .setDomainHistory(historyEntry)
-                .setBillingTime(DELETION_TIME.plusYears(1))
+                .setBillingTime(toInstant(DELETION_TIME.plusYears(1)))
                 .setCost(Money.parse("USD 10"))
                 .setPeriodYears(1)
                 .setReason(Reason.CREATE)
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(DELETION_TIME)
+                .setEventTime(toInstant(DELETION_TIME))
                 .setTargetId(fqdn)
                 .build());
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setHistoryEntry(historyEntry)
-                .setEventTime(DELETION_TIME)
+                .setEventTime(toInstant(DELETION_TIME))
                 .setRegistrarId("TheRegistrar")
                 .setMsg("Domain registered")
                 .build());
@@ -327,7 +328,7 @@ class DeleteProberDataActionTest {
             GracePeriod.create(
                 ADD,
                 domain.getRepoId(),
-                DELETION_TIME.plusDays(5),
+                toInstant(DELETION_TIME.plusDays(5)),
                 "TheRegistrar",
                 billingEvent.createVKey()));
     domain = persistResource(domain.asBuilder().addGracePeriod(gracePeriod).build());

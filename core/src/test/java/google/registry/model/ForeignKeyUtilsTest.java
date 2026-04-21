@@ -19,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
@@ -73,7 +74,7 @@ class ForeignKeyUtilsTest {
   @Test
   void testSuccess_loadKeyMostRecentResource() {
     Host host = persistActiveHost("ns1.example.com");
-    persistResource(host.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
+    persistResource(host.asBuilder().setDeletionTime(minusDays(fakeClock.now(), 1)).build());
     fakeClock.advanceOneMilli();
     Host newHost = persistActiveHost("ns1.example.com");
     assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
@@ -89,7 +90,7 @@ class ForeignKeyUtilsTest {
   @Test
   void testSuccess_loadKeyDeletedForeignKey_returnsNull() {
     Host host = persistActiveHost("ns1.example.com");
-    persistResource(host.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
+    persistResource(host.asBuilder().setDeletionTime(minusDays(fakeClock.now(), 1)).build());
     assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
         .isEmpty();
   }
@@ -98,7 +99,7 @@ class ForeignKeyUtilsTest {
   void testSuccess_mostRecentKeySoftDeleted_returnsNull() {
     Host host1 = persistActiveHost("ns1.example.com");
     fakeClock.advanceOneMilli();
-    persistResource(host1.asBuilder().setDeletionTime(fakeClock.nowUtc()).build());
+    persistResource(host1.asBuilder().setDeletionTime(fakeClock.now()).build());
     assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
         .isEmpty();
   }
@@ -107,14 +108,14 @@ class ForeignKeyUtilsTest {
   void testSuccess_batchLoadKeys_skipsDeletedAndNonexistent() {
     Host host1 = persistActiveHost("ns1.example.com");
     Host host2 = persistActiveHost("ns2.example.com");
-    persistResource(host2.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
+    persistResource(host2.asBuilder().setDeletionTime(minusDays(fakeClock.now(), 1)).build());
     assertThat(
             ForeignKeyUtils.loadKeys(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.nowUtc()))
         .containsExactlyEntriesIn(ImmutableMap.of("ns1.example.com", host1.createVKey()));
-    persistResource(host1.asBuilder().setDeletionTime(fakeClock.nowUtc()).build());
+    persistResource(host1.asBuilder().setDeletionTime(fakeClock.now()).build());
     fakeClock.advanceOneMilli();
     Host newHost1 = persistActiveHost("ns1.example.com");
     assertThat(
@@ -129,14 +130,14 @@ class ForeignKeyUtilsTest {
   void testSuccess_loadHostKeysCached_cacheIsStale() {
     Host host1 = persistActiveHost("ns1.example.com");
     Host host2 = persistActiveHost("ns2.example.com");
-    persistResource(host2.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
+    persistResource(host2.asBuilder().setDeletionTime(minusDays(fakeClock.now(), 1)).build());
     assertThat(
             ForeignKeyUtils.loadKeysByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.nowUtc()))
         .containsExactlyEntriesIn(ImmutableMap.of("ns1.example.com", host1.createVKey()));
-    persistResource(host1.asBuilder().setDeletionTime(fakeClock.nowUtc()).build());
+    persistResource(host1.asBuilder().setDeletionTime(fakeClock.now()).build());
     fakeClock.advanceOneMilli();
     persistActiveHost("ns1.example.com");
     // Even though a new host1 is now live, the cache still returns the VKey to the old one.

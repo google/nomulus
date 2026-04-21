@@ -560,7 +560,7 @@ public class DomainFlowUtils {
 
     // If the resultant autorenew poll message would have no poll messages to deliver, then just
     // delete it. Otherwise, save it with the new end time.
-    if (isAtOrAfter(updatedAutorenewPollMessage.getEventTime(), newEndTime)) {
+    if (isAtOrAfter(updatedAutorenewPollMessage.getEventTime(), toInstant(newEndTime))) {
       autorenewPollMessage.ifPresent(autorenew -> tm().delete(autorenew));
     } else {
       tm().put(updatedAutorenewPollMessage);
@@ -1081,7 +1081,7 @@ public class DomainFlowUtils {
                       for (DomainTransactionRecord record :
                           historyEntry.getDomainTransactionRecords()) {
                         if (cancelableFields.contains(record.getReportField())
-                            && record.getReportingTime().isAfter(now)) {
+                            && record.getReportingTime().isAfter(toInstant(now))) {
                           return true;
                         }
                       }

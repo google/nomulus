@@ -228,7 +228,7 @@ public class BsaValidateAction implements Runnable {
   }
 
   boolean isStalenessAllowed(Domain domain) {
-    return domain.getCreationTimeInstant().plus(maxStaleness).isAfter(clock.now());
+    return domain.getCreationTime().plus(maxStaleness).isAfter(clock.now());
   }
 
   /** Returns unique labels across all block lists in the download specified by {@code jobName}. */

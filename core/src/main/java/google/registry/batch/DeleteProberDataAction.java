@@ -188,7 +188,8 @@ public class DeleteProberDataAction implements Runnable {
         tm().query(DOMAIN_QUERY_STRING, Domain.class)
             .setParameter("tlds", deletableTlds)
             .setParameter(
-                "creationTimeCutoff", CreateAutoTimestamp.create(now.minus(DOMAIN_USED_DURATION)))
+                "creationTimeCutoff",
+                CreateAutoTimestamp.create(toInstant(now.minus(DOMAIN_USED_DURATION))))
             .setParameter("nowMinusSoftDeleteDelay", toInstant(now.minus(SOFT_DELETE_DELAY)))
             .setParameter("now", toInstant(now));
     ImmutableList<Domain> domainList =
@@ -304,12 +305,12 @@ public class DeleteProberDataAction implements Runnable {
   // Take a DNS queue + admin registrar id as input so that it can be called from the mapper as well
   private void softDeleteDomain(Domain domain) {
     Domain deletedDomain =
-        domain.asBuilder().setDeletionTime(tm().getTransactionTime()).setStatusValues(null).build();
+        domain.asBuilder().setDeletionTime(tm().getTxTime()).setStatusValues(null).build();
     DomainHistory historyEntry =
         new DomainHistory.Builder()
             .setDomain(domain)
             .setType(DOMAIN_DELETE)
-            .setModificationTime(tm().getTransactionTime())
+            .setModificationTime(tm().getTxTime())
             .setBySuperuser(true)
             .setReason("Deletion of prober data")
             .setRegistrarId(registryAdminRegistrarId)
