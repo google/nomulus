@@ -19,7 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Ascii;
@@ -60,7 +60,7 @@ abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdate
           newTld(
               tldStr,
               Ascii.toUpperCase(tldStr),
-              ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY),
+              ImmutableSortedMap.of(START_INSTANT, GENERAL_AVAILABILITY),
               TldType.TEST);
       persistPremiumList(tldStr, currency, premiumListInput);
       persistResource(registry);

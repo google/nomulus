@@ -154,8 +154,7 @@ public final class EppResourceUtils {
    * @return the resource at {@code timestamp} or {@code null} if resource is deleted or not yet
    *     created.
    */
-  public static <T extends EppResource> T loadAtPointInTime(
-      final T resource, final Instant timestamp) {
+  public static <T extends EppResource> T loadAtPointInTime(final T resource, Instant timestamp) {
     // If we're before the resource creation time, don't try to find a "most recent revision".
     if (timestamp.isBefore(resource.getCreationTime())) {
       return null;
@@ -189,7 +188,7 @@ public final class EppResourceUtils {
    * falling back to using the resource as-is if there are no revisions.
    */
   private static <T extends EppResource> T loadMostRecentRevisionAtTime(
-      final T resource, final Instant timestamp) {
+      final T resource, Instant timestamp) {
     @SuppressWarnings("unchecked")
     T resourceAtPointInTime =
         (T)

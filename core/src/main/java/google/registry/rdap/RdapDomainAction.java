@@ -85,7 +85,7 @@ public class RdapDomainAction extends RdapActionBase {
 
   private void handlePossibleBsaBlock(InternetDomainName domainName) {
     Tld tld = Tld.get(domainName.parent().toString());
-    if (DomainFlowUtils.isBlockedByBsa(domainName.parts().getFirst(), tld, clock.nowUtc())) {
+    if (DomainFlowUtils.isBlockedByBsa(domainName.parts().getFirst(), tld, clock.now())) {
       throw new DomainBlockedByBsaException(domainName + " blocked by BSA");
     }
   }

@@ -24,7 +24,7 @@ import static google.registry.tmch.LordnTaskUtils.COLUMNS_CLAIMS;
 import static google.registry.tmch.LordnTaskUtils.COLUMNS_SUNRISE;
 import static google.registry.tmch.LordnTaskUtils.getCsvLineForClaimsDomain;
 import static google.registry.tmch.LordnTaskUtils.getCsvLineForSunriseDomain;
-import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -172,8 +172,7 @@ public final class NordnUploadAction implements Runnable {
                       phase.equals(PARAM_LORDN_PHASE_SUNRISE) ? COLUMNS_SUNRISE : COLUMNS_CLAIMS;
                   String header =
                       String.format(
-                          "1,%s,%d\n%s\n",
-                          ISO_8601_FORMATTER.format(clock.now()), domains.size(), columns);
+                          "1,%s,%d\n%s\n", formatInstant(clock.now()), domains.size(), columns);
                   try {
                     URL url =
                         uploadCsvToLordn(String.format("/LORDN/%s/%s", tld, phase), header + csv);

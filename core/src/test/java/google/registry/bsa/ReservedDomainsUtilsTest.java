@@ -70,8 +70,8 @@ class ReservedDomainsUtilsTest {
             .asBuilder()
             .setTldStateTransitions(
                 ImmutableSortedMap.of(
-                    fakeClock.nowUtc(), START_DATE_SUNRISE,
-                    fakeClock.nowUtc().plusMillis(1), GENERAL_AVAILABILITY))
+                    fakeClock.now(), START_DATE_SUNRISE,
+                    fakeClock.now().plusMillis(1), GENERAL_AVAILABILITY))
             .build());
     addReservedListsToTld("tld", ImmutableList.of("testlist"));
 
@@ -81,20 +81,20 @@ class ReservedDomainsUtilsTest {
 
   @Test
   void enumerateReservedDomain_in_sunrise() {
-    assertThat(getAllReservedDomainsInTld(Tld.get("tld"), fakeClock.nowUtc()))
+    assertThat(getAllReservedDomainsInTld(Tld.get("tld"), fakeClock.now()))
         .containsExactly("specific.tld", "anchor.tld", "fully.tld");
   }
 
   @Test
   void enumerateReservedDomain_after_sunrise() {
     fakeClock.advanceOneMilli();
-    assertThat(getAllReservedDomainsInTld(Tld.get("tld"), fakeClock.nowUtc()))
+    assertThat(getAllReservedDomainsInTld(Tld.get("tld"), fakeClock.now()))
         .containsExactly("sunrise.tld", "name.tld", "specific.tld", "anchor.tld", "fully.tld");
   }
 
   @Test
   void enumerateReservedDomain_multiple_lists() {
-    assertThat(getAllReservedDomainsInTld(Tld.get("tld2"), fakeClock.nowUtc()))
+    assertThat(getAllReservedDomainsInTld(Tld.get("tld2"), fakeClock.now()))
         .containsExactly(
             "somethingelse.tld2",
             "sunrise.tld2",

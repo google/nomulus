@@ -14,7 +14,7 @@
 
 package google.registry.util;
 
-import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
+import static google.registry.util.DateTimeUtils.formatInstant;
 
 import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class InstantTypeAdapter extends StringBaseTypeAdapter<Instant> {
     if (value == null) {
       writer.value("null");
     } else {
-      writer.value(ISO_8601_FORMATTER.format(value));
+      writer.value(formatInstant(value));
     }
   }
 }

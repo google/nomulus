@@ -31,11 +31,9 @@ import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
@@ -688,18 +686,14 @@ public class DomainTest {
         Tld.get("com")
             .asBuilder()
             .setRenewBillingCostTransitions(
-                new ImmutableSortedMap.Builder<DateTime, Money>(Ordering.natural())
-                    .put(START_OF_TIME, Money.of(USD, 1))
-                    .put(toDateTime(oldExpirationTime.plusMillis(1)), Money.of(USD, 2))
-                    .put(
-                        toDateTime(plusYears(oldExpirationTime, 1).plusMillis(1)), Money.of(USD, 3))
+                new ImmutableSortedMap.Builder<Instant, Money>(Ordering.natural())
+                    .put(START_INSTANT, Money.of(USD, 1))
+                    .put(oldExpirationTime.plusMillis(1), Money.of(USD, 2))
+                    .put(plusYears(oldExpirationTime, 1).plusMillis(1), Money.of(USD, 3))
                     // Surround the third autorenew with price changes right before and after just
                     // to be 100% sure that we lookup the cost at the expiration time.
-                    .put(
-                        toDateTime(plusYears(oldExpirationTime, 2).minusMillis(1)),
-                        Money.of(USD, 4))
-                    .put(
-                        toDateTime(plusYears(oldExpirationTime, 2).plusMillis(1)), Money.of(USD, 5))
+                    .put(plusYears(oldExpirationTime, 2).minusMillis(1), Money.of(USD, 4))
+                    .put(plusYears(oldExpirationTime, 2).plusMillis(1), Money.of(USD, 5))
                     .build())
             .build());
     Domain renewedThreeTimes = domain.cloneProjectedAtTime(plusYears(oldExpirationTime, 2));

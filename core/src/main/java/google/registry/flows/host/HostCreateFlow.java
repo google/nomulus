@@ -25,7 +25,6 @@ import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig.Config;
@@ -101,7 +100,7 @@ public final class HostCreateFlow implements MutatingFlow {
     extensionManager.validate();
     Create command = (Create) resourceCommand;
     Instant now = tm().getTxTime();
-    verifyResourceDoesNotExist(Host.class, targetId, toDateTime(now), registrarId);
+    verifyResourceDoesNotExist(Host.class, targetId, now, registrarId);
     // The superordinate domain of the host object if creating an in-bailiwick host, or null if
     // creating an external host. This is looked up before we actually create the Host object, so
     // we can detect error conditions earlier.

@@ -801,10 +801,10 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitionsInstant(
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
@@ -1047,7 +1047,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 11.1)))
             .build());
     setEppInput("domain_check_fee_fractional_stdv1.xml");
@@ -1150,10 +1150,10 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         createTld("example")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitionsInstant(
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
@@ -1327,7 +1327,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("example")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<Instant, Money>(Ordering.natural())
                     .put(START_INSTANT, Money.of(USD, 0))
                     .put(minusDays(clock.now(), 1), Money.of(USD, 100))
@@ -1356,7 +1356,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("example")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<Instant, Money>(Ordering.natural())
                     .put(START_INSTANT, Money.of(USD, 0))
                     .put(minusDays(startTime, 1), Money.of(USD, 100))
@@ -2073,10 +2073,10 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         createTld("example")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitionsInstant(
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
@@ -2137,7 +2137,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 11.1)))
             .build());
     setEppInput("domain_check_fee_fractional_v06.xml");
@@ -2453,7 +2453,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<Instant, Money>(Ordering.natural())
                     .put(START_INSTANT, Money.of(USD, 0))
                     .put(minusDays(clock.now(), 1), Money.of(USD, 100))

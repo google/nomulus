@@ -22,7 +22,6 @@ import static google.registry.util.DateTimeUtils.plusYears;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
-import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
@@ -45,9 +44,7 @@ class TimeOfYearTest {
     // This should be lossless because atOrAfter includes an exact match.
     assertThat(TimeOfYear.fromInstant(march1).getNextInstanceAtOrAfter(march1)).isEqualTo(march1);
     // This should be a year later because we stepped forward a millisecond
-    assertThat(
-            TimeOfYear.fromInstant(march1)
-                .getNextInstanceAtOrAfter(march1.plus(Duration.ofMillis(1))))
+    assertThat(TimeOfYear.fromInstant(march1).getNextInstanceAtOrAfter(march1.plusMillis(1)))
         .isEqualTo(plusYears(march1, 1));
   }
 
@@ -56,9 +53,7 @@ class TimeOfYearTest {
     // This should be lossless because beforeOrAt includes an exact match.
     assertThat(TimeOfYear.fromInstant(march1).getLastInstanceBeforeOrAt(march1)).isEqualTo(march1);
     // This should be a year earlier because we stepped backward a millisecond
-    assertThat(
-            TimeOfYear.fromInstant(march1)
-                .getLastInstanceBeforeOrAt(march1.minus(Duration.ofMillis(1))))
+    assertThat(TimeOfYear.fromInstant(march1).getLastInstanceBeforeOrAt(march1.minusMillis(1)))
         .isEqualTo(minusYears(march1, 1));
   }
 

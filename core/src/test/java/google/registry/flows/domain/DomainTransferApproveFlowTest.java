@@ -120,7 +120,7 @@ class DomainTransferApproveFlowTest
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 new ImmutableSortedMap.Builder<Instant, Money>(Ordering.natural())
                     .put(START_INSTANT, Money.of(USD, 1))
                     .put(minusDays(clock.now(), 1).plusMillis(1), Money.of(USD, 22))

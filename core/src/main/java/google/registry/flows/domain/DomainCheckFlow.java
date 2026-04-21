@@ -82,6 +82,7 @@ import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -89,7 +90,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.joda.money.CurrencyUnit;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that checks whether a domain can be provisioned.
@@ -156,7 +156,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
     extensionManager.validate();
     ImmutableList<String> domainNames = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(domainNames, maxChecks);
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     ImmutableMap.Builder<String, InternetDomainName> parsedDomainsBuilder =
         new ImmutableMap.Builder<>();
     // Only check that the registrar has access to a TLD the first time it is encountered
@@ -225,7 +225,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
       ImmutableSet<InternetDomainName> bsaBlockedDomainNames,
       ImmutableMap<String, TldState> tldStates,
       ImmutableMap<String, InternetDomainName> parsedDomains,
-      DateTime now)
+      Instant now)
       throws EppException {
     InternetDomainName idn = parsedDomains.get(domainName);
     Optional<AllocationToken> token;
@@ -286,7 +286,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
       ImmutableMap<String, InternetDomainName> domainNames,
       ImmutableMap<String, VKey<Domain>> existingDomains,
       ImmutableSet<String> availableDomains,
-      DateTime now)
+      Instant now)
       throws EppException {
     Optional<FeeCheckCommandExtension> feeCheckOpt =
         eppInput.getSingleExtension(FeeCheckCommandExtension.class);
@@ -480,7 +480,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
   }
 
   static ImmutableSet<InternetDomainName> getBsaBlockedDomains(
-      ImmutableCollection<InternetDomainName> parsedDomains, DateTime now) {
+      ImmutableCollection<InternetDomainName> parsedDomains, Instant now) {
     Map<String, ImmutableList<InternetDomainName>> labelToDomainNames =
         parsedDomains.stream()
             .filter(

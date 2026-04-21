@@ -24,6 +24,8 @@ import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
+import static google.registry.util.DateTimeUtils.minusHours;
+import static google.registry.util.DateTimeUtils.plusHours;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
@@ -42,7 +44,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import java.time.Duration;
 import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,11 +91,9 @@ public class SyncRegistrarsSheetTest {
   @Test
   void test_wereRegistrarsModified_atDifferentCursorTimes() {
     persistNewRegistrar("SomeRegistrar", "Some Registrar Inc.", Registrar.Type.REAL, 8L);
-    persistResource(
-        Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.now().minus(Duration.ofHours(1))));
+    persistResource(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, minusHours(clock.now(), 1)));
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isTrue();
-    persistResource(
-        Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.now().plus(Duration.ofHours(1))));
+    persistResource(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, plusHours(clock.now(), 1)));
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isFalse();
   }
 

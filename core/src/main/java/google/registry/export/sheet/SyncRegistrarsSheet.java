@@ -44,7 +44,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /**
  * Class for synchronizing all {@link Registrar} objects to a Google Spreadsheet.
@@ -75,7 +74,7 @@ class SyncRegistrarsSheet {
 
   /** Performs the synchronization operation. */
   void run(String spreadsheetId) throws IOException {
-    final DateTime executionTime = clock.nowUtc();
+    Instant executionTime = clock.now();
     sheetSynchronizer.synchronize(
         spreadsheetId,
         new Ordering<Registrar>() {

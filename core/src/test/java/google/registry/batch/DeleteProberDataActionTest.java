@@ -49,7 +49,6 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.RegistryEnvironment;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
@@ -239,7 +238,7 @@ class DeleteProberDataActionTest {
     persistResource(
         DatabaseHelper.newDomain("blah.ib-any.test")
             .asBuilder()
-            .setCreationTimeForTest(clock.now().minus(Duration.ofSeconds(1)))
+            .setCreationTimeForTest(clock.now().minusSeconds(1))
             .build());
     action.run();
     Optional<Domain> domain =

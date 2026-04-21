@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.findDuplicates;
 import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.beust.jcommander.Parameter;
@@ -72,7 +73,8 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
     checkArgument(period < 10, "Cannot renew domains for 10 or more years");
     DateTime now = clock.nowUtc();
     for (String domainName : mainParameters) {
-      Domain domain = ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, now);
+      Domain domain =
+          ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, toInstant(now));
       setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
       SoyMapData soyMapData =
           new SoyMapData(
