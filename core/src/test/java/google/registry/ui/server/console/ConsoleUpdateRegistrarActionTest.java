@@ -46,8 +46,8 @@ import jakarta.mail.internet.InternetAddress;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -115,7 +115,7 @@ class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
     action.run();
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     assertThat(newRegistrar.getLastPocVerificationDate())
-        .isEqualTo(DateTime.parse("1970-01-01T00:00:00.000Z"));
+        .isEqualTo(Instant.parse("1970-01-01T00:00:00.000Z"));
   }
 
   @Test

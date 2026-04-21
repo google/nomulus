@@ -32,8 +32,8 @@ import google.registry.request.auth.Auth;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.Optional;
-import org.joda.time.Days;
 
 /**
  * An action that checks all {@link BulkPricingPackage} objects for compliance with their max create
@@ -111,8 +111,7 @@ public class CheckBulkComplianceAction implements Runnable {
                       + " 'DOMAIN_CREATE'",
                   Long.class)
               .setParameter("token", bulkPricingPackage.getToken())
-              .setParameter(
-                  "lastBilling", minusYears(bulkPricingPackage.getNextBillingDateInstant(), 1))
+              .setParameter("lastBilling", minusYears(bulkPricingPackage.getNextBillingDate(), 1))
               .getSingleResult();
       if (creates > bulkPricingPackage.getMaxCreates()) {
         long overage = creates - bulkPricingPackage.getMaxCreates();
@@ -186,7 +185,7 @@ public class CheckBulkComplianceAction implements Runnable {
       int daysSinceLastNotification =
           bulkPricingPackage
               .getLastNotificationSent()
-              .map(sentDate -> Days.daysBetween(sentDate, clock.nowUtc()).getDays())
+              .map(sentDate -> (int) Duration.between(sentDate, clock.now()).toDays())
               .orElse(Integer.MAX_VALUE);
       // Send a warning email if 30-39 days since last notification and an upgrade email if 40+ days
       if (daysSinceLastNotification >= THIRTY_DAYS) {
@@ -222,7 +221,7 @@ public class CheckBulkComplianceAction implements Runnable {
               bulkPricingPackage.getMaxDomains(),
               activeDomains);
       sendNotification(bulkToken, emailSubject, body, registrar.get());
-      tm().put(bulkPricingPackage.asBuilder().setLastNotificationSent(clock.nowUtc()).build());
+      tm().put(bulkPricingPackage.asBuilder().setLastNotificationSent(clock.now()).build());
     } else {
       throw new IllegalStateException(
           String.format("Could not find registrar for bulk token %s", bulkToken));

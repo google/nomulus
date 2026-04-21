@@ -29,7 +29,9 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -41,6 +43,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.testing.DatabaseHelper;
+import java.time.Instant;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -423,9 +426,9 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setTokenStatusTransitions(
-                    ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                        .put(START_OF_TIME, NOT_STARTED)
-                        .put(now.minusDays(1), VALID)
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, NOT_STARTED)
+                        .put(toInstant(now.minusDays(1)), VALID)
                         .build())
                 .build());
     runCommandForced(
@@ -452,9 +455,9 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setTokenStatusTransitions(
-                    ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                        .put(START_OF_TIME, NOT_STARTED)
-                        .put(now.minusDays(1), VALID)
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, NOT_STARTED)
+                        .put(toInstant(now.minusDays(1)), VALID)
                         .build())
                 .build());
     createTld("tld");
@@ -568,10 +571,10 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .setToken("token")
         .setTokenType(UNLIMITED_USE)
         .setTokenStatusTransitions(
-            ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                .put(START_OF_TIME, NOT_STARTED)
-                .put(now.minusDays(1), VALID)
-                .put(now.plusDays(1), ENDED)
+            ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                .put(START_INSTANT, NOT_STARTED)
+                .put(toInstant(now.minusDays(1)), VALID)
+                .put(toInstant(now.plusDays(1)), ENDED)
                 .build());
   }
 }

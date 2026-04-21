@@ -38,12 +38,13 @@ import google.registry.tools.params.NameserversParameter;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
 import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
 
 /** A command to suspend a domain for the Uniform Rapid Suspension process. */
 @Parameters(separators = " =",
@@ -158,9 +159,9 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
               "domainName",
               domain.getDomainName(),
               "expirationDate",
-              domain
-                  .getRegistrationExpirationDateTime()
-                  .toString(DateTimeFormat.forPattern("YYYY-MM-dd")),
+              DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                  .withZone(ZoneOffset.UTC)
+                  .format(domain.getRegistrationExpirationTime()),
               // period is the number of years to renew the registration for
               "period",
               String.valueOf(1),

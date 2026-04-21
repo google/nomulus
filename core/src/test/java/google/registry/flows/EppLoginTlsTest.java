@@ -18,6 +18,7 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.X509Utils.getCertificateHash;
 
 import com.google.common.collect.ImmutableMap;
@@ -77,13 +78,13 @@ class EppLoginTlsTest extends EppTestCase {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, clock.nowUtc())
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, clock.now())
             .build());
     // Set a cert for the second registrar, or else any cert will be allowed for login.
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.now())
             .build());
   }
 
@@ -156,8 +157,8 @@ class EppLoginTlsTest extends EppTestCase {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, now)
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, now)
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, toInstant(now))
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, toInstant(now))
             .build());
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
   }
@@ -169,8 +170,8 @@ class EppLoginTlsTest extends EppTestCase {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT, now)
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT3, now)
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT, toInstant(now))
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT3, toInstant(now))
             .build());
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
   }
@@ -182,8 +183,8 @@ class EppLoginTlsTest extends EppTestCase {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(null, now)
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT3, now)
+            .setClientCertificate(null, toInstant(now))
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT3, toInstant(now))
             .build());
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
   }
@@ -195,8 +196,8 @@ class EppLoginTlsTest extends EppTestCase {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(null, now)
-            .setFailoverClientCertificate(null, now)
+            .setClientCertificate(null, toInstant(now))
+            .setFailoverClientCertificate(null, toInstant(now))
             .build());
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
@@ -211,8 +212,8 @@ class EppLoginTlsTest extends EppTestCase {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT, clock.nowUtc())
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT, clock.now())
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.now())
             .build());
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
@@ -244,8 +245,8 @@ class EppLoginTlsTest extends EppTestCase {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(sw.toString(), clock.nowUtc())
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
+            .setClientCertificate(sw.toString(), clock.now())
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.now())
             .build());
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
@@ -255,9 +256,10 @@ class EppLoginTlsTest extends EppTestCase {
                 "2200",
                 "MSG",
                 """
-                    Registrar certificate contains the following security violations:
-                    Certificate is expired.
-                    Certificate validity period is too long; it must be less than or equal to 398\
-                     days."""));
+                Registrar certificate contains the following security violations:
+                Certificate is expired.
+                Certificate validity period is too long; it must be less than or equal to 398\
+                 days.\
+                """));
   }
 }

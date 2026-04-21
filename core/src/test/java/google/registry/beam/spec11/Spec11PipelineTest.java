@@ -22,6 +22,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -289,9 +290,9 @@ class Spec11PipelineTest {
         .setCreationRegistrarId(registrar.getRegistrarId())
         .setLastEppUpdateTime(fakeClock.now())
         .setLastEppUpdateRegistrarId(registrar.getRegistrarId())
-        .setLastTransferTime(fakeClock.nowUtc())
+        .setLastTransferTime(fakeClock.now())
         .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
-        .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
+        .setRegistrationExpirationTime(plusYears(fakeClock.now(), 1))
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
         .build();
   }

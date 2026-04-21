@@ -385,7 +385,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
     Domain domain = reloadResourceByForeignKey();
     Instant redemptionEndTime = plusDays(domain.getLastEppUpdateTime(), 3);
-    Domain domainAtRedemptionTime = domain.cloneProjectedAtInstant(redemptionEndTime);
+    Domain domainAtRedemptionTime = domain.cloneProjectedAtTime(redemptionEndTime);
     assertAboutDomains()
         .that(domainAtRedemptionTime)
         .hasLastEppUpdateRegistrarId("TheRegistrar")

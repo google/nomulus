@@ -28,7 +28,6 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 
 import com.google.common.collect.ImmutableList;
@@ -148,7 +147,7 @@ class RdapJsonFormatterTest {
             makeDomain("cat.みんな", hostIpv4, hostIpv6, registrar)
                 .asBuilder()
                 .setCreationTimeForTest(minusMonths(clock.now(), 4))
-                .setLastEppUpdateTime(toInstant(clock.nowUtc().minusMonths(1)))
+                .setLastEppUpdateTime(minusMonths(clock.now(), 1))
                 .build());
     domainNoNameserversNoTransfers =
         persistResource(

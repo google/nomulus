@@ -170,7 +170,7 @@ public abstract class DateTimeUtils {
    * Adds years to a date, in the {@code Duration} sense of semantic years. Use this instead of
    * {@link java.time.ZonedDateTime#plusYears} to ensure that we never end up on February 29.
    */
-  public static Instant plusYears(Instant now, long years) {
+  public static Instant plusYears(Instant now, int years) {
     checkArgument(years >= 0);
     return (years == 0)
         ? now

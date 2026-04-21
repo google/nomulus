@@ -289,7 +289,8 @@ public final class DomainTransferUtils {
       String targetId,
       Domain existingDomain,
       Optional<Money> transferCost) {
-    Domain domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
+    Domain domainAtTransferTime =
+        existingDomain.cloneProjectedAtTime(toInstant(automaticTransferTime));
     GracePeriod autorenewGracePeriod =
         getOnlyElement(
             domainAtTransferTime.getGracePeriodsOfType(GracePeriodStatus.AUTO_RENEW), null);

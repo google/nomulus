@@ -24,7 +24,9 @@ import static google.registry.testing.DatabaseHelper.assertAllocationTokens;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,6 +46,7 @@ import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.DeterministicStringGenerator.Rule;
 import google.registry.util.StringGenerator.Alphabets;
 import java.io.File;
+import java.time.Instant;
 import java.util.Collection;
 import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
@@ -158,10 +161,10 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
             .setDiscountPremiums(true)
             .setDiscountYears(6)
             .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(promoStart, TokenStatus.VALID)
-                    .put(promoEnd, TokenStatus.ENDED)
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(toInstant(promoStart), TokenStatus.VALID)
+                    .put(toInstant(promoEnd), TokenStatus.ENDED)
                     .build())
             .build());
   }
@@ -200,10 +203,10 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
             .setDiscountPremiums(false)
             .setDiscountYears(6)
             .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(promoStart, TokenStatus.VALID)
-                    .put(promoEnd, TokenStatus.ENDED)
+                ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                    .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                    .put(toInstant(promoStart), TokenStatus.VALID)
+                    .put(toInstant(promoEnd), TokenStatus.ENDED)
                     .build())
             .build());
   }

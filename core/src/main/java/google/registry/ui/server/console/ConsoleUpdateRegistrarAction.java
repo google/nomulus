@@ -17,7 +17,8 @@ package google.registry.ui.server.console;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -36,6 +37,7 @@ import google.registry.request.auth.Auth;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
@@ -92,13 +94,13 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
               }
 
               DateTime now = tm().getTransactionTime();
-              DateTime newLastPocVerificationDate =
+              Instant newLastPocVerificationDate =
                   registrarParam.getLastPocVerificationDate() == null
-                      ? START_OF_TIME
+                      ? START_INSTANT
                       : registrarParam.getLastPocVerificationDate();
 
               checkArgument(
-                  newLastPocVerificationDate.isBefore(now),
+                  newLastPocVerificationDate.isBefore(toInstant(now)),
                   "Invalid value of LastPocVerificationDate - value is in the future");
 
               var updatedRegistrarBuilder =

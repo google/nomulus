@@ -265,7 +265,8 @@ public final class DomainLockUtilsTest {
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, "0")
-            .scheduleTime(clock.nowUtc().plus(lock.getRelockDuration().get())));
+            .scheduleTime(
+                clock.nowUtc().plusMillis((int) lock.getRelockDuration().get().getMillis())));
   }
 
   @Test
@@ -491,7 +492,8 @@ public final class DomainLockUtilsTest {
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, "0")
-            .scheduleTime(clock.nowUtc().plus(lock.getRelockDuration().get())));
+            .scheduleTime(
+                clock.nowUtc().plusMillis((int) lock.getRelockDuration().get().getMillis())));
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)

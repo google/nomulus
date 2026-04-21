@@ -185,7 +185,7 @@ public final class ForeignKeyUtils {
       Class<E> clazz, Collection<String> foreignKeys, Instant now) {
     return loadMostRecentResourceObjects(clazz, foreignKeys, false).entrySet().stream()
         .filter(e -> now.isBefore(e.getValue().getDeletionTime()))
-        .collect(toImmutableMap(Entry::getKey, e -> (E) e.getValue().cloneProjectedAtInstant(now)));
+        .collect(toImmutableMap(Entry::getKey, e -> (E) e.getValue().cloneProjectedAtTime(now)));
   }
 
   /**
@@ -543,6 +543,6 @@ public final class ForeignKeyUtils {
         foreignKeyToResourceCache
             .get(VKey.create(clazz, foreignKey))
             .filter(e -> now.isBefore(e.getDeletionTime()))
-            .map(e -> e.cloneProjectedAtInstant(now));
+            .map(e -> e.cloneProjectedAtTime(now));
   }
 }

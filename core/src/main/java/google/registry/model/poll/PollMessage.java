@@ -549,16 +549,7 @@ public abstract class PollMessage extends ImmutableObject
       return targetId;
     }
 
-    /**
-     * @deprecated Use {@link #getAutorenewEndTimeInstant()}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public DateTime getAutorenewEndTime() {
-      return toDateTime(autorenewEndTime);
-    }
-
-    public Instant getAutorenewEndTimeInstant() {
+    public Instant getAutorenewEndTime() {
       return autorenewEndTime;
     }
 

@@ -240,7 +240,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                     .asBuilder()
                     .setTransferredRegistrationExpirationTime(toInstant(newExpirationTime))
                     .build())
-            .setRegistrationExpirationTime(newExpirationTime)
+            .setRegistrationExpirationTime(toInstant(newExpirationTime))
             .setAutorenewBillingEvent(autorenewEvent.createVKey())
             .setAutorenewPollMessage(gainingClientAutorenewPollMessage.createVKey())
             // Remove all the old grace periods and add a new one for the transfer.
@@ -278,7 +278,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
             createTransferResponse(
                 targetId,
                 newDomain.getTransferData(),
-                newDomain.getRegistrationExpirationDateTime()))
+                toDateTime(newDomain.getRegistrationExpirationTime())))
         .build();
   }
 

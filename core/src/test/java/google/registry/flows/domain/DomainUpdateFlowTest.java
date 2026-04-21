@@ -53,7 +53,6 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -1503,7 +1502,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         persistDomain()
             .asBuilder()
-            .setAutorenewEndTime(Optional.of(toDateTime(expirationTime)))
+            .setAutorenewEndTime(Optional.of(expirationTime))
             .setRegistrationExpirationTime(expirationTime)
             .build());
     clock.advanceOneMilli();

@@ -17,6 +17,7 @@ package google.registry.flows;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -81,7 +82,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   protected <T extends EppResource> T reloadResourceAndCloneAtTime(T resource, DateTime now) {
     @SuppressWarnings("unchecked")
     T refreshedResource =
-        (T) tm().transact(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);
+        (T) tm().transact(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(toInstant(now));
     return refreshedResource;
   }
 

@@ -22,6 +22,7 @@ import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -233,7 +234,7 @@ public final class OteAccountBuilder {
 
   /** Sets the client certificate to all the OT&amp;E Registrars. */
   public OteAccountBuilder setCertificate(String asciiCert, DateTime now) {
-    return transformRegistrars(builder -> builder.setClientCertificate(asciiCert, now));
+    return transformRegistrars(builder -> builder.setClientCertificate(asciiCert, toInstant(now)));
   }
 
   /** Sets the IP allowlist to all the OT&amp;E Registrars. */
