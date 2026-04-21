@@ -245,7 +245,7 @@ public final class DomainLockUtilsTest {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryUnlockRequest(
             DOMAIN_NAME, "TheRegistrar", false, Optional.of(Duration.standardDays(1)));
-    assertThat(lock.getRelockDuration()).hasValue(Duration.standardDays(1));
+    assertThat(lock.getRelockDuration()).isEqualTo(Optional.of(Duration.standardDays(1)));
   }
 
   @Test
@@ -265,7 +265,8 @@ public final class DomainLockUtilsTest {
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, "0")
-            .scheduleTime(clock.nowUtc().plus(lock.getRelockDuration().get())));
+            .scheduleTime(
+                clock.nowUtc().plusMillis((int) lock.getRelockDuration().get().getMillis())));
   }
 
   @Test
@@ -276,7 +277,7 @@ public final class DomainLockUtilsTest {
     RegistryLock resultLock =
         domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
     verifyProperlyLockedDomain(true);
-    assertThat(resultLock.getLockCompletionTime()).hasValue(clock.now());
+    assertThat(resultLock.getLockCompletionTime()).isEqualTo(Optional.of(clock.now()));
   }
 
   @Test
@@ -297,7 +298,7 @@ public final class DomainLockUtilsTest {
     RegistryLock resultLock =
         domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
     verifyProperlyLockedDomain(true);
-    assertThat(resultLock.getLockCompletionTime()).hasValue(clock.now());
+    assertThat(resultLock.getLockCompletionTime()).isEqualTo(Optional.of(clock.now()));
   }
 
   @Test
@@ -491,7 +492,8 @@ public final class DomainLockUtilsTest {
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, "0")
-            .scheduleTime(clock.nowUtc().plus(lock.getRelockDuration().get())));
+            .scheduleTime(
+                clock.nowUtc().plusMillis((int) lock.getRelockDuration().get().getMillis())));
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)

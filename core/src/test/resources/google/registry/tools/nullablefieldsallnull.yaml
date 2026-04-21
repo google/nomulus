@@ -12,7 +12,7 @@ driveFolderId: null
 tldType: "REAL"
 invoicingEnabled: false
 tldStateTransitions:
-  "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
+  "1970-01-01T00:00:00Z": "GENERAL_AVAILABILITY"
 creationTime: "2022-09-01T00:00:00.000Z"
 reservedListNames: null
 premiumListName: null
@@ -28,7 +28,7 @@ automaticTransferLength: "PT2592000S"
 pendingDeleteLength: "PT2592000S"
 currency: "USD"
 createBillingCostTransitions:
-  "1970-01-01T00:00:00.000Z":
+  "1970-01-01T00:00:00Z":
     currency: "USD"
     amount: 25.00
 restoreBillingCost:
@@ -41,7 +41,7 @@ registryLockOrUnlockBillingCost:
   currency: "USD"
   amount: 0.00
 renewBillingCostTransitions:
-  "1970-01-01T00:00:00.000Z":
+  "1970-01-01T00:00:00Z":
     currency: "USD"
     amount: 11.00
 lordnUsername: null
@@ -50,6 +50,6 @@ allowedFullyQualifiedHostNames: null
 defaultPromoTokens: null
 idnTables: null
 eapFeeSchedule:
-  "1970-01-01T00:00:00.000Z":
+  "1970-01-01T00:00:00Z":
     currency: "USD"
     amount: 0.00

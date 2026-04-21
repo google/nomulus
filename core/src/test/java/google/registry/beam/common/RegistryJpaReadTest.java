@@ -20,7 +20,8 @@ import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -176,7 +177,7 @@ public class RegistryJpaReadTest {
             .setCreationRegistrarId(registrar.getRegistrarId())
             .setLastEppUpdateTime(fakeClock.now())
             .setLastEppUpdateRegistrarId(registrar.getRegistrarId())
-            .setLastTransferTime(fakeClock.nowUtc())
+            .setLastTransferTime(fakeClock.now())
             .setStatusValues(
                 ImmutableSet.of(
                     StatusValue.CLIENT_DELETE_PROHIBITED,
@@ -187,11 +188,11 @@ public class RegistryJpaReadTest {
                     StatusValue.SERVER_HOLD))
             .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
             .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
-            .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
+            .setRegistrationExpirationTime(toInstant(fakeClock.nowUtc().plusYears(1)))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
             .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .setLaunchNotice(
-                LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
+                LaunchNotice.create("tcnid", "validatorId", START_INSTANT, START_INSTANT))
             .setSmdId("smdid")
             .addGracePeriod(
                 GracePeriod.create(

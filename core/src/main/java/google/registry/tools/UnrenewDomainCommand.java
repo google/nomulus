@@ -23,6 +23,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.beust.jcommander.Parameter;
@@ -44,6 +45,7 @@ import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
 import jakarta.inject.Inject;
 import java.io.UnsupportedEncodingException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -99,9 +101,10 @@ class UnrenewDomainCommand extends ConfirmingCommand {
       }
       domainsWithDisallowedStatusesBuilder.putAll(
           domainName, Sets.intersection(domain.get().getStatusValues(), DISALLOWED_STATUSES));
-      if (isBeforeOrAt(minusYears(domain.get().getRegistrationExpirationDateTime(), period), now)) {
+      if (isBeforeOrAt(
+          toDateTime(minusYears(domain.get().getRegistrationExpirationTime(), period)), now)) {
         domainsExpiringTooSoonBuilder.put(
-            domainName, domain.get().getRegistrationExpirationDateTime());
+            domainName, toDateTime(domain.get().getRegistrationExpirationTime()));
       }
     }
 
@@ -144,8 +147,8 @@ class UnrenewDomainCommand extends ConfirmingCommand {
     DateTime now = clock.nowUtc();
     for (String domainName : mainParameters) {
       Domain domain = ForeignKeyUtils.loadResource(Domain.class, domainName, now).get();
-      DateTime previousTime = domain.getRegistrationExpirationDateTime();
-      DateTime newTime = minusYears(previousTime, period);
+      Instant previousTime = domain.getRegistrationExpirationTime();
+      Instant newTime = minusYears(previousTime, period);
       resultBuilder.append(
           String.format(
               "%s expiration time changed from %s to %s\n", domainName, previousTime, newTime));
@@ -180,11 +183,11 @@ class UnrenewDomainCommand extends ConfirmingCommand {
         "Domain %s has prohibited status values",
         domainName);
     checkState(
-        minusYears(domain.getRegistrationExpirationDateTime(), period).isAfter(now),
+        minusYears(domain.getRegistrationExpirationTime(), period).isAfter(toInstant(now)),
         "Domain %s expires too soon",
         domainName);
 
-    DateTime newExpirationTime = minusYears(domain.getRegistrationExpirationDateTime(), period);
+    Instant newExpirationTime = minusYears(domain.getRegistrationExpirationTime(), period);
     DomainHistory domainHistory =
         new DomainHistory.Builder()
             .setDomain(domain)
@@ -209,18 +212,18 @@ class UnrenewDomainCommand extends ConfirmingCommand {
     // Create a new autorenew billing event and poll message starting at the new expiration time.
     BillingRecurrence newAutorenewEvent =
         newAutorenewBillingEvent(domain)
-            .setEventTime(toInstant(newExpirationTime))
+            .setEventTime(newExpirationTime)
             .setDomainHistory(domainHistory)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(domain)
-            .setEventTime(toInstant(newExpirationTime))
+            .setEventTime(newExpirationTime)
             .setHistoryEntry(domainHistory)
             .build();
     // End the old autorenew billing event and poll message now.
     BillingRecurrence existingBillingRecurrence = tm().loadByKey(domain.getAutorenewBillingEvent());
     updateAutorenewRecurrenceEndTime(
-        domain, existingBillingRecurrence, now, domainHistory.getHistoryEntryId());
+        domain, existingBillingRecurrence, toInstant(now), domainHistory.getHistoryEntryId());
     Domain newDomain =
         domain
             .asBuilder()

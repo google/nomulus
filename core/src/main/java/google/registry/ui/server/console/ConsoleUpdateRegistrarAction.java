@@ -17,7 +17,7 @@ package google.registry.ui.server.console;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -36,9 +36,9 @@ import google.registry.request.auth.Auth;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.joda.time.DateTime;
 
 @Action(
     service = Service.CONSOLE,
@@ -91,10 +91,10 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
                 }
               }
 
-              DateTime now = tm().getTransactionTime();
-              DateTime newLastPocVerificationDate =
+              Instant now = tm().getTxTime();
+              Instant newLastPocVerificationDate =
                   registrarParam.getLastPocVerificationDate() == null
-                      ? START_OF_TIME
+                      ? START_INSTANT
                       : registrarParam.getLastPocVerificationDate();
 
               checkArgument(

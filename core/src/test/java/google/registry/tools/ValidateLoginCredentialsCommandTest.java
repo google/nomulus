@@ -21,6 +21,7 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -56,7 +57,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
         loadRegistrar("NewRegistrar")
             .asBuilder()
             .setPassword(PASSWORD)
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, DateTime.now(UTC))
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, toInstant(DateTime.now(UTC)))
             .setIpAddressAllowList(ImmutableList.of(new CidrAddressBlock(CLIENT_IP)))
             .setState(ACTIVE)
             .setAllowedTlds(ImmutableSet.of("tld"))

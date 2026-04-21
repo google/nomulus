@@ -29,7 +29,6 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import java.time.Instant;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +66,7 @@ public class BulkPricingPackageTest extends EntityTestCase {
             .setBulkPrice(Money.of(CurrencyUnit.USD, 10000))
             .setMaxCreates(40)
             .setMaxDomains(10)
-            .setNextBillingDate(DateTime.parse("2011-11-12T05:00:00Z"))
+            .setNextBillingDate(Instant.parse("2011-11-12T05:00:00Z"))
             .build();
 
     tm().transact(() -> tm().put(bulkPricingPackage));
@@ -99,7 +98,7 @@ public class BulkPricingPackageTest extends EntityTestCase {
                         .setBulkPrice(Money.of(CurrencyUnit.USD, 10000))
                         .setMaxCreates(40)
                         .setMaxDomains(10)
-                        .setNextBillingDate(DateTime.parse("2011-11-12T05:00:00Z"))
+                        .setNextBillingDate(Instant.parse("2011-11-12T05:00:00Z"))
                         .build()));
 
     assertThat(thrown).hasMessageThat().isEqualTo("Allocation token must be a BULK_PRICING type");

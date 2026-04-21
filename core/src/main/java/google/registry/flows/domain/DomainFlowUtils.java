@@ -42,8 +42,6 @@ import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
-import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
 import static java.util.stream.Collectors.joining;
 
@@ -125,6 +123,7 @@ import google.registry.tools.DigestType;
 import google.registry.util.Idn;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -133,7 +132,6 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.xbill.DNS.DNSSEC.Algorithm;
 
@@ -253,7 +251,7 @@ public class DomainFlowUtils {
   public static void verifyNotBlockedByBsa(
       InternetDomainName domainName,
       Tld tld,
-      DateTime now,
+      Instant now,
       Optional<AllocationToken> allocationToken)
       throws DomainLabelBlockedByBsaException {
     if (!isRegisterBsaCreate(domainName, allocationToken)
@@ -262,7 +260,7 @@ public class DomainFlowUtils {
     }
   }
 
-  public static boolean isBlockedByBsa(String domainLabel, Tld tld, DateTime now) {
+  public static boolean isBlockedByBsa(String domainLabel, Tld tld, Instant now) {
     return isEnrolledWithBsa(tld, now) && isLabelBlocked(domainLabel);
   }
 
@@ -458,7 +456,7 @@ public class DomainFlowUtils {
 
   /** Verifies that a launch extension's specified phase matches the specified tld's phase. */
   static void verifyLaunchPhaseMatchesRegistryPhase(
-      Tld tld, LaunchExtension launchExtension, DateTime now) throws EppException {
+      Tld tld, LaunchExtension launchExtension, Instant now) throws EppException {
     if (!LAUNCH_PHASE_TO_TLD_STATES.containsKey(launchExtension.getPhase())
         || !LAUNCH_PHASE_TO_TLD_STATES
             .get(launchExtension.getPhase())
@@ -474,8 +472,8 @@ public class DomainFlowUtils {
    * this registrar.
    */
   static void verifyPremiumNameIsNotBlocked(
-      String domainName, DateTime priceTime, String registrarId) throws EppException {
-    if (isDomainPremium(domainName, toInstant(priceTime))) {
+      String domainName, Instant priceTime, String registrarId) throws EppException {
+    if (isDomainPremium(domainName, priceTime)) {
       if (Registrar.loadByRegistrarIdCached(registrarId).get().getBlockPremiumNames()) {
         throw new PremiumNameBlockedException();
       }
@@ -486,7 +484,7 @@ public class DomainFlowUtils {
    * Helper to call {@link CreateOrUpdate#cloneAndLinkReferences} and convert exceptions to
    * EppExceptions, since this is needed in several places.
    */
-  static <T extends CreateOrUpdate<T>> T cloneAndLinkReferences(T command, DateTime now)
+  static <T extends CreateOrUpdate<T>> T cloneAndLinkReferences(T command, Instant now)
       throws EppException {
     try {
       return command.cloneAndLinkReferences(now);
@@ -532,7 +530,7 @@ public class DomainFlowUtils {
   public static BillingRecurrence updateAutorenewRecurrenceEndTime(
       Domain domain,
       BillingRecurrence existingBillingRecurrence,
-      DateTime newEndTime,
+      Instant newEndTime,
       @Nullable HistoryEntryId historyId) {
     Optional<Autorenew> autorenewPollMessage =
         tm().loadByKeyIfPresent(domain.getAutorenewPollMessage());
@@ -560,14 +558,14 @@ public class DomainFlowUtils {
 
     // If the resultant autorenew poll message would have no poll messages to deliver, then just
     // delete it. Otherwise, save it with the new end time.
-    if (isAtOrAfter(updatedAutorenewPollMessage.getEventTime(), toInstant(newEndTime))) {
+    if (isAtOrAfter(updatedAutorenewPollMessage.getEventTime(), newEndTime)) {
       autorenewPollMessage.ifPresent(autorenew -> tm().delete(autorenew));
     } else {
       tm().put(updatedAutorenewPollMessage);
     }
 
     BillingRecurrence newBillingRecurrence =
-        existingBillingRecurrence.asBuilder().setRecurrenceEndTime(toInstant(newEndTime)).build();
+        existingBillingRecurrence.asBuilder().setRecurrenceEndTime(newEndTime).build();
     tm().update(newBillingRecurrence);
     return newBillingRecurrence;
   }
@@ -582,13 +580,13 @@ public class DomainFlowUtils {
       InternetDomainName domainName,
       Optional<Domain> domain,
       @Nullable CurrencyUnit topLevelCurrency,
-      DateTime currentDate,
+      Instant currentDate,
       DomainPricingLogic pricingLogic,
       Optional<AllocationToken> allocationToken,
       boolean isAvailable,
       @Nullable BillingRecurrence billingRecurrence)
       throws EppException {
-    Instant now = toInstant(currentDate);
+    Instant now = currentDate;
     // Use the custom effective date specified in the fee check request, if there is one.
     if (feeRequest.getEffectiveDate().isPresent()) {
       now = feeRequest.getEffectiveDate().get();
@@ -847,9 +845,12 @@ public class DomainFlowUtils {
    *
    * @throws ExceedsMaxRegistrationYearsException if the new registration period is too long
    */
-  public static void validateRegistrationPeriod(DateTime now, DateTime newExpirationTime)
+  public static void validateRegistrationPeriod(Instant now, Instant newExpirationTime)
       throws EppException {
-    if (plusYears(now, MAX_REGISTRATION_YEARS).isBefore(newExpirationTime)) {
+    if (now.atZone(ZoneOffset.UTC)
+        .plusYears(MAX_REGISTRATION_YEARS)
+        .toInstant()
+        .isBefore(newExpirationTime)) {
       throw new ExceedsMaxRegistrationYearsException();
     }
   }
@@ -935,7 +936,7 @@ public class DomainFlowUtils {
   }
 
   /** Check that the registry phase is not predelegation, during which some flows are forbidden. */
-  public static void verifyNotInPredelegation(Tld registry, DateTime now)
+  public static void verifyNotInPredelegation(Tld registry, Instant now)
       throws BadCommandForRegistryPhaseException {
     if (registry.getTldState(now) == PREDELEGATION) {
       throw new BadCommandForRegistryPhaseException();
@@ -970,7 +971,7 @@ public class DomainFlowUtils {
 
   /** Validate the notice from a launch create extension, allowing null as a valid notice. */
   static void validateLaunchCreateNotice(
-      @Nullable LaunchNotice notice, String domainLabel, boolean isSuperuser, DateTime now)
+      @Nullable LaunchNotice notice, String domainLabel, boolean isSuperuser, Instant now)
       throws EppException {
     if (notice == null) {
       return;
@@ -984,7 +985,7 @@ public class DomainFlowUtils {
         throw new ExpiredClaimException();
       }
       // An acceptance within the past 48 hours is mandated by the TMCH Functional Spec.
-      if (notice.getAcceptedTime().isBefore(now.minusHours(48))) {
+      if (notice.getAcceptedTime().isBefore(now.minus(java.time.Duration.ofDays(2)))) {
         throw new AcceptedTooLongAgoException();
       }
     }
@@ -998,8 +999,8 @@ public class DomainFlowUtils {
   }
 
   /** Check that the claims period hasn't ended. */
-  static void verifyClaimsPeriodNotEnded(Tld tld, DateTime now) throws ClaimsPeriodEndedException {
-    if (isAtOrAfter(now, tld.getClaimsPeriodEnd())) {
+  static void verifyClaimsPeriodNotEnded(Tld tld, Instant now) throws ClaimsPeriodEndedException {
+    if (!now.isBefore(tld.getClaimsPeriodEnd())) {
       throw new ClaimsPeriodEndedException(tld.getTldStr());
     }
   }
@@ -1066,7 +1067,7 @@ public class DomainFlowUtils {
    */
   public static ImmutableSet<DomainTransactionRecord> createCancelingRecords(
       Domain domain,
-      final DateTime now,
+      final Instant now,
       Duration maxSearchPeriod,
       final ImmutableSet<TransactionReportField> cancelableFields) {
 
@@ -1081,7 +1082,7 @@ public class DomainFlowUtils {
                       for (DomainTransactionRecord record :
                           historyEntry.getDomainTransactionRecords()) {
                         if (cancelableFields.contains(record.getReportField())
-                            && record.getReportingTime().isAfter(toInstant(now))) {
+                            && record.getReportingTime().isAfter(now)) {
                           return true;
                         }
                       }
@@ -1110,12 +1111,12 @@ public class DomainFlowUtils {
   }
 
   private static List<DomainHistory> findRecentHistoryEntries(
-      Domain domain, DateTime now, Duration maxSearchPeriod) {
+      Domain domain, Instant now, Duration maxSearchPeriod) {
     return tm().query(
             "FROM DomainHistory WHERE modificationTime >= :beginning AND repoId = "
                 + ":repoId ORDER BY modificationTime ASC",
             DomainHistory.class)
-        .setParameter("beginning", toInstant(now.minus(maxSearchPeriod)))
+        .setParameter("beginning", now.minusMillis(maxSearchPeriod.getMillis()))
         .setParameter("repoId", domain.getRepoId())
         .getResultList();
   }

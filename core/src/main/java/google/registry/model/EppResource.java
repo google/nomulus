@@ -49,7 +49,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.joda.time.DateTime;
 
 /** An EPP entity object (i.e. a domain, contact, or host). */
 @MappedSuperclass
@@ -191,11 +190,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   }
 
   /** Return a clone of the resource with timed status values modified using the given time. */
-  @Deprecated
-  public abstract EppResource cloneProjectedAtTime(DateTime now);
-
-  /** Return a clone of the resource with timed status values modified using the given time. */
-  public abstract EppResource cloneProjectedAtInstant(Instant now);
+  public abstract EppResource cloneProjectedAtTime(Instant now);
 
   /** Get the foreign key string for this resource. */
   public abstract String getForeignKey();

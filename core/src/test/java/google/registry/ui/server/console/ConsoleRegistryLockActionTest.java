@@ -341,7 +341,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
     verifyEmail();
     RegistryLock savedUnlockRequest =
         getMostRecentRegistryLockByRepoId(defaultDomain.getRepoId()).get();
-    assertThat(savedUnlockRequest.getRelockDuration()).hasValue(Duration.standardDays(1));
+    assertThat(savedUnlockRequest.getRelockDuration())
+        .isEqualTo(Optional.of(Duration.standardDays(1)));
   }
 
   @Test

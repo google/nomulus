@@ -89,7 +89,7 @@ class DeleteExpiredDomainsActionTest {
         persistResource(
             DatabaseHelper.newDomain("bar.tld")
                 .asBuilder()
-                .setAutorenewEndTime(Optional.of(clock.nowUtc().minusDays(10)))
+                .setAutorenewEndTime(Optional.of(toInstant(clock.nowUtc().minusDays(10))))
                 .setDeletionTime(plusDays(clock.now(), 17))
                 .build());
 
@@ -98,7 +98,7 @@ class DeleteExpiredDomainsActionTest {
         persistResource(
             DatabaseHelper.newDomain("baz.tld")
                 .asBuilder()
-                .setAutorenewEndTime(Optional.of(clock.nowUtc().plusDays(15)))
+                .setAutorenewEndTime(Optional.of(toInstant(clock.nowUtc().plusDays(15))))
                 .build());
 
     // A non-autorenewing domain that is past its expiration time and should be deleted.
@@ -182,7 +182,7 @@ class DeleteExpiredDomainsActionTest {
         persistResource(
             pendingExpirationDomain
                 .asBuilder()
-                .setAutorenewEndTime(Optional.of(clock.nowUtc().minusDays(10)))
+                .setAutorenewEndTime(Optional.of(toInstant(clock.nowUtc().minusDays(10))))
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
                 .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());

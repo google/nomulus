@@ -265,7 +265,7 @@ public class DomainToXjcConverterTest {
                     makeHost(clock, "3-Q9JYB4C", "bird.or.devil.みんな", "1.2.3.4").createVKey(),
                     makeHost(clock, "4-Q9JYB4C", "ns2.cat.みんな", "bad:f00d:cafe::15:beef")
                         .createVKey()))
-            .setRegistrationExpirationTime(DateTime.parse("1930-01-01T00:00:00Z"))
+            .setRegistrationExpirationTime(Instant.parse("1930-01-01T00:00:00Z"))
             .setGracePeriods(
                 ImmutableSet.of(
                     GracePeriod.forBillingEvent(

@@ -103,7 +103,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.getClientCertificateHash()).isEmpty();
     assertThat(registrar.getPhonePasscode()).isEqualTo("01234");
     assertThat(registrar.getCreationTime()).isIn(Range.closed(before, after));
-    assertThat(registrar.getLastUpdateTimeInstant()).isEqualTo(registrar.getCreationTime());
+    assertThat(registrar.getLastUpdateTime()).isEqualTo(registrar.getCreationTime());
     assertThat(registrar.getBlockPremiumNames()).isFalse();
     assertThat(registrar.isRegistryLockAllowed()).isFalse();
     assertThat(registrar.getPoNumber()).isEmpty();
@@ -596,14 +596,14 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         newTld("foo", "FOO")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(JPY, new BigDecimal(1300))))
             .setRestoreBillingCost(Money.of(JPY, new BigDecimal(1700)))
             .setServerStatusChangeBillingCost(Money.of(JPY, new BigDecimal(1900)))
             .setRegistryLockOrUnlockBillingCost(Money.of(JPY, new BigDecimal(2700)))
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(JPY, new BigDecimal(1100))))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.zero(JPY)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(JPY)))
             .setPremiumList(null)
             .build());
 

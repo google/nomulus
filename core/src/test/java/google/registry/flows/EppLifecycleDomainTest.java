@@ -30,8 +30,7 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppMetricSubject.assertThat;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.collect.ImmutableMap;
@@ -50,8 +49,10 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.tmch.TmchData;
 import google.registry.tmch.TmchTestData;
+import google.registry.util.DateTimeUtils;
+import java.time.Duration;
+import java.time.Instant;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -294,11 +295,11 @@ class EppLifecycleDomainTest extends EppTestCase {
   void testDomainDelete_duringAddAndRenewalGracePeriod_deletesImmediately() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
 
-    DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
+    Instant createTime = Instant.parse("2000-06-01T00:02:00Z");
     // Create domain example.tld
     assertThatCommand(
             "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"))
-        .atTime(createTime)
+        .atTime(DateTimeUtils.toDateTime(createTime))
         .hasResponse(
             "domain_create_response.xml",
             ImmutableMap.of(
@@ -315,11 +316,11 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CRDATE", "2000-06-01T00:02:00Z",
                 "EXDATE", "2002-06-01T00:02:00Z"));
 
-    DateTime renewTime = DateTime.parse("2000-06-03T00:00:00Z");
+    Instant renewTime = Instant.parse("2000-06-03T00:00:00Z");
     assertThatCommand(
             "domain_renew.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXPDATE", "2002-06-01", "YEARS", "3"))
-        .atTime(renewTime)
+        .atTime(DateTimeUtils.toDateTime(renewTime))
         .hasResponse(
             "domain_renew_response.xml",
             ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2005-06-01T00:02:00Z"));
@@ -337,9 +338,9 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "UPDATE", "2000-06-03T00:00:00Z"));
 
     Domain domain =
-        loadResource(Domain.class, "example.tld", DateTime.parse("2000-06-03T04:00:00Z")).get();
+        loadResource(Domain.class, "example.tld", Instant.parse("2000-06-03T04:00:00Z")).get();
 
-    DateTime deleteTime = DateTime.parse("2000-06-04T00:00:00Z");
+    Instant deleteTime = Instant.parse("2000-06-04T00:00:00Z");
     // Delete domain example.tld during both grace periods.
     assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"))
         .atTime("2000-06-04T00:00:00Z")
@@ -354,8 +355,10 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CODE", "2303", "MSG", "The domain with given ID (example.tld) doesn't exist."));
 
     // The expected one-time billing event, that should have an associated Cancellation.
-    BillingEvent createBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
-    BillingEvent renewBillingEvent = makeOneTimeRenewBillingEvent(domain, renewTime);
+    BillingEvent createBillingEvent =
+        makeOneTimeCreateBillingEvent(domain, DateTimeUtils.toDateTime(createTime));
+    BillingEvent renewBillingEvent =
+        makeOneTimeRenewBillingEvent(domain, DateTimeUtils.toDateTime(renewTime));
 
     // Verify that the OneTime billing event associated with the domain creation is canceled.
     assertBillingEventsForResource(
@@ -365,11 +368,25 @@ class EppLifecycleDomainTest extends EppTestCase {
         renewBillingEvent,
         // There should be two ended recurring billing events, one each from the create and renew.
         // (The former was ended by the renew and the latter was ended by the delete.)
-        makeCreateRecurrence(domain, createTime.plusYears(2), renewTime),
-        makeRenewRecurrence(domain, createTime.plusYears(5), deleteTime),
+        makeCreateRecurrence(
+            domain,
+            DateTimeUtils.toDateTime(DateTimeUtils.plusYears(createTime, 2)),
+            DateTimeUtils.toDateTime(renewTime)),
+        makeRenewRecurrence(
+            domain,
+            DateTimeUtils.toDateTime(DateTimeUtils.plusYears(createTime, 5)),
+            DateTimeUtils.toDateTime(deleteTime)),
         // There should be Cancellations offsetting both of the one-times.
-        makeCancellationBillingEventForCreate(domain, createBillingEvent, createTime, deleteTime),
-        makeCancellationBillingEventForRenew(domain, renewBillingEvent, renewTime, deleteTime));
+        makeCancellationBillingEventForCreate(
+            domain,
+            createBillingEvent,
+            DateTimeUtils.toDateTime(createTime),
+            DateTimeUtils.toDateTime(deleteTime)),
+        makeCancellationBillingEventForRenew(
+            domain,
+            renewBillingEvent,
+            DateTimeUtils.toDateTime(renewTime),
+            DateTimeUtils.toDateTime(deleteTime)));
 
     // Verify that the registration expiration time was set back to the creation time, because the
     // entire cost of registration was refunded. We have to do this through the DB instead of EPP
@@ -386,10 +403,10 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
 
     // Create domain example.tld
-    DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
+    Instant createTime = Instant.parse("2000-06-01T00:02:00Z");
     assertThatCommand(
             "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"))
-        .atTime(createTime)
+        .atTime(DateTimeUtils.toDateTime(createTime))
         .hasResponse(
             "domain_create_response.xml",
             ImmutableMap.of(
@@ -397,32 +414,42 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CRDATE", "2000-06-01T00:02:00.0Z",
                 "EXDATE", "2002-06-01T00:02:00.0Z"));
 
-    Domain domain = loadResource(Domain.class, "example.tld", createTime.plusHours(1)).get();
+    Domain domain =
+        loadResource(Domain.class, "example.tld", DateTimeUtils.toDateTime(createTime).plusHours(1))
+            .get();
 
     // Delete domain example.tld within the add grace period.
-    DateTime deleteTime = createTime.plusDays(1);
+    Instant deleteTime = createTime.plus(Duration.ofDays(1));
     assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"))
-        .atTime(deleteTime)
+        .atTime(DateTimeUtils.toDateTime(deleteTime))
         .hasResponse("generic_success_response.xml");
 
     // Verify that it is immediately non-existent.
     assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
-        .atTime(deleteTime.plusSeconds(1))
+        .atTime(DateTimeUtils.toDateTime(deleteTime.plus(Duration.ofSeconds(1))))
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
                 "CODE", "2303", "MSG", "The domain with given ID (example.tld) doesn't exist."));
 
     // The expected one-time billing event, that should have an associated Cancellation.
-    BillingEvent createBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
+    BillingEvent createBillingEvent =
+        makeOneTimeCreateBillingEvent(domain, DateTimeUtils.toDateTime(createTime));
     // Verify that the OneTime billing event associated with the domain creation is canceled.
     assertBillingEventsForResource(
         domain,
         // Check the existence of the expected create one-time billing event.
         createBillingEvent,
-        makeCreateRecurrence(domain, createTime.plusYears(2), deleteTime),
+        makeCreateRecurrence(
+            domain,
+            DateTimeUtils.toDateTime(DateTimeUtils.plusYears(createTime, 2)),
+            DateTimeUtils.toDateTime(deleteTime)),
         // Check for the existence of a cancellation for the given one-time billing event.
-        makeCancellationBillingEventForCreate(domain, createBillingEvent, createTime, deleteTime));
+        makeCancellationBillingEventForCreate(
+            domain,
+            createBillingEvent,
+            DateTimeUtils.toDateTime(createTime),
+            DateTimeUtils.toDateTime(deleteTime)));
 
     // Verify that the registration expiration time was set back to the creation time, because the
     // entire cost of registration was refunded. We have to do this through the DB instead of EPP
@@ -438,11 +465,11 @@ class EppLifecycleDomainTest extends EppTestCase {
   void testDomainDeletion_outsideAddGracePeriod_showsRedemptionPeriod() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
 
-    DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
+    Instant createTime = Instant.parse("2000-06-01T00:02:00Z");
     // Create domain example.tld
     assertThatCommand(
             "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"))
-        .atTime(createTime)
+        .atTime(DateTimeUtils.toDateTime(createTime))
         .hasResponse(
             "domain_create_response.xml",
             ImmutableMap.of(
@@ -450,10 +477,10 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CRDATE", "2000-06-01T00:02:00.0Z",
                 "EXDATE", "2002-06-01T00:02:00.0Z"));
 
-    DateTime deleteTime = DateTime.parse("2000-07-07T00:02:00Z"); // 1 month and 6 days after
+    Instant deleteTime = Instant.parse("2000-07-07T00:02:00Z"); // 1 month and 6 days after
     // Delete domain example.tld after its add grace period has expired.
     assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"))
-        .atTime(deleteTime)
+        .atTime(DateTimeUtils.toDateTime(deleteTime))
         .hasResponse("generic_success_action_pending_response.xml");
 
     // Verify that domain shows redemptionPeriod soon after deletion.
@@ -478,18 +505,22 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CODE", "2303", "MSG", "The domain with given ID (example.tld) doesn't exist."));
 
     Domain domain =
-        loadResource(Domain.class, "example.tld", DateTime.parse("2000-08-01T00:02:00Z")).get();
+        loadResource(Domain.class, "example.tld", Instant.parse("2000-08-01T00:02:00Z")).get();
     // Verify that the autorenew was ended and that the one-time billing event is not canceled.
     assertBillingEventsForResource(
         domain,
-        makeOneTimeCreateBillingEvent(domain, createTime),
-        makeCreateRecurrence(domain, createTime.plusYears(2), deleteTime));
+        makeOneTimeCreateBillingEvent(domain, DateTimeUtils.toDateTime(createTime)),
+        makeCreateRecurrence(
+            domain,
+            DateTimeUtils.toDateTime(DateTimeUtils.plusYears(createTime, 2)),
+            DateTimeUtils.toDateTime(deleteTime)));
 
     assertThatLogoutSucceeds();
 
     // Make sure that in the future, the domain expiration is unchanged after deletion
-    Domain clonedDomain = domain.cloneProjectedAtTime(deleteTime.plusYears(5));
-    assertThat(clonedDomain.getRegistrationExpirationDateTime()).isEqualTo(createTime.plusYears(2));
+    Domain clonedDomain = domain.cloneProjectedAtTime(DateTimeUtils.plusYears(deleteTime, 5));
+    assertThat(clonedDomain.getRegistrationExpirationTime())
+        .isEqualTo(DateTimeUtils.plusYears(createTime, 2));
   }
 
   @Test
@@ -502,27 +533,27 @@ class EppLifecycleDomainTest extends EppTestCase {
             .asBuilder()
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 0),
-                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Instant.parse("2000-06-01T00:00:00Z"),
                     Money.of(USD, 100),
-                    DateTime.parse("2000-06-02T00:00:00Z"),
+                    Instant.parse("2000-06-02T00:00:00Z"),
                     Money.of(USD, 0)))
             .build());
 
     // Create domain example.tld, which should have an EAP fee of USD 100.
-    DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
+    Instant createTime = Instant.parse("2000-06-01T00:02:00Z");
     assertThatCommand("domain_create_eap_fee.xml")
-        .atTime(createTime)
+        .atTime(DateTimeUtils.toDateTime(createTime))
         .hasResponse("domain_create_response_eap_fee.xml");
 
     Domain domain =
-        loadResource(Domain.class, "example.tld", DateTime.parse("2000-06-01T00:03:00Z")).get();
+        loadResource(Domain.class, "example.tld", Instant.parse("2000-06-01T00:03:00Z")).get();
 
     // Delete domain example.tld within the add grade period.
-    DateTime deleteTime = createTime.plusDays(1);
+    Instant deleteTime = createTime.plus(Duration.ofDays(1));
     assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"))
-        .atTime(deleteTime)
+        .atTime(DateTimeUtils.toDateTime(deleteTime))
         .hasResponse("domain_delete_response_fee.xml");
 
     // Verify that the OneTime billing event associated with the base fee of domain registration and
@@ -534,24 +565,32 @@ class EppLifecycleDomainTest extends EppTestCase {
             .setRegistrarId("NewRegistrar")
             .setPeriodYears(1)
             .setCost(Money.parse("USD 100.00"))
-            .setEventTime(toInstant(createTime))
-            .setBillingTime(toInstant(createTime.plus(Tld.get("tld").getRenewGracePeriodLength())))
+            .setEventTime(createTime)
+            .setBillingTime(
+                createTime.plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis()))
             .setDomainHistory(
                 getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
             .build();
 
     // The expected one-time billing event, that should have an associated Cancellation.
-    BillingEvent expectedCreateBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
+    BillingEvent expectedCreateBillingEvent =
+        makeOneTimeCreateBillingEvent(domain, DateTimeUtils.toDateTime(createTime));
     assertBillingEventsForResource(
         domain,
         // Check for the expected create one-time billing event ...
         expectedCreateBillingEvent,
         // ... and the expected one-time EAP fee billing event ...
         expectedCreateEapBillingEvent,
-        makeCreateRecurrence(domain, createTime.plusYears(2), deleteTime),
+        makeCreateRecurrence(
+            domain,
+            DateTimeUtils.toDateTime(DateTimeUtils.plusYears(createTime, 2)),
+            DateTimeUtils.toDateTime(deleteTime)),
         // ... and verify that the create one-time billing event was canceled ...
         makeCancellationBillingEventForCreate(
-            domain, expectedCreateBillingEvent, createTime, deleteTime));
+            domain,
+            expectedCreateBillingEvent,
+            DateTimeUtils.toDateTime(createTime),
+            DateTimeUtils.toDateTime(deleteTime)));
     // ... but there was NOT a Cancellation for the EAP fee, as this would fail if additional
     // billing events were present.
 
@@ -671,13 +710,13 @@ class EppLifecycleDomainTest extends EppTestCase {
 
   @Test
   void testDomainCreation_failsBeforeSunrise() throws Exception {
-    DateTime sunriseDate = DateTime.parse("2000-05-30T00:00:00Z");
+    Instant sunriseDate = Instant.parse("2000-05-30T00:00:00Z");
     createTld(
         "example",
-        new ImmutableSortedMap.Builder<DateTime, TldState>(Ordering.natural())
-            .put(START_OF_TIME, PREDELEGATION)
+        new ImmutableSortedMap.Builder<Instant, TldState>(Ordering.natural())
+            .put(START_INSTANT, TldState.PREDELEGATION)
             .put(sunriseDate, START_DATE_SUNRISE)
-            .put(sunriseDate.plusMonths(2), GENERAL_AVAILABILITY)
+            .put(DateTimeUtils.plusMonths(sunriseDate, 2), GENERAL_AVAILABILITY)
             .build());
 
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -685,7 +724,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     createHosts();
 
     assertThatCommand("domain_create_sunrise_encoded_mark.xml")
-        .atTime(sunriseDate.minusDays(1))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate.minus(Duration.ofDays(1))))
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -693,7 +732,7 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "MSG", "The current registry phase does not allow for general registrations"));
 
     assertThatCommand("domain_info_testvalidate.xml")
-        .atTime(sunriseDate.plusDays(1))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate.plus(Duration.ofDays(1))))
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -705,17 +744,15 @@ class EppLifecycleDomainTest extends EppTestCase {
 
   @Test
   void testDomainCheckFee_succeeds() throws Exception {
-    DateTime gaDate = DateTime.parse("2000-05-30T00:00:00Z");
+    Instant gaDate = Instant.parse("2000-05-30T00:00:00Z");
     createTld(
         "example",
-        ImmutableSortedMap.of(
-            START_OF_TIME, PREDELEGATION,
-            gaDate, GENERAL_AVAILABILITY));
+        ImmutableSortedMap.of(START_INSTANT, PREDELEGATION, gaDate, GENERAL_AVAILABILITY));
 
     assertThatCommand("login_valid_fee_extension.xml").hasSuccessfulLogin();
 
     assertThatCommand("domain_check_fee_premium.xml")
-        .atTime(gaDate.plusDays(1))
+        .atTime(DateTimeUtils.toDateTime(gaDate.plus(Duration.ofDays(1))))
         .hasResponse("domain_check_fee_premium_response.xml");
     assertThat(getRecordedEppMetric())
         .hasClientId("NewRegistrar")
@@ -1177,24 +1214,27 @@ class EppLifecycleDomainTest extends EppTestCase {
   @Test
   void testDomainCreation_startDateSunriseFull() throws Exception {
     // The signed mark is valid between 2022-11-22 and 2027-10-18.
-    DateTime sunriseDate = DateTime.parse("2025-09-08T09:09:09Z");
-    DateTime gaDate = sunriseDate.plusDays(30);
+    Instant sunriseDate = Instant.parse("2025-09-08T09:09:09Z");
+    Instant gaDate = sunriseDate.plus(Duration.ofDays(30));
     createTld(
         "example",
         ImmutableSortedMap.of(
-            START_OF_TIME, PREDELEGATION,
-            sunriseDate, START_DATE_SUNRISE,
-            gaDate, GENERAL_AVAILABILITY));
+            START_INSTANT,
+            PREDELEGATION,
+            sunriseDate,
+            START_DATE_SUNRISE,
+            gaDate,
+            GENERAL_AVAILABILITY));
 
     assertThatLogin("NewRegistrar", "foo-BAR2")
-        .atTime(sunriseDate.minusDays(3))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate.minus(Duration.ofDays(3))))
         .hasSuccessfulLogin();
 
     createHosts();
 
     // During pre-delegation, any create should fail both with and without mark
     assertThatCommand("domain_create_sunrise_encoded_mark.xml", ImmutableMap.of("SMD", ENCODED_SMD))
-        .atTime(sunriseDate.minusDays(2))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate.minus(Duration.ofDays(2))))
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -1203,7 +1243,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     assertThatCommand(
             "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "general.example"))
-        .atTime(sunriseDate.minusDays(1))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate.minus(Duration.ofDays(1))))
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -1214,7 +1254,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatCommand(
             "domain_create_start_date_sunrise_encoded_mark_wrong_phase.xml",
             ImmutableMap.of("SMD", ENCODED_SMD))
-        .atTime(sunriseDate)
+        .atTime(DateTimeUtils.toDateTime(sunriseDate))
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -1226,7 +1266,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     // During sunrise, create with mark will succeed but without will fail.
     // We also test we can delete without a mark.
     assertThatCommand("domain_create_sunrise_encoded_mark.xml", ImmutableMap.of("SMD", ENCODED_SMD))
-        .atTime(sunriseDate.plusDays(1))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate.plus(Duration.ofDays(1))))
         .hasResponse(
             "domain_create_response.xml",
             ImmutableMap.of(
@@ -1235,12 +1275,12 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "EXDATE", "2026-09-09T09:09:09Z"));
 
     assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "test-validate.example"))
-        .atTime(sunriseDate.plusDays(1).plusMinutes(1))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate).plusDays(1).plusMinutes(1))
         .hasResponse("generic_success_response.xml");
 
     assertThatCommand(
             "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "general.example"))
-        .atTime(sunriseDate.plusDays(2))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate.plus(Duration.ofDays(2))))
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -1249,7 +1289,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     // During general availability, sunrise creates will fail but regular creates succeed
     assertThatCommand("domain_create_sunrise_encoded_mark.xml")
-        .atTime(gaDate.plusDays(1))
+        .atTime(DateTimeUtils.toDateTime(gaDate.plus(Duration.ofDays(1))))
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -1260,7 +1300,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     assertThatCommand(
             "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "general.example"))
-        .atTime(gaDate.plusDays(2))
+        .atTime(DateTimeUtils.toDateTime(gaDate.plus(Duration.ofDays(2))))
         .hasResponse(
             "domain_create_response.xml",
             ImmutableMap.of(
@@ -1275,17 +1315,20 @@ class EppLifecycleDomainTest extends EppTestCase {
   @Test
   void testDomainCreation_startDateSunrise_noType() throws Exception {
     // The signed mark is valid between 2022-11-22 and 2027-10-18.
-    DateTime sunriseDate = DateTime.parse("2025-09-08T09:09:09Z");
-    DateTime gaDate = sunriseDate.plusDays(30);
+    Instant sunriseDate = Instant.parse("2025-09-08T09:09:09Z");
+    Instant gaDate = sunriseDate.plus(Duration.ofDays(30));
     createTld(
         "example",
         ImmutableSortedMap.of(
-            START_OF_TIME, PREDELEGATION,
-            sunriseDate, START_DATE_SUNRISE,
-            gaDate, GENERAL_AVAILABILITY));
+            START_INSTANT,
+            PREDELEGATION,
+            sunriseDate,
+            START_DATE_SUNRISE,
+            gaDate,
+            GENERAL_AVAILABILITY));
 
     assertThatLogin("NewRegistrar", "foo-BAR2")
-        .atTime(sunriseDate.minusDays(3))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate.minus(Duration.ofDays(3))))
         .hasSuccessfulLogin();
 
     createHosts();
@@ -1293,7 +1336,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     // During start-date sunrise, create with mark will succeed but without will fail.
     // We also test we can delete without a mark.
     assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "test-validate.example"))
-        .atTime(sunriseDate.plusDays(1))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate.plus(Duration.ofDays(1))))
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -1303,7 +1346,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatCommand(
             "domain_create_start_date_sunrise_encoded_mark_no_type.xml",
             ImmutableMap.of("SMD", ENCODED_SMD))
-        .atTime(sunriseDate.plusDays(1).plusMinutes(1))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate).plusDays(1).plusMinutes(1))
         .hasResponse(
             "domain_create_response.xml",
             ImmutableMap.of(
@@ -1312,7 +1355,7 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "EXDATE", "2026-09-09T09:10:09Z"));
 
     assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "test-validate.example"))
-        .atTime(sunriseDate.plusDays(1).plusMinutes(2))
+        .atTime(DateTimeUtils.toDateTime(sunriseDate).plusDays(1).plusMinutes(2))
         .hasResponse(
             "domain_info_response_ok_wildcard.xml",
             ImmutableMap.of(

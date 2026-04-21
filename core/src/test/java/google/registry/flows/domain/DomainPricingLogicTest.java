@@ -89,7 +89,7 @@ public class DomainPricingLogicTest {
         persistResource(
             Tld.get("example")
                 .asBuilder()
-                .setRenewBillingCostTransitionsInstant(
+                .setRenewBillingCostTransitions(
                     ImmutableSortedMap.of(
                         START_INSTANT, Money.of(USD, 1), clock.now(), Money.of(USD, 10)))
                 .setPremiumList(persistPremiumList("tld2", USD, "premium,USD 100"))
@@ -142,8 +142,7 @@ public class DomainPricingLogicTest {
             .build();
     createTld("sunrise");
     Tld sunriseTld =
-        persistResource(
-            Tld.get("sunrise").asBuilder().setTldStateTransitionsInstant(transitions).build());
+        persistResource(Tld.get("sunrise").asBuilder().setTldStateTransitions(transitions).build());
     assertThat(
             domainPricingLogic.getCreatePrice(
                 sunriseTld, "domain.sunrise", clock.now(), 2, false, true, Optional.empty()))

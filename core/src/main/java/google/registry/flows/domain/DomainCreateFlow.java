@@ -121,6 +121,7 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -236,7 +237,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     verifyRegistrarIsActive(registrarId);
     extensionManager.validate();
     verifyDomainDoesNotExist();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     DomainCommand.Create command = cloneAndLinkReferences((Create) resourceCommand, now);
     Period period = command.getPeriod();
     verifyUnitIsYears(period);
@@ -314,7 +315,7 @@ public final class DomainCreateFlow implements MutatingFlow {
       // at this point so that we can verify it before the "after validation" extension point.
       signedMarkId =
           tmchUtils
-              .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, toInstant(now))
+              .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, now)
               .getId();
     }
     verifyNotBlockedByBsa(domainName, tld, now, allocationToken);
@@ -328,11 +329,11 @@ public final class DomainCreateFlow implements MutatingFlow {
         eppInput.getSingleExtension(FeeCreateCommandExtension.class);
     FeesAndCredits feesAndCredits =
         pricingLogic.getCreatePrice(
-            tld, targetId, toInstant(now), years, isAnchorTenant, isSunriseCreate, allocationToken);
+            tld, targetId, now, years, isAnchorTenant, isSunriseCreate, allocationToken);
     validateFeeChallenge(feeCreate, feesAndCredits, defaultTokenUsed);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
-    DateTime registrationExpirationTime = plusYears(now, years);
+    Instant registrationExpirationTime = plusYears(now, years);
     String repoId = createDomainRepoId(tm().allocateId(), tld.getTldStr());
     long historyRevisionId = tm().allocateId();
     HistoryEntryId domainHistoryId = new HistoryEntryId(repoId, historyRevisionId);
@@ -435,21 +436,13 @@ public final class DomainCreateFlow implements MutatingFlow {
     FeesAndCredits responseFeesAndCredits =
         shouldShowDefaultPrice
             ? pricingLogic.getCreatePrice(
-                tld,
-                targetId,
-                toInstant(now),
-                years,
-                isAnchorTenant,
-                isSunriseCreate,
-                Optional.empty())
+                tld, targetId, now, years, isAnchorTenant, isSunriseCreate, Optional.empty())
             : feesAndCredits;
 
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
-                .setResData(
-                    DomainCreateData.create(
-                        targetId, toInstant(now), toInstant(registrationExpirationTime)))
+                .setResData(DomainCreateData.create(targetId, now, registrationExpirationTime))
                 .setResponseExtensions(createResponseExtensions(feeCreate, responseFeesAndCredits))
                 .build());
     return responseBuilder
@@ -501,7 +494,7 @@ public final class DomainCreateFlow implements MutatingFlow {
   private void verifyIsGaOrSpecialCase(
       Tld tld,
       ClaimsList claimsList,
-      DateTime now,
+      Instant now,
       String domainLabel,
       Optional<AllocationToken> allocationToken,
       boolean isAnchorTenant,
@@ -565,14 +558,14 @@ public final class DomainCreateFlow implements MutatingFlow {
   }
 
   private DomainHistory buildDomainHistory(
-      Domain domain, Tld tld, DateTime now, Period period, Duration addGracePeriod) {
+      Domain domain, Tld tld, Instant now, Period period, Duration addGracePeriod) {
     // We ignore prober transactions
     if (tld.getTldType() == TldType.REAL) {
       historyBuilder.setDomainTransactionRecords(
           ImmutableSet.of(
               DomainTransactionRecord.create(
                   tld.getTldStr(),
-                  toInstant(now.plus(addGracePeriod)),
+                  now.plusMillis(addGracePeriod.getMillis()),
                   TransactionReportField.netAddsFieldFromYears(period.getValue()),
                   1)));
     }
@@ -588,7 +581,7 @@ public final class DomainCreateFlow implements MutatingFlow {
       FeesAndCredits feesAndCredits,
       HistoryEntryId domainHistoryId,
       Optional<AllocationToken> allocationToken,
-      DateTime now) {
+      Instant now) {
     ImmutableSet.Builder<Flag> flagsBuilder = new ImmutableSet.Builder<>();
     // Sunrise and anchor tenancy are orthogonal tags and thus both can be present together.
     if (isSunriseCreate) {
@@ -607,14 +600,14 @@ public final class DomainCreateFlow implements MutatingFlow {
         .setRegistrarId(registrarId)
         .setPeriodYears(years)
         .setCost(feesAndCredits.getCreateCost())
-        .setEventTime(toInstant(now))
+        .setEventTime(now)
         .setAllocationToken(allocationToken.map(AllocationToken::createVKey).orElse(null))
         .setBillingTime(
-            toInstant(
-                now.plus(
-                    isAnchorTenant
+            now.plusMillis(
+                (isAnchorTenant
                         ? tld.getAnchorTenantAddGracePeriodLength()
-                        : tld.getAddGracePeriodLength())))
+                        : tld.getAddGracePeriodLength())
+                    .getMillis()))
         .setFlags(flagsBuilder.build())
         .setDomainHistoryId(domainHistoryId)
         .build();
@@ -622,7 +615,7 @@ public final class DomainCreateFlow implements MutatingFlow {
 
   private BillingRecurrence createAutorenewBillingEvent(
       HistoryEntryId domainHistoryId,
-      DateTime registrationExpirationTime,
+      Instant registrationExpirationTime,
       boolean isAnchorTenant,
       Optional<AllocationToken> allocationToken) {
     // Non-standard renewal behaviors can occur for anchor tenants (always NONPREMIUM pricing) or if
@@ -639,7 +632,7 @@ public final class DomainCreateFlow implements MutatingFlow {
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
-        .setEventTime(toInstant(registrationExpirationTime))
+        .setEventTime(registrationExpirationTime)
         .setRecurrenceEndTime(END_INSTANT)
         .setDomainHistoryId(domainHistoryId)
         .setRenewalPriceBehavior(renewalPriceBehavior)
@@ -648,11 +641,11 @@ public final class DomainCreateFlow implements MutatingFlow {
   }
 
   private Autorenew createAutorenewPollMessage(
-      HistoryEntryId domainHistoryId, DateTime registrationExpirationTime) {
+      HistoryEntryId domainHistoryId, Instant registrationExpirationTime) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
-        .setEventTime(toInstant(registrationExpirationTime))
+        .setEventTime(registrationExpirationTime)
         .setMsg("Domain was auto-renewed.")
         .setDomainHistoryId(domainHistoryId)
         .build();
@@ -662,7 +655,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     Optional<DateTime> previousDeletionTime =
         domainDeletionTimeCache.getDeletionTimeForDomain(targetId);
     if (previousDeletionTime.isPresent()
-        && !tm().getTransactionTime().isAfter(previousDeletionTime.get())) {
+        && !tm().getTxTime().isAfter(toInstant(previousDeletionTime.get()))) {
       throw new ResourceCreateContentionException(targetId);
     }
   }
@@ -683,10 +676,10 @@ public final class DomainCreateFlow implements MutatingFlow {
   }
 
   private static PollMessage.OneTime createNameCollisionOneTimePollMessage(
-      String domainName, HistoryEntry historyEntry, String registrarId, DateTime now) {
+      String domainName, HistoryEntry historyEntry, String registrarId, Instant now) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(registrarId)
-        .setEventTime(toInstant(now))
+        .setEventTime(now)
         .setMsg(COLLISION_MESSAGE) // Remind the registrar of the name collision policy.
         .setResponseData(
             ImmutableList.of(

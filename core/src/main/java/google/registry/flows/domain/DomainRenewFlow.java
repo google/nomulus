@@ -34,8 +34,7 @@ import static google.registry.flows.domain.token.AllocationTokenFlowUtils.maybeA
 import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verifyBulkTokenAllowedOnDomain;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -87,9 +86,10 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
@@ -164,7 +164,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     validateRegistrarIsLoggedIn(registrarId);
     verifyRegistrarIsActive(registrarId);
     extensionManager.validate();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     Renew command = (Renew) resourceCommand;
     // Loads the target resource if it exists
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
@@ -191,8 +191,12 @@ public final class DomainRenewFlow implements MutatingFlow {
     // If client passed an applicable static token this updates the domain
     existingDomain = maybeApplyBulkPricingRemovalToken(existingDomain, allocationToken);
 
-    DateTime newExpirationTime =
-        plusYears(existingDomain.getRegistrationExpirationDateTime(), years); // Uncapped
+    Instant newExpirationTime =
+        existingDomain
+            .getRegistrationExpirationTime()
+            .atZone(ZoneOffset.UTC)
+            .plusYears(years)
+            .toInstant(); // Uncapped
     validateRegistrationPeriod(now, newExpirationTime);
     Optional<FeeRenewCommandExtension> feeRenew =
         eppInput.getSingleExtension(FeeRenewCommandExtension.class);
@@ -202,7 +206,7 @@ public final class DomainRenewFlow implements MutatingFlow {
         pricingLogic.getRenewPrice(
             Tld.get(existingDomain.getTld()),
             targetId,
-            toInstant(now),
+            now,
             years,
             existingBillingRecurrence,
             allocationToken);
@@ -222,14 +226,14 @@ public final class DomainRenewFlow implements MutatingFlow {
     // Create a new autorenew billing event and poll message starting at the new expiration time.
     BillingRecurrence newAutorenewEvent =
         newAutorenewBillingEvent(existingDomain)
-            .setEventTime(toInstant(newExpirationTime))
+            .setEventTime(newExpirationTime)
             .setRenewalPrice(existingBillingRecurrence.getRenewalPrice().orElse(null))
             .setRenewalPriceBehavior(existingBillingRecurrence.getRenewalPriceBehavior())
             .setDomainHistoryId(domainHistoryId)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
-            .setEventTime(toInstant(newExpirationTime))
+            .setEventTime(newExpirationTime)
             .setDomainHistoryId(domainHistoryId)
             .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
@@ -238,7 +242,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     Domain newDomain =
         existingDomain
             .asBuilder()
-            .setLastEppUpdateTime(toInstant(now))
+            .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)
             .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
@@ -288,7 +292,7 @@ public final class DomainRenewFlow implements MutatingFlow {
   }
 
   private DomainHistory buildDomainHistory(
-      Domain newDomain, DateTime now, Period period, Duration renewGracePeriod) {
+      Domain newDomain, Instant now, Period period, Duration renewGracePeriod) {
     Optional<MetadataExtension> metadataExtensionOpt =
         eppInput.getSingleExtension(MetadataExtension.class);
     if (metadataExtensionOpt.isPresent()) {
@@ -306,7 +310,7 @@ public final class DomainRenewFlow implements MutatingFlow {
             ImmutableSet.of(
                 DomainTransactionRecord.create(
                     newDomain.getTld(),
-                    toInstant(now.plus(renewGracePeriod)),
+                    now.plusMillis(renewGracePeriod.getMillis()),
                     TransactionReportField.netRenewsFieldFromYears(period.getValue()),
                     1)))
         .build();
@@ -331,7 +335,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     // If the date they specify doesn't match the expiration, fail. (This is an idempotence check).
     if (!command
         .getCurrentExpirationDate()
-        .equals(existingDomain.getRegistrationExpirationDateTime().toLocalDate())) {
+        .equals(toDateTime(existingDomain.getRegistrationExpirationTime()).toLocalDate())) {
       throw new IncorrectCurrentExpirationDateException();
     }
   }
@@ -342,20 +346,20 @@ public final class DomainRenewFlow implements MutatingFlow {
       int years,
       HistoryEntryId domainHistoryId,
       Optional<AllocationToken> allocationToken,
-      DateTime now) {
+      Instant now) {
     return new BillingEvent.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
         .setPeriodYears(years)
         .setCost(renewCost)
-        .setEventTime(toInstant(now))
+        .setEventTime(now)
         .setAllocationToken(
             allocationToken
                 .filter(t -> AllocationToken.TokenBehavior.DEFAULT.equals(t.getTokenBehavior()))
                 .map(AllocationToken::createVKey)
                 .orElse(null))
-        .setBillingTime(toInstant(now.plus(Tld.get(tld).getRenewGracePeriodLength())))
+        .setBillingTime(now.plusMillis(Tld.get(tld).getRenewGracePeriodLength().getMillis()))
         .setDomainHistoryId(domainHistoryId)
         .build();
   }

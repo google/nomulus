@@ -385,7 +385,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
     Domain domain = reloadResourceByForeignKey();
     Instant redemptionEndTime = plusDays(domain.getLastEppUpdateTime(), 3);
-    Domain domainAtRedemptionTime = domain.cloneProjectedAtInstant(redemptionEndTime);
+    Domain domainAtRedemptionTime = domain.cloneProjectedAtTime(redemptionEndTime);
     assertAboutDomains()
         .that(domainAtRedemptionTime)
         .hasLastEppUpdateRegistrarId("TheRegistrar")
@@ -543,7 +543,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 11),
@@ -1325,7 +1325,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 11),
@@ -1344,7 +1344,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 11),
@@ -1362,7 +1362,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 11),

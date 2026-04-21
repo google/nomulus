@@ -21,7 +21,8 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -45,6 +46,7 @@ import google.registry.persistence.VKey;
 import google.registry.tools.IamClient;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.RegistryEnvironment;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -107,13 +109,13 @@ public final class OteAccountBuilder {
           .setZip("55555")
           .build();
 
-  private static final ImmutableSortedMap<DateTime, Money> EAP_FEE_SCHEDULE =
+  private static final ImmutableSortedMap<Instant, Money> EAP_FEE_SCHEDULE =
       ImmutableSortedMap.of(
-          new DateTime(0),
+          Instant.EPOCH,
           Money.of(CurrencyUnit.USD, 0),
-          DateTime.parse("2018-03-01T00:00:00Z"),
+          Instant.parse("2018-03-01T00:00:00Z"),
           Money.of(CurrencyUnit.USD, 100),
-          DateTime.parse("2030-03-01T00:00:00Z"),
+          Instant.parse("2030-03-01T00:00:00Z"),
           Money.of(CurrencyUnit.USD, 0));
 
   /**
@@ -233,7 +235,7 @@ public final class OteAccountBuilder {
 
   /** Sets the client certificate to all the OT&amp;E Registrars. */
   public OteAccountBuilder setCertificate(String asciiCert, DateTime now) {
-    return transformRegistrars(builder -> builder.setClientCertificate(asciiCert, now));
+    return transformRegistrars(builder -> builder.setClientCertificate(asciiCert, toInstant(now)));
   }
 
   /** Sets the IP allowlist to all the OT&amp;E Registrars. */
@@ -329,7 +331,7 @@ public final class OteAccountBuilder {
         new Tld.Builder()
             .setTldStr(tldName)
             .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, initialTldState))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, initialTldState))
             .setDnsWriters(ImmutableSet.of("VoidDnsWriter"))
             .setPremiumList(premiumList.get())
             .setTldType(TldType.TEST)

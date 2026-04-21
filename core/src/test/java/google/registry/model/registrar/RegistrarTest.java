@@ -27,7 +27,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,13 +68,13 @@ class RegistrarTest extends EntityTestCase {
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1300))))
+                ImmutableSortedMap.of(START_INSTANT, Money.of(JPY, new BigDecimal(1300))))
             .setRestoreBillingCost(Money.of(JPY, new BigDecimal(1700)))
             .setServerStatusChangeBillingCost(Money.of(JPY, new BigDecimal(1900)))
             .setRegistryLockOrUnlockBillingCost(Money.of(JPY, new BigDecimal(2700)))
             .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1100))))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(JPY)))
+                ImmutableSortedMap.of(START_INSTANT, Money.of(JPY, new BigDecimal(1100))))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(JPY)))
             .setPremiumList(null)
             .build());
     // Set up a new persisted registrar entity.
@@ -88,7 +88,7 @@ class RegistrarTest extends EntityTestCase {
                 .setAllowedTlds(ImmutableSet.of("xn--q9jyb4c"))
                 .setWhoisServer("whois.example.com")
                 .setBlockPremiumNames(true)
-                .setClientCertificate(SAMPLE_CERT, fakeClock.nowUtc())
+                .setClientCertificate(SAMPLE_CERT, fakeClock.now())
                 .setIpAddressAllowList(
                     ImmutableList.of(
                         CidrAddressBlock.create("192.168.1.1/31"),
@@ -222,10 +222,10 @@ class RegistrarTest extends EntityTestCase {
 
   @Test
   void testSetCertificateHash_alsoSetsHash() {
-    registrar = registrar.asBuilder().setClientCertificate(null, fakeClock.nowUtc()).build();
+    registrar = registrar.asBuilder().setClientCertificate(null, fakeClock.now()).build();
     fakeClock.advanceOneMilli();
-    registrar = registrar.asBuilder().setClientCertificate(SAMPLE_CERT, fakeClock.nowUtc()).build();
-    assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.nowUtc());
+    registrar = registrar.asBuilder().setClientCertificate(SAMPLE_CERT, fakeClock.now()).build();
+    assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.now());
     assertThat(registrar.getClientCertificate()).hasValue(SAMPLE_CERT);
     assertThat(registrar.getClientCertificateHash()).hasValue(SAMPLE_CERT_HASH);
   }
@@ -234,8 +234,8 @@ class RegistrarTest extends EntityTestCase {
   void testDeleteCertificateHash_alsoDeletesHash() {
     assertThat(registrar.getClientCertificateHash()).isPresent();
     fakeClock.advanceOneMilli();
-    registrar = registrar.asBuilder().setClientCertificate(null, fakeClock.nowUtc()).build();
-    assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.nowUtc());
+    registrar = registrar.asBuilder().setClientCertificate(null, fakeClock.now()).build();
+    assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.now());
     assertThat(registrar.getClientCertificate()).isEmpty();
     assertThat(registrar.getClientCertificateHash()).isEmpty();
   }
@@ -244,11 +244,8 @@ class RegistrarTest extends EntityTestCase {
   void testSetFailoverCertificateHash_alsoSetsHash() {
     fakeClock.advanceOneMilli();
     registrar =
-        registrar
-            .asBuilder()
-            .setFailoverClientCertificate(SAMPLE_CERT2, fakeClock.nowUtc())
-            .build();
-    assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.nowUtc());
+        registrar.asBuilder().setFailoverClientCertificate(SAMPLE_CERT2, fakeClock.now()).build();
+    assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.now());
     assertThat(registrar.getFailoverClientCertificate()).hasValue(SAMPLE_CERT2);
     assertThat(registrar.getFailoverClientCertificateHash()).hasValue(SAMPLE_CERT2_HASH);
   }
@@ -256,12 +253,11 @@ class RegistrarTest extends EntityTestCase {
   @Test
   void testDeleteFailoverCertificateHash_alsoDeletesHash() {
     registrar =
-        registrar.asBuilder().setFailoverClientCertificate(SAMPLE_CERT, fakeClock.nowUtc()).build();
+        registrar.asBuilder().setFailoverClientCertificate(SAMPLE_CERT, fakeClock.now()).build();
     assertThat(registrar.getFailoverClientCertificateHash()).isPresent();
     fakeClock.advanceOneMilli();
-    registrar =
-        registrar.asBuilder().setFailoverClientCertificate(null, fakeClock.nowUtc()).build();
-    assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.nowUtc());
+    registrar = registrar.asBuilder().setFailoverClientCertificate(null, fakeClock.now()).build();
+    assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.now());
     assertThat(registrar.getFailoverClientCertificate()).isEmpty();
     assertThat(registrar.getFailoverClientCertificateHash()).isEmpty();
   }
@@ -456,13 +452,13 @@ class RegistrarTest extends EntityTestCase {
 
   @Test
   void testSuccess_getLastExpiringCertNotificationSentDate_returnsInitialValue() {
-    assertThat(registrar.getLastExpiringCertNotificationSentDate()).isEqualTo(START_OF_TIME);
+    assertThat(registrar.getLastExpiringCertNotificationSentDate()).isEqualTo(START_INSTANT);
   }
 
   @Test
   void testSuccess_getLastExpiringFailoverCertNotificationSentDate_returnsInitialValue() {
     assertThat(registrar.getLastExpiringFailoverCertNotificationSentDate())
-        .isEqualTo(START_OF_TIME);
+        .isEqualTo(START_INSTANT);
   }
 
   @Test
@@ -470,10 +466,10 @@ class RegistrarTest extends EntityTestCase {
     assertThat(
             registrar
                 .asBuilder()
-                .setLastExpiringCertNotificationSentDate(fakeClock.nowUtc())
+                .setLastExpiringCertNotificationSentDate(fakeClock.now())
                 .build()
                 .getLastExpiringCertNotificationSentDate())
-        .isEqualTo(fakeClock.nowUtc());
+        .isEqualTo(fakeClock.now());
   }
 
   @Test
@@ -495,10 +491,10 @@ class RegistrarTest extends EntityTestCase {
     assertThat(
             registrar
                 .asBuilder()
-                .setLastExpiringFailoverCertNotificationSentDate(fakeClock.nowUtc())
+                .setLastExpiringFailoverCertNotificationSentDate(fakeClock.now())
                 .build()
                 .getLastExpiringFailoverCertNotificationSentDate())
-        .isEqualTo(fakeClock.nowUtc());
+        .isEqualTo(fakeClock.now());
   }
 
   @Test
@@ -506,10 +502,10 @@ class RegistrarTest extends EntityTestCase {
     assertThat(
             registrar
                 .asBuilder()
-                .setLastPocVerificationDate(fakeClock.nowUtc())
+                .setLastPocVerificationDate(fakeClock.now())
                 .build()
                 .getLastPocVerificationDate())
-        .isEqualTo(fakeClock.nowUtc());
+        .isEqualTo(fakeClock.now());
   }
 
   @Test

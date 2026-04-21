@@ -19,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -376,7 +377,7 @@ public class CheckBulkComplianceActionTest {
             String.format(DOMAIN_LIMIT_WARNING_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
     BulkPricingPackage packageAfterCheck =
         tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
-    assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
+    assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.now());
   }
 
   @Test
@@ -458,7 +459,7 @@ public class CheckBulkComplianceActionTest {
             .asBuilder()
             .setMaxCreates(4)
             .setMaxDomains(1)
-            .setLastNotificationSent(clock.nowUtc().minusDays(5))
+            .setLastNotificationSent(toInstant(clock.nowUtc().minusDays(5)))
             .build();
     tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
@@ -488,7 +489,7 @@ public class CheckBulkComplianceActionTest {
     BulkPricingPackage packageAfterCheck =
         tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get())
-        .isEqualTo(clock.nowUtc().minusDays(5));
+        .isEqualTo(toInstant(clock.nowUtc().minusDays(5)));
   }
 
   @Test
@@ -499,7 +500,7 @@ public class CheckBulkComplianceActionTest {
             .asBuilder()
             .setMaxCreates(4)
             .setMaxDomains(1)
-            .setLastNotificationSent(clock.nowUtc().minusDays(45))
+            .setLastNotificationSent(toInstant(clock.nowUtc().minusDays(45)))
             .build();
     tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
@@ -533,7 +534,7 @@ public class CheckBulkComplianceActionTest {
             String.format(DOMAIN_LIMIT_WARNING_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
     BulkPricingPackage packageAfterCheck =
         tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
-    assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
+    assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.now());
   }
 
   @Test
@@ -544,7 +545,7 @@ public class CheckBulkComplianceActionTest {
             .asBuilder()
             .setMaxCreates(4)
             .setMaxDomains(1)
-            .setLastNotificationSent(clock.nowUtc().minusDays(31))
+            .setLastNotificationSent(toInstant(clock.nowUtc().minusDays(31)))
             .build();
     tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
@@ -578,6 +579,6 @@ public class CheckBulkComplianceActionTest {
             String.format(DOMAIN_LIMIT_UPGRADE_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
     BulkPricingPackage packageAfterCheck =
         tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
-    assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
+    assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.now());
   }
 }

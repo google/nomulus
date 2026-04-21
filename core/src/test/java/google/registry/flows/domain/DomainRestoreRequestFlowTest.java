@@ -208,7 +208,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         new PollMessage.Autorenew.Builder()
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
+            .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
@@ -276,7 +276,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         new PollMessage.Autorenew.Builder()
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
+            .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
@@ -322,7 +322,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     persistResource(
         reloadResourceByForeignKey()
             .asBuilder()
-            .setAutorenewEndTimeInstant(Optional.of(plusYears(clock.now(), 2)))
+            .setAutorenewEndTime(Optional.of(plusYears(clock.now(), 2)))
             .build());
     assertThat(reloadResourceByForeignKey().getAutorenewEndTime()).isPresent();
     runFlowAssertResponse(
@@ -482,12 +482,11 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
-            .setRenewBillingCostTransitionsInstant(
-                ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 7)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 7)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 0))
             .build());
@@ -601,10 +600,10 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitionsInstant(
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))

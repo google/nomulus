@@ -31,7 +31,6 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActi
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RESTORE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -70,9 +69,10 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that requests that a domain in the redemption grace period be restored.
@@ -137,12 +137,11 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     verifyRegistrarIsActive(registrarId);
     extensionManager.validate();
     Update command = (Update) resourceCommand;
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    boolean isExpired = existingDomain.getRegistrationExpirationDateTime().isBefore(now);
+    boolean isExpired = existingDomain.getRegistrationExpirationTime().isBefore(now);
     FeesAndCredits feesAndCredits =
-        pricingLogic.getRestorePrice(
-            Tld.get(existingDomain.getTld()), targetId, toInstant(now), isExpired);
+        pricingLogic.getRestorePrice(Tld.get(existingDomain.getTld()), targetId, now, isExpired);
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);
@@ -150,8 +149,12 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
     ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
 
-    DateTime newExpirationTime =
-        existingDomain.getRegistrationExpirationDateTime().plusYears(isExpired ? 1 : 0);
+    Instant newExpirationTime =
+        existingDomain
+            .getRegistrationExpirationTime()
+            .atZone(ZoneOffset.UTC)
+            .plusYears(isExpired ? 1 : 0)
+            .toInstant();
     // Restore the expiration time on the deleted domain, except if that's already passed, then add
     // a year and bill for it immediately, with no grace period.
     if (isExpired) {
@@ -164,14 +167,14 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
 
     BillingRecurrence autorenewEvent =
         newAutorenewBillingEvent(existingDomain)
-            .setEventTime(toInstant(newExpirationTime))
+            .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistoryId(domainHistoryId)
             .build();
     entitiesToInsert.add(autorenewEvent);
     PollMessage.Autorenew autorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
-            .setEventTime(toInstant(newExpirationTime))
+            .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_INSTANT)
             .setDomainHistoryId(domainHistoryId)
             .build();
@@ -197,17 +200,14 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
         .build();
   }
 
-  private DomainHistory buildDomainHistory(Domain newDomain, DateTime now) {
+  private DomainHistory buildDomainHistory(Domain newDomain, Instant now) {
     return historyBuilder
         .setType(DOMAIN_RESTORE)
         .setDomain(newDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(
                 DomainTransactionRecord.create(
-                    newDomain.getTld(),
-                    toInstant(now),
-                    TransactionReportField.RESTORED_DOMAINS,
-                    1)))
+                    newDomain.getTld(), now, TransactionReportField.RESTORED_DOMAINS, 1)))
         .build();
   }
 
@@ -216,7 +216,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
       Domain existingDomain,
       Optional<FeeUpdateCommandExtension> feeUpdate,
       FeesAndCredits feesAndCredits,
-      DateTime now)
+      Instant now)
       throws EppException {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     if (!isSuperuser) {
@@ -239,10 +239,10 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
 
   private static Domain performRestore(
       Domain existingDomain,
-      DateTime newExpirationTime,
+      Instant newExpirationTime,
       BillingRecurrence autorenewEvent,
       PollMessage.Autorenew autorenewPollMessage,
-      DateTime now,
+      Instant now,
       String registrarId) {
     return existingDomain
         .asBuilder()
@@ -256,28 +256,28 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
         // Clear the autorenew end time so if it had expired but is now explicitly being restored,
         // it won't immediately be deleted again.
         .setAutorenewEndTime(Optional.empty())
-        .setLastEppUpdateTime(toInstant(now))
+        .setLastEppUpdateTime(now)
         .setLastEppUpdateRegistrarId(registrarId)
         .build();
   }
 
   private BillingEvent createRenewBillingEvent(
-      HistoryEntryId domainHistoryId, Money renewCost, DateTime now) {
+      HistoryEntryId domainHistoryId, Money renewCost, Instant now) {
     return prepareBillingEvent(domainHistoryId, renewCost, now).setReason(Reason.RENEW).build();
   }
 
   private BillingEvent createRestoreBillingEvent(
-      HistoryEntryId domainHistoryId, Money restoreCost, DateTime now) {
+      HistoryEntryId domainHistoryId, Money restoreCost, Instant now) {
     return prepareBillingEvent(domainHistoryId, restoreCost, now).setReason(Reason.RESTORE).build();
   }
 
   private BillingEvent.Builder prepareBillingEvent(
-      HistoryEntryId domainHistoryId, Money cost, DateTime now) {
+      HistoryEntryId domainHistoryId, Money cost, Instant now) {
     return new BillingEvent.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
-        .setEventTime(toInstant(now))
-        .setBillingTime(toInstant(now))
+        .setEventTime(now)
+        .setBillingTime(now)
         .setPeriodYears(1)
         .setCost(cost)
         .setDomainHistoryId(domainHistoryId);

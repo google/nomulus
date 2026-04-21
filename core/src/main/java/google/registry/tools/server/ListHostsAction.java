@@ -28,7 +28,7 @@ import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /** An action that lists hosts, for use by the {@code nomulus list_hosts} command. */
 @Action(
@@ -50,7 +50,7 @@ public final class ListHostsAction extends ListObjectsAction<Host> {
 
   @Override
   public ImmutableSet<Host> loadObjects() {
-    final DateTime now = clock.nowUtc();
+    final Instant now = clock.now();
     return loadAllOf(Host.class)
         .flatMap(ImmutableList::stream)
         .filter(host -> EppResourceUtils.isActive(host, now))

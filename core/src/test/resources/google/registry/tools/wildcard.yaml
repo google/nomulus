@@ -5,7 +5,7 @@ autoRenewGracePeriodLength: "PT3888000S"
 automaticTransferLength: "PT432000S"
 claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
 createBillingCostTransitions:
-  "1970-01-01T00:00:00.000Z":
+  "1970-01-01T00:00:00Z":
     currency: "USD"
     amount: 25.00
 creationTime: "2022-09-01T00:00:00.000Z"
@@ -19,7 +19,7 @@ dnsWriters:
 - "VoidDnsWriter"
 driveFolderId: "driveFolder"
 eapFeeSchedule:
-  "1970-01-01T00:00:00.000Z":
+  "1970-01-01T00:00:00Z":
     currency: "USD"
     amount: 0.00
 escrowEnabled: false
@@ -35,7 +35,7 @@ registryLockOrUnlockBillingCost:
   currency: "USD"
   amount: 0.00
 renewBillingCostTransitions:
-  "1970-01-01T00:00:00.000Z":
+  "1970-01-01T00:00:00Z":
     currency: "USD"
     amount: 11.00
 renewGracePeriodLength: "PT432000S"
@@ -48,7 +48,7 @@ serverStatusChangeBillingCost:
   currency: "USD"
   amount: 19.00
 tldStateTransitions:
-  "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
+  "1970-01-01T00:00:00Z": "GENERAL_AVAILABILITY"
 tldStr: %TLDSTR%
 tldType: "REAL"
 tldUnicode: %TLDUNICODE%

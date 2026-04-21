@@ -621,23 +621,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>Note that {@link TldState#PDT} TLDs pretend to be in {@link TldState#GENERAL_AVAILABILITY}.
    */
-  public TldState getTldState(DateTime now) {
-    return getTldState(toInstant(now));
-  }
-
-  /**
-   * Retrieve the TLD state at the given time. Defaults to {@link TldState#PREDELEGATION}.
-   *
-   * <p>Note that {@link TldState#PDT} TLDs pretend to be in {@link TldState#GENERAL_AVAILABILITY}.
-   */
   public TldState getTldState(Instant now) {
     TldState state = tldStateTransitions.getValueAtTime(now);
     return TldState.PDT.equals(state) ? TldState.GENERAL_AVAILABILITY : state;
-  }
-
-  /** Retrieve whether this TLD is in predelegation testing. */
-  public boolean isPdt(DateTime now) {
-    return isPdt(toInstant(now));
   }
 
   /** Retrieve whether this TLD is in predelegation testing. */
@@ -647,16 +633,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   public Instant getCreationTime() {
     return creationTime.getTimestamp();
-  }
-
-  /**
-   * @deprecated Use {@link #getCreationTime()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @JsonIgnore
-  public DateTime getCreationDateTime() {
-    return toDateTime(creationTime.getTimestamp());
   }
 
   public boolean getEscrowEnabled() {
@@ -716,24 +692,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * Use {@code PricingEngineProxy.getDomainCreateCost} instead of this to find the cost for a
    * domain create.
    */
-  public Money getCreateBillingCost(DateTime now) {
-    return getCreateBillingCost(toInstant(now));
-  }
-
-  /**
-   * Use {@code PricingEngineProxy.getDomainCreateCost} instead of this to find the cost for a
-   * domain create.
-   */
   public Money getCreateBillingCost(Instant now) {
     return createBillingCostTransitions.getValueAtTime(now);
   }
 
-  public ImmutableSortedMap<DateTime, Money> getCreateBillingCostTransitions() {
-    return createBillingCostTransitions.toValueMap();
-  }
-
-  @JsonIgnore
-  public ImmutableSortedMap<Instant, Money> getCreateBillingCostTransitionsInstant() {
+  public ImmutableSortedMap<Instant, Money> getCreateBillingCostTransitions() {
     return createBillingCostTransitions.toValueMapInstant();
   }
 
@@ -743,15 +706,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    */
   public Money getRestoreBillingCost() {
     return restoreBillingCost;
-  }
-
-  /**
-   * Use {@code PricingEngineProxy.getDomainRenewCost} instead of this to find the cost for a domain
-   * renewal, and all derived costs (i.e. autorenews, transfers, and the per-domain part of a
-   * restore cost).
-   */
-  public Money getStandardRenewCost(DateTime now) {
-    return getStandardRenewCost(toInstant(now));
   }
 
   /**
@@ -773,32 +727,17 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return registryLockOrUnlockBillingCost;
   }
 
-  public ImmutableSortedMap<DateTime, TldState> getTldStateTransitions() {
-    return tldStateTransitions.toValueMap();
-  }
-
-  @JsonIgnore
-  public ImmutableSortedMap<Instant, TldState> getTldStateTransitionsInstant() {
+  public ImmutableSortedMap<Instant, TldState> getTldStateTransitions() {
     return tldStateTransitions.toValueMapInstant();
   }
 
-  public ImmutableSortedMap<DateTime, Money> getRenewBillingCostTransitions() {
-    return renewBillingCostTransitions.toValueMap();
-  }
-
-  @JsonIgnore
-  public ImmutableSortedMap<Instant, Money> getRenewBillingCostTransitionsInstant() {
+  public ImmutableSortedMap<Instant, Money> getRenewBillingCostTransitions() {
     return renewBillingCostTransitions.toValueMapInstant();
   }
 
   /** Returns the EAP fee for the tld at the given time. */
-  public Fee getEapFeeFor(DateTime now) {
-    return getEapFeeFor(toInstant(now));
-  }
-
-  /** Returns the EAP fee for the tld at the given time. */
   public Fee getEapFeeFor(Instant now) {
-    ImmutableSortedMap<Instant, Money> valueMap = getEapFeeScheduleAsMapInstant();
+    ImmutableSortedMap<Instant, Money> valueMap = getEapFeeScheduleAsMap();
     Instant periodStart = valueMap.floorKey(now);
     Instant periodEnd = valueMap.ceilingKey(now);
     // NOTE: assuming END_INSTANT would never be reached...
@@ -818,13 +757,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   @VisibleForTesting
   @JsonProperty("eapFeeSchedule")
-  public ImmutableSortedMap<DateTime, Money> getEapFeeScheduleAsMap() {
-    return eapFeeSchedule.toValueMap();
-  }
-
-  @JsonIgnore
-  @VisibleForTesting
-  public ImmutableSortedMap<Instant, Money> getEapFeeScheduleAsMapInstant() {
+  public ImmutableSortedMap<Instant, Money> getEapFeeScheduleAsMap() {
     return eapFeeSchedule.toValueMapInstant();
   }
 
@@ -832,12 +765,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return lordnUsername;
   }
 
-  public DateTime getClaimsPeriodEnd() {
-    return toDateTime(claimsPeriodEnd);
-  }
-
-  @JsonIgnore
-  public Instant getClaimsPeriodEndInstant() {
+  public Instant getClaimsPeriodEnd() {
     return claimsPeriodEnd;
   }
 
@@ -914,17 +842,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     /** Sets the TLD state to transition to the specified states at the specified times. */
-    public Builder setTldStateTransitions(ImmutableSortedMap<DateTime, TldState> tldStatesMap) {
-      return setTldStateTransitionsInstant(
-          tldStatesMap.entrySet().stream()
-              .collect(
-                  ImmutableSortedMap.toImmutableSortedMap(
-                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
-    }
-
-    /** Sets the TLD state to transition to the specified states at the specified times. */
-    public Builder setTldStateTransitionsInstant(
-        ImmutableSortedMap<Instant, TldState> tldStatesMap) {
+    public Builder setTldStateTransitions(ImmutableSortedMap<Instant, TldState> tldStatesMap) {
       checkNotNull(tldStatesMap, "TLD states map cannot be null");
       // Filter out any entries with QUIET_PERIOD as the value before checking for ordering, since
       // that phase is allowed to appear anywhere.
@@ -1056,15 +974,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setCreateBillingCostTransitions(
-        ImmutableSortedMap<DateTime, Money> createCostsMap) {
-      return setCreateBillingCostTransitionsInstant(
-          createCostsMap.entrySet().stream()
-              .collect(
-                  ImmutableSortedMap.toImmutableSortedMap(
-                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
-    }
-
-    public Builder setCreateBillingCostTransitionsInstant(
         ImmutableSortedMap<Instant, Money> createCostsMap) {
       checkArgumentNotNull(createCostsMap, "Create billing costs map cannot be null");
       checkArgument(
@@ -1117,24 +1026,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-    /**
-     * Sets the renew billing cost to transition to the specified values at the specified times.
-     *
-     * <p>Renew billing costs transitions should only be added at least 5 days (the length of an
-     * automatic transfer) in advance, to avoid discrepancies between the cost stored with the
-     * billing event (created when the transfer is requested) and the cost at the time when the
-     * transfer actually occurs (5 days later).
-     */
     public Builder setRenewBillingCostTransitions(
-        ImmutableSortedMap<DateTime, Money> renewCostsMap) {
-      return setRenewBillingCostTransitionsInstant(
-          renewCostsMap.entrySet().stream()
-              .collect(
-                  ImmutableSortedMap.toImmutableSortedMap(
-                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
-    }
-
-    public Builder setRenewBillingCostTransitionsInstant(
         ImmutableSortedMap<Instant, Money> renewCostsMap) {
       checkArgumentNotNull(renewCostsMap, "Renew billing costs map cannot be null");
       checkArgument(
@@ -1146,16 +1038,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     /** Sets the EAP fee schedule for the TLD. */
-    public Builder setEapFeeSchedule(ImmutableSortedMap<DateTime, Money> eapFeeSchedule) {
-      return setEapFeeScheduleInstant(
-          eapFeeSchedule.entrySet().stream()
-              .collect(
-                  ImmutableSortedMap.toImmutableSortedMap(
-                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
-    }
-
-    /** Sets the EAP fee schedule for the TLD. */
-    public Builder setEapFeeScheduleInstant(ImmutableSortedMap<Instant, Money> eapFeeSchedule) {
+    public Builder setEapFeeSchedule(ImmutableSortedMap<Instant, Money> eapFeeSchedule) {
       checkArgumentNotNull(eapFeeSchedule, "EAP fee schedule cannot be null");
       checkArgument(
           eapFeeSchedule.values().stream().allMatch(Money::isPositiveOrZero),
@@ -1194,11 +1077,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-    public Builder setClaimsPeriodEnd(DateTime claimsPeriodEnd) {
-      return setClaimsPeriodEndInstant(toInstant(claimsPeriodEnd));
-    }
-
-    public Builder setClaimsPeriodEndInstant(Instant claimsPeriodEnd) {
+    public Builder setClaimsPeriodEnd(Instant claimsPeriodEnd) {
       getInstance().claimsPeriodEnd = checkArgumentNotNull(claimsPeriodEnd);
       return this;
     }
@@ -1287,12 +1166,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       Predicate<Money> currencyCheck =
           (Money money) -> money.getCurrencyUnit().equals(instance.currency);
       checkArgument(
-          instance.getRenewBillingCostTransitionsInstant().values().stream()
-              .allMatch(currencyCheck),
+          instance.getRenewBillingCostTransitions().values().stream().allMatch(currencyCheck),
           "Renew cost must be in the TLD's currency");
       checkArgument(
-          instance.getCreateBillingCostTransitionsInstant().values().stream()
-              .allMatch(currencyCheck),
+          instance.getCreateBillingCostTransitions().values().stream().allMatch(currencyCheck),
           "Create cost must be in the TLD's currency");
       checkArgument(
           instance.eapFeeSchedule.toValueMapInstant().values().stream().allMatch(currencyCheck),

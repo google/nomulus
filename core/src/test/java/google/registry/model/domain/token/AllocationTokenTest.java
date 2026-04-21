@@ -74,7 +74,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setDiscountFraction(0.5)
                 .setDiscountPremiums(true)
                 .setDiscountYears(3)
-                .setTokenStatusTransitionsInstant(
+                .setTokenStatusTransitions(
                     ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                         .put(START_INSTANT, NOT_STARTED)
                         .put(fakeClock.now(), TokenStatus.VALID)
@@ -111,7 +111,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setDiscountFraction(0.5)
                 .setDiscountPremiums(true)
                 .setDiscountYears(3)
-                .setTokenStatusTransitionsInstant(
+                .setTokenStatusTransitions(
                     ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                         .put(START_INSTANT, NOT_STARTED)
                         .put(fakeClock.now(), TokenStatus.VALID)
@@ -420,7 +420,7 @@ public class AllocationTokenTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new AllocationToken.Builder()
-                    .setTokenStatusTransitionsInstant(
+                    .setTokenStatusTransitions(
                         ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                             .put(fakeClock.now(), NOT_STARTED)
                             .put(plusDays(fakeClock.now(), 1), TokenStatus.VALID)
@@ -438,7 +438,7 @@ public class AllocationTokenTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new AllocationToken.Builder()
-                    .setTokenStatusTransitionsInstant(
+                    .setTokenStatusTransitions(
                         ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                             .put(START_INSTANT, TokenStatus.VALID)
                             .put(fakeClock.now(), TokenStatus.ENDED)
@@ -720,7 +720,7 @@ public class AllocationTokenTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new AllocationToken.Builder().setTokenStatusTransitionsInstant(map));
+            () -> new AllocationToken.Builder().setTokenStatusTransitions(map));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
@@ -734,7 +734,7 @@ public class AllocationTokenTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new AllocationToken.Builder()
-                    .setTokenStatusTransitionsInstant(
+                    .setTokenStatusTransitions(
                         ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                             .put(START_INSTANT, NOT_STARTED)
                             .put(fakeClock.now(), VALID)

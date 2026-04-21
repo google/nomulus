@@ -346,7 +346,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
             .setDomainName("specificuse.tld")
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -370,7 +370,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(0.5)
             .setDiscountYears(2)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -393,7 +393,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setDiscountFraction(0.5)
             .setDiscountYears(2)
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -415,7 +415,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setDiscountFraction(0.9)
             .setDiscountYears(3)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -473,7 +473,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
             .setDomainName("specificuse.tld")
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 2), TokenStatus.VALID)
@@ -535,7 +535,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setDomainName("single.tld")
             .setDiscountFraction(0.444)
             .setDiscountYears(2)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -568,7 +568,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(plusDays(clock.now(), 1), TokenStatus.VALID)
@@ -592,7 +592,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
             .setAllowedTlds(ImmutableSet.of("example"))
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -616,7 +616,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
             .setAllowedRegistrarIds(ImmutableSet.of("someOtherClient"))
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -801,10 +801,10 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitionsInstant(
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
@@ -1047,7 +1047,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 11.1)))
             .build());
     setEppInput("domain_check_fee_fractional_stdv1.xml");
@@ -1150,10 +1150,10 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         createTld("example")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitionsInstant(
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
@@ -1218,7 +1218,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         setUpDefaultToken("NewRegistrar")
             .asBuilder()
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     TokenStatus.NOT_STARTED,
@@ -1327,7 +1327,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("example")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<Instant, Money>(Ordering.natural())
                     .put(START_INSTANT, Money.of(USD, 0))
                     .put(minusDays(clock.now(), 1), Money.of(USD, 100))
@@ -1356,7 +1356,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("example")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<Instant, Money>(Ordering.natural())
                     .put(START_INSTANT, Money.of(USD, 0))
                     .put(minusDays(startTime, 1), Money.of(USD, 100))
@@ -2073,10 +2073,10 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         createTld("example")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitionsInstant(
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
@@ -2117,7 +2117,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         setUpDefaultToken("NewRegistrar")
             .asBuilder()
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     TokenStatus.NOT_STARTED,
@@ -2137,7 +2137,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 11.1)))
             .build());
     setEppInput("domain_check_fee_fractional_v06.xml");
@@ -2156,7 +2156,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setDiscountFraction(0.5)
             .setDiscountYears(2)
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -2190,7 +2190,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setDomainName("single.tld")
             .setDiscountFraction(0.444)
             .setDiscountYears(2)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -2225,7 +2225,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setDiscountFraction(0.9)
             .setDiscountYears(3)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -2274,7 +2274,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(plusDays(clock.now(), 1), TokenStatus.VALID)
@@ -2303,7 +2303,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(0.5)
             .setDiscountYears(2)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -2323,7 +2323,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
             .setAllowedTlds(ImmutableSet.of("example"))
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -2351,7 +2351,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
             .setAllowedRegistrarIds(ImmutableSet.of("someOtherClient"))
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -2453,7 +2453,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 new ImmutableSortedMap.Builder<Instant, Money>(Ordering.natural())
                     .put(START_INSTANT, Money.of(USD, 0))
                     .put(minusDays(clock.now(), 1), Money.of(USD, 100))

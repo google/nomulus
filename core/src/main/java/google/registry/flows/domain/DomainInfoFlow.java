@@ -56,8 +56,8 @@ import google.registry.persistence.IsolationLevel;
 import google.registry.persistence.PersistenceModule;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that returns information about a domain.
@@ -105,7 +105,7 @@ public final class DomainInfoFlow implements MutatingFlow {
     flowCustomLogic.beforeValidation();
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     Domain domain = loadAndVerifyExistence(Domain.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, domain);
     flowCustomLogic.afterValidation(
@@ -124,7 +124,7 @@ public final class DomainInfoFlow implements MutatingFlow {
             .setCreationTime(domain.getCreationTime())
             .setLastEppUpdateTime(domain.getLastEppUpdateTime())
             .setRegistrationExpirationTime(domain.getRegistrationExpirationTime())
-            .setLastTransferTime(domain.getLastTransferTimeInstant());
+            .setLastTransferTime(domain.getLastTransferTime());
 
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
@@ -149,7 +149,7 @@ public final class DomainInfoFlow implements MutatingFlow {
         .build();
   }
 
-  private ImmutableList<ResponseExtension> getDomainResponseExtensions(Domain domain, DateTime now)
+  private ImmutableList<ResponseExtension> getDomainResponseExtensions(Domain domain, Instant now)
       throws EppException {
     ImmutableList.Builder<ResponseExtension> extensions = new ImmutableList.Builder<>();
     addSecDnsExtensionIfPresent(extensions, domain.getDsData());

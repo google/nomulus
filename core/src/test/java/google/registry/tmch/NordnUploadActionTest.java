@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -199,7 +200,8 @@ class NordnUploadActionTest {
             .setCreationTimeForTest(clock.now())
             .setCreationRegistrarId("NewRegistrar")
             .setLaunchNotice(
-                LaunchNotice.create("landrush2tcn", null, null, clock.nowUtc().minusHours(2)))
+                LaunchNotice.create(
+                    "landrush2tcn", null, null, toInstant(clock.nowUtc().minusHours(2))))
             .setLordnPhase(LordnPhase.CLAIMS)
             .build());
     clock.advanceBy(Duration.standardDays(1));
@@ -208,7 +210,8 @@ class NordnUploadActionTest {
             .asBuilder()
             .setCreationTimeForTest(clock.now())
             .setLaunchNotice(
-                LaunchNotice.create("landrush1tcn", null, null, clock.nowUtc().minusHours(1)))
+                LaunchNotice.create(
+                    "landrush1tcn", null, null, toInstant(clock.nowUtc().minusHours(1))))
             .setLordnPhase(LordnPhase.CLAIMS)
             .build());
   }

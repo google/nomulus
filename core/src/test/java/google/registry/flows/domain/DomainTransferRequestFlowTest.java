@@ -47,7 +47,6 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static google.registry.testing.HostSubject.assertAboutHosts;
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
@@ -345,7 +344,7 @@ class DomainTransferRequestFlowTest
     assertThat(domain.getGracePeriods()).containsExactlyElementsIn(originalGracePeriods);
     // If we fast forward AUTOMATIC_TRANSFER_DAYS, the transfer should have cleared out all other
     // grace periods, but expect a transfer grace period (if there was a transfer billing event).
-    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtInstant(implicitTransferTime);
+    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
     if (expectTransferBillingEvent) {
       assertGracePeriods(
           domainAfterAutomaticTransfer.getGracePeriods(),
@@ -440,7 +439,7 @@ class DomainTransferRequestFlowTest
       Instant expectedExpirationTime, Instant implicitTransferTime, Period expectedPeriod)
       throws Exception {
     Tld registry = Tld.get(domain.getTld());
-    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtInstant(implicitTransferTime);
+    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
     assertTransferApproved(domainAfterAutomaticTransfer, implicitTransferTime, expectedPeriod);
     assertAboutDomains()
         .that(domainAfterAutomaticTransfer)
@@ -453,7 +452,7 @@ class DomainTransferRequestFlowTest
         .isEqualTo(expectedExpirationTime);
     // And after the expected grace time, the grace period should be gone.
     Domain afterGracePeriod =
-        domain.cloneProjectedAtInstant(
+        domain.cloneProjectedAtTime(
             clock
                 .now()
                 .plusMillis(registry.getAutomaticTransferLength().getMillis())
@@ -801,7 +800,7 @@ class DomainTransferRequestFlowTest
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     doSuccessfulTest("domain_transfer_request.xml", "domain_transfer_request_response.xml");
   }
@@ -1025,10 +1024,10 @@ class DomainTransferRequestFlowTest
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
             .setRestoreBillingCost(Money.ofMajor(JPY, 800))
@@ -1489,7 +1488,7 @@ class DomainTransferRequestFlowTest
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     EppException thrown =
         assertThrows(
@@ -1795,7 +1794,7 @@ class DomainTransferRequestFlowTest
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(plusDays(clock.now(), 1), TokenStatus.VALID)
@@ -1816,7 +1815,7 @@ class DomainTransferRequestFlowTest
             .setTokenType(UNLIMITED_USE)
             .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)

@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
@@ -194,7 +195,8 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
     return tm().transact(
             () ->
                 RegistryLockDao.getLocksByRegistrarId(registrarId).stream()
-                    .filter(lock -> !lock.isLockRequestExpired(tm().getTxTime()))
+                    .filter(
+                        lock -> !lock.isLockRequestExpired(toInstant(tm().getTransactionTime())))
                     .collect(toImmutableList()));
   }
 

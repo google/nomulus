@@ -21,6 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -78,7 +79,7 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
                     .setParameter("tlds", tlds)
                     .setMaxResults(limit)
                     .getResultStream()
-                    .map(EppResourceUtils.transformAtTime(tm().getTransactionTime()))
+                    .map(EppResourceUtils.transformAtTime(toDateTime(tm().getTxTime())))
                     .collect(toImmutableList()));
   }
 }

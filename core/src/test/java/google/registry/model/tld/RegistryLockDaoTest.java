@@ -82,8 +82,8 @@ public final class RegistryLockDaoTest extends EntityTestCase {
                 .setRelockDuration(Duration.standardHours(6))
                 .build());
     RegistryLock fromDatabase = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
-    assertThat(fromDatabase.getUnlockRequestTime()).hasValue(fakeClock.now());
-    assertThat(fromDatabase.getUnlockCompletionTime()).hasValue(fakeClock.now());
+    assertThat(fromDatabase.getUnlockRequestTime()).isEqualTo(Optional.of(fakeClock.now()));
+    assertThat(fromDatabase.getUnlockCompletionTime()).isEqualTo(Optional.of(fakeClock.now()));
     assertThat(fromDatabase.isLocked()).isFalse();
     assertThat(fromDatabase.getRelockDuration()).hasValue(Duration.standardHours(6));
   }
@@ -98,7 +98,8 @@ public final class RegistryLockDaoTest extends EntityTestCase {
             () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
-              assertThat(fromDatabase.getLockCompletionTime()).hasValue(fakeClock.now());
+              assertThat(fromDatabase.getLockCompletionTime())
+                  .isEqualTo(Optional.of(fakeClock.now()));
             });
   }
 

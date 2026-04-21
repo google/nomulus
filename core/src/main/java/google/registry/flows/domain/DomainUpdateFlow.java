@@ -38,7 +38,6 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNot
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -85,9 +84,9 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that updates a domain.
@@ -165,7 +164,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
     flowCustomLogic.beforeValidation();
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     Update command = cloneAndLinkReferences((Update) resourceCommand, now);
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     verifyUpdateAllowed(command, existingDomain, now);
@@ -212,7 +211,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
   }
 
   /** Fail if the object doesn't exist or was deleted. */
-  private void verifyUpdateAllowed(Update command, Domain existingDomain, DateTime now)
+  private void verifyUpdateAllowed(Update command, Domain existingDomain, Instant now)
       throws EppException {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     AddRemove add = command.getInnerAdd();
@@ -228,13 +227,13 @@ public final class DomainUpdateFlow implements MutatingFlow {
     Tld tld = Tld.get(tldStr);
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
-    FeesAndCredits feesAndCredits = pricingLogic.getUpdatePrice(tld, targetId, toInstant(now));
+    FeesAndCredits feesAndCredits = pricingLogic.getUpdatePrice(tld, targetId, now);
     validateFeesAckedIfPresent(feeUpdate, feesAndCredits, false);
     verifyNotInPendingDelete(add.getNameservers());
     validateNameserversAllowedOnTld(tldStr, add.getNameserverHostNames());
   }
 
-  private Domain performUpdate(Update command, Domain domain, DateTime now) throws EppException {
+  private Domain performUpdate(Update command, Domain domain, Instant now) throws EppException {
     AddRemove add = command.getInnerAdd();
     AddRemove remove = command.getInnerRemove();
     Optional<SecDnsUpdateExtension> secDnsUpdate =
@@ -263,7 +262,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
                             .collect(toImmutableSet()),
                         secDnsUpdate.get())
                     : domain.getDsData())
-            .setLastEppUpdateTime(toInstant(now))
+            .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)
             .addStatusValues(add.getStatusValues())
             .removeStatusValues(remove.getStatusValues())
@@ -282,7 +281,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
       if (superuserExt.get().getAutorenews().isPresent()) {
         boolean autorenews = superuserExt.get().getAutorenews().get();
         domainBuilder.setAutorenewEndTime(
-            Optional.ofNullable(autorenews ? null : domain.getRegistrationExpirationDateTime()));
+            Optional.ofNullable(autorenews ? null : domain.getRegistrationExpirationTime()));
       }
     }
     return domainBuilder.build();
@@ -305,7 +304,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
 
   /** Some status updates cost money. Bill only once no matter how many of them are changed. */
   private Optional<BillingEvent> createBillingEventForStatusUpdates(
-      Domain existingDomain, Domain newDomain, DomainHistory historyEntry, DateTime now) {
+      Domain existingDomain, Domain newDomain, DomainHistory historyEntry, Instant now) {
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
     if (metadataExtension.isPresent() && metadataExtension.get().getRequestedByRegistrar()) {
@@ -319,8 +318,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
                   .setTargetId(targetId)
                   .setRegistrarId(registrarId)
                   .setCost(Tld.get(existingDomain.getTld()).getServerStatusChangeBillingCost())
-                  .setEventTime(toInstant(now))
-                  .setBillingTime(toInstant(now))
+                  .setEventTime(now)
+                  .setBillingTime(now)
                   .setDomainHistory(historyEntry)
                   .build());
         }
@@ -331,7 +330,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
 
   /** Enqueues a poll message iff a superuser is adding/removing server statuses. */
   private Optional<PollMessage.OneTime> createPollMessageForServerStatusUpdates(
-      Domain existingDomain, Domain newDomain, DomainHistory historyEntry, DateTime now) {
+      Domain existingDomain, Domain newDomain, DomainHistory historyEntry, Instant now) {
     if (registrarId.equals(existingDomain.getPersistedCurrentSponsorRegistrarId())) {
       // Don't send a poll message when a superuser registrar is updating its own domain.
       return Optional.empty();
@@ -369,7 +368,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
     return Optional.ofNullable(
         new PollMessage.OneTime.Builder()
             .setHistoryEntry(historyEntry)
-            .setEventTime(toInstant(now))
+            .setEventTime(now)
             .setRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
             .setMsg(msg)
             .setResponseData(
