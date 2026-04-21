@@ -32,7 +32,6 @@ import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomain
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMultimap;
@@ -67,9 +66,9 @@ import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that updates a host.
@@ -138,7 +137,7 @@ public final class HostUpdateFlow implements MutatingFlow {
     Update command = (Update) resourceCommand;
     Change change = command.getInnerChange();
     String suppliedNewHostName = change.getHostName();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     validateHostName(targetId);
     Host existingHost = loadAndVerifyExistence(Host.class, targetId, now);
     boolean isHostRename = suppliedNewHostName != null;
@@ -146,7 +145,7 @@ public final class HostUpdateFlow implements MutatingFlow {
     String newHostName = firstNonNull(suppliedNewHostName, oldHostName);
     Domain oldSuperordinateDomain =
         existingHost.isSubordinate()
-            ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
+            ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtInstant(now)
             : null;
     // Note that lookupSuperordinateDomain calls cloneProjectedAtTime on the domain for us.
     Optional<Domain> newSuperordinateDomain =
@@ -168,7 +167,7 @@ public final class HostUpdateFlow implements MutatingFlow {
     VKey<Domain> newSuperordinateDomainKey =
         newSuperordinateDomain.map(Domain::createVKey).orElse(null);
     // If the superordinateDomain field is changing, set the lastSuperordinateChange to now.
-    DateTime lastSuperordinateChange =
+    Instant lastSuperordinateChange =
         Objects.equals(newSuperordinateDomainKey, existingHost.getSuperordinateDomain())
             ? existingHost.getLastSuperordinateChange()
             : now;
@@ -176,8 +175,7 @@ public final class HostUpdateFlow implements MutatingFlow {
     // have just completed.  This is only critical for updates that rename a host away from its
     // current superordinate domain, where we must "freeze" the last transfer time, but it's easiest
     // to just update it unconditionally.
-    DateTime lastTransferTime =
-        toDateTime(existingHost.computeLastTransferTime(oldSuperordinateDomain));
+    Instant lastTransferTime = existingHost.computeLastTransferTime(oldSuperordinateDomain);
     // Copy the clientId onto the host. This is only really needed when the host will be external,
     // since external hosts store their own clientId. For subordinate hosts the canonical clientId
     // comes from the superordinate domain, but we might as well update the persisted value. For

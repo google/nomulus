@@ -276,12 +276,12 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
           ImmutableSet.copyOf(
               billingRecurrence
                   .getRecurrenceTimeOfYear()
-                  .getInstancesInRangeInstant(
+                  .getInstancesInRange(
                       Range.closedOpen(
                           latestOf(
-                              plusYears(billingRecurrence.getRecurrenceLastExpansionInstant(), 1),
+                              plusYears(billingRecurrence.getRecurrenceLastExpansion(), 1),
                               startTime),
-                          earliestOf(billingRecurrence.getRecurrenceEndTimeInstant(), endTime))));
+                          earliestOf(billingRecurrence.getRecurrenceEndTime(), endTime))));
     } catch (IllegalArgumentException e) {
       return;
     }
@@ -306,7 +306,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
       return;
     }
 
-    Instant recurrenceLastExpansionTime = billingRecurrence.getRecurrenceLastExpansionInstant();
+    Instant recurrenceLastExpansionTime = billingRecurrence.getRecurrenceLastExpansion();
 
     // Create new OneTime and DomainHistory for EventTimes that needs to be expanded.
     for (Instant eventTime : eventTimesToExpand) {

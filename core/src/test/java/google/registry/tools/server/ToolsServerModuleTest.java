@@ -37,7 +37,7 @@ public class ToolsServerModuleTest {
     DateTime expected = DateTime.parse("1991-07-01T00:00:00Z");
     Optional<DateTime> dateTimeParam = ToolsServerModule.provideDeletionTime(request);
 
-    assertThat(dateTimeParam).isEqualTo(Optional.of(expected));
+    assertThat(dateTimeParam).hasValue(expected);
   }
 
   @Test

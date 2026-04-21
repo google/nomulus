@@ -25,7 +25,7 @@ import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig.Config;
@@ -50,8 +50,8 @@ import google.registry.model.host.HostCommand.Create;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that creates a new host.
@@ -100,8 +100,8 @@ public final class HostCreateFlow implements MutatingFlow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
     Create command = (Create) resourceCommand;
-    DateTime now = tm().getTransactionTime();
-    verifyResourceDoesNotExist(Host.class, targetId, now, registrarId);
+    Instant now = tm().getTxTime();
+    verifyResourceDoesNotExist(Host.class, targetId, toDateTime(now), registrarId);
     // The superordinate domain of the host object if creating an in-bailiwick host, or null if
     // creating an external host. This is looked up before we actually create the Host object, so
     // we can detect error conditions earlier.
@@ -142,7 +142,7 @@ public final class HostCreateFlow implements MutatingFlow {
       requestHostDnsRefresh(targetId);
     }
     tm().insertAll(entitiesToInsert);
-    return responseBuilder.setResData(HostCreateData.create(targetId, toInstant(now))).build();
+    return responseBuilder.setResData(HostCreateData.create(targetId, now)).build();
   }
 
   /** Subordinate hosts must have an ip address. */

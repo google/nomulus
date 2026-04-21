@@ -94,7 +94,7 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
     // We have to use a constant checkpoint time in order to have stable pagination, since domains
     // can be constantly created or deleted
     DateTime checkpoint = checkpointTime.orElseGet(tm()::getTransactionTime);
-    CreateAutoTimestamp checkpointTimestamp = CreateAutoTimestamp.create(checkpoint);
+    CreateAutoTimestamp checkpointTimestamp = CreateAutoTimestamp.create(toInstant(checkpoint));
     // Don't compute the number of total results over and over if we don't need to
     long actualTotalResults =
         totalResults.orElseGet(

@@ -45,8 +45,9 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusMinutes;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -173,7 +174,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
               .setTargetId(getUniqueIdFromCommand())
               .setRegistrarId("TheRegistrar")
               .setEventTime(expirationTime)
-              .setRecurrenceEndTime(END_OF_TIME)
+              .setRecurrenceEndTime(toInstant(END_OF_TIME))
               .setDomainHistory(historyEntryDomainCreate)
               .setRenewalPriceBehavior(renewalPriceBehavior)
               .setRenewalPrice(renewalPrice)
@@ -262,7 +263,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     DomainHistory historyEntryDomainRenew =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW, DomainHistory.class);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
-        .isEqualTo(toDateTime(newExpiration));
+        .isEqualTo(newExpiration);
     assertAboutDomains()
         .that(domain)
         .isActiveAt(clock.now())
@@ -285,8 +286,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setPeriodYears(renewalYears)
             .setEventTime(clock.now())
             .setBillingTime(
-                toDateTime(
-                    clock.now().plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis())))
+                clock.now().plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis()))
             .setDomainHistory(historyEntryDomainRenew)
             .build();
     assertBillingEvents(
@@ -311,8 +311,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
-            .setRecurrenceEndTime(END_OF_TIME)
+            .setEventTime(toInstant(domain.getRegistrationExpirationDateTime()))
+            .setRecurrenceEndTime(toInstant(END_OF_TIME))
             .setDomainHistory(historyEntryDomainRenew)
             .build());
     // There should only be the new autorenew poll message, as the old one will have been deleted
@@ -321,7 +321,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
+            .setEventTime(toInstant(domain.getRegistrationExpirationDateTime()))
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRenew)
@@ -332,8 +332,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             GracePeriod.create(
                 GracePeriodStatus.RENEW,
                 domain.getRepoId(),
-                toDateTime(
-                    clock.now().plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis())),
+                clock.now().plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis()),
                 renewalClientId,
                 null),
             renewBillingEvent));
@@ -1104,7 +1103,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         .containsExactly(
             DomainTransactionRecord.create(
                 "tld",
-                historyEntry.getModificationTime().plusMinutes(9),
+                plusMinutes(historyEntry.getModificationTime(), 9),
                 TransactionReportField.netRenewsFieldFromYears(5),
                 1));
   }

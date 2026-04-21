@@ -24,6 +24,7 @@ import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static org.joda.time.Duration.standardDays;
 import static org.mockito.Mockito.verify;
 
@@ -110,14 +111,14 @@ public class ResaveEntityActionTest {
         persistResource(
             newDomain
                 .asBuilder()
-                .setDeletionTime(clock.nowUtc().plusDays(35))
+                .setDeletionTime(plusDays(clock.now(), 35))
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
                 .setGracePeriods(
                     ImmutableSet.of(
                         GracePeriod.createWithoutBillingEvent(
                             GracePeriodStatus.REDEMPTION,
                             newDomain.getRepoId(),
-                            clock.nowUtc().plusDays(30),
+                            plusDays(clock.now(), 30),
                             "TheRegistrar")))
                 .build());
     clock.advanceBy(standardDays(30));

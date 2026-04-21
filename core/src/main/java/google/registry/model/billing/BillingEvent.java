@@ -17,8 +17,6 @@ package google.registry.model.billing;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
@@ -35,7 +33,6 @@ import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /** A one-time billable event. */
 @Entity
@@ -108,16 +105,7 @@ public class BillingEvent extends BillingBase {
     return cost;
   }
 
-  /**
-   * @deprecated Use {@link #getBillingTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getBillingTime() {
-    return toDateTime(billingTime);
-  }
-
-  public Instant getBillingTimeInstant() {
+  public Instant getBillingTime() {
     return billingTime;
   }
 
@@ -125,16 +113,7 @@ public class BillingEvent extends BillingBase {
     return periodYears;
   }
 
-  /**
-   * @deprecated Use {@link #getSyntheticCreationTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getSyntheticCreationTime() {
-    return toDateTime(syntheticCreationTime);
-  }
-
-  public Instant getSyntheticCreationTimeInstant() {
+  public Instant getSyntheticCreationTime() {
     return syntheticCreationTime;
   }
 
@@ -185,27 +164,9 @@ public class BillingEvent extends BillingBase {
       return this;
     }
 
-    /**
-     * @deprecated Use {@link #setBillingTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public Builder setBillingTime(DateTime billingTime) {
-      return setBillingTime(toInstant(billingTime));
-    }
-
     public Builder setBillingTime(Instant billingTime) {
       getInstance().billingTime = billingTime;
       return this;
-    }
-
-    /**
-     * @deprecated Use {@link #setSyntheticCreationTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public Builder setSyntheticCreationTime(DateTime syntheticCreationTime) {
-      return setSyntheticCreationTime(toInstant(syntheticCreationTime));
     }
 
     public Builder setSyntheticCreationTime(Instant syntheticCreationTime) {

@@ -31,7 +31,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * An event representing a cancellation of one of the other two billable event types.
@@ -55,7 +55,7 @@ import org.joda.time.DateTime;
 public class BillingCancellation extends BillingBase {
 
   /** The billing time of the charge that is being cancelled. */
-  DateTime billingTime;
+  Instant billingTime;
 
   /** The one-time billing event to cancel, or null for autorenew cancellations. */
   @Column(name = "billing_event_id")
@@ -67,7 +67,7 @@ public class BillingCancellation extends BillingBase {
   @Convert(converter = VKeyConverter_BillingRecurrence.class)
   VKey<BillingRecurrence> billingRecurrence;
 
-  public DateTime getBillingTime() {
+  public Instant getBillingTime() {
     return billingTime;
   }
 
@@ -90,10 +90,7 @@ public class BillingCancellation extends BillingBase {
    * reason) from the grace period.
    */
   public static BillingCancellation forGracePeriod(
-      GracePeriod gracePeriod,
-      DateTime eventTime,
-      HistoryEntryId domainHistoryId,
-      String targetId) {
+      GracePeriod gracePeriod, Instant eventTime, HistoryEntryId domainHistoryId, String targetId) {
     checkArgument(
         gracePeriod.hasBillingEvent(),
         "Cannot create cancellation for grace period without billing event");
@@ -104,7 +101,7 @@ public class BillingCancellation extends BillingBase {
             .setRegistrarId(gracePeriod.getRegistrarId())
             .setEventTime(eventTime)
             // The charge being cancelled will take place at the grace period's expiration time.
-            .setBillingTime(gracePeriod.getExpirationDateTime())
+            .setBillingTime(gracePeriod.getExpirationTime())
             .setDomainHistoryId(domainHistoryId);
     // Set the grace period's billing event using the appropriate Cancellation builder method.
     if (gracePeriod.getBillingEvent() != null) {
@@ -138,7 +135,7 @@ public class BillingCancellation extends BillingBase {
       super(instance);
     }
 
-    public Builder setBillingTime(DateTime billingTime) {
+    public Builder setBillingTime(Instant billingTime) {
       getInstance().billingTime = billingTime;
       return this;
     }

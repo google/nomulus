@@ -251,7 +251,7 @@ public class FlowModule {
           String registrarId,
           EppInput eppInput) {
     builder
-        .setModificationTime(tm().getTransactionTime())
+        .setModificationTime(tm().getTxTime())
         .setTrid(trid)
         .setXmlBytes(inputXmlBytes)
         .setBySuperuser(isSuperuser)

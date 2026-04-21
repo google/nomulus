@@ -15,6 +15,7 @@
 package google.registry.model.transfer;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
@@ -54,7 +55,7 @@ public class DomainTransferDataTest {
     DomainTransferData constantTransferData =
         new DomainTransferData.Builder()
             .setTransferRequestTrid(Trid.create("server-trid", "client-trid"))
-            .setTransferRequestTime(now)
+            .setTransferRequestTime(toInstant(now))
             .setGainingRegistrarId("NewRegistrar")
             .setLosingRegistrarId("TheRegistrar")
             // Test must use a non-1-year period, since that's the default value.
@@ -63,7 +64,7 @@ public class DomainTransferDataTest {
     DomainTransferData fullTransferData =
         constantTransferData
             .asBuilder()
-            .setPendingTransferExpirationTime(now)
+            .setPendingTransferExpirationTime(toInstant(now))
             .setTransferStatus(TransferStatus.PENDING)
             .setServerApproveEntities(
                 "4-TLD",
