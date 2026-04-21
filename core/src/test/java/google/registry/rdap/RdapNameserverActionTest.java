@@ -21,6 +21,7 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistH
 import static google.registry.testing.FullFieldsTestEntityHelper.makePunycodedHost;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.GsonSubject.assertAboutJson;
+import static google.registry.util.DateTimeUtils.minusMonths;
 import static org.mockito.Mockito.verify;
 
 import google.registry.model.registrar.Registrar;
@@ -56,7 +57,7 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     persistResource(
         makeAndPersistHost("nsdeleted.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1))
             .asBuilder()
-            .setDeletionTime(clock.nowUtc().minusMonths(1))
+            .setDeletionTime(minusMonths(clock.now(), 1))
             .build());
     // other registrar
     persistResource(

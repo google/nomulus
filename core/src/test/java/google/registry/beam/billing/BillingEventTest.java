@@ -23,9 +23,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import org.apache.beam.sdk.coders.NullableCoder;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,8 +41,8 @@ class BillingEventTest {
   private static BillingEvent createBillingEvent(String pONumber, int years) {
     return BillingEvent.create(
         1,
-        new DateTime(1508835963000L, DateTimeZone.UTC),
-        new DateTime(1484870383000L, DateTimeZone.UTC),
+        Instant.ofEpochMilli(1508835963000L),
+        Instant.ofEpochMilli(1484870383000L),
         "myRegistrar",
         "12345-CRRHELLO",
         pONumber,

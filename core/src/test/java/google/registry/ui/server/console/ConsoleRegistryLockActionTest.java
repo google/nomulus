@@ -113,7 +113,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testGet_simpleLock() {
-    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).build());
+    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(clock.now()).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
@@ -143,8 +143,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistryLockEmail("johndoe@theregistrar.com")
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(clock.now())
+            .setUnlockRequestTime(clock.now())
             .build();
     saveRegistryLock(expiredUnlock);
     clock.advanceBy(Duration.standardDays(1));
@@ -156,7 +156,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistryLockEmail("johndoe@theregistrar.com")
-            .setLockCompletionTime(clock.nowUtc())
+            .setLockCompletionTime(clock.now())
             .build();
     clock.advanceOneMilli();
     RegistryLock adminLock =
@@ -166,7 +166,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("122222222ABCDEFGHJKLMNPQRSTUVWXY")
             .isSuperuser(true)
-            .setLockCompletionTime(clock.nowUtc())
+            .setLockCompletionTime(clock.now())
             .build();
     RegistryLock incompleteLock =
         new RegistryLock.Builder()
@@ -184,8 +184,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistryLockEmail("johndoe@theregistrar.com")
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(clock.now())
+            .setUnlockRequestTime(clock.now())
             .build();
 
     RegistryLock unlockedLock =
@@ -195,9 +195,9 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setRegistryLockEmail("johndoe@theregistrar.com")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUUUUU")
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
-            .setUnlockCompletionTime(clock.nowUtc())
+            .setLockCompletionTime(clock.now())
+            .setUnlockRequestTime(clock.now())
+            .setUnlockCompletionTime(clock.now())
             .build();
 
     saveRegistryLock(regularLock);
@@ -318,7 +318,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testPost_unlock() throws Exception {
-    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).build());
+    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(clock.now()).build());
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action = createDefaultPostAction(false);
     action.run();
@@ -331,7 +331,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testPost_unlock_relockDuration() throws Exception {
-    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).build());
+    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(clock.now()).build());
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action =
         createPostAction(
@@ -341,14 +341,13 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
     verifyEmail();
     RegistryLock savedUnlockRequest =
         getMostRecentRegistryLockByRepoId(defaultDomain.getRepoId()).get();
-    assertThat(savedUnlockRequest.getRelockDuration())
-        .isEqualTo(Optional.of(Duration.standardDays(1)));
+    assertThat(savedUnlockRequest.getRelockDuration()).hasValue(Duration.standardDays(1));
   }
 
   @Test
   void testPost_adminUnlockingAdmin() throws Exception {
     saveRegistryLock(
-        createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).isSuperuser(true).build());
+        createDefaultLockBuilder().setLockCompletionTime(clock.now()).isSuperuser(true).build());
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     user =
         user.asBuilder()
@@ -414,7 +413,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
   @Test
   void testPost_failure_nonAdminUnlockingAdmin() throws Exception {
     saveRegistryLock(
-        createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).isSuperuser(true).build());
+        createDefaultLockBuilder().setLockCompletionTime(clock.now()).isSuperuser(true).build());
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action = createDefaultPostAction(false);
     action.run();
@@ -488,9 +487,9 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
   void testPost_failure_alreadyUnlocked() throws Exception {
     saveRegistryLock(
         createDefaultLockBuilder()
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
-            .setUnlockCompletionTime(clock.nowUtc())
+            .setLockCompletionTime(clock.now())
+            .setUnlockRequestTime(clock.now())
+            .setUnlockCompletionTime(clock.now())
             .build());
     action = createDefaultPostAction(false);
     action.run();

@@ -15,8 +15,6 @@
 package google.registry.model.reporting;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.batch.ExpandBillingRecurrencesAction;
@@ -47,7 +45,6 @@ import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.BooleanUtils;
-import org.joda.time.DateTime;
 
 /**
  * A record of an EPP command that mutated a resource.
@@ -200,19 +197,8 @@ public abstract class HistoryEntry extends ImmutableObject
     return xmlBytes == null ? null : xmlBytes.clone();
   }
 
-  /**
-   * Returns the time the command occurred.
-   *
-   * @deprecated Use {@link #getModificationTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getModificationTime() {
-    return toDateTime(modificationTime);
-  }
-
   /** Returns the time the command occurred. */
-  public Instant getModificationTimeInstant() {
+  public Instant getModificationTime() {
     return modificationTime;
   }
 
@@ -325,15 +311,6 @@ public abstract class HistoryEntry extends ImmutableObject
     public B setModificationTime(Instant modificationTime) {
       getInstance().modificationTime = modificationTime;
       return thisCastToDerived();
-    }
-
-    /**
-     * @deprecated Use {@link #setModificationTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public B setModificationTime(DateTime modificationTime) {
-      return setModificationTime(toInstant(modificationTime));
     }
 
     public B setRegistrarId(String registrarId) {

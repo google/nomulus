@@ -14,8 +14,6 @@
 
 package google.registry.model.transfer;
 
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.EppResource;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
@@ -27,7 +25,6 @@ import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.time.Instant;
-import org.joda.time.DateTime;
 
 /**
  * A response to a transfer command on a {@link EppResource}. This base class contains fields that
@@ -67,15 +64,6 @@ public class TransferResponse extends BaseTransferObject implements ResponseData
     @XmlJavaTypeAdapter(UtcInstantAdapter.class)
     Instant extendedRegistrationExpirationTime;
 
-    /**
-     * @deprecated Use {@link #getExtendedRegistrationExpirationTime()}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public DateTime getExtendedRegistrationExpirationDateTime() {
-      return toDateTime(extendedRegistrationExpirationTime);
-    }
-
     public Instant getExtendedRegistrationExpirationTime() {
       return extendedRegistrationExpirationTime;
     }
@@ -93,16 +81,6 @@ public class TransferResponse extends BaseTransferObject implements ResponseData
           Instant extendedRegistrationExpirationTime) {
         getInstance().extendedRegistrationExpirationTime = extendedRegistrationExpirationTime;
         return this;
-      }
-
-      /**
-       * @deprecated Use {@link #setExtendedRegistrationExpirationTime(Instant)}
-       */
-      @Deprecated
-      @SuppressWarnings("InlineMeSuggester")
-      public Builder setExtendedRegistrationExpirationTime(
-          DateTime extendedRegistrationExpirationTime) {
-        return setExtendedRegistrationExpirationTime(toInstant(extendedRegistrationExpirationTime));
       }
     }
   }

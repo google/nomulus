@@ -14,12 +14,17 @@
 
 package google.registry.beam.billing;
 
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import google.registry.reporting.billing.BillingModule;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 import org.apache.beam.sdk.coders.AtomicCoder;
 import org.apache.beam.sdk.coders.Coder;
@@ -29,9 +34,6 @@ import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.coders.VarLongCoder;
 import org.jetbrains.annotations.NotNull;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 /**
  * A record representing a single billable event, parsed from a {@code SchemaAndRecord}.
@@ -53,8 +55,8 @@ import org.joda.time.format.DateTimeFormatter;
  */
 public record BillingEvent(
     long id,
-    DateTime billingTime,
-    DateTime eventTime,
+    Instant billingTime,
+    Instant eventTime,
     String registrarId,
     String billingId,
     String poNumber,
@@ -68,7 +70,7 @@ public record BillingEvent(
     String flags) {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
-      DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss zzz");
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withZone(ZoneOffset.UTC);
 
   private static final Pattern SYNTHETIC_REGEX = Pattern.compile("SYNTHETIC", Pattern.LITERAL);
 
@@ -92,8 +94,8 @@ public record BillingEvent(
   /** Creates a concrete {@link BillingEvent}. */
   static BillingEvent create(
       long id,
-      DateTime billingTime,
-      DateTime eventTime,
+      Instant billingTime,
+      Instant eventTime,
       String registrarId,
       String billingId,
       String poNumber,
@@ -143,8 +145,8 @@ public record BillingEvent(
         .join(
             ImmutableList.of(
                 id(),
-                DATE_TIME_FORMATTER.print(billingTime()),
-                DATE_TIME_FORMATTER.print(eventTime()),
+                DATE_TIME_FORMATTER.format(billingTime()),
+                DATE_TIME_FORMATTER.format(eventTime()),
                 registrarId(),
                 billingId(),
                 poNumber(),
@@ -162,10 +164,13 @@ public record BillingEvent(
   /** Returns the grouping key for this {@code BillingEvent}, to generate the overall invoice. */
   InvoiceGroupingKey getInvoiceGroupingKey() {
     return new InvoiceGroupingKey(
-        billingTime().toLocalDate().withDayOfMonth(1).toString(),
+        ZonedDateTime.ofInstant(billingTime(), ZoneOffset.UTC)
+            .toLocalDate()
+            .withDayOfMonth(1)
+            .toString(),
         years() == 0
             ? ""
-            : billingTime()
+            : ZonedDateTime.ofInstant(billingTime(), ZoneOffset.UTC)
                 .toLocalDate()
                 .withDayOfMonth(1)
                 .plusYears(years())
@@ -308,8 +313,8 @@ public record BillingEvent(
     @Override
     public void encode(BillingEvent value, OutputStream outStream) throws IOException {
       longCoder.encode(value.id(), outStream);
-      stringCoder.encode(DATE_TIME_FORMATTER.print(value.billingTime()), outStream);
-      stringCoder.encode(DATE_TIME_FORMATTER.print(value.eventTime()), outStream);
+      stringCoder.encode(DATE_TIME_FORMATTER.format(value.billingTime()), outStream);
+      stringCoder.encode(DATE_TIME_FORMATTER.format(value.eventTime()), outStream);
       stringCoder.encode(value.registrarId(), outStream);
       stringCoder.encode(value.billingId(), outStream);
       stringCoder.encode(value.poNumber(), outStream);
@@ -327,8 +332,8 @@ public record BillingEvent(
     public BillingEvent decode(InputStream inStream) throws IOException {
       return new BillingEvent(
           longCoder.decode(inStream),
-          DATE_TIME_FORMATTER.parseDateTime(stringCoder.decode(inStream)),
-          DATE_TIME_FORMATTER.parseDateTime(stringCoder.decode(inStream)),
+          Instant.from(DATE_TIME_FORMATTER.parse(stringCoder.decode(inStream))),
+          Instant.from(DATE_TIME_FORMATTER.parse(stringCoder.decode(inStream))),
           stringCoder.decode(inStream),
           stringCoder.decode(inStream),
           stringCoder.decode(inStream),

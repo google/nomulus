@@ -28,6 +28,9 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static google.registry.testing.GsonSubject.assertAboutJson;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
@@ -78,7 +81,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     persistResource(
         makeDomain("cat.lol", host1, host2, registrarLol)
             .asBuilder()
-            .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+            .setCreationTimeForTest(minusYears(clock.now(), 3))
             .setCreationRegistrarId("TheRegistrar")
             .build());
 
@@ -90,9 +93,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         persistResource(
             makeDomain("dodo.lol", host1, hostDodo2, registrarLol)
                 .asBuilder()
-                .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+                .setCreationTimeForTest(minusYears(clock.now(), 3))
                 .setCreationRegistrarId("TheRegistrar")
-                .setDeletionTime(clock.nowUtc().minusDays(1))
+                .setDeletionTime(minusDays(clock.now(), 1))
                 .build());
     // cat.みんな
     createTld("xn--q9jyb4c");
@@ -102,7 +105,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     persistResource(
         makeDomain("cat.みんな", host1, host2, registrarIdn)
             .asBuilder()
-            .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+            .setCreationTimeForTest(minusYears(clock.now(), 3))
             .setCreationRegistrarId("TheRegistrar")
             .build());
 
@@ -115,7 +118,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     persistResource(
         makeDomain("cat.1.tld", host1, host2, registrar1Tld)
             .asBuilder()
-            .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+            .setCreationTimeForTest(minusYears(clock.now(), 3))
             .setCreationRegistrarId("TheRegistrar")
             .build());
 
@@ -356,14 +359,14 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         domain
             .asBuilder()
             .addNameserver(host1.createVKey())
-            .setDeletionTime(clock.nowUtc().plusDays(1))
+            .setDeletionTime(plusDays(clock.now(), 1))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .setGracePeriods(
                 ImmutableSet.of(
                     GracePeriod.createWithoutBillingEvent(
                         GracePeriodStatus.REDEMPTION,
                         domain.getRepoId(),
-                        clock.nowUtc().plusDays(4),
+                        plusDays(clock.now(), 4),
                         "TheRegistrar")))
             .build());
     assertAboutJson()
@@ -385,7 +388,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                 GracePeriod.create(
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    plusDays(clock.now(), 1),
                     "TheRegistrar",
                     null))
             .build());
@@ -408,7 +411,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                 GracePeriod.create(
                     GracePeriodStatus.TRANSFER,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    plusDays(clock.now(), 1),
                     "TheRegistrar",
                     null))
             .build());

@@ -19,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.stripBillingEventId;
 import static google.registry.testing.TestDataHelper.loadFile;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.xml.XmlTestUtils.assertXmlEqualsWithMessage;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -286,8 +287,9 @@ public class EppTestCase {
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setCost(Money.parse("USD 24.00"))
         .setPeriodYears(2)
-        .setEventTime(createTime)
-        .setBillingTime(createTime.plus(Tld.get(domain.getTld()).getAddGracePeriodLength()))
+        .setEventTime(toInstant(createTime))
+        .setBillingTime(
+            toInstant(createTime.plus(Tld.get(domain.getTld()).getAddGracePeriodLength())))
         .setDomainHistory(
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
         .build();
@@ -301,8 +303,9 @@ public class EppTestCase {
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setCost(Money.parse("USD 33.00"))
         .setPeriodYears(3)
-        .setEventTime(renewTime)
-        .setBillingTime(renewTime.plus(Tld.get(domain.getTld()).getRenewGracePeriodLength()))
+        .setEventTime(toInstant(renewTime))
+        .setBillingTime(
+            toInstant(renewTime.plus(Tld.get(domain.getTld()).getRenewGracePeriodLength())))
         .setDomainHistory(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
         .build();
   }
@@ -335,8 +338,8 @@ public class EppTestCase {
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-        .setEventTime(eventTime)
-        .setRecurrenceEndTime(endTime)
+        .setEventTime(toInstant(eventTime))
+        .setRecurrenceEndTime(toInstant(endTime))
         .setDomainHistory(historyEntry)
         .build();
   }
@@ -347,9 +350,10 @@ public class EppTestCase {
     return new BillingCancellation.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-        .setEventTime(deleteTime)
+        .setEventTime(toInstant(deleteTime))
         .setBillingEvent(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
-        .setBillingTime(createTime.plus(Tld.get(domain.getTld()).getAddGracePeriodLength()))
+        .setBillingTime(
+            toInstant(createTime.plus(Tld.get(domain.getTld()).getAddGracePeriodLength())))
         .setReason(Reason.CREATE)
         .setDomainHistory(
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))
@@ -362,9 +366,10 @@ public class EppTestCase {
     return new BillingCancellation.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-        .setEventTime(deleteTime)
+        .setEventTime(toInstant(deleteTime))
         .setBillingEvent(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
-        .setBillingTime(renewTime.plus(Tld.get(domain.getTld()).getRenewGracePeriodLength()))
+        .setBillingTime(
+            toInstant(renewTime.plus(Tld.get(domain.getTld()).getRenewGracePeriodLength())))
         .setReason(Reason.RENEW)
         .setDomainHistory(
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))

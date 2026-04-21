@@ -105,7 +105,7 @@ class EnqueuePollMessageCommand extends MutatingCommand {
                       .setType(SYNTHETIC)
                       .setBySuperuser(true)
                       .setReason("Manual enqueueing of poll message: " + message)
-                      .setModificationTime(tm().getTransactionTime())
+                      .setModificationTime(tm().getTxTime())
                       .setRequestedByRegistrar(false)
                       .setRegistrarId(registryAdminClientId)
                       .build();

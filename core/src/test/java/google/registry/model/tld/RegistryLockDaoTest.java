@@ -46,7 +46,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
     RegistryLock fromDatabase = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
     assertThat(fromDatabase.getDomainName()).isEqualTo(lock.getDomainName());
     assertThat(fromDatabase.getVerificationCode()).isEqualTo(lock.getVerificationCode());
-    assertThat(fromDatabase.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(fromDatabase.getLastUpdateTime()).isEqualTo(fakeClock.now());
   }
 
   @Test
@@ -59,14 +59,14 @@ public final class RegistryLockDaoTest extends EntityTestCase {
               RegistryLock updatedLock =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
               RegistryLockDao.save(
-                  updatedLock.asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build());
+                  updatedLock.asBuilder().setLockCompletionTime(fakeClock.now()).build());
             });
     tm().transact(
             () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
-              assertThat(fromDatabase.getLockCompletionTime()).hasValue(fakeClock.nowUtc());
-              assertThat(fromDatabase.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
+              assertThat(fromDatabase.getLockCompletionTime()).hasValue(fakeClock.now());
+              assertThat(fromDatabase.getLastUpdateTime()).isEqualTo(fakeClock.now());
             });
   }
 
@@ -76,14 +76,14 @@ public final class RegistryLockDaoTest extends EntityTestCase {
         saveRegistryLock(
             createLock()
                 .asBuilder()
-                .setLockCompletionTime(fakeClock.nowUtc())
-                .setUnlockRequestTime(fakeClock.nowUtc())
-                .setUnlockCompletionTime(fakeClock.nowUtc())
+                .setLockCompletionTime(fakeClock.now())
+                .setUnlockRequestTime(fakeClock.now())
+                .setUnlockCompletionTime(fakeClock.now())
                 .setRelockDuration(Duration.standardHours(6))
                 .build());
     RegistryLock fromDatabase = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
-    assertThat(fromDatabase.getUnlockRequestTime()).isEqualTo(Optional.of(fakeClock.nowUtc()));
-    assertThat(fromDatabase.getUnlockCompletionTime()).isEqualTo(Optional.of(fakeClock.nowUtc()));
+    assertThat(fromDatabase.getUnlockRequestTime()).hasValue(fakeClock.now());
+    assertThat(fromDatabase.getUnlockCompletionTime()).hasValue(fakeClock.now());
     assertThat(fromDatabase.isLocked()).isFalse();
     assertThat(fromDatabase.getRelockDuration()).hasValue(Duration.standardHours(6));
   }
@@ -92,14 +92,13 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   void testUpdateLock_usingSamePrimaryKey() {
     RegistryLock lock = saveRegistryLock(createLock());
     fakeClock.advanceOneMilli();
-    RegistryLock updatedLock = lock.asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build();
+    RegistryLock updatedLock = lock.asBuilder().setLockCompletionTime(fakeClock.now()).build();
     saveRegistryLock(updatedLock);
     tm().transact(
             () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
-              assertThat(fromDatabase.getLockCompletionTime())
-                  .isEqualTo(Optional.of(fakeClock.nowUtc()));
+              assertThat(fromDatabase.getLockCompletionTime()).hasValue(fakeClock.now());
             });
   }
 
@@ -134,15 +133,15 @@ public final class RegistryLockDaoTest extends EntityTestCase {
         createLock()
             .asBuilder()
             .setDomainName("otherexample.test")
-            .setLockCompletionTime(fakeClock.nowUtc())
+            .setLockCompletionTime(fakeClock.now())
             .build();
     RegistryLock unlockedLock =
         createLock()
             .asBuilder()
             .setDomainName("unlocked.test")
-            .setLockCompletionTime(fakeClock.nowUtc())
-            .setUnlockRequestTime(fakeClock.nowUtc())
-            .setUnlockCompletionTime(fakeClock.nowUtc())
+            .setLockCompletionTime(fakeClock.now())
+            .setUnlockRequestTime(fakeClock.now())
+            .setUnlockCompletionTime(fakeClock.now())
             .build();
     saveRegistryLock(lock);
     saveRegistryLock(secondLock);
@@ -159,7 +158,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   @Test
   void testLoad_byRepoId() {
     RegistryLock completedLock =
-        createLock().asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build();
+        createLock().asBuilder().setLockCompletionTime(fakeClock.now()).build();
     saveRegistryLock(completedLock);
 
     fakeClock.advanceOneMilli();
@@ -179,7 +178,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   @Test
   void testLoad_verified_byRepoId() {
     RegistryLock completedLock =
-        createLock().asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build();
+        createLock().asBuilder().setLockCompletionTime(fakeClock.now()).build();
     saveRegistryLock(completedLock);
 
     fakeClock.advanceOneMilli();
@@ -204,9 +203,9 @@ public final class RegistryLockDaoTest extends EntityTestCase {
         saveRegistryLock(
             createLock()
                 .asBuilder()
-                .setLockCompletionTime(fakeClock.nowUtc())
-                .setUnlockRequestTime(fakeClock.nowUtc())
-                .setUnlockCompletionTime(fakeClock.nowUtc())
+                .setLockCompletionTime(fakeClock.now())
+                .setUnlockRequestTime(fakeClock.now())
+                .setUnlockCompletionTime(fakeClock.now())
                 .build());
 
     Optional<RegistryLock> mostRecent = getMostRecentUnlockedRegistryLockByRepoId(lock.getRepoId());
@@ -216,7 +215,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   @Test
   void testLoad_verifiedUnlock_empty() {
     RegistryLock completedLock =
-        createLock().asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build();
+        createLock().asBuilder().setLockCompletionTime(fakeClock.now()).build();
     saveRegistryLock(completedLock);
     assertThat(getMostRecentUnlockedRegistryLockByRepoId(completedLock.getRepoId()).isPresent())
         .isFalse();

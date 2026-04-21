@@ -17,6 +17,7 @@ package google.registry.testing;
 import static google.registry.testing.DatabaseHelper.generateNewDomainRoid;
 import static google.registry.testing.DatabaseHelper.generateNewHostRoid;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -38,6 +39,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.util.Idn;
 import java.net.InetAddress;
+import java.time.Instant;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
@@ -137,7 +139,7 @@ public final class FullFieldsTestEntityHelper {
         new Host.Builder()
             .setRepoId(generateNewHostRoid())
             .setHostName(fqhn)
-            .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
+            .setCreationTimeForTest(Instant.parse("2000-10-08T00:45:00Z"))
             .setPersistedCurrentSponsorRegistrarId(registrarClientId);
     if ((ip1 != null) || (ip2 != null)) {
       ImmutableSet.Builder<InetAddress> ipBuilder = new ImmutableSet.Builder<>();
@@ -185,8 +187,8 @@ public final class FullFieldsTestEntityHelper {
         new Domain.Builder()
             .setDomainName(Idn.toASCII(domain))
             .setRepoId(generateNewDomainRoid(getTldFromDomainName(Idn.toASCII(domain))))
-            .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
-            .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
+            .setLastEppUpdateTime(Instant.parse("2009-05-29T20:13:00Z"))
+            .setCreationTimeForTest(Instant.parse("2000-10-08T00:45:00Z"))
             .setRegistrationExpirationTime(DateTime.parse("2110-10-08T00:44:59Z"))
             .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
             .setCreationRegistrarId(registrar.getRegistrarId())
@@ -220,7 +222,7 @@ public final class FullFieldsTestEntityHelper {
         HistoryEntry.createBuilderForResource(resource)
             .setType(type)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(modificationTime)
+            .setModificationTime(toInstant(modificationTime))
             .setRegistrarId(resource.getPersistedCurrentSponsorRegistrarId())
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)

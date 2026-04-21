@@ -36,7 +36,6 @@ import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusMonths;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -184,7 +183,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE, DomainHistory.class);
     assertLastHistoryContainsResource(domain);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
-        .isEqualTo(toDateTime(expirationTime));
+        .isEqualTo(expirationTime);
     assertAboutDomains()
         .that(domain)
         // New expiration time should be the same as from before the deletion.
@@ -252,7 +251,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE, DomainHistory.class);
     assertLastHistoryContainsResource(domain);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
-        .isEqualTo(toDateTime(newExpirationTime));
+        .isEqualTo(newExpirationTime);
     assertAboutDomains()
         .that(domain)
         // New expiration time should be exactly a year from now.

@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
@@ -80,7 +81,7 @@ public final class EppResourceUtils {
   }
 
   public static boolean isActive(EppResource resource, Instant time) {
-    return isAtOrAfter(time, resource.getCreationTimeInstant())
+    return isAtOrAfter(time, resource.getCreationTime())
         && time.isBefore(resource.getDeletionTime());
   }
 
@@ -120,7 +121,7 @@ public final class EppResourceUtils {
     builder
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData(transferDataBuilder.build())
-        .setLastTransferTime(transferData.getPendingTransferExpirationDateTime())
+        .setLastTransferTime(toDateTime(transferData.getPendingTransferExpirationTime()))
         .setPersistedCurrentSponsorRegistrarId(transferData.getGainingRegistrarId());
   }
 
@@ -157,7 +158,7 @@ public final class EppResourceUtils {
   public static <T extends EppResource> T loadAtPointInTime(
       final T resource, final Instant timestamp) {
     // If we're before the resource creation time, don't try to find a "most recent revision".
-    if (timestamp.isBefore(resource.getCreationTimeInstant())) {
+    if (timestamp.isBefore(resource.getCreationTime())) {
       return null;
     }
     // If the resource was not modified after the requested time, then use it as-is, otherwise find

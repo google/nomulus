@@ -58,7 +58,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setPeriod(Period.create(1, Period.Unit.YEARS))
                 .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-                .setModificationTime(fakeClock.nowUtc())
+                .setModificationTime(fakeClock.now())
                 .setRegistrarId("TheRegistrar")
                 .setTrid(Trid.create("ABC-123", "server-trid"))
                 .setBySuperuser(false)
@@ -69,7 +69,7 @@ public class PollMessageTest extends EntityTestCase {
         new PollMessage.OneTime.Builder()
             .setId(100L)
             .setRegistrarId("TheRegistrar")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .setMsg("Test poll message")
             .setHistoryEntry(historyEntry)
             .build();
@@ -77,7 +77,7 @@ public class PollMessageTest extends EntityTestCase {
         new PollMessage.Autorenew.Builder()
             .setId(200L)
             .setRegistrarId("TheRegistrar")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .setMsg("Test poll message")
             .setHistoryEntry(historyEntry)
             .setAutorenewEndTime(plusYears(fakeClock.nowUtc(), 1))
@@ -104,7 +104,7 @@ public class PollMessageTest extends EntityTestCase {
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(fakeClock.nowUtc())
+                .setEventTime(fakeClock.now())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .build());
@@ -123,7 +123,7 @@ public class PollMessageTest extends EntityTestCase {
     PollMessage.OneTime pollMessage =
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .setMsg("Test poll message")
             .setHistoryEntry(historyEntry)
             .setResponseData(ImmutableList.of(hostPendingActionNotificationResponse))
@@ -142,7 +142,7 @@ public class PollMessageTest extends EntityTestCase {
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(fakeClock.nowUtc())
+                .setEventTime(fakeClock.now())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .build());
@@ -156,7 +156,7 @@ public class PollMessageTest extends EntityTestCase {
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(fakeClock.nowUtc())
+                .setEventTime(fakeClock.now())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .setAutorenewEndTime(plusYears(fakeClock.nowUtc(), 1))
@@ -171,7 +171,7 @@ public class PollMessageTest extends EntityTestCase {
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(fakeClock.nowUtc())
+                .setEventTime(fakeClock.now())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .setAutorenewEndTime(plusYears(fakeClock.nowUtc(), 1))

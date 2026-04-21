@@ -14,8 +14,6 @@
 
 package google.registry.model.transfer;
 
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
@@ -29,7 +27,6 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.time.Instant;
-import org.joda.time.DateTime;
 
 /** Fields common to {@link DomainTransferData} and {@link TransferResponse}. */
 @XmlTransient
@@ -73,30 +70,12 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
     return gainingClientId;
   }
 
-  /**
-   * @deprecated Use {@link #getTransferRequestTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getTransferRequestTime() {
-    return toDateTime(transferRequestTime);
-  }
-
-  public Instant getTransferRequestTimeInstant() {
+  public Instant getTransferRequestTime() {
     return transferRequestTime;
   }
 
   public String getLosingRegistrarId() {
     return losingClientId;
-  }
-
-  /**
-   * @deprecated Use {@link #getPendingTransferExpirationTime()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getPendingTransferExpirationDateTime() {
-    return toDateTime(pendingTransferExpirationTime);
   }
 
   public Instant getPendingTransferExpirationTime() {
@@ -133,15 +112,6 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
       return thisCastToDerived();
     }
 
-    /**
-     * @deprecated Use {@link #setTransferRequestTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public B setTransferRequestTime(DateTime transferRequestTime) {
-      return setTransferRequestTime(toInstant(transferRequestTime));
-    }
-
     /** Set the losing registrar for a pending transfer on this resource. */
     public B setLosingRegistrarId(String losingRegistrarId) {
       getInstance().losingClientId = losingRegistrarId;
@@ -152,15 +122,6 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
     public B setPendingTransferExpirationTime(Instant pendingTransferExpirationTime) {
       getInstance().pendingTransferExpirationTime = pendingTransferExpirationTime;
       return thisCastToDerived();
-    }
-
-    /**
-     * @deprecated Use {@link #setPendingTransferExpirationTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public B setPendingTransferExpirationTime(DateTime pendingTransferExpirationTime) {
-      return setPendingTransferExpirationTime(toInstant(pendingTransferExpirationTime));
     }
 
     @Override

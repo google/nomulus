@@ -159,7 +159,7 @@ public class RdePipelineTest {
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("soy")
-            .setReportingTime(clock.nowUtc())
+            .setReportingTime(clock.now())
             .setReportField(TransactionReportField.NET_ADDS_1_YR)
             .setReportAmount(1)
             .build();
@@ -168,7 +168,7 @@ public class RdePipelineTest {
         new DomainHistory.Builder()
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(clock.nowUtc())
+            .setModificationTime(clock.now())
             .setRegistrarId("TheRegistrar")
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)
@@ -186,7 +186,7 @@ public class RdePipelineTest {
         new HostHistory.Builder()
             .setType(HistoryEntry.Type.HOST_CREATE)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(clock.nowUtc())
+            .setModificationTime(clock.now())
             .setRegistrarId("TheRegistrar")
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)
@@ -257,7 +257,7 @@ public class RdePipelineTest {
 
     // Advance time
     clock.advanceOneMilli();
-    persistDomainHistory(deletedDomain.asBuilder().setDeletionTime(clock.nowUtc()).build());
+    persistDomainHistory(deletedDomain.asBuilder().setDeletionTime(clock.now()).build());
     kittyDomain = kittyDomain.asBuilder().setDomainName("cat.fun").build();
     persistDomainHistory(kittyDomain);
 
@@ -276,7 +276,7 @@ public class RdePipelineTest {
     // Set the clock to 2000-01-02, any change after hereafter should not show up in the
     // resulting deposit fragments.
     clock.advanceBy(Duration.standardDays(2));
-    persistDomainHistory(kittyDomain.asBuilder().setDeletionTime(clock.nowUtc()).build());
+    persistDomainHistory(kittyDomain.asBuilder().setDeletionTime(clock.now()).build());
     Host futureHost = persistActiveHost("ns1.future.tld");
     persistHostHistory(futureHost);
     persistDomainHistory(

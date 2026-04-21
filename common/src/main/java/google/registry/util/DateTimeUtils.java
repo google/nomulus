@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -250,6 +251,22 @@ public abstract class DateTimeUtils {
   @Nullable
   public static org.joda.time.Instant toJodaInstant(@Nullable java.time.Instant instant) {
     return (instant == null) ? null : org.joda.time.Instant.ofEpochMilli(instant.toEpochMilli());
+  }
+
+  public static Instant plusHours(Instant instant, long hours) {
+    return instant.plus(hours, ChronoUnit.HOURS);
+  }
+
+  public static Instant minusHours(Instant instant, long hours) {
+    return instant.minus(hours, ChronoUnit.HOURS);
+  }
+
+  public static Instant plusMinutes(Instant instant, long minutes) {
+    return instant.plus(minutes, ChronoUnit.MINUTES);
+  }
+
+  public static Instant minusMinutes(Instant instant, long minutes) {
+    return instant.minus(minutes, ChronoUnit.MINUTES);
   }
 
   public static Instant plusDays(Instant instant, int days) {

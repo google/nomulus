@@ -19,7 +19,7 @@ import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
@@ -174,7 +174,7 @@ public class RegistryJpaReadTest {
             .setDomainName("example.com")
             .setRepoId("4-COM")
             .setCreationRegistrarId(registrar.getRegistrarId())
-            .setLastEppUpdateTime(fakeClock.nowUtc())
+            .setLastEppUpdateTime(fakeClock.now())
             .setLastEppUpdateRegistrarId(registrar.getRegistrarId())
             .setLastTransferTime(fakeClock.nowUtc())
             .setStatusValues(
@@ -197,7 +197,7 @@ public class RegistryJpaReadTest {
                 GracePeriod.create(
                     GracePeriodStatus.ADD,
                     "4-COM",
-                    END_OF_TIME,
+                    END_INSTANT,
                     registrar.getRegistrarId(),
                     null,
                     100L))
