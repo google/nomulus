@@ -19,6 +19,7 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -35,7 +36,7 @@ import google.registry.model.host.HostInfoData;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * An EPP flow that returns information about a host.
@@ -64,7 +65,7 @@ public final class HostInfoFlow implements TransactionalFlow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate(); // There are no legal extensions for this flow.
     validateHostName(targetId);
-    DateTime now = clock.nowUtc();
+    Instant now = toInstant(clock.nowUtc());
     Host host = loadAndVerifyExistence(Host.class, targetId, now);
     ImmutableSet.Builder<StatusValue> statusValues = new ImmutableSet.Builder<>();
     statusValues.addAll(host.getStatusValues());
@@ -77,7 +78,7 @@ public final class HostInfoFlow implements TransactionalFlow {
     // there is no superordinate domain, the host's own values for these fields will be correct.
     if (host.isSubordinate()) {
       Domain superordinateDomain =
-          tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now);
+          tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtInstant(now);
       hostInfoDataBuilder
           .setCurrentSponsorRegistrarId(superordinateDomain.getCurrentSponsorRegistrarId())
           .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));
@@ -87,7 +88,7 @@ public final class HostInfoFlow implements TransactionalFlow {
     } else {
       hostInfoDataBuilder
           .setCurrentSponsorRegistrarId(host.getPersistedCurrentSponsorRegistrarId())
-          .setLastTransferTime(host.getLastTransferTimeInstant());
+          .setLastTransferTime(host.getLastTransferTime());
     }
     return responseBuilder
         .setResData(

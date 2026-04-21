@@ -23,8 +23,10 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.DaggerEppTestComponent;
@@ -193,8 +195,8 @@ class DeleteExpiredDomainsActionTest {
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId("fizz.tld")
         .setRegistrarId("TheRegistrar")
-        .setEventTime(clock.nowUtc().plusYears(1))
-        .setRecurrenceEndTime(END_OF_TIME)
+        .setEventTime(toInstant(clock.nowUtc().plusYears(1)))
+        .setRecurrenceEndTime(END_INSTANT)
         .setDomainHistory(createHistoryEntry);
   }
 
@@ -203,7 +205,7 @@ class DeleteExpiredDomainsActionTest {
     return new PollMessage.Autorenew.Builder()
         .setTargetId("fizz.tld")
         .setRegistrarId("TheRegistrar")
-        .setEventTime(clock.nowUtc().plusYears(1))
+        .setEventTime(toInstant(clock.nowUtc().plusYears(1)))
         .setAutorenewEndTime(END_OF_TIME)
         .setHistoryEntry(createHistoryEntry);
   }

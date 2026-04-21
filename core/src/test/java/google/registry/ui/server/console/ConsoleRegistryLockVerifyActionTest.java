@@ -21,6 +21,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
@@ -87,8 +88,8 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     saveRegistryLock(
         createDefaultLockBuilder()
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
+            .setUnlockRequestTime(toInstant(clock.nowUtc()))
             .build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_OK);
@@ -121,8 +122,8 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
     saveRegistryLock(
         createDefaultLockBuilder()
             .isSuperuser(true)
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
+            .setUnlockRequestTime(toInstant(clock.nowUtc()))
             .build());
     user =
         user.asBuilder()
@@ -172,8 +173,8 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
     saveRegistryLock(
         createDefaultLockBuilder()
             .isSuperuser(true)
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
+            .setUnlockRequestTime(toInstant(clock.nowUtc()))
             .build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);

@@ -21,7 +21,8 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.model.ImmutableObjectSubject;
@@ -41,7 +42,7 @@ public class RecreateBillingRecurrencesCommandTest
 
   @BeforeEach
   void beforeEach() {
-    fakeClock.setTo(DateTime.parse("2022-09-05TZ"));
+    fakeClock.setTo(toInstant(DateTime.parse("2022-09-05TZ")));
     createTld("tld");
     domain =
         persistDomainWithDependentResources(
@@ -53,7 +54,10 @@ public class RecreateBillingRecurrencesCommandTest
     oldRecurrence = loadByKey(domain.getAutorenewBillingEvent());
     oldRecurrence =
         persistResource(
-            oldRecurrence.asBuilder().setRecurrenceEndTime(fakeClock.nowUtc().plusDays(1)).build());
+            oldRecurrence
+                .asBuilder()
+                .setRecurrenceEndTime(toInstant(fakeClock.nowUtc().plusDays(1)))
+                .build());
     fakeClock.setTo(DateTime.parse("2023-07-11TZ"));
   }
 
@@ -64,10 +68,10 @@ public class RecreateBillingRecurrencesCommandTest
     BillingRecurrence newRecurrence = loadByKey(loadByEntity(domain).getAutorenewBillingEvent());
     assertThat(newRecurrence.getId()).isNotEqualTo(oldRecurrence.getId());
     // The new recurrence should not end and have last year's event time and last expansion.
-    assertThat(newRecurrence.getRecurrenceEndTime()).isEqualTo(END_OF_TIME);
-    assertThat(newRecurrence.getEventTime()).isEqualTo(DateTime.parse("2023-09-05TZ"));
+    assertThat(newRecurrence.getRecurrenceEndTime()).isEqualTo(END_INSTANT);
+    assertThat(newRecurrence.getEventTime()).isEqualTo(toInstant(DateTime.parse("2023-09-05TZ")));
     assertThat(newRecurrence.getRecurrenceLastExpansion())
-        .isEqualTo(DateTime.parse("2022-09-05TZ"));
+        .isEqualTo(toInstant(DateTime.parse("2022-09-05TZ")));
     assertThat(loadAllOf(BillingRecurrence.class)).containsExactly(oldRecurrence, newRecurrence);
   }
 
@@ -85,26 +89,27 @@ public class RecreateBillingRecurrencesCommandTest
         persistResource(
             otherRecurrence
                 .asBuilder()
-                .setRecurrenceEndTime(DateTime.parse("2022-09-08TZ"))
+                .setRecurrenceEndTime(toInstant(DateTime.parse("2022-09-08TZ")))
                 .build());
     runCommandForced("example.tld", "other.tld");
-    // Both domains should have new recurrences with END_OF_TIME expirations
+    // Both domains should have new recurrences with END_INSTANT expirations
     BillingRecurrence otherNewRecurrence =
         loadByKey(loadByEntity(otherDomain).getAutorenewBillingEvent());
     assertThat(otherNewRecurrence.getId()).isNotEqualTo(otherRecurrence.getId());
-    assertThat(otherNewRecurrence.getRecurrenceEndTime()).isEqualTo(END_OF_TIME);
-    assertThat(otherNewRecurrence.getEventTime()).isEqualTo(DateTime.parse("2023-09-07TZ"));
+    assertThat(otherNewRecurrence.getRecurrenceEndTime()).isEqualTo(END_INSTANT);
+    assertThat(otherNewRecurrence.getEventTime())
+        .isEqualTo(toInstant(DateTime.parse("2023-09-07TZ")));
     assertThat(otherNewRecurrence.getRecurrenceLastExpansion())
-        .isEqualTo(DateTime.parse("2022-09-07TZ"));
+        .isEqualTo(toInstant(DateTime.parse("2022-09-07TZ")));
     assertThat(loadAllOf(BillingRecurrence.class))
         .comparingElementsUsing(ImmutableObjectSubject.immutableObjectCorrespondence("id"))
         .containsExactly(
             oldRecurrence,
             oldRecurrence
                 .asBuilder()
-                .setRecurrenceEndTime(END_OF_TIME)
-                .setEventTime(DateTime.parse("2023-09-05TZ"))
-                .setRecurrenceLastExpansion(DateTime.parse("2022-09-05TZ"))
+                .setRecurrenceEndTime(END_INSTANT)
+                .setEventTime(toInstant(DateTime.parse("2023-09-05TZ")))
+                .setRecurrenceLastExpansion(toInstant(DateTime.parse("2022-09-05TZ")))
                 .build(),
             otherRecurrence,
             otherNewRecurrence);
@@ -119,19 +124,19 @@ public class RecreateBillingRecurrencesCommandTest
 
   @Test
   void testFailure_alreadyEndOfTime() {
-    persistResource(oldRecurrence.asBuilder().setRecurrenceEndTime(END_OF_TIME).build());
+    persistResource(oldRecurrence.asBuilder().setRecurrenceEndTime(END_INSTANT).build());
     assertThat(assertThrows(IllegalArgumentException.class, () -> runCommandForced("example.tld")))
         .hasMessageThat()
-        .isEqualTo("Domain example.tld's recurrence's end date is already END_OF_TIME");
+        .isEqualTo("Domain example.tld's recurrence's end date is already END_INSTANT");
   }
 
   @Test
   void testFailure_nonLinkedRecurrenceIsEndOfTime() {
-    persistResource(oldRecurrence.asBuilder().setRecurrenceEndTime(END_OF_TIME).setId(0).build());
+    persistResource(oldRecurrence.asBuilder().setRecurrenceEndTime(END_INSTANT).setId(0).build());
     assertThat(assertThrows(IllegalArgumentException.class, () -> runCommandForced("example.tld")))
         .hasMessageThat()
         .isEqualTo(
             "There exists a recurrence with id 8 for domain example.tld with an end date of"
-                + " END_OF_TIME");
+                + " END_INSTANT");
   }
 }

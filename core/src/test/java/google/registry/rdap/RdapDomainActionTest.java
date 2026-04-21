@@ -28,6 +28,7 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static google.registry.testing.GsonSubject.assertAboutJson;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
@@ -363,7 +364,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                     GracePeriod.createWithoutBillingEvent(
                         GracePeriodStatus.REDEMPTION,
                         domain.getRepoId(),
-                        clock.nowUtc().plusDays(4),
+                        toInstant(clock.nowUtc().plusDays(4)),
                         "TheRegistrar")))
             .build());
     assertAboutJson()
@@ -385,7 +386,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                 GracePeriod.create(
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    toInstant(clock.nowUtc().plusDays(1)),
                     "TheRegistrar",
                     null))
             .build());
@@ -408,7 +409,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                 GracePeriod.create(
                     GracePeriodStatus.TRANSFER,
                     domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
+                    toInstant(clock.nowUtc().plusDays(1)),
                     "TheRegistrar",
                     null))
             .build());

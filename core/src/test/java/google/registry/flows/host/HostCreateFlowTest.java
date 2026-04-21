@@ -55,7 +55,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.DatabaseHelper;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostCreateFlow}. */
@@ -79,7 +79,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
 
   HostCreateFlowTest() {
     setEppHostCreateInput("ns1.example.tld", null);
-    clock.setTo(DateTime.parse("1999-04-03T22:00:00.0Z"));
+    clock.setTo(Instant.parse("1999-04-03T22:00:00.0Z"));
   }
 
   private void doSuccessfulTest() throws Exception {

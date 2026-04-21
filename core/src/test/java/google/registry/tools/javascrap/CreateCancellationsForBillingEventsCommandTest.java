@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -128,8 +129,8 @@ public class CreateCancellationsForBillingEventsCommandTest
             .setRegistrarId("TheRegistrar")
             .setCost(Money.of(CurrencyUnit.USD, 10))
             .setPeriodYears(2)
-            .setEventTime(fakeClock.nowUtc())
-            .setBillingTime(fakeClock.nowUtc())
+            .setEventTime(toInstant(fakeClock.nowUtc()))
+            .setBillingTime(toInstant(fakeClock.nowUtc()))
             .setFlags(ImmutableSet.of())
             .setDomainHistory(
                 Iterables.getOnlyElement(

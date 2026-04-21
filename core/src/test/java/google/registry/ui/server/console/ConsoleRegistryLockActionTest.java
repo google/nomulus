@@ -27,6 +27,7 @@ import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoI
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static google.registry.ui.server.console.ConsoleRegistryLockAction.ConsoleRegistryLockPostInput;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -113,7 +114,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testGet_simpleLock() {
-    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).build());
+    saveRegistryLock(
+        createDefaultLockBuilder().setLockCompletionTime(toInstant(clock.nowUtc())).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
@@ -143,8 +145,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistryLockEmail("johndoe@theregistrar.com")
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
+            .setUnlockRequestTime(toInstant(clock.nowUtc()))
             .build();
     saveRegistryLock(expiredUnlock);
     clock.advanceBy(Duration.standardDays(1));
@@ -156,7 +158,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistryLockEmail("johndoe@theregistrar.com")
-            .setLockCompletionTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
             .build();
     clock.advanceOneMilli();
     RegistryLock adminLock =
@@ -166,7 +168,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("122222222ABCDEFGHJKLMNPQRSTUVWXY")
             .isSuperuser(true)
-            .setLockCompletionTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
             .build();
     RegistryLock incompleteLock =
         new RegistryLock.Builder()
@@ -184,8 +186,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistryLockEmail("johndoe@theregistrar.com")
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
+            .setUnlockRequestTime(toInstant(clock.nowUtc()))
             .build();
 
     RegistryLock unlockedLock =
@@ -195,9 +197,9 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRegistrarId("TheRegistrar")
             .setRegistryLockEmail("johndoe@theregistrar.com")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUUUUU")
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
-            .setUnlockCompletionTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
+            .setUnlockRequestTime(toInstant(clock.nowUtc()))
+            .setUnlockCompletionTime(toInstant(clock.nowUtc()))
             .build();
 
     saveRegistryLock(regularLock);
@@ -318,7 +320,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testPost_unlock() throws Exception {
-    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).build());
+    saveRegistryLock(
+        createDefaultLockBuilder().setLockCompletionTime(toInstant(clock.nowUtc())).build());
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action = createDefaultPostAction(false);
     action.run();
@@ -331,7 +334,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testPost_unlock_relockDuration() throws Exception {
-    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).build());
+    saveRegistryLock(
+        createDefaultLockBuilder().setLockCompletionTime(toInstant(clock.nowUtc())).build());
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action =
         createPostAction(
@@ -342,13 +346,16 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
     RegistryLock savedUnlockRequest =
         getMostRecentRegistryLockByRepoId(defaultDomain.getRepoId()).get();
     assertThat(savedUnlockRequest.getRelockDuration())
-        .isEqualTo(Optional.of(Duration.standardDays(1)));
+        .isEqualTo(Optional.of(org.joda.time.Duration.standardDays(1)));
   }
 
   @Test
   void testPost_adminUnlockingAdmin() throws Exception {
     saveRegistryLock(
-        createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).isSuperuser(true).build());
+        createDefaultLockBuilder()
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
+            .isSuperuser(true)
+            .build());
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     user =
         user.asBuilder()
@@ -414,7 +421,10 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
   @Test
   void testPost_failure_nonAdminUnlockingAdmin() throws Exception {
     saveRegistryLock(
-        createDefaultLockBuilder().setLockCompletionTime(clock.nowUtc()).isSuperuser(true).build());
+        createDefaultLockBuilder()
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
+            .isSuperuser(true)
+            .build());
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action = createDefaultPostAction(false);
     action.run();
@@ -488,9 +498,9 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
   void testPost_failure_alreadyUnlocked() throws Exception {
     saveRegistryLock(
         createDefaultLockBuilder()
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
-            .setUnlockCompletionTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
+            .setUnlockRequestTime(toInstant(clock.nowUtc()))
+            .setUnlockCompletionTime(toInstant(clock.nowUtc()))
             .build());
     action = createDefaultPostAction(false);
     action.run();

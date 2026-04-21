@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
@@ -120,7 +121,7 @@ public final class EppResourceUtils {
     builder
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData(transferDataBuilder.build())
-        .setLastTransferTime(transferData.getPendingTransferExpirationDateTime())
+        .setLastTransferTime(toDateTime(transferData.getPendingTransferExpirationTime()))
         .setPersistedCurrentSponsorRegistrarId(transferData.getGainingRegistrarId());
   }
 

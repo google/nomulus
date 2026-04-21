@@ -27,8 +27,8 @@ import static google.registry.testing.SqlHelper.getRegistryLockByRevisionId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.Duration.standardDays;
-import static org.joda.time.Duration.standardHours;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.cloud.tasks.v2.HttpMethod;
@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -244,8 +245,8 @@ public final class DomainLockUtilsTest {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     RegistryLock lock =
         domainLockUtils.saveNewRegistryUnlockRequest(
-            DOMAIN_NAME, "TheRegistrar", false, Optional.of(standardDays(1)));
-    assertThat(lock.getRelockDuration()).isEqualTo(Optional.of(standardDays(1)));
+            DOMAIN_NAME, "TheRegistrar", false, Optional.of(Duration.standardDays(1)));
+    assertThat(lock.getRelockDuration()).isEqualTo(Optional.of(Duration.standardDays(1)));
   }
 
   @Test
@@ -253,7 +254,7 @@ public final class DomainLockUtilsTest {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     RegistryLock lock =
         domainLockUtils.saveNewRegistryUnlockRequest(
-            DOMAIN_NAME, "TheRegistrar", false, Optional.of(standardHours(6)));
+            DOMAIN_NAME, "TheRegistrar", false, Optional.of(Duration.standardHours(6)));
     domainLockUtils.verifyVerificationCode(lock.getVerificationCode(), false);
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
@@ -265,7 +266,8 @@ public final class DomainLockUtilsTest {
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, "0")
-            .scheduleTime(clock.nowUtc().plus(lock.getRelockDuration().get())));
+            .scheduleTime(
+                clock.nowUtc().plusMillis((int) lock.getRelockDuration().get().getMillis())));
   }
 
   @Test
@@ -276,7 +278,8 @@ public final class DomainLockUtilsTest {
     RegistryLock resultLock =
         domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
     verifyProperlyLockedDomain(true);
-    assertThat(resultLock.getLockCompletionTime()).isEqualTo(Optional.of(clock.nowUtc()));
+    assertThat(resultLock.getLockCompletionTime())
+        .isEqualTo(Optional.of(toInstant(clock.nowUtc())));
   }
 
   @Test
@@ -285,7 +288,7 @@ public final class DomainLockUtilsTest {
     // what the RegistryLock table says
     SqlHelper.saveRegistryLock(
         new RegistryLock.Builder()
-            .setLockCompletionTime(clock.nowUtc())
+            .setLockCompletionTime(toInstant(clock.nowUtc()))
             .setDomainName(DOMAIN_NAME)
             .setVerificationCode("hi")
             .setRegistrarId("TheRegistrar")
@@ -297,7 +300,8 @@ public final class DomainLockUtilsTest {
     RegistryLock resultLock =
         domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
     verifyProperlyLockedDomain(true);
-    assertThat(resultLock.getLockCompletionTime()).isEqualTo(Optional.of(clock.nowUtc()));
+    assertThat(resultLock.getLockCompletionTime())
+        .isEqualTo(Optional.of(toInstant(clock.nowUtc())));
   }
 
   @Test
@@ -469,13 +473,13 @@ public final class DomainLockUtilsTest {
     RegistryLock lock =
         saveRegistryLock(
             new RegistryLock.Builder()
-                .setLockCompletionTime(clock.nowUtc())
-                .setUnlockRequestTime(clock.nowUtc())
-                .setUnlockCompletionTime(clock.nowUtc())
+                .setLockCompletionTime(toInstant(clock.nowUtc()))
+                .setUnlockRequestTime(toInstant(clock.nowUtc()))
+                .setUnlockCompletionTime(toInstant(clock.nowUtc()))
                 .isSuperuser(false)
                 .setDomainName("example.tld")
                 .setRepoId("repoId")
-                .setRelockDuration(standardHours(6))
+                .setRelockDuration(Duration.standardHours(6))
                 .setRegistrarId("TheRegistrar")
                 .setRegistryLockEmail("someone@example.com")
                 .setVerificationCode("hi")
@@ -491,7 +495,8 @@ public final class DomainLockUtilsTest {
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, "0")
-            .scheduleTime(clock.nowUtc().plus(lock.getRelockDuration().get())));
+            .scheduleTime(
+                clock.nowUtc().plusMillis((int) lock.getRelockDuration().get().getMillis())));
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)
@@ -571,8 +576,8 @@ public final class DomainLockUtilsTest {
                         .setTargetId(domain.getForeignKey())
                         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
                         .setCost(Tld.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
-                        .setEventTime(clock.nowUtc())
-                        .setBillingTime(clock.nowUtc())
+                        .setEventTime(toInstant(clock.nowUtc()))
+                        .setBillingTime(toInstant(clock.nowUtc()))
                         .setDomainHistory(entry)
                         .build())
             .collect(Collectors.toSet());

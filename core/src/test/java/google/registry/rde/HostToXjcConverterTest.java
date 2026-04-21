@@ -33,6 +33,7 @@ import google.registry.xjc.host.XjcHostStatusValueType;
 import google.registry.xjc.rdehost.XjcRdeHost;
 import google.registry.xjc.rdehost.XjcRdeHostElement;
 import java.io.ByteArrayOutputStream;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,7 +73,7 @@ public class HostToXjcConverterTest {
                 .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.foobar")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
-                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                 .setLastEppUpdateRegistrarId("CeilingCat")
                 .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-roid")
@@ -128,7 +129,7 @@ public class HostToXjcConverterTest {
                 .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.lol")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
-                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                 .setLastEppUpdateRegistrarId("CeilingCat")
                 .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-roid")
@@ -177,7 +178,7 @@ public class HostToXjcConverterTest {
                 .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.lol")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
-                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                 .setLastEppUpdateRegistrarId("CeilingCat")
                 .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-LOL")
@@ -200,7 +201,7 @@ public class HostToXjcConverterTest {
                     .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                     .setHostName("ns1.love.lol")
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
-                    .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                    .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                     .setLastEppUpdateRegistrarId("CeilingCat")
                     .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                     .setRepoId("2-LOL")
@@ -219,7 +220,7 @@ public class HostToXjcConverterTest {
                 .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.lol")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
-                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                 .setLastEppUpdateRegistrarId("CeilingCat")
                 .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-LOL")

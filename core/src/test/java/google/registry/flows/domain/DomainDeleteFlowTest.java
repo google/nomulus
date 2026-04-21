@@ -50,6 +50,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
@@ -241,7 +242,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
-            .setBillingTime(toDateTime(plusDays(TIME_BEFORE_FLOW, 1)))
+            .setBillingTime(plusDays(TIME_BEFORE_FLOW, 1))
             .setBillingEvent(graceBillingEvent.createVKey())
             .setDomainHistory(historyEntryDomainDelete)
             .build());
@@ -262,7 +263,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setCost(cost)
         .setPeriodYears(2)
         .setEventTime(minusDays(TIME_BEFORE_FLOW, 4))
-        .setBillingTime(toDateTime(plusDays(TIME_BEFORE_FLOW, 1)))
+        .setBillingTime(plusDays(TIME_BEFORE_FLOW, 1))
         .setDomainHistory(earlierHistoryEntry)
         .build();
   }
@@ -274,7 +275,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setTargetId("example.tld")
         .setRegistrarId(registrarId)
         .setEventTime(A_MONTH_FROM_NOW)
-        .setRecurrenceEndTime(END_OF_TIME)
+        .setRecurrenceEndTime(END_INSTANT)
         .setDomainHistory(earlierHistoryEntry);
   }
 

@@ -342,9 +342,9 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   /**
    * @deprecated Use {@link #getCreationTime()}
    */
-  @JsonIgnore
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
+  @JsonIgnore
   public Optional<DateTime> getCreationDateTime() {
     return Optional.ofNullable(toDateTime(creationTime.getTimestamp()));
   }

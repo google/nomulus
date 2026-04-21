@@ -20,6 +20,8 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -36,6 +38,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DatabaseHelper;
+import java.time.Duration;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,10 +72,12 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         .setDomainName("test.example")
                         .setTransferStatus(TransferStatus.SERVER_APPROVED)
                         .setGainingRegistrarId(getRegistrarIdForFlow())
-                        .setTransferRequestTime(clock.nowUtc().minusDays(5))
+                        .setTransferRequestTime(toInstant(clock.nowUtc()).minus(Duration.ofDays(5)))
                         .setLosingRegistrarId("TheRegistrar")
-                        .setPendingTransferExpirationTime(clock.nowUtc().minusDays(1))
-                        .setExtendedRegistrationExpirationTime(clock.nowUtc().plusYears(1))
+                        .setPendingTransferExpirationTime(
+                            toInstant(clock.nowUtc()).minus(Duration.ofDays(1)))
+                        .setExtendedRegistrationExpirationTime(
+                            plusYears(toInstant(clock.nowUtc()), 1))
                         .build()))
             .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());

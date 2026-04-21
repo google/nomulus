@@ -36,6 +36,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.difference;
 import static google.registry.util.CollectionUtils.union;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.toDateTime;
@@ -297,11 +298,11 @@ public final class DatabaseHelper {
                 .setRenewalPrice(renewalPrice)
                 .setRenewalPriceBehavior(renewalPriceBehavior)
                 .setRegistrarId(domain.getCreationRegistrarId())
-                .setEventTime(domain.getCreationTime())
+                .setEventTime(toInstant(domain.getCreationTime()))
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setId(2L)
                 .setReason(Reason.RENEW)
-                .setRecurrenceEndTime(END_OF_TIME)
+                .setRecurrenceEndTime(END_INSTANT)
                 .setTargetId(domain.getDomainName())
                 .build());
     return persistResource(
@@ -447,9 +448,9 @@ public final class DatabaseHelper {
     return new DomainTransferData.Builder()
         .setTransferStatus(TransferStatus.PENDING)
         .setGainingRegistrarId("NewRegistrar")
-        .setTransferRequestTime(requestTime)
+        .setTransferRequestTime(toInstant(requestTime))
         .setLosingRegistrarId("TheRegistrar")
-        .setPendingTransferExpirationTime(expirationTime);
+        .setPendingTransferExpirationTime(toInstant(expirationTime));
   }
 
   public static PollMessage.OneTime createPollMessageForImplicitTransfer(
@@ -479,11 +480,11 @@ public final class DatabaseHelper {
       @Nullable DateTime extendedRegistrationExpirationTime) {
     DomainTransferData transferData =
         createDomainTransferDataBuilder(requestTime, expirationTime)
-            .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
+            .setTransferredRegistrationExpirationTime(toInstant(extendedRegistrationExpirationTime))
             .build();
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(registrarId)
-        .setEventTime(expirationTime)
+        .setEventTime(toInstant(expirationTime))
         .setMsg("Transfer server approved.")
         .setResponseData(ImmutableList.of(createTransferResponse(domain, transferData)))
         .setHistoryEntry(historyEntry)
@@ -501,8 +502,9 @@ public final class DatabaseHelper {
     return new BillingEvent.Builder()
         .setReason(Reason.TRANSFER)
         .setTargetId(domain.getDomainName())
-        .setEventTime(eventTime)
-        .setBillingTime(eventTime.plus(Tld.get(domain.getTld()).getTransferGracePeriodLength()))
+        .setEventTime(toInstant(eventTime))
+        .setBillingTime(
+            toInstant(eventTime.plus(Tld.get(domain.getTld()).getTransferGracePeriodLength())))
         .setRegistrarId("NewRegistrar")
         .setPeriodYears(1)
         .setCost(getDomainRenewCost(domain.getDomainName(), toInstant(costLookupTime), 1))
@@ -539,7 +541,7 @@ public final class DatabaseHelper {
           GracePeriod.create(
               GracePeriodStatus.ADD,
               repoId,
-              creationTime.plus(addGracePeriodLength),
+              toInstant(creationTime.plus(addGracePeriodLength)),
               "TheRegistrar",
               null));
     }
@@ -559,8 +561,8 @@ public final class DatabaseHelper {
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(domainName)
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(expirationTime)
-                .setRecurrenceEndTime(END_OF_TIME)
+                .setEventTime(toInstant(expirationTime))
+                .setRecurrenceEndTime(END_INSTANT)
                 .setDomainHistory(historyEntryDomainCreate)
                 .build());
     PollMessage.Autorenew autorenewPollMessage =
@@ -568,7 +570,7 @@ public final class DatabaseHelper {
             new PollMessage.Autorenew.Builder()
                 .setTargetId(domainName)
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(expirationTime)
+                .setEventTime(toInstant(expirationTime))
                 .setAutorenewEndTime(END_OF_TIME)
                 .setMsg("Domain was auto-renewed.")
                 .setHistoryEntry(historyEntryDomainCreate)
@@ -617,8 +619,8 @@ public final class DatabaseHelper {
                 .setReason(Reason.RENEW)
                 .setTargetId(domain.getDomainName())
                 .setRegistrarId("NewRegistrar")
-                .setEventTime(extendedRegistrationExpirationTime)
-                .setRecurrenceEndTime(END_OF_TIME)
+                .setEventTime(toInstant(extendedRegistrationExpirationTime))
+                .setRecurrenceEndTime(END_INSTANT)
                 .setDomainHistory(historyEntryDomainTransfer)
                 .build());
     PollMessage.Autorenew gainingClientAutorenewPollMessage =
@@ -626,7 +628,7 @@ public final class DatabaseHelper {
             new PollMessage.Autorenew.Builder()
                 .setTargetId(domain.getDomainName())
                 .setRegistrarId("NewRegistrar")
-                .setEventTime(extendedRegistrationExpirationTime)
+                .setEventTime(toInstant(extendedRegistrationExpirationTime))
                 .setAutorenewEndTime(END_OF_TIME)
                 .setMsg("Domain was auto-renewed.")
                 .setHistoryEntry(historyEntryDomainTransfer)
@@ -637,7 +639,7 @@ public final class DatabaseHelper {
                 () ->
                     tm().loadByKey(domain.getAutorenewBillingEvent())
                         .asBuilder()
-                        .setRecurrenceEndTime(expirationTime)
+                        .setRecurrenceEndTime(toInstant(expirationTime))
                         .build()));
     // Update the end time of the existing autorenew poll message. We must delete it if it has no
     // events left in it.
@@ -657,8 +659,9 @@ public final class DatabaseHelper {
             .addStatusValue(StatusValue.PENDING_TRANSFER)
             .setTransferData(
                 transferDataBuilder
-                    .setPendingTransferExpirationTime(expirationTime)
-                    .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
+                    .setPendingTransferExpirationTime(toInstant(expirationTime))
+                    .setTransferredRegistrationExpirationTime(
+                        toInstant(extendedRegistrationExpirationTime))
                     .setServerApproveBillingEvent(transferBillingEvent.createVKey())
                     .setServerApproveAutorenewEvent(gainingClientAutorenewEvent.createVKey())
                     .setServerApproveAutorenewPollMessage(

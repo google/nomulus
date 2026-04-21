@@ -190,7 +190,7 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
                   endTime));
       BillingRecurrence billingRecurrence = tm().loadByKey(domain.getAutorenewBillingEvent());
       checkArgument(
-          billingRecurrence.getRecurrenceEndTimeInstant().equals(END_INSTANT),
+          billingRecurrence.getRecurrenceEndTime().equals(END_INSTANT),
           "Domain %s's recurrence's end date is not END_INSTANT",
           domainName);
       result.put(domain, billingRecurrence);

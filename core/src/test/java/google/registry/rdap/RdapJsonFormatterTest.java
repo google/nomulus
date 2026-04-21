@@ -25,6 +25,8 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntr
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.GsonSubject.assertAboutJson;
 import static google.registry.testing.TestDataHelper.loadFile;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 
 import com.google.common.collect.ImmutableList;
@@ -48,6 +50,7 @@ import google.registry.rdap.RdapObjectClasses.BoilerplateType;
 import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -129,12 +132,13 @@ class RdapJsonFormatterTest {
                                     new DomainTransferData.Builder()
                                         .setTransferStatus(TransferStatus.PENDING)
                                         .setGainingRegistrarId("NewRegistrar")
-                                        .setTransferRequestTime(clock.nowUtc().minusDays(1))
+                                        .setTransferRequestTime(
+                                            toInstant(clock.nowUtc()).minus(Duration.ofDays(1)))
                                         .setLosingRegistrarId("TheRegistrar")
                                         .setPendingTransferExpirationTime(
-                                            clock.nowUtc().plusYears(100))
+                                            plusYears(toInstant(clock.nowUtc()), 100))
                                         .setTransferredRegistrationExpirationTime(
-                                            DateTime.parse("2111-10-08T00:44:59Z"))
+                                            toInstant(DateTime.parse("2111-10-08T00:44:59Z")))
                                         .build())
                                 .build())
                         .createVKey())

@@ -26,6 +26,7 @@ import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HostSubject.assertAboutHosts;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -48,7 +49,7 @@ import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DatabaseHelper;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -236,9 +237,11 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     // Setup a transfer that should have been server approved a day ago.
-    DateTime now = clock.nowUtc();
-    DateTime requestTime = now.minusDays(1).minus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
-    DateTime transferExpirationTime = now.minusDays(1);
+    Instant now = toInstant(clock.nowUtc());
+    Instant requestTime =
+        now.minus(java.time.Duration.ofDays(1))
+            .minusMillis(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH.getMillis());
+    Instant transferExpirationTime = now.minus(java.time.Duration.ofDays(1));
     Domain domain =
         persistResource(
             DatabaseHelper.newDomain("example.tld")
@@ -270,9 +273,11 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     // Setup a transfer that should have been server approved a day ago.
-    DateTime now = clock.nowUtc();
-    DateTime requestTime = now.minusDays(1).minus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
-    DateTime transferExpirationTime = now.minusDays(1);
+    Instant now = toInstant(clock.nowUtc());
+    Instant requestTime =
+        now.minus(java.time.Duration.ofDays(1))
+            .minusMillis(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH.getMillis());
+    Instant transferExpirationTime = now.minus(java.time.Duration.ofDays(1));
     Domain domain =
         persistResource(
             DatabaseHelper.newDomain("example.tld")

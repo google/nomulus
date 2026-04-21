@@ -53,7 +53,6 @@ public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerial
    * @deprecated Use {@link #getTimestamp()}
    */
   @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
   @Nullable
   public DateTime getTimestampDateTime() {
     return toDateTime(creationTime);

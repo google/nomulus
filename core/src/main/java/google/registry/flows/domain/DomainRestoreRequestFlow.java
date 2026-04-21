@@ -164,14 +164,14 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
 
     BillingRecurrence autorenewEvent =
         newAutorenewBillingEvent(existingDomain)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistoryId(domainHistoryId)
             .build();
     entitiesToInsert.add(autorenewEvent);
     PollMessage.Autorenew autorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setAutorenewEndTime(END_INSTANT)
             .setDomainHistoryId(domainHistoryId)
             .build();
@@ -273,8 +273,8 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     return new BillingEvent.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
-        .setEventTime(now)
-        .setBillingTime(now)
+        .setEventTime(toInstant(now))
+        .setBillingTime(toInstant(now))
         .setPeriodYears(1)
         .setCost(cost)
         .setDomainHistoryId(domainHistoryId);

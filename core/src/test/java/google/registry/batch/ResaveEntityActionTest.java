@@ -24,6 +24,7 @@ import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.time.Duration.standardDays;
 import static org.mockito.Mockito.verify;
 
@@ -117,7 +118,7 @@ public class ResaveEntityActionTest {
                         GracePeriod.createWithoutBillingEvent(
                             GracePeriodStatus.REDEMPTION,
                             newDomain.getRepoId(),
-                            clock.nowUtc().plusDays(30),
+                            toInstant(clock.nowUtc().plusDays(30)),
                             "TheRegistrar")))
                 .build());
     clock.advanceBy(standardDays(30));

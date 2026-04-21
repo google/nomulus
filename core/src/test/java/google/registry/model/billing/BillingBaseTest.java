@@ -21,7 +21,8 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.SerializeUtils.serializeDeserialize;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
@@ -113,8 +114,8 @@ public class BillingBaseTest extends EntityTestCase {
                     .setFlags(ImmutableSet.of(BillingBase.Flag.ANCHOR_TENANT))
                     .setPeriodYears(2)
                     .setCost(Money.of(USD, 1))
-                    .setEventTime(now)
-                    .setBillingTime(now.plusDays(5))
+                    .setEventTime(toInstant(now))
+                    .setBillingTime(toInstant(now.plusDays(5)))
                     .setAllocationToken(allocationToken.createVKey())));
 
     billingRecurrence =
@@ -124,8 +125,8 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setEventTime(toInstant(now.plusYears(1)))
+                    .setRecurrenceEndTime(END_INSTANT)));
     billingEventSynthetic =
         persistResource(
             commonInit(
@@ -134,12 +135,12 @@ public class BillingBaseTest extends EntityTestCase {
                     .setReason(Reason.CREATE)
                     .setFlags(
                         ImmutableSet.of(BillingBase.Flag.ANCHOR_TENANT, BillingBase.Flag.SYNTHETIC))
-                    .setSyntheticCreationTime(now.plusDays(10))
+                    .setSyntheticCreationTime(toInstant(now.plusDays(10)))
                     .setCancellationMatchingBillingEvent(billingRecurrence)
                     .setPeriodYears(2)
                     .setCost(Money.of(USD, 1))
-                    .setEventTime(now)
-                    .setBillingTime(now.plusDays(5))));
+                    .setEventTime(toInstant(now))
+                    .setBillingTime(toInstant(now.plusDays(5)))));
 
     cancellationOneTime =
         persistResource(
@@ -147,8 +148,8 @@ public class BillingBaseTest extends EntityTestCase {
                 new BillingCancellation.Builder()
                     .setDomainHistory(domainHistory2)
                     .setReason(Reason.CREATE)
-                    .setEventTime(now.plusDays(1))
-                    .setBillingTime(now.plusDays(5))
+                    .setEventTime(toInstant(now.plusDays(1)))
+                    .setBillingTime(toInstant(now.plusDays(5)))
                     .setBillingEvent(billingEvent.createVKey())));
 
     cancellationRecurrence =
@@ -157,8 +158,8 @@ public class BillingBaseTest extends EntityTestCase {
                 new BillingCancellation.Builder()
                     .setDomainHistory(domainHistory2)
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusDays(1))
-                    .setBillingTime(now.plusYears(1).plusDays(45))
+                    .setEventTime(toInstant(now.plusDays(1)))
+                    .setBillingTime(toInstant(now.plusYears(1).plusDays(45)))
                     .setBillingRecurrence(billingRecurrence.createVKey())));
   }
 
@@ -218,7 +219,11 @@ public class BillingBaseTest extends EntityTestCase {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
-            () -> billingEvent.asBuilder().setSyntheticCreationTime(now.plusDays(10)).build());
+            () ->
+                billingEvent
+                    .asBuilder()
+                    .setSyntheticCreationTime(toInstant(now.plusDays(10)))
+                    .build());
     assertThat(thrown)
         .hasMessageThat()
         .contains("Synthetic creation time must be set if and only if the SYNTHETIC flag is set");
@@ -233,7 +238,7 @@ public class BillingBaseTest extends EntityTestCase {
                 billingEvent
                     .asBuilder()
                     .setFlags(ImmutableSet.of(BillingBase.Flag.SYNTHETIC))
-                    .setSyntheticCreationTime(END_OF_TIME)
+                    .setSyntheticCreationTime(END_INSTANT)
                     .build());
     assertThat(thrown)
         .hasMessageThat()
@@ -264,7 +269,7 @@ public class BillingBaseTest extends EntityTestCase {
     BillingCancellation newCancellation =
         BillingCancellation.forGracePeriod(
             GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), billingEvent),
-            domainHistory2.getModificationTime(),
+            toInstant(domainHistory2.getModificationTime()),
             domainHistory2.getHistoryEntryId(),
             "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
@@ -279,10 +284,10 @@ public class BillingBaseTest extends EntityTestCase {
             GracePeriod.createForRecurrence(
                 GracePeriodStatus.AUTO_RENEW,
                 domain.getRepoId(),
-                now.plusYears(1).plusDays(45),
+                toInstant(now.plusYears(1).plusDays(45)),
                 "TheRegistrar",
                 billingRecurrence.createVKey()),
-            domainHistory2.getModificationTime(),
+            toInstant(domainHistory2.getModificationTime()),
             domainHistory2.getHistoryEntryId(),
             "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
@@ -300,9 +305,9 @@ public class BillingBaseTest extends EntityTestCase {
                     GracePeriod.createWithoutBillingEvent(
                         GracePeriodStatus.REDEMPTION,
                         domain.getRepoId(),
-                        now.plusDays(1),
+                        toInstant(now.plusDays(1)),
                         "a registrar"),
-                    domainHistory.getModificationTime(),
+                    toInstant(domainHistory.getModificationTime()),
                     domainHistory.getHistoryEntryId(),
                     "foo.tld"));
     assertThat(thrown).hasMessageThat().contains("grace period without billing event");
@@ -343,8 +348,8 @@ public class BillingBaseTest extends EntityTestCase {
             IllegalStateException.class,
             () ->
                 new BillingEvent.Builder()
-                    .setBillingTime(DateTime.parse("2020-02-05T15:33:11Z"))
-                    .setEventTime(DateTime.parse("2020-01-05T15:33:11Z"))
+                    .setBillingTime(toInstant(DateTime.parse("2020-02-05T15:33:11Z")))
+                    .setEventTime(toInstant(DateTime.parse("2020-01-05T15:33:11Z")))
                     .setCost(Money.of(USD, 10))
                     .setReason(Reason.RENEW)
                     .setCost(Money.of(USD, 10))
@@ -364,8 +369,8 @@ public class BillingBaseTest extends EntityTestCase {
             IllegalStateException.class,
             () ->
                 new BillingEvent.Builder()
-                    .setBillingTime(DateTime.parse("2020-02-05T15:33:11Z"))
-                    .setEventTime(DateTime.parse("2020-01-05T15:33:11Z"))
+                    .setBillingTime(toInstant(DateTime.parse("2020-02-05T15:33:11Z")))
+                    .setEventTime(toInstant(DateTime.parse("2020-01-05T15:33:11Z")))
                     .setCost(Money.of(USD, 10))
                     .setPeriodYears(2)
                     .setReason(Reason.SERVER_STATUS)
@@ -384,8 +389,8 @@ public class BillingBaseTest extends EntityTestCase {
     // This won't throw even though periodYears is missing on a RESTORE because the event time
     // is before 2019.
     new BillingEvent.Builder()
-        .setBillingTime(DateTime.parse("2018-02-05T15:33:11Z"))
-        .setEventTime(DateTime.parse("2018-01-05T15:33:11Z"))
+        .setBillingTime(toInstant(DateTime.parse("2018-02-05T15:33:11Z")))
+        .setEventTime(toInstant(DateTime.parse("2018-01-05T15:33:11Z")))
         .setReason(Reason.RESTORE)
         .setCost(Money.of(USD, 10))
         .setRegistrarId("TheRegistrar")
@@ -409,9 +414,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.NONPREMIUM);
     assertThat(billingRecurrence.getRenewalPrice()).isEmpty();
@@ -426,9 +431,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
     assertThat(billingRecurrence.getRenewalPrice()).isEmpty();
     BillingRecurrence loadedEntity = loadByEntity(billingRecurrence);
@@ -453,9 +458,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
     assertThat(billingRecurrence.getRenewalPrice()).isEmpty();
     BillingRecurrence loadedEntity = loadByEntity(billingRecurrence);
@@ -476,9 +481,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.NONPREMIUM);
     assertThat(billingRecurrence.getRenewalPrice()).isEmpty();
@@ -504,9 +509,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.NONPREMIUM);
     assertThat(billingRecurrence.getRenewalPrice()).isEmpty();
@@ -528,10 +533,10 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, 100))
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
     assertThat(billingRecurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
@@ -557,10 +562,10 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, 100))
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
     assertThat(billingRecurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
@@ -586,9 +591,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
     assertThat(billingRecurrence.getRenewalPrice()).isEmpty();
     BillingRecurrence loadedEntity = loadByEntity(billingRecurrence);
@@ -617,9 +622,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.DEFAULT);
     assertThat(billingRecurrence.getRenewalPrice()).isEmpty();
     BillingRecurrence loadedEntity = loadByEntity(billingRecurrence);
@@ -649,9 +654,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.NONPREMIUM);
     assertThat(billingRecurrence.getRenewalPrice()).isEmpty();
@@ -682,9 +687,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.NONPREMIUM);
     assertThat(billingRecurrence.getRenewalPrice()).isEmpty();
@@ -714,10 +719,10 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, 100))
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
     assertThat(billingRecurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
@@ -747,10 +752,10 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, 100))
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
     assertThat(billingRecurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
@@ -780,14 +785,14 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, BigDecimal.valueOf(100)))
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
     assertThat(billingRecurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
-    assertThat(billingRecurrence.getRecurrenceLastExpansion()).isEqualTo(now);
+    assertThat(billingRecurrence.getRecurrenceLastExpansion()).isEqualTo(toInstant(now));
   }
 
   @Test
@@ -799,9 +804,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.NONPREMIUM);
     assertThat(loadByEntity(billingRecurrence).getRenewalPrice()).isEmpty();
@@ -816,10 +821,10 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                     .setRenewalPrice(Money.of(USD, BigDecimal.valueOf(100)))
-                    .setRecurrenceEndTime(END_OF_TIME)));
+                    .setRecurrenceEndTime(END_INSTANT)));
     assertThat(billingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
     assertThat(billingRecurrence.getRenewalPrice()).hasValue(Money.of(USD, 100));
@@ -835,9 +840,9 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
-                    .setRecurrenceEndTime(END_OF_TIME)
+                    .setRecurrenceEndTime(END_INSTANT)
                     .build());
     assertThat(thrown)
         .hasMessageThat()
@@ -856,10 +861,10 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.NONPREMIUM)
                     .setRenewalPrice(Money.of(USD, BigDecimal.valueOf(100)))
-                    .setRecurrenceEndTime(END_OF_TIME)
+                    .setRecurrenceEndTime(END_INSTANT)
                     .build());
     assertThat(thrown)
         .hasMessageThat()
@@ -878,10 +883,10 @@ public class BillingBaseTest extends EntityTestCase {
                     .setDomainHistory(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
-                    .setEventTime(now.plusYears(1))
+                    .setEventTime(toInstant(now.plusYears(1)))
                     .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
                     .setRenewalPrice(Money.of(USD, BigDecimal.valueOf(100)))
-                    .setRecurrenceEndTime(END_OF_TIME)
+                    .setRecurrenceEndTime(END_INSTANT)
                     .build());
     assertThat(thrown)
         .hasMessageThat()

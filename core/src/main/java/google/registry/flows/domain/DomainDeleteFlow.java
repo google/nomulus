@@ -40,6 +40,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.union;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
@@ -242,7 +243,8 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
         entitiesToInsert.add(
-            BillingCancellation.forGracePeriod(gracePeriod, now, domainHistoryId, targetId));
+            BillingCancellation.forGracePeriod(
+                gracePeriod, toInstant(now), domainHistoryId, targetId));
         if (gracePeriod.getBillingEvent() != null) {
           // Take the amount of registration time being refunded off the expiration time.
           // This can be either add grace periods or renew grace periods.
@@ -380,7 +382,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
       Domain existingDomain, HistoryEntryId domainHistoryId, DateTime now, DateTime deletionTime) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(existingDomain.getPersistedCurrentSponsorRegistrarId())
-        .setEventTime(now)
+        .setEventTime(toInstant(now))
         .setDomainHistoryId(domainHistoryId)
         .setMsg(
             String.format(
@@ -421,7 +423,10 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     if (gracePeriod.getType() == GracePeriodStatus.AUTO_RENEW) {
       // If we updated the autorenew billing event, reuse it.
       DateTime autoRenewTime =
-          billingRecurrence.getRecurrenceTimeOfYear().getLastInstanceBeforeOrAt(now);
+          toDateTime(
+              billingRecurrence
+                  .getRecurrenceTimeOfYear()
+                  .getLastInstanceBeforeOrAt(toInstant(now)));
       return getDomainRenewCost(targetId, toInstant(autoRenewTime), 1);
     }
     return tm().loadByKey(checkNotNull(gracePeriod.getBillingEvent())).getCost();

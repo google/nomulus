@@ -470,7 +470,7 @@ public abstract class PollMessage extends ImmutableObject
                   .setGainingRegistrarId(transferResponse.getGainingRegistrarId())
                   .setLosingRegistrarId(transferResponse.getLosingRegistrarId())
                   .setTransferStatus(transferResponse.getTransferStatus())
-                  .setTransferRequestTime(transferResponse.getTransferRequestTimeInstant())
+                  .setTransferRequestTime(transferResponse.getTransferRequestTime())
                   .setPendingTransferExpirationTime(
                       transferResponse.getPendingTransferExpirationTime())
                   .setExtendedRegistrationExpirationTime(extendedRegistrationExpirationTime)

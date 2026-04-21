@@ -14,6 +14,7 @@
 
 package google.registry.rde;
 
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
@@ -225,9 +226,9 @@ final class DomainToXjcConverter {
         XjcEppcomTrStatusType.fromValue(model.getTransferStatus().getXmlName()));
     bean.setReRr(RdeUtils.makeXjcRdeRrType(model.getGainingRegistrarId()));
     bean.setAcRr(RdeUtils.makeXjcRdeRrType(model.getLosingRegistrarId()));
-    bean.setReDate(model.getTransferRequestTime());
-    bean.setAcDate(model.getPendingTransferExpirationDateTime());
-    bean.setExDate(model.getTransferredRegistrationExpirationDateTime());
+    bean.setReDate(toDateTime(model.getTransferRequestTime()));
+    bean.setAcDate(toDateTime(model.getPendingTransferExpirationTime()));
+    bean.setExDate(toDateTime(model.getTransferredRegistrationExpirationTime()));
     return bean;
   }
 

@@ -37,8 +37,8 @@ import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.testing.DatabaseHelper;
+import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -66,9 +66,9 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, Host> {
             .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .setCreationRegistrarId("NewRegistrar")
             .setLastEppUpdateRegistrarId("NewRegistrar")
-            .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
-            .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
-            .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
+            .setCreationTimeForTest(Instant.parse("1999-04-03T22:00:00.0Z"))
+            .setLastEppUpdateTime(Instant.parse("1999-12-03T09:00:00.0Z"))
+            .setLastTransferTime(Instant.parse("2000-04-08T09:00:00.0Z"))
             .build());
   }
 
@@ -111,7 +111,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, Host> {
   }
 
   private void runTest_superordinateDomain(
-      DateTime domainTransferTime, @Nullable DateTime lastSuperordinateChange) throws Exception {
+      Instant domainTransferTime, @Nullable Instant lastSuperordinateChange) throws Exception {
     persistNewRegistrar("superclientid");
     Domain domain =
         persistResource(
@@ -143,18 +143,18 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, Host> {
   @Test
   void testSuccess_withSuperordinateDomain_hostMovedAfterDomainTransfer() throws Exception {
     runTest_superordinateDomain(
-        DateTime.parse("2000-01-08T09:00:00.0Z"), DateTime.parse("2000-03-01T01:00:00.0Z"));
+        Instant.parse("2000-01-08T09:00:00.0Z"), Instant.parse("2000-03-01T01:00:00.0Z"));
   }
 
   @Test
   void testSuccess_withSuperordinateDomain_hostMovedBeforeDomainTransfer() throws Exception {
     runTest_superordinateDomain(
-        DateTime.parse("2000-04-08T09:00:00.0Z"), DateTime.parse("2000-02-08T09:00:00.0Z"));
+        Instant.parse("2000-04-08T09:00:00.0Z"), Instant.parse("2000-02-08T09:00:00.0Z"));
   }
 
   @Test
   void testSuccess_withSuperordinateDomain() throws Exception {
-    runTest_superordinateDomain(DateTime.parse("2000-04-08T09:00:00.0Z"), null);
+    runTest_superordinateDomain(Instant.parse("2000-04-08T09:00:00.0Z"), null);
   }
 
   @Test

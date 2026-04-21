@@ -25,7 +25,8 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 import static google.registry.testing.TestLogHandlerUtils.assertNoLogMessage;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -286,8 +287,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId("example.tld")
                 .setRegistrarId("NewRegistrar")
-                .setEventTime(fakeClock.nowUtc().minusDays(5))
-                .setRecurrenceEndTime(END_OF_TIME)
+                .setEventTime(toInstant(fakeClock.nowUtc().minusDays(5)))
+                .setRecurrenceEndTime(END_INSTANT)
                 .setDomainHistory(createHistoryEntry)
                 .build());
     persistResource(
@@ -300,7 +301,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                     GracePeriod.createForRecurrence(
                         AUTO_RENEW,
                         domain.getRepoId(),
-                        fakeClock.nowUtc().plusDays(40),
+                        toInstant(fakeClock.nowUtc().plusDays(40)),
                         "NewRegistrar",
                         autorenewBillingEvent.createVKey())))
             .build());

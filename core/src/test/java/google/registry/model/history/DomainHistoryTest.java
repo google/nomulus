@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.newHostWithRoid;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
@@ -96,7 +96,7 @@ public class DomainHistoryTest extends EntityTestCase {
         .setGracePeriods(
             ImmutableSet.of(
                 GracePeriod.create(
-                    GracePeriodStatus.ADD, "domainRepoId", END_OF_TIME, "clientId", null)))
+                    GracePeriodStatus.ADD, "domainRepoId", END_INSTANT, "clientId", null)))
         .build();
   }
 

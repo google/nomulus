@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.loadByKeysIfPresent;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
@@ -90,12 +91,15 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
                 .setHistoryEntry(domainHistory)
-                .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
+                .setEventTime(toInstant(DateTime.parse("2011-04-15T22:33:44Z")))
                 .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
                 .build());
     Autorenew resaved =
-        autorenew.asBuilder().setEventTime(DateTime.parse("2012-04-15T22:33:44Z")).build();
+        autorenew
+            .asBuilder()
+            .setEventTime(toInstant(DateTime.parse("2012-04-15T22:33:44Z")))
+            .build();
     VKey<Autorenew> pm3 = autorenew.createVKey();
     runCommand("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3)).values())
@@ -117,7 +121,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
                 .setHistoryEntry(domainHistory)
-                .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
+                .setEventTime(toInstant(DateTime.parse("2011-04-15T22:33:44Z")))
                 .setAutorenewEndTime(DateTime.parse("2012-01-01T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
@@ -163,7 +167,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                 .setId(2474L)
                 .setHistoryEntry(domainHistory)
                 .setRegistrarId("NewRegistrar")
-                .setEventTime(DateTime.parse("2013-06-01T22:33:44Z"))
+                .setEventTime(toInstant(DateTime.parse("2013-06-01T22:33:44Z")))
                 .setMsg("baaaahh")
                 .build());
     VKey<OneTime> pm3 = notMatched.createVKey();
@@ -193,7 +197,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             .setId(id)
             .setHistoryEntry(domainHistory)
             .setRegistrarId("TheRegistrar")
-            .setEventTime(eventTime)
+            .setEventTime(toInstant(eventTime))
             .setMsg(message)
             .build());
   }

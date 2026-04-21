@@ -175,8 +175,6 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
     return creationRegistrarId;
   }
 
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastEppUpdateDateTime() {
     return toDateTime(lastEppUpdateTime);
   }
@@ -203,8 +201,6 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
     return nullToEmptyImmutableCopy(statuses);
   }
 
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
   public DateTime getDeletionDateTime() {
     return toDateTime(deletionTime);
   }

@@ -40,6 +40,7 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -2438,7 +2439,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(existingDomain.getDomainName())
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(existingDomain.getCreationTime())
+                .setEventTime(toInstant(existingDomain.getCreationTime()))
                 .setRecurrenceEndTime(clock.now())
                 .setDomainHistory(historyEntry)
                 .build());

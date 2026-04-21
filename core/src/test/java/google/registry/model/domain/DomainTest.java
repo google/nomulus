@@ -29,12 +29,13 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.SqlHelper.saveRegistrar;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -71,6 +72,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -119,9 +121,9 @@ public class DomainTest {
                     .setReason(Reason.SERVER_STATUS)
                     .setTargetId(domain.getDomainName())
                     .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-                    .setBillingTime(DateTime.now(UTC))
+                    .setBillingTime(toInstant(DateTime.now(UTC)))
                     .setCost(Money.of(USD, 100))
-                    .setEventTime(DateTime.now(UTC).plusYears(1))
+                    .setEventTime(toInstant(DateTime.now(UTC).plusYears(1)))
                     .setDomainHistory(domainHistory)
                     .build())
             .createVKey();
@@ -145,9 +147,9 @@ public class DomainTest {
             .setReason(Reason.SERVER_STATUS)
             .setTargetId("example.com")
             .setRegistrarId("registrar1")
-            .setBillingTime(DateTime.now(UTC))
+            .setBillingTime(toInstant(DateTime.now(UTC)))
             .setCost(Money.of(USD, 100))
-            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setEventTime(toInstant(DateTime.now(UTC).plusYears(1)))
             .setDomainHistory(historyEntry)
             .build();
     oneTimeBillKey = billingEventBill.createVKey();
@@ -158,8 +160,8 @@ public class DomainTest {
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(domain.getDomainName())
             .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-            .setEventTime(DateTime.now(UTC).plusYears(1))
-            .setRecurrenceEndTime(END_OF_TIME)
+            .setEventTime(toInstant(DateTime.now(UTC).plusYears(1)))
+            .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistory(historyEntry)
             .build();
     persistResources(historyEntry, billingEventBill, billingRecurrence);
@@ -197,7 +199,7 @@ public class DomainTest {
                         new DomainTransferData.Builder()
                             .setGainingRegistrarId("TheRegistrar")
                             .setLosingRegistrarId("NewRegistrar")
-                            .setPendingTransferExpirationTime(fakeClock.nowUtc())
+                            .setPendingTransferExpirationTime(toInstant(fakeClock.nowUtc()))
                             .setServerApproveEntities(
                                 historyEntry.getRepoId(),
                                 historyEntry.getRevisionId(),
@@ -206,7 +208,8 @@ public class DomainTest {
                             .setServerApproveBillingEvent(oneTimeBillKey)
                             .setServerApproveAutorenewEvent(recurrenceBillKey)
                             .setServerApproveAutorenewPollMessage(autorenewPollKey)
-                            .setTransferRequestTime(fakeClock.nowUtc().plusDays(1))
+                            .setTransferRequestTime(
+                                toInstant(fakeClock.nowUtc()).plus(Duration.ofDays(1)))
                             .setTransferStatus(TransferStatus.SERVER_APPROVED)
                             .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                             .build())
@@ -218,7 +221,7 @@ public class DomainTest {
                         GracePeriod.create(
                             GracePeriodStatus.ADD,
                             domain.getRepoId(),
-                            fakeClock.nowUtc().plusDays(1),
+                            toInstant(fakeClock.nowUtc().plusDays(1)),
                             "TheRegistrar",
                             oneTimeBillKey))
                     .setAutorenewEndTime(Optional.of(fakeClock.nowUtc().plusYears(2)))
@@ -411,12 +414,13 @@ public class DomainTest {
                 .setReason(Reason.TRANSFER)
                 .setRegistrarId("TheRegistrar")
                 .setTargetId(domain.getDomainName())
-                .setEventTime(fakeClock.nowUtc())
+                .setEventTime(toInstant(fakeClock.nowUtc()))
                 .setBillingTime(
-                    fakeClock
-                        .nowUtc()
-                        .plusDays(1)
-                        .plus(Tld.get("com").getTransferGracePeriodLength()))
+                    toInstant(
+                        fakeClock
+                            .nowUtc()
+                            .plusDays(1)
+                            .plus(Tld.get("com").getTransferGracePeriodLength())))
                 .setCost(Money.of(USD, 11))
                 .setPeriodYears(1)
                 .setDomainHistory(historyEntry)
@@ -430,8 +434,9 @@ public class DomainTest {
                     .getTransferData()
                     .asBuilder()
                     .setTransferStatus(TransferStatus.PENDING)
-                    .setTransferRequestTime(fakeClock.nowUtc().minusDays(4))
-                    .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1))
+                    .setTransferRequestTime(toInstant(fakeClock.nowUtc()).minus(Duration.ofDays(4)))
+                    .setPendingTransferExpirationTime(
+                        toInstant(fakeClock.nowUtc()).plus(Duration.ofDays(1)))
                     .setGainingRegistrarId("TheRegistrar")
                     .setServerApproveBillingEvent(transferBillingEvent.createVKey())
                     .setServerApproveEntities(
@@ -445,7 +450,7 @@ public class DomainTest {
                 GracePeriod.create(
                     GracePeriodStatus.ADD,
                     domain.getRepoId(),
-                    fakeClock.nowUtc().plusDays(100),
+                    toInstant(fakeClock.nowUtc().plusDays(100)),
                     "TheRegistrar",
                     oneTimeBillKey))
             .build();
@@ -459,7 +464,11 @@ public class DomainTest {
             GracePeriod.create(
                 GracePeriodStatus.TRANSFER,
                 domain.getRepoId(),
-                fakeClock.nowUtc().plusDays(1).plus(Tld.get("com").getTransferGracePeriodLength()),
+                toInstant(
+                    fakeClock
+                        .nowUtc()
+                        .plusDays(1)
+                        .plus(Tld.get("com").getTransferGracePeriodLength())),
                 "TheRegistrar",
                 transferBillingEvent.createVKey(),
                 afterTransfer.getGracePeriods().iterator().next().getGracePeriodId()));
@@ -495,8 +504,8 @@ public class DomainTest {
                     .getTransferData()
                     .asBuilder()
                     .setTransferStatus(TransferStatus.PENDING)
-                    .setTransferRequestTime(toDateTime(transferRequestTime))
-                    .setPendingTransferExpirationTime(toDateTime(transferSuccessTime))
+                    .setTransferRequestTime(toInstant(toDateTime(transferRequestTime)))
+                    .setPendingTransferExpirationTime(toInstant(toDateTime(transferSuccessTime)))
                     .build())
             .setLastEppUpdateTime(toDateTime(transferRequestTime))
             .setLastEppUpdateRegistrarId(domain.getTransferData().getGainingRegistrarId())
@@ -574,19 +583,19 @@ public class DomainTest {
             GracePeriod.create(
                 GracePeriodStatus.ADD,
                 domain.getRepoId(),
-                fakeClock.nowUtc().plusDays(3),
+                toInstant(fakeClock.nowUtc().plusDays(3)),
                 "foo",
                 null),
             GracePeriod.create(
                 GracePeriodStatus.ADD,
                 domain.getRepoId(),
-                fakeClock.nowUtc().plusDays(2),
+                toInstant(fakeClock.nowUtc().plusDays(2)),
                 "bar",
                 null),
             GracePeriod.create(
                 GracePeriodStatus.ADD,
                 domain.getRepoId(),
-                fakeClock.nowUtc().plusDays(1),
+                toInstant(fakeClock.nowUtc().plusDays(1)),
                 "baz",
                 null));
     domain = domain.asBuilder().setGracePeriods(ImmutableSet.copyOf(gracePeriods)).build();
@@ -603,13 +612,13 @@ public class DomainTest {
             GracePeriod.create(
                 GracePeriodStatus.ADD,
                 domain.getRepoId(),
-                fakeClock.nowUtc().plusDays(3),
+                toInstant(fakeClock.nowUtc().plusDays(3)),
                 "foo",
                 null),
             GracePeriod.create(
                 GracePeriodStatus.ADD,
                 domain.getRepoId(),
-                fakeClock.nowUtc().plusDays(1),
+                toInstant(fakeClock.nowUtc().plusDays(1)),
                 "baz",
                 null));
     ImmutableSet<GracePeriod> renewGracePeriods =
@@ -617,13 +626,13 @@ public class DomainTest {
             GracePeriod.create(
                 GracePeriodStatus.RENEW,
                 domain.getRepoId(),
-                fakeClock.nowUtc().plusDays(3),
+                toInstant(fakeClock.nowUtc().plusDays(3)),
                 "foo",
                 null),
             GracePeriod.create(
                 GracePeriodStatus.RENEW,
                 domain.getRepoId(),
-                fakeClock.nowUtc().plusDays(1),
+                toInstant(fakeClock.nowUtc().plusDays(1)),
                 "baz",
                 null));
     domain =
@@ -697,7 +706,10 @@ public class DomainTest {
             GracePeriod.createForRecurrence(
                 GracePeriodStatus.AUTO_RENEW,
                 domain.getRepoId(),
-                oldExpirationTime.plusYears(2).plus(Tld.get("com").getAutoRenewGracePeriodLength()),
+                toInstant(
+                    oldExpirationTime
+                        .plusYears(2)
+                        .plus(Tld.get("com").getAutoRenewGracePeriodLength())),
                 renewedThreeTimes.getCurrentSponsorRegistrarId(),
                 renewedThreeTimes.autorenewBillingEvent,
                 renewedThreeTimes.getGracePeriods().iterator().next().getGracePeriodId()));
@@ -768,7 +780,7 @@ public class DomainTest {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setPendingTransferExpirationTime(transferExpirationTime)
+            .setPendingTransferExpirationTime(toInstant(transferExpirationTime))
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
             .build();
@@ -796,7 +808,7 @@ public class DomainTest {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setPendingTransferExpirationTime(transferExpirationTime)
+            .setPendingTransferExpirationTime(toInstant(transferExpirationTime))
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
             .build();
@@ -824,7 +836,7 @@ public class DomainTest {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setPendingTransferExpirationTime(transferExpirationTime)
+            .setPendingTransferExpirationTime(toInstant(transferExpirationTime))
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
             .build();
@@ -865,7 +877,7 @@ public class DomainTest {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setPendingTransferExpirationTime(transferExpirationTime)
+            .setPendingTransferExpirationTime(toInstant(transferExpirationTime))
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
             .build();
@@ -890,7 +902,7 @@ public class DomainTest {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setPendingTransferExpirationTime(transferExpirationTime)
+            .setPendingTransferExpirationTime(toInstant(transferExpirationTime))
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
             .build();
@@ -929,7 +941,7 @@ public class DomainTest {
 
     DomainTransferData transferData =
         new DomainTransferData.Builder()
-            .setPendingTransferExpirationTime(transferExpirationTime)
+            .setPendingTransferExpirationTime(toInstant(transferExpirationTime))
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingRegistrarId("TheRegistrar")
             .setServerApproveAutorenewEvent(recurrenceBillKey)
@@ -945,7 +957,7 @@ public class DomainTest {
                         GracePeriod.createForRecurrence(
                             GracePeriodStatus.AUTO_RENEW,
                             domain.getRepoId(),
-                            now.plusDays(1),
+                            toInstant(now.plusDays(1)),
                             "NewRegistrar",
                             recurrenceBillKey)))
                 .setTransferData(transferData)
@@ -973,13 +985,13 @@ public class DomainTest {
                         GracePeriod.createForRecurrence(
                             GracePeriodStatus.AUTO_RENEW,
                             domain.getRepoId(),
-                            now.plusDays(1),
+                            toInstant(now.plusDays(1)),
                             "NewRegistrar",
                             recurrenceBillKey),
                         GracePeriod.create(
                             GracePeriodStatus.RENEW,
                             domain.getRepoId(),
-                            now.plusDays(1),
+                            toInstant(now.plusDays(1)),
                             "NewRegistrar",
                             oneTimeBillKey)))
                 .build());

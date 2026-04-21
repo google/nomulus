@@ -222,14 +222,14 @@ public final class DomainRenewFlow implements MutatingFlow {
     // Create a new autorenew billing event and poll message starting at the new expiration time.
     BillingRecurrence newAutorenewEvent =
         newAutorenewBillingEvent(existingDomain)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setRenewalPrice(existingBillingRecurrence.getRenewalPrice().orElse(null))
             .setRenewalPriceBehavior(existingBillingRecurrence.getRenewalPriceBehavior())
             .setDomainHistoryId(domainHistoryId)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setDomainHistoryId(domainHistoryId)
             .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
@@ -349,13 +349,13 @@ public final class DomainRenewFlow implements MutatingFlow {
         .setRegistrarId(registrarId)
         .setPeriodYears(years)
         .setCost(renewCost)
-        .setEventTime(now)
+        .setEventTime(toInstant(now))
         .setAllocationToken(
             allocationToken
                 .filter(t -> AllocationToken.TokenBehavior.DEFAULT.equals(t.getTokenBehavior()))
                 .map(AllocationToken::createVKey)
                 .orElse(null))
-        .setBillingTime(now.plus(Tld.get(tld).getRenewGracePeriodLength()))
+        .setBillingTime(toInstant(now.plus(Tld.get(tld).getRenewGracePeriodLength())))
         .setDomainHistoryId(domainHistoryId)
         .build();
   }

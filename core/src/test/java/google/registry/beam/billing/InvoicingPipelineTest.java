@@ -23,7 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.util.logging.Level.SEVERE;
 import static org.joda.money.CurrencyUnit.CAD;
@@ -56,6 +56,7 @@ import java.io.File;
 import java.io.Serial;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map.Entry;
@@ -70,7 +71,6 @@ import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -97,8 +97,8 @@ class InvoicingPipelineTest {
       ImmutableList.of(
           google.registry.beam.billing.BillingEvent.create(
               1,
-              DateTime.parse("2017-10-04T00:00:00Z"),
-              DateTime.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -112,8 +112,8 @@ class InvoicingPipelineTest {
               ""),
           google.registry.beam.billing.BillingEvent.create(
               2,
-              DateTime.parse("2017-10-04T00:00:00Z"),
-              DateTime.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -127,8 +127,8 @@ class InvoicingPipelineTest {
               ""),
           google.registry.beam.billing.BillingEvent.create(
               3,
-              DateTime.parse("2017-10-02T00:00:00Z"),
-              DateTime.parse("2017-09-29T00:00:00Z"),
+              Instant.parse("2017-10-02T00:00:00Z"),
+              Instant.parse("2017-09-29T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -142,8 +142,8 @@ class InvoicingPipelineTest {
               ""),
           google.registry.beam.billing.BillingEvent.create(
               4,
-              DateTime.parse("2017-10-04T00:00:00Z"),
-              DateTime.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
               "bestdomains",
               "456",
               "116688",
@@ -157,8 +157,8 @@ class InvoicingPipelineTest {
               ""),
           google.registry.beam.billing.BillingEvent.create(
               5,
-              DateTime.parse("2017-10-04T00:00:00Z"),
-              DateTime.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
               "anotherRegistrar",
               "789",
               "",
@@ -172,8 +172,8 @@ class InvoicingPipelineTest {
               "SUNRISE ANCHOR_TENANT"),
           google.registry.beam.billing.BillingEvent.create(
               6,
-              DateTime.parse("2017-10-04T00:00:00Z"),
-              DateTime.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -187,8 +187,8 @@ class InvoicingPipelineTest {
               ""),
           google.registry.beam.billing.BillingEvent.create(
               7,
-              DateTime.parse("2017-10-04T00:00:00Z"),
-              DateTime.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
               "theRegistrar",
               "234",
               "",
@@ -202,8 +202,8 @@ class InvoicingPipelineTest {
               ""),
           google.registry.beam.billing.BillingEvent.create(
               15,
-              DateTime.parse("2017-10-02T00:00:00.0Z"),
-              DateTime.parse("2017-10-04T00:00:00.0Z"),
+              Instant.parse("2017-10-02T00:00:00.0Z"),
+              Instant.parse("2017-10-04T00:00:00.0Z"),
               "theRegistrarCopy",
               "234",
               "",
@@ -217,8 +217,8 @@ class InvoicingPipelineTest {
               ""),
           google.registry.beam.billing.BillingEvent.create(
               16,
-              DateTime.parse("2017-10-04T00:00:00Z"),
-              DateTime.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
               "theRegistrarCopy",
               "234",
               "",
@@ -478,8 +478,8 @@ AND cr.id IS NULL
         Reason.CREATE,
         5,
         Money.ofMajor(JPY, 70),
-        DateTime.parse("2017-09-29T00:00:00.0Z"),
-        DateTime.parse("2017-10-02T00:00:00.0Z"));
+        Instant.parse("2017-09-29T00:00:00.0Z"),
+        Instant.parse("2017-10-02T00:00:00.0Z"));
     persistBillingEvent(4, domain4, registrar2, Reason.RENEW, 1, Money.of(USD, 20.5));
     persistBillingEvent(
         5,
@@ -488,8 +488,8 @@ AND cr.id IS NULL
         Reason.CREATE,
         1,
         Money.of(USD, 0),
-        DateTime.parse("2017-10-04T00:00:00.0Z"),
-        DateTime.parse("2017-10-04T00:00:00.0Z"),
+        Instant.parse("2017-10-04T00:00:00.0Z"),
+        Instant.parse("2017-10-04T00:00:00.0Z"),
         Flag.SUNRISE,
         Flag.ANCHOR_TENANT);
     persistBillingEvent(6, domain6, registrar1, Reason.SERVER_STATUS, 0, Money.of(USD, 0));
@@ -529,8 +529,8 @@ AND cr.id IS NULL
         Reason.CREATE,
         5,
         Money.ofMajor(JPY, 70),
-        DateTime.parse("2017-06-29T00:00:00.0Z"),
-        DateTime.parse("2017-07-02T00:00:00.0Z"));
+        Instant.parse("2017-06-29T00:00:00.0Z"),
+        Instant.parse("2017-07-02T00:00:00.0Z"));
 
     // Add a billing event with a corresponding cancellation
     Domain domain12 = persistActiveDomain("cancel.test");
@@ -543,8 +543,8 @@ AND cr.id IS NULL
             .asBuilder()
             .setId(1)
             .setRegistrarId(registrar1.getRegistrarId())
-            .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
-            .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
+            .setEventTime(Instant.parse("2017-10-05T00:00:00.0Z"))
+            .setBillingTime(Instant.parse("2017-10-04T00:00:00.0Z"))
             .setBillingEvent(billingEvent.createVKey())
             .setTargetId(domain12.getDomainName())
             .setReason(Reason.RENEW)
@@ -560,11 +560,11 @@ AND cr.id IS NULL
         new BillingRecurrence()
             .asBuilder()
             .setRegistrarId(registrar1.getRegistrarId())
-            .setRecurrenceEndTime(END_OF_TIME)
+            .setRecurrenceEndTime(END_INSTANT)
             .setId(1)
             .setDomainHistory(domainHistoryRecurrence)
             .setTargetId(domain13.getDomainName())
-            .setEventTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
+            .setEventTime(Instant.parse("2017-10-04T00:00:00.0Z"))
             .setReason(Reason.RENEW)
             .build();
     persistResource(billingRecurrence);
@@ -575,7 +575,7 @@ AND cr.id IS NULL
             .asBuilder()
             .setCancellationMatchingBillingEvent(billingRecurrence)
             .setFlags(ImmutableSet.of(Flag.SYNTHETIC))
-            .setSyntheticCreationTime(DateTime.parse("2017-10-03T00:00:00.0Z"))
+            .setSyntheticCreationTime(Instant.parse("2017-10-03T00:00:00.0Z"))
             .build();
     persistResource(billingEventRecurrence);
 
@@ -584,8 +584,8 @@ AND cr.id IS NULL
             .asBuilder()
             .setId(2)
             .setRegistrarId(registrar1.getRegistrarId())
-            .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
-            .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
+            .setEventTime(Instant.parse("2017-10-05T00:00:00.0Z"))
+            .setBillingTime(Instant.parse("2017-10-04T00:00:00.0Z"))
             .setBillingRecurrence(billingRecurrence.createVKey())
             .setTargetId(domain13.getDomainName())
             .setReason(Reason.RENEW)
@@ -604,8 +604,8 @@ AND cr.id IS NULL
         Reason.CREATE,
         5,
         Money.ofMajor(JPY, 70),
-        DateTime.parse("2017-10-04T00:00:00.0Z"),
-        DateTime.parse("2017-10-02T00:00:00.0Z"));
+        Instant.parse("2017-10-04T00:00:00.0Z"),
+        Instant.parse("2017-10-02T00:00:00.0Z"));
     persistBillingEvent(16, domain15, registrar11, Reason.RENEW, 3, Money.of(USD, 20.5));
   }
 
@@ -613,7 +613,7 @@ AND cr.id IS NULL
     DomainHistory domainHistory =
         new DomainHistory.Builder()
             .setType(HistoryEntry.Type.DOMAIN_RENEW)
-            .setModificationTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
+            .setModificationTime(Instant.parse("2017-10-04T00:00:00.0Z"))
             .setDomain(domain)
             .setRegistrarId(registrar.getRegistrarId())
             .build();
@@ -629,8 +629,8 @@ AND cr.id IS NULL
         reason,
         years,
         money,
-        DateTime.parse("2017-10-04T00:00:00.0Z"),
-        DateTime.parse("2017-10-04T00:00:00.0Z"));
+        Instant.parse("2017-10-04T00:00:00.0Z"),
+        Instant.parse("2017-10-04T00:00:00.0Z"));
   }
 
   private static BillingEvent persistBillingEvent(
@@ -640,8 +640,8 @@ AND cr.id IS NULL
       Reason reason,
       int years,
       Money money,
-      DateTime eventTime,
-      DateTime billingTime,
+      Instant eventTime,
+      Instant billingTime,
       Flag... flags) {
     BillingEvent.Builder billingEventBuilder =
         new BillingEvent()

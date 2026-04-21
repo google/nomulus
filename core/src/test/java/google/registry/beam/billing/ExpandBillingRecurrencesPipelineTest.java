@@ -226,8 +226,7 @@ public class ExpandBillingRecurrencesPipelineTest {
         persistResource(
             billingRecurrence
                 .asBuilder()
-                .setRecurrenceEndTime(
-                    billingRecurrence.getEventTimeInstant().minus(1, ChronoUnit.DAYS))
+                .setRecurrenceEndTime(billingRecurrence.getEventTime().minus(1, ChronoUnit.DAYS))
                 .build());
     runPipeline();
     assertNoExpansionsHappened();
@@ -251,7 +250,7 @@ public class ExpandBillingRecurrencesPipelineTest {
         persistResource(
             billingRecurrence
                 .asBuilder()
-                .setEventTime(minusYears(billingRecurrence.getEventTimeInstant(), 1))
+                .setEventTime(minusYears(billingRecurrence.getEventTime(), 1))
                 .setRecurrenceEndTime(startTime.plus(6, ChronoUnit.HOURS))
                 .build());
     runPipeline();

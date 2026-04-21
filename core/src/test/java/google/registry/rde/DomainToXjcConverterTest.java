@@ -20,7 +20,9 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.xjc.rgp.XjcRgpStatusValueType.RENEW_PERIOD;
 import static google.registry.xjc.rgp.XjcRgpStatusValueType.TRANSFER_PERIOD;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -241,8 +243,8 @@ public class DomainToXjcConverterTest {
                 .setRegistrarId("TheRegistrar")
                 .setCost(Money.of(USD, 26))
                 .setPeriodYears(2)
-                .setEventTime(DateTime.parse("1910-01-01T00:00:00Z"))
-                .setBillingTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setEventTime(toInstant(DateTime.parse("1910-01-01T00:00:00Z")))
+                .setBillingTime(toInstant(DateTime.parse("1910-01-01T00:00:00Z")))
                 .setDomainHistory(domainHistory)
                 .build());
     domain =
@@ -255,7 +257,7 @@ public class DomainToXjcConverterTest {
             .setDsData(
                 ImmutableSet.of(DomainDsData.create(123, 200, 230, base16().decode("1234567890"))))
             .setDomainName(Idn.toASCII("love.みんな"))
-            .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+            .setLastTransferTime(toInstant(DateTime.parse("1910-01-01T00:00:00Z")))
             .setLastEppUpdateRegistrarId("TheRegistrar")
             .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
             .setNameservers(
@@ -276,14 +278,14 @@ public class DomainToXjcConverterTest {
                                 .setRegistrarId("TheRegistrar")
                                 .setCost(Money.of(USD, 456))
                                 .setPeriodYears(2)
-                                .setEventTime(DateTime.parse("1920-01-01T00:00:00Z"))
-                                .setBillingTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                                .setEventTime(toInstant(DateTime.parse("1920-01-01T00:00:00Z")))
+                                .setBillingTime(toInstant(DateTime.parse("1920-01-01T00:00:00Z")))
                                 .setDomainHistory(domainHistory)
                                 .build())),
                     GracePeriod.create(
                         GracePeriodStatus.TRANSFER,
                         domain.getRepoId(),
-                        DateTime.parse("1920-01-01T00:00:00Z"),
+                        toInstant(DateTime.parse("1920-01-01T00:00:00Z")),
                         "TheRegistrar",
                         null)))
             .setSubordinateHosts(ImmutableSet.of("home.by.horror.haunted"))
@@ -300,8 +302,8 @@ public class DomainToXjcConverterTest {
                             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                             .setTargetId("lol")
                             .setRegistrarId("TheRegistrar")
-                            .setEventTime(END_OF_TIME)
-                            .setRecurrenceEndTime(END_OF_TIME)
+                            .setEventTime(END_INSTANT)
+                            .setRecurrenceEndTime(END_INSTANT)
                             .setDomainHistory(domainHistory)
                             .build())
                     .createVKey())
@@ -310,7 +312,7 @@ public class DomainToXjcConverterTest {
                         new PollMessage.Autorenew.Builder()
                             .setTargetId("lol")
                             .setRegistrarId("TheRegistrar")
-                            .setEventTime(END_OF_TIME)
+                            .setEventTime(END_INSTANT)
                             .setAutorenewEndTime(END_OF_TIME)
                             .setMsg("Domain was auto-renewed.")
                             .setHistoryEntry(domainHistory)
@@ -320,7 +322,8 @@ public class DomainToXjcConverterTest {
                 new DomainTransferData.Builder()
                     .setGainingRegistrarId("NewRegistrar")
                     .setLosingRegistrarId("TheRegistrar")
-                    .setPendingTransferExpirationTime(DateTime.parse("1925-04-20T00:00:00Z"))
+                    .setPendingTransferExpirationTime(
+                        toInstant(DateTime.parse("1925-04-20T00:00:00Z")))
                     .setServerApproveBillingEvent(billingEvent.createVKey())
                     .setServerApproveAutorenewEvent(
                         persistResource(
@@ -329,8 +332,8 @@ public class DomainToXjcConverterTest {
                                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                                     .setTargetId("example.xn--q9jyb4c")
                                     .setRegistrarId("TheRegistrar")
-                                    .setEventTime(END_OF_TIME)
-                                    .setRecurrenceEndTime(END_OF_TIME)
+                                    .setEventTime(END_INSTANT)
+                                    .setRecurrenceEndTime(END_INSTANT)
                                     .setDomainHistory(domainHistory)
                                     .build())
                             .createVKey())
@@ -339,7 +342,7 @@ public class DomainToXjcConverterTest {
                                 new Autorenew.Builder()
                                     .setTargetId("example.xn--q9jyb4c")
                                     .setRegistrarId("TheRegistrar")
-                                    .setEventTime(END_OF_TIME)
+                                    .setEventTime(END_INSTANT)
                                     .setAutorenewEndTime(END_OF_TIME)
                                     .setMsg("Domain was auto-renewed.")
                                     .setHistoryEntry(domainHistory)
@@ -349,10 +352,10 @@ public class DomainToXjcConverterTest {
                         domain.getRepoId(),
                         domainHistory.getRevisionId(),
                         ImmutableSet.of(billingEvent.createVKey()))
-                    .setTransferRequestTime(DateTime.parse("1919-01-01T00:00:00Z"))
+                    .setTransferRequestTime(toInstant(DateTime.parse("1919-01-01T00:00:00Z")))
                     .setTransferStatus(TransferStatus.PENDING)
                     .setTransferredRegistrationExpirationTime(
-                        DateTime.parse("1931-01-01T00:00:00Z"))
+                        toInstant(DateTime.parse("1931-01-01T00:00:00Z")))
                     .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                     .build())
             .build();
@@ -369,7 +372,7 @@ public class DomainToXjcConverterTest {
             .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .setHostName(Idn.toASCII(fqhn))
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString(ip)))
-            .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+            .setLastTransferTime(toInstant(DateTime.parse("1910-01-01T00:00:00Z")))
             .setLastEppUpdateRegistrarId("TheRegistrar")
             .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
             .setRepoId(repoId)

@@ -56,7 +56,7 @@ import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
@@ -334,7 +334,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     DomainHistory historyEntry = getHistoryEntries(domain, DomainHistory.class).get(0);
     VKey<BillingRecurrence> autorenewVKey = domain.getAutorenewBillingEvent();
     BillingRecurrence autorenewBR = tm().transact(() -> tm().loadByKey(autorenewVKey));
-    Instant eventTime = autorenewBR.getEventTimeInstant();
+    Instant eventTime = autorenewBR.getEventTime();
     assertAboutDomains()
         .that(domain)
         .hasRegistrationExpirationTime(eventTime)
@@ -370,8 +370,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
-            .setRecurrenceEndTime(END_OF_TIME)
+            .setEventTime(domain.getRegistrationExpirationTime())
+            .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistory(historyEntry)
             .setRenewalPriceBehavior(expectedRenewalPriceBehavior)
             .setRenewalPrice(
@@ -406,7 +406,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new PollMessage.Autorenew.Builder()
             .setTargetId(domain.getDomainName())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
+            .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntry)
             .build());
@@ -1730,7 +1730,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new PollMessage.Autorenew.Builder()
             .setTargetId(domain.getDomainName())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
+            .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntry)
             .build(),
@@ -1863,7 +1863,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new PollMessage.Autorenew.Builder()
             .setTargetId(domain.getDomainName())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
+            .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntry)
             .build(),

@@ -62,7 +62,9 @@ final class HostToXjcConverter {
   /** Converts {@link Host} to {@link XjcRdeHost}. */
   static XjcRdeHost convertExternalHost(Host model) {
     return convertHostCommon(
-        model, model.getPersistedCurrentSponsorRegistrarId(), model.getLastTransferTime());
+        model,
+        model.getPersistedCurrentSponsorRegistrarId(),
+        toDateTime(model.getLastTransferTime()));
   }
 
   private static XjcRdeHost convertHostCommon(

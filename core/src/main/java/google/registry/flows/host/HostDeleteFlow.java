@@ -24,6 +24,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -43,7 +44,7 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * An EPP flow that deletes a host.
@@ -82,9 +83,9 @@ public final class HostDeleteFlow implements MutatingFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     validateHostName(targetId);
-    checkLinkedDomains(targetId, now);
+    checkLinkedDomains(targetId, toDateTime(now));
     Host existingHost = loadAndVerifyExistence(Host.class, targetId, now);
     verifyNoDisallowedStatuses(existingHost, ImmutableSet.of(StatusValue.PENDING_DELETE));
     if (!isSuperuser) {
@@ -93,7 +94,7 @@ public final class HostDeleteFlow implements MutatingFlow {
       // the client id, needs to be read off of it.
       EppResource owningResource =
           existingHost.isSubordinate()
-              ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
+              ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtInstant(now)
               : existingHost;
       verifyResourceOwnership(registrarId, owningResource);
     }
