@@ -1437,3 +1437,4 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     assertIcannReportingActivityFieldLogged("srs-host-update");
   }
 }
+

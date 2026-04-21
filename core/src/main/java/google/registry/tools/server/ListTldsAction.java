@@ -27,7 +27,7 @@ import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /** An action that lists top-level domains, for use by the {@code nomulus list_tlds} command. */
 @Action(
@@ -62,7 +62,7 @@ public final class ListTldsAction extends ListObjectsAction<Tld> {
 
   @Override
   public ImmutableMap<String, String> getFieldOverrides(Tld tld) {
-    final DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     return new ImmutableMap.Builder<String, String>()
         .put("dnsPaused", tld.getDnsPaused() ? "paused" : "-")
         .put("escrowEnabled", tld.getEscrowEnabled() ? "enabled" : "-")

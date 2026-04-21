@@ -44,9 +44,7 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,10 +100,8 @@ public class BillingBaseTest extends EntityTestCase {
                 .setTokenStatusTransitions(
                     ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                         .put(START_INSTANT, TokenStatus.NOT_STARTED)
-                        .put(Instant.now().truncatedTo(ChronoUnit.MILLIS), TokenStatus.VALID)
-                        .put(
-                            Instant.now().truncatedTo(ChronoUnit.MILLIS).plus(Duration.ofDays(56)),
-                            TokenStatus.ENDED)
+                        .put(fakeClock.now(), TokenStatus.VALID)
+                        .put(plusDays(fakeClock.now(), 56), TokenStatus.ENDED)
                         .build())
                 .build());
 

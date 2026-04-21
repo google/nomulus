@@ -17,8 +17,8 @@ package google.registry.model.common;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
-import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static google.registry.util.DateTimeUtils.latestOf;
 import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
@@ -63,9 +63,7 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
     return backingMap.entrySet().stream()
         .collect(
             toImmutableSortedMap(
-                Ordering.natural(),
-                e -> ISO_8601_FORMATTER.format(e.getKey()),
-                Map.Entry::getValue));
+                Ordering.natural(), e -> formatInstant(e.getKey()), Map.Entry::getValue));
   }
 
   private TimedTransitionProperty(ImmutableSortedMap<Instant, V> backingMap) {
@@ -281,7 +279,7 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
   @Override
   public String toString() {
     return backingMap.entrySet().stream()
-        .map(e -> ISO_8601_FORMATTER.format(e.getKey()) + "=" + e.getValue())
+        .map(e -> formatInstant(e.getKey()) + "=" + e.getValue())
         .collect(Collectors.joining(", ", "{", "}"));
   }
 }

@@ -31,8 +31,12 @@ import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusMonths;
 import static google.registry.util.ResourceUtils.readResourceBytes;
 import static java.math.RoundingMode.UNNECESSARY;
 import static org.joda.money.CurrencyUnit.EUR;
@@ -55,9 +59,9 @@ import google.registry.persistence.VKey;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -117,11 +121,11 @@ public final class TldTest extends EntityTestCase {
             .setDnsWriters(ImmutableSet.of("baz", "bang"))
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 0),
-                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Instant.parse("2000-06-01T00:00:00Z"),
                     Money.of(USD, 100),
-                    DateTime.parse("2000-06-02T00:00:00Z"),
+                    Instant.parse("2000-06-02T00:00:00Z"),
                     Money.of(USD, 0)))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("foo"))
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
@@ -151,11 +155,11 @@ public final class TldTest extends EntityTestCase {
             // set create billing cost back to the default (database helper sets it to $13)
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 0),
-                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Instant.parse("2000-06-01T00:00:00Z"),
                     Money.of(USD, 100),
-                    DateTime.parse("2000-06-02T00:00:00Z"),
+                    Instant.parse("2000-06-02T00:00:00Z"),
                     Money.of(USD, 0)))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("foo"))
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
@@ -215,36 +219,36 @@ public final class TldTest extends EntityTestCase {
 
   @Test
   void testSetCreateBillingCostTransitions() {
-    ImmutableSortedMap<DateTime, Money> createCostTransitions =
+    ImmutableSortedMap<Instant, Money> createCostTransitions =
         ImmutableSortedMap.of(
-            START_OF_TIME,
+            START_INSTANT,
             Money.of(USD, 8),
-            fakeClock.nowUtc(),
+            fakeClock.now(),
             Money.of(USD, 1),
-            fakeClock.nowUtc().plusMonths(1),
+            plusMonths(fakeClock.now(), 1),
             Money.of(USD, 2),
-            fakeClock.nowUtc().plusMonths(2),
+            plusMonths(fakeClock.now(), 2),
             Money.of(USD, 3));
     Tld registry =
         Tld.get("tld").asBuilder().setCreateBillingCostTransitions(createCostTransitions).build();
     assertThat(registry.getCreateBillingCostTransitions()).isEqualTo(createCostTransitions);
-    assertThat(registry.getCreateBillingCost(fakeClock.nowUtc().minus(Duration.standardDays(5))))
+    assertThat(registry.getCreateBillingCost(minusDays(fakeClock.now(), 5)))
         .isEqualTo(Money.of(USD, 8));
-    assertThat(registry.getCreateBillingCost(fakeClock.nowUtc().plusMonths(8)))
+    assertThat(registry.getCreateBillingCost(plusMonths(fakeClock.now(), 8)))
         .isEqualTo(Money.of(USD, 3));
   }
 
   @Test
   void testSetCreateBillingCostTransitionsNegativeCost() throws Exception {
-    ImmutableSortedMap<DateTime, Money> createCostTransitions =
+    ImmutableSortedMap<Instant, Money> createCostTransitions =
         ImmutableSortedMap.of(
-            START_OF_TIME,
+            START_INSTANT,
             Money.of(USD, 8),
-            fakeClock.nowUtc(),
+            fakeClock.now(),
             Money.of(USD, 1),
-            fakeClock.nowUtc().plusMonths(1),
+            plusMonths(fakeClock.now(), 1),
             Money.of(USD, -2),
-            fakeClock.nowUtc().plusMonths(2),
+            plusMonths(fakeClock.now(), 2),
             Money.of(USD, 3));
     IllegalArgumentException thrown =
         assertThrows(
@@ -261,7 +265,7 @@ public final class TldTest extends EntityTestCase {
   void testSettingRestoreBillingCost() {
     Tld registry = Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 42)).build();
     // The default value of 13 is set in createTld().
-    assertThat(registry.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(registry.getCreateBillingCost(fakeClock.now())).isEqualTo(Money.of(USD, 13));
     assertThat(registry.getRestoreBillingCost()).isEqualTo(Money.of(USD, 42));
   }
 
@@ -418,9 +422,9 @@ public final class TldTest extends EntityTestCase {
     Tld registry =
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, TldState.PDT))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, TldState.PDT))
             .build();
-    assertThat(registry.getTldState(START_OF_TIME)).isEqualTo(GENERAL_AVAILABILITY);
+    assertThat(registry.getTldState(START_INSTANT)).isEqualTo(GENERAL_AVAILABILITY);
   }
 
   @Test
@@ -429,33 +433,32 @@ public final class TldTest extends EntityTestCase {
         Tld.get("tld")
             .asBuilder()
             .setTldStateTransitions(
-                ImmutableSortedMap.<DateTime, TldState>naturalOrder()
-                    .put(START_OF_TIME, PREDELEGATION)
-                    .put(fakeClock.nowUtc().plusMonths(1), START_DATE_SUNRISE)
-                    .put(fakeClock.nowUtc().plusMonths(2), QUIET_PERIOD)
-                    .put(fakeClock.nowUtc().plusMonths(3), GENERAL_AVAILABILITY)
+                ImmutableSortedMap.<Instant, TldState>naturalOrder()
+                    .put(START_INSTANT, PREDELEGATION)
+                    .put(plusMonths(fakeClock.now(), 1), START_DATE_SUNRISE)
+                    .put(plusMonths(fakeClock.now(), 2), QUIET_PERIOD)
+                    .put(plusMonths(fakeClock.now(), 3), GENERAL_AVAILABILITY)
                     .build())
             .build();
-    assertThat(registry.getTldState(fakeClock.nowUtc())).isEqualTo(PREDELEGATION);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMillis(1))).isEqualTo(PREDELEGATION);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(1).minusMillis(1)))
+    assertThat(registry.getTldState(fakeClock.now())).isEqualTo(PREDELEGATION);
+    assertThat(registry.getTldState(fakeClock.now().plusMillis(1))).isEqualTo(PREDELEGATION);
+    assertThat(registry.getTldState(plusMonths(fakeClock.now(), 1).minusMillis(1)))
         .isEqualTo(PREDELEGATION);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(1)))
+    assertThat(registry.getTldState(plusMonths(fakeClock.now(), 1))).isEqualTo(START_DATE_SUNRISE);
+    assertThat(registry.getTldState(plusMonths(fakeClock.now(), 1).plusMillis(1)))
         .isEqualTo(START_DATE_SUNRISE);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(1).plusMillis(1)))
+    assertThat(registry.getTldState(plusMonths(fakeClock.now(), 2).minusMillis(1)))
         .isEqualTo(START_DATE_SUNRISE);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(2).minusMillis(1)))
-        .isEqualTo(START_DATE_SUNRISE);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(2))).isEqualTo(QUIET_PERIOD);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(2).plusMillis(1)))
+    assertThat(registry.getTldState(plusMonths(fakeClock.now(), 2))).isEqualTo(QUIET_PERIOD);
+    assertThat(registry.getTldState(plusMonths(fakeClock.now(), 2).plusMillis(1)))
         .isEqualTo(QUIET_PERIOD);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(3).minusMillis(1)))
+    assertThat(registry.getTldState(plusMonths(fakeClock.now(), 3).minusMillis(1)))
         .isEqualTo(QUIET_PERIOD);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(3)))
+    assertThat(registry.getTldState(plusMonths(fakeClock.now(), 3)))
         .isEqualTo(GENERAL_AVAILABILITY);
-    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(3).plusMillis(1)))
+    assertThat(registry.getTldState(plusMonths(fakeClock.now(), 3).plusMillis(1)))
         .isEqualTo(GENERAL_AVAILABILITY);
-    assertThat(registry.getTldState(END_OF_TIME)).isEqualTo(GENERAL_AVAILABILITY);
+    assertThat(registry.getTldState(END_INSTANT)).isEqualTo(GENERAL_AVAILABILITY);
   }
 
   @Test
@@ -463,12 +466,12 @@ public final class TldTest extends EntityTestCase {
     Tld.get("tld")
         .asBuilder()
         .setTldStateTransitions(
-            ImmutableSortedMap.<DateTime, TldState>naturalOrder()
-                .put(START_OF_TIME, PREDELEGATION)
-                .put(fakeClock.nowUtc().plusMonths(1), QUIET_PERIOD)
-                .put(fakeClock.nowUtc().plusMonths(2), START_DATE_SUNRISE)
-                .put(fakeClock.nowUtc().plusMonths(3), QUIET_PERIOD)
-                .put(fakeClock.nowUtc().plusMonths(6), GENERAL_AVAILABILITY)
+            ImmutableSortedMap.<Instant, TldState>naturalOrder()
+                .put(START_INSTANT, PREDELEGATION)
+                .put(plusMonths(fakeClock.now(), 1), QUIET_PERIOD)
+                .put(plusMonths(fakeClock.now(), 2), START_DATE_SUNRISE)
+                .put(plusMonths(fakeClock.now(), 3), QUIET_PERIOD)
+                .put(plusMonths(fakeClock.now(), 6), GENERAL_AVAILABILITY)
                 .build())
         .build();
   }
@@ -480,49 +483,49 @@ public final class TldTest extends EntityTestCase {
             .asBuilder()
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 8),
-                    fakeClock.nowUtc(),
+                    fakeClock.now(),
                     Money.of(USD, 1),
-                    fakeClock.nowUtc().plusMonths(1),
+                    plusMonths(fakeClock.now(), 1),
                     Money.of(USD, 2),
-                    fakeClock.nowUtc().plusMonths(2),
+                    plusMonths(fakeClock.now(), 2),
                     Money.of(USD, 3)))
             .build();
-    assertThat(registry.getStandardRenewCost(START_OF_TIME)).isEqualTo(Money.of(USD, 8));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(START_INSTANT)).isEqualTo(Money.of(USD, 8));
+    assertThat(registry.getStandardRenewCost(fakeClock.now().minusMillis(1)))
         .isEqualTo(Money.of(USD, 8));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 1));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.now())).isEqualTo(Money.of(USD, 1));
+    assertThat(registry.getStandardRenewCost(fakeClock.now().plusMillis(1)))
         .isEqualTo(Money.of(USD, 1));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(1).minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(plusMonths(fakeClock.now(), 1).minusMillis(1)))
         .isEqualTo(Money.of(USD, 1));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(1)))
+    assertThat(registry.getStandardRenewCost(plusMonths(fakeClock.now(), 1)))
         .isEqualTo(Money.of(USD, 2));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(1).plusMillis(1)))
+    assertThat(registry.getStandardRenewCost(plusMonths(fakeClock.now(), 1).plusMillis(1)))
         .isEqualTo(Money.of(USD, 2));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(2).minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(plusMonths(fakeClock.now(), 2).minusMillis(1)))
         .isEqualTo(Money.of(USD, 2));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(2)))
+    assertThat(registry.getStandardRenewCost(plusMonths(fakeClock.now(), 2)))
         .isEqualTo(Money.of(USD, 3));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(2).plusMillis(1)))
+    assertThat(registry.getStandardRenewCost(plusMonths(fakeClock.now(), 2).plusMillis(1)))
         .isEqualTo(Money.of(USD, 3));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(3).minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(plusMonths(fakeClock.now(), 3).minusMillis(1)))
         .isEqualTo(Money.of(USD, 3));
-    assertThat(registry.getStandardRenewCost(END_OF_TIME)).isEqualTo(Money.of(USD, 3));
+    assertThat(registry.getStandardRenewCost(END_INSTANT)).isEqualTo(Money.of(USD, 3));
   }
 
   @Test
   void testRenewBillingCostNoTransitions() {
     Tld registry = Tld.get("tld");
     // The default value of 11 is set in createTld().
-    assertThat(registry.getStandardRenewCost(START_OF_TIME)).isEqualTo(Money.of(USD, 11));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(START_INSTANT)).isEqualTo(Money.of(USD, 11));
+    assertThat(registry.getStandardRenewCost(fakeClock.now().minusMillis(1)))
         .isEqualTo(Money.of(USD, 11));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 11));
-    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.now())).isEqualTo(Money.of(USD, 11));
+    assertThat(registry.getStandardRenewCost(fakeClock.now().plusMillis(1)))
         .isEqualTo(Money.of(USD, 11));
-    assertThat(registry.getStandardRenewCost(END_OF_TIME)).isEqualTo(Money.of(USD, 11));
+    assertThat(registry.getStandardRenewCost(END_INSTANT)).isEqualTo(Money.of(USD, 11));
   }
 
   @Test
@@ -568,8 +571,8 @@ public final class TldTest extends EntityTestCase {
                 .asBuilder()
                 .setTldStateTransitions(
                     ImmutableSortedMap.of(
-                        fakeClock.nowUtc(), GENERAL_AVAILABILITY,
-                        fakeClock.nowUtc().plusMonths(1), START_DATE_SUNRISE))
+                        fakeClock.now(), GENERAL_AVAILABILITY,
+                        plusMonths(fakeClock.now(), 1), START_DATE_SUNRISE))
                 .build());
   }
 
@@ -582,8 +585,8 @@ public final class TldTest extends EntityTestCase {
                 .asBuilder()
                 .setTldStateTransitions(
                     ImmutableSortedMap.of(
-                        fakeClock.nowUtc(), START_DATE_SUNRISE,
-                        fakeClock.nowUtc().plusMonths(1), START_DATE_SUNRISE))
+                        fakeClock.now(), START_DATE_SUNRISE,
+                        plusMonths(fakeClock.now(), 1), START_DATE_SUNRISE))
                 .build());
   }
 
@@ -595,7 +598,7 @@ public final class TldTest extends EntityTestCase {
             () ->
                 new Tld.Builder()
                     .setCreateBillingCostTransitions(
-                        ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
+                        ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 13)))
                     .setTldStr("invalid")
                     .build());
     assertThat(thrown)
@@ -612,7 +615,7 @@ public final class TldTest extends EntityTestCase {
                 Tld.get("tld")
                     .asBuilder()
                     .setRenewBillingCostTransitions(
-                        ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, -42))));
+                        ImmutableSortedMap.of(START_INSTANT, Money.of(USD, -42))));
     assertThat(thrown).hasMessageThat().contains("billing cost cannot be negative");
   }
 
@@ -663,7 +666,7 @@ public final class TldTest extends EntityTestCase {
                 Tld.get("tld")
                     .asBuilder()
                     .setRenewBillingCostTransitions(
-                        ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 42)))
+                        ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 42)))
                     .build());
     assertThat(thrown).hasMessageThat().contains("cost must be in the TLD's currency");
   }
@@ -677,7 +680,7 @@ public final class TldTest extends EntityTestCase {
                 Tld.get("tld")
                     .asBuilder()
                     .setCreateBillingCostTransitions(
-                        ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 42)))
+                        ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 42)))
                     .build());
     assertThat(thrown).hasMessageThat().contains("cost must be in the TLD's currency");
   }
@@ -706,29 +709,27 @@ public final class TldTest extends EntityTestCase {
 
   @Test
   void testEapFee_undefined() {
-    assertThat(Tld.get("tld").getEapFeeFor(fakeClock.nowUtc()).getCost())
+    assertThat(Tld.get("tld").getEapFeeFor(fakeClock.now()).getCost())
         .isEqualTo(BigDecimal.ZERO.setScale(2, UNNECESSARY));
   }
 
   @Test
   void testEapFee_specified() {
-    DateTime a = fakeClock.nowUtc().minusDays(1);
-    DateTime b = fakeClock.nowUtc().plusDays(1);
+    Instant a = minusDays(fakeClock.now(), 1);
+    Instant b = plusDays(fakeClock.now(), 1);
     Tld registry =
         Tld.get("tld")
             .asBuilder()
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
-                    START_OF_TIME, Money.of(USD, 0),
-                    a, Money.of(USD, 100),
-                    b, Money.of(USD, 50)))
+                    START_INSTANT, Money.of(USD, 0), a, Money.of(USD, 100), b, Money.of(USD, 50)))
             .build();
 
-    assertThat(registry.getEapFeeFor(fakeClock.nowUtc()).getCost())
+    assertThat(registry.getEapFeeFor(fakeClock.now()).getCost())
         .isEqualTo(new BigDecimal("100.00"));
-    assertThat(registry.getEapFeeFor(fakeClock.nowUtc().minusDays(2)).getCost())
+    assertThat(registry.getEapFeeFor(minusDays(fakeClock.now(), 2)).getCost())
         .isEqualTo(BigDecimal.ZERO.setScale(2, UNNECESSARY));
-    assertThat(registry.getEapFeeFor(fakeClock.nowUtc().plusDays(2)).getCost())
+    assertThat(registry.getEapFeeFor(plusDays(fakeClock.now(), 2)).getCost())
         .isEqualTo(new BigDecimal("50.00"));
   }
 
@@ -740,7 +741,7 @@ public final class TldTest extends EntityTestCase {
             () ->
                 Tld.get("tld")
                     .asBuilder()
-                    .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
+                    .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
                     .build());
     assertThat(thrown).hasMessageThat().contains("All EAP fees must be in the TLD's currency");
   }

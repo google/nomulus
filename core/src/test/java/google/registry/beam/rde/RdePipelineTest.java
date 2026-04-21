@@ -441,12 +441,10 @@ public class RdePipelineTest {
             "soy_2000-01-01_full_S1_R1.xml.ghostryde",
             "soy_2000-01-01_full_S1_R1-report.xml.ghostryde");
 
-    assertThat(loadCursorTime(CursorType.BRDA))
-        .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
+    assertThat(loadCursorTime(CursorType.BRDA)).isEquivalentAccordingToCompareTo(plusDays(now, 1));
     assertThat(loadRevision(now, THIN)).isEqualTo(1);
 
-    assertThat(loadCursorTime(RDE_STAGING))
-        .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
+    assertThat(loadCursorTime(RDE_STAGING)).isEquivalentAccordingToCompareTo(plusDays(now, 1));
     assertThat(loadRevision(now, FULL)).isEqualTo(1);
     cloudTasksHelper.assertTasksEnqueued(
         "brda",

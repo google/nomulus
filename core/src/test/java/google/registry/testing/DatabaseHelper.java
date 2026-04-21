@@ -39,7 +39,6 @@ import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX_REGEX;
@@ -185,18 +184,18 @@ public final class DatabaseHelper {
   }
 
   public static Tld newTld(String tld, String roidSuffix) {
-    return newTld(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
+    return newTld(tld, roidSuffix, ImmutableSortedMap.of(START_INSTANT, GENERAL_AVAILABILITY));
   }
 
   public static Tld newTld(
-      String tld, String roidSuffix, ImmutableSortedMap<DateTime, TldState> tldStates) {
+      String tld, String roidSuffix, ImmutableSortedMap<Instant, TldState> tldStates) {
     return setupTld(new Tld.Builder(), tld, roidSuffix, tldStates);
   }
 
   public static Tld newTld(
       String tld,
       String roidSuffix,
-      ImmutableSortedMap<DateTime, TldState> tldStates,
+      ImmutableSortedMap<Instant, TldState> tldStates,
       TldType tldType) {
     return setupTld(new Tld.Builder().setTldType(tldType), tld, roidSuffix, tldStates);
   }
@@ -205,15 +204,15 @@ public final class DatabaseHelper {
       Tld.Builder tldBuilder,
       String tld,
       String roidSuffix,
-      ImmutableSortedMap<DateTime, TldState> tldStates) {
+      ImmutableSortedMap<Instant, TldState> tldStates) {
     return tldBuilder
         .setTldStr(tld)
         .setRoidSuffix(roidSuffix)
         .setTldStateTransitions(tldStates)
         // Set billing costs to distinct small primes to avoid masking bugs in tests.
-        .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 11)))
-        .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(USD)))
-        .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
+        .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 11)))
+        .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(USD)))
+        .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 13)))
         .setRestoreBillingCost(Money.of(USD, 17))
         .setServerStatusChangeBillingCost(Money.of(USD, 19))
         // Always set a default premium list. Tests that don't want it can delete it.
@@ -366,7 +365,7 @@ public final class DatabaseHelper {
   }
 
   public static Tld createTld(String tld, String roidSuffix) {
-    return createTld(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
+    return createTld(tld, roidSuffix, ImmutableSortedMap.of(START_INSTANT, GENERAL_AVAILABILITY));
   }
 
   /** Creates and persists the given TLDs. */
@@ -377,10 +376,10 @@ public final class DatabaseHelper {
   }
 
   public static Tld createTld(String tld, TldState tldState) {
-    return createTld(tld, ImmutableSortedMap.of(START_OF_TIME, tldState));
+    return createTld(tld, ImmutableSortedMap.of(START_INSTANT, tldState));
   }
 
-  public static Tld createTld(String tld, ImmutableSortedMap<DateTime, TldState> tldStates) {
+  public static Tld createTld(String tld, ImmutableSortedMap<Instant, TldState> tldStates) {
     // Coerce the TLD string into a valid ROID suffix.
     String roidSuffix =
         Ascii.toUpperCase(tld.replaceFirst(ACE_PREFIX_REGEX, "").replace(".", "")).replace("-", "");
@@ -389,7 +388,7 @@ public final class DatabaseHelper {
   }
 
   public static Tld createTld(
-      String tld, String roidSuffix, ImmutableSortedMap<DateTime, TldState> tldStates) {
+      String tld, String roidSuffix, ImmutableSortedMap<Instant, TldState> tldStates) {
     Tld registry = persistResource(newTld(tld, roidSuffix, tldStates));
     allowRegistrarAccess("TheRegistrar", tld);
     allowRegistrarAccess("NewRegistrar", tld);

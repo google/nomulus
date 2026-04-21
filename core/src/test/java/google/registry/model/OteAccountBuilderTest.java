@@ -25,7 +25,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKeyIfPresent;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -48,11 +48,10 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.tools.IamClient;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SystemClock;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,7 +85,7 @@ public final class OteAccountBuilderTest {
     Tld registry = Tld.get(tld);
     assertThat(registry).isNotNull();
     assertThat(registry.getPremiumListName()).hasValue("default_sandbox_list");
-    assertThat(registry.getTldStateTransitions()).containsExactly(START_OF_TIME, tldState);
+    assertThat(registry.getTldStateTransitions()).containsExactly(START_INSTANT, tldState);
     assertThat(registry.getDnsWriters()).containsExactly("VoidDnsWriter");
     assertThat(registry.getAddGracePeriodLength()).isEqualTo(Duration.standardHours(1));
     assertThat(registry.getPendingDeleteLength()).isEqualTo(Duration.standardMinutes(5));
@@ -94,8 +93,7 @@ public final class OteAccountBuilderTest {
     assertThat(registry.getCurrency()).isEqualTo(eapFee.getCurrencyUnit());
     // This uses "now" on purpose - so the test will break at 2022 when the current EapFee in OTE
     // goes back to 0
-    assertThat(registry.getEapFeeFor(DateTime.now(DateTimeZone.UTC)).getCost())
-        .isEqualTo(eapFee.getAmount());
+    assertThat(registry.getEapFeeFor(Instant.now()).getCost()).isEqualTo(eapFee.getAmount());
   }
 
   private static void assertRegistrarExists(String registrarId, String tld) {

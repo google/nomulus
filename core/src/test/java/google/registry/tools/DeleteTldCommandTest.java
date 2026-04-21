@@ -19,7 +19,7 @@ import static google.registry.testing.DatabaseHelper.allowRegistrarAccess;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Ascii;
@@ -43,13 +43,13 @@ class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
         newTld(
             TLD_REAL,
             Ascii.toUpperCase(TLD_REAL),
-            ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY),
+            ImmutableSortedMap.of(START_INSTANT, GENERAL_AVAILABILITY),
             TldType.REAL));
     persistResource(
         newTld(
             TLD_TEST,
             Ascii.toUpperCase(TLD_TEST),
-            ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY),
+            ImmutableSortedMap.of(START_INSTANT, GENERAL_AVAILABILITY),
             TldType.TEST));
   }
 

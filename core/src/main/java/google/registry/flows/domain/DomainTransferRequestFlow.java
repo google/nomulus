@@ -36,7 +36,6 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PE
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -83,8 +82,8 @@ import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that requests a transfer on a domain.
@@ -165,7 +164,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     validateRegistrarIsLoggedIn(gainingClientId);
     verifyRegistrarIsActive(gainingClientId);
     extensionManager.validate();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     AllocationTokenFlowUtils.loadAllocationTokenFromExtension(
         gainingClientId,
@@ -198,9 +197,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
       feesAndCredits = Optional.empty();
     } else if (existingDomain.getCurrentBulkToken().isEmpty()) {
       feesAndCredits =
-          Optional.of(
-              pricingLogic.getTransferPrice(
-                  tld, targetId, toInstant(now), existingBillingRecurrence));
+          Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, existingBillingRecurrence));
     } else {
       // If existing domain is in a bulk pricing package, calculate the transfer price with default
       // renewal price
@@ -208,7 +205,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
       feesAndCredits =
           period.getValue() == 0
               ? Optional.empty()
-              : Optional.of(pricingLogic.getTransferPrice(tld, targetId, toInstant(now), null));
+              : Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, null));
     }
 
     if (feesAndCredits.isPresent()) {
@@ -218,13 +215,14 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     historyBuilder
         .setRevisionId(domainHistoryId.getRevisionId())
         .setOtherRegistrarId(existingDomain.getCurrentSponsorRegistrarId());
-    DateTime automaticTransferTime =
+    Instant automaticTransferTime =
         superuserExtension
             .map(
                 domainTransferRequestSuperuserExtension ->
-                    now.plusDays(
-                        domainTransferRequestSuperuserExtension.getAutomaticTransferLength()))
-            .orElseGet(() -> now.plus(tld.getAutomaticTransferLength()));
+                    now.plus(
+                        domainTransferRequestSuperuserExtension.getAutomaticTransferLength(),
+                        ChronoUnit.DAYS))
+            .orElseGet(() -> now.plusMillis(tld.getAutomaticTransferLength().getMillis()));
     // If the domain will be in the auto-renew grace period at the moment of transfer, the transfer
     // will subsume the autorenew, so we don't add the normal extra year from the transfer.
     // The gaining registrar is still billed for the extra year; the losing registrar will get a
@@ -232,13 +230,10 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     //
     // See b/19430703#comment17 and https://www.icann.org/news/advisory-2002-06-06-en for the
     // policy documentation for transfers subsuming autorenews within the autorenew grace period.
-    Domain domainAtTransferTime =
-        existingDomain.cloneProjectedAtTime(toInstant(automaticTransferTime));
+    Domain domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
     // The new expiration time if there is a server approval.
-    DateTime serverApproveNewExpirationTime =
-        toDateTime(
-            computeExDateForApprovalTime(
-                domainAtTransferTime, toInstant(automaticTransferTime), period));
+    Instant serverApproveNewExpirationTime =
+        computeExDateForApprovalTime(domainAtTransferTime, automaticTransferTime, period);
     // Create speculative entities in anticipation of an automatic server approval.
     ImmutableSet<TransferServerApproveEntity> serverApproveEntities =
         createTransferServerApproveEntities(
@@ -258,12 +253,11 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
             domainHistoryId.getRevisionId(),
             new DomainTransferData.Builder()
                 .setTransferRequestTrid(trid)
-                .setTransferRequestTime(toInstant(now))
+                .setTransferRequestTime(now)
                 .setGainingRegistrarId(gainingClientId)
                 .setLosingRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
-                .setPendingTransferExpirationTime(toInstant(automaticTransferTime))
-                .setTransferredRegistrationExpirationTime(
-                    toInstant(serverApproveNewExpirationTime)),
+                .setPendingTransferExpirationTime(automaticTransferTime)
+                .setTransferredRegistrationExpirationTime(serverApproveNewExpirationTime),
             serverApproveEntities,
             period);
     // Create a poll message to notify the losing registrar that a transfer was requested.
@@ -271,7 +265,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
         createLosingTransferPollMessage(
                 targetId, pendingTransferData, serverApproveNewExpirationTime, domainHistoryId)
             .asBuilder()
-            .setEventTime(toInstant(now))
+            .setEventTime(now)
             .build();
     // End the old autorenew event and poll message at the implicit transfer time. This may delete
     // the poll message if it has no events left. Note that if the automatic transfer succeeds, then
@@ -284,19 +278,21 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
             .asBuilder()
             .setTransferData(pendingTransferData)
             .addStatusValue(StatusValue.PENDING_TRANSFER)
-            .setLastEppUpdateTime(toInstant(now))
+            .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(gainingClientId)
             .build();
     DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now, period);
 
     asyncTaskEnqueuer.enqueueAsyncResave(
-        newDomain.createVKey(), now, ImmutableSortedSet.of(automaticTransferTime));
+        newDomain.createVKey(),
+        toDateTime(now),
+        ImmutableSortedSet.of(toDateTime(automaticTransferTime)));
     tm().put(newDomain);
     tm().putAll(serverApproveEntities);
     tm().insertAll(domainHistory, requestPollMessage);
     return responseBuilder
         .setResultFromCode(SUCCESS_WITH_ACTION_PENDING)
-        .setResData(createResponse(period, existingDomain, newDomain, toInstant(now)))
+        .setResData(createResponse(period, existingDomain, newDomain, now))
         .setExtensions(createResponseExtensions(feesAndCredits, feeTransfer))
         .build();
   }
@@ -304,7 +300,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
   private void verifyTransferAllowed(
       Domain existingDomain,
       Period period,
-      DateTime now,
+      Instant now,
       Optional<DomainTransferRequestSuperuserExtension> superuserExtension)
       throws EppException {
     verifyNoDisallowedStatuses(existingDomain, ImmutableSet.of(StatusValue.PENDING_DELETE));
@@ -367,7 +363,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     }
   }
 
-  private DomainHistory buildDomainHistory(Domain newDomain, Tld tld, DateTime now, Period period) {
+  private DomainHistory buildDomainHistory(Domain newDomain, Tld tld, Instant now, Period period) {
     return historyBuilder
         .setType(DOMAIN_TRANSFER_REQUEST)
         .setPeriod(period)
@@ -376,9 +372,8 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
             ImmutableSet.of(
                 DomainTransactionRecord.create(
                     tld.getTldStr(),
-                    toInstant(
-                        now.plus(tld.getAutomaticTransferLength())
-                            .plus(tld.getTransferGracePeriodLength())),
+                    now.plusMillis(tld.getAutomaticTransferLength().getMillis())
+                        .plusMillis(tld.getTransferGracePeriodLength().getMillis()),
                     TransactionReportField.TRANSFER_SUCCESSFUL,
                     1)))
         .build();
@@ -392,7 +387,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     Instant approveNowExtendedRegistrationTime =
         computeExDateForApprovalTime(existingDomain, now, period);
     return createTransferResponse(
-        targetId, newDomain.getTransferData(), toDateTime(approveNowExtendedRegistrationTime));
+        targetId, newDomain.getTransferData(), approveNowExtendedRegistrationTime);
   }
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(

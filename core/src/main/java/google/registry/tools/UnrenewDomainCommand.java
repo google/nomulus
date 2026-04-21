@@ -20,8 +20,8 @@ import static google.registry.flows.domain.DomainFlowUtils.newAutorenewBillingEv
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewPollMessage;
 import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurrenceEndTime;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.toDateTime;
@@ -206,7 +206,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
             .setMsg(
                 String.format(
                     "Domain %s was unrenewed by %d years; now expires at %s.",
-                    domainName, period, ISO_8601_FORMATTER.format(newExpirationTime)))
+                    domainName, period, formatInstant(newExpirationTime)))
             .setHistoryEntry(domainHistory)
             .setEventTime(now)
             .build();
@@ -224,7 +224,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
     // End the old autorenew billing event and poll message now.
     BillingRecurrence existingBillingRecurrence = tm().loadByKey(domain.getAutorenewBillingEvent());
     updateAutorenewRecurrenceEndTime(
-        domain, existingBillingRecurrence, now, domainHistory.getHistoryEntryId());
+        domain, existingBillingRecurrence, toInstant(now), domainHistory.getHistoryEntryId());
     Domain newDomain =
         domain
             .asBuilder()

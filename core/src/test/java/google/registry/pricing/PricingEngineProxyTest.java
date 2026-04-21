@@ -107,7 +107,7 @@ public class PricingEngineProxyTest {
     persistResource(
         Tld.get("example")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT, Money.of(USD, 8), clock.now(), Money.of(USD, 10)))
             .build());

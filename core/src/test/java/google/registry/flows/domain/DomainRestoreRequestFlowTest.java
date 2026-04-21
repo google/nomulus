@@ -82,7 +82,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -172,7 +171,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   @Test
   void testSuccess_expiryStillInFuture_notExtended() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
-    Instant expirationTime = plusYears(clock.now(), 5).plus(Duration.ofDays(45));
+    Instant expirationTime = plusDays(plusYears(clock.now(), 5), 45);
     persistPendingDeleteDomain(expirationTime);
     assertMutatingFlow(true);
     // Double check that we see a poll message in the future for when the delete happens.
@@ -482,12 +481,11 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
-            .setRenewBillingCostTransitionsInstant(
-                ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 7)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 7)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 0))
             .build());
@@ -601,10 +599,10 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitionsInstant(
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
