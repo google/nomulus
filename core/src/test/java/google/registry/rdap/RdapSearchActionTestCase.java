@@ -90,7 +90,8 @@ public abstract class RdapSearchActionTestCase<A extends RdapSearchActionBase>
             .setRole(metricRole)
             .setRequestMethod(requestMethod)
             .setStatusCode(metricStatusCode)
-            .setIncompletenessWarningType(incompletenessWarningType);
+            .setIncompletenessWarningType(incompletenessWarningType)
+            .setProcessingTime(0L);
     numDomainsRetrieved.ifPresent(builder::setNumDomainsRetrieved);
     numHostsRetrieved.ifPresent(builder::setNumHostsRetrieved);
     verify(rdapMetrics).updateMetrics(builder.build());

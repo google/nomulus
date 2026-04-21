@@ -287,6 +287,7 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
                 .setRequestMethod(Action.Method.GET)
                 .setStatusCode(200)
                 .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE)
+                .setProcessingTime(0L)
                 .build());
   }
 }
