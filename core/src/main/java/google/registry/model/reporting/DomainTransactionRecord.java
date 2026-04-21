@@ -15,8 +15,6 @@
 package google.registry.model.reporting;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
@@ -34,7 +32,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import org.joda.time.DateTime;
 
 /**
  * The record of the mutations which contribute to transaction reporting.
@@ -204,16 +201,7 @@ public class DomainTransactionRecord extends ImmutableObject
     return reportAmount;
   }
 
-  /**
-   * @deprecated Use {@link #getReportingTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getReportingTime() {
-    return toDateTime(reportingTime);
-  }
-
-  public Instant getReportingTimeInstant() {
+  public Instant getReportingTime() {
     return reportingTime;
   }
 
@@ -230,19 +218,6 @@ public class DomainTransactionRecord extends ImmutableObject
         .setReportField(transactionReportField)
         .setReportAmount(reportAmount)
         .build();
-  }
-
-  /**
-   * @deprecated Use {@link #create(String, Instant, TransactionReportField, int)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static DomainTransactionRecord create(
-      String tld,
-      DateTime reportingTime,
-      TransactionReportField transactionReportField,
-      int reportAmount) {
-    return create(tld, toInstant(reportingTime), transactionReportField, reportAmount);
   }
 
   @Override
@@ -270,15 +245,6 @@ public class DomainTransactionRecord extends ImmutableObject
       checkArgumentNotNull(reportingTime, "reportingTime must not be null");
       getInstance().reportingTime = reportingTime;
       return this;
-    }
-
-    /**
-     * @deprecated Use {@link #setReportingTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public Builder setReportingTime(DateTime reportingTime) {
-      return setReportingTime(toInstant(reportingTime));
     }
 
     public Builder setReportField(TransactionReportField reportField) {

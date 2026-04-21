@@ -163,14 +163,15 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                             .getTransferPrice(
                                 Tld.get(tldStr),
                                 targetId,
-                                transferData.getTransferRequestTimeInstant(),
+                                transferData.getTransferRequestTime(),
                                 // When removing a domain from bulk pricing it should return to the
                                 // default recurrence billing behavior so the existing recurrence
                                 // billing event should not be passed in.
                                 hasBulkToken ? null : existingBillingRecurrence)
                             .getRenewCost())
-                    .setEventTime(now)
-                    .setBillingTime(now.plus(Tld.get(tldStr).getTransferGracePeriodLength()))
+                    .setEventTime(toInstant(now))
+                    .setBillingTime(
+                        toInstant(now.plus(Tld.get(tldStr).getTransferGracePeriodLength())))
                     .setDomainHistoryId(domainHistoryId)
                     .build());
 
@@ -187,7 +188,8 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
       // still needs to be charged for the auto-renew.
       if (billingEvent.isPresent()) {
         entitiesToInsert.add(
-            BillingCancellation.forGracePeriod(autorenewGrace, now, domainHistoryId, targetId));
+            BillingCancellation.forGracePeriod(
+                autorenewGrace, toInstant(now), domainHistoryId, targetId));
       }
     }
     // Close the old autorenew event and poll message at the transfer time (aka now). This may end
@@ -205,7 +207,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setRenewalPriceBehavior(
                 hasBulkToken
                     ? RenewalPriceBehavior.DEFAULT
@@ -219,7 +221,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
         new PollMessage.Autorenew.Builder()
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setAutorenewEndTime(END_INSTANT)
             .setMsg("Domain was auto-renewed.")
             .setDomainHistoryId(domainHistoryId)
@@ -236,7 +238,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                 partiallyApprovedDomain
                     .getTransferData()
                     .asBuilder()
-                    .setTransferredRegistrationExpirationTime(newExpirationTime)
+                    .setTransferredRegistrationExpirationTime(toInstant(newExpirationTime))
                     .build())
             .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(autorenewEvent.createVKey())
@@ -250,7 +252,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                                 GracePeriod.forBillingEvent(
                                     GracePeriodStatus.TRANSFER, existingDomain.getRepoId(), event)))
                     .orElseGet(ImmutableSet::of))
-            .setLastEppUpdateTime(now)
+            .setLastEppUpdateTime(toInstant(now))
             .setLastEppUpdateRegistrarId(registrarId)
             // Even if the existing domain had a bulk token, that bulk token should be removed
             // on transfer
@@ -297,7 +299,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                 cancelingRecords,
                 DomainTransactionRecord.create(
                     newDomain.getTld(),
-                    now.plus(tld.getTransferGracePeriodLength()),
+                    toInstant(now.plus(tld.getTransferGracePeriodLength())),
                     TRANSFER_SUCCESSFUL,
                     1)))
         .build();

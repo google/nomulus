@@ -25,8 +25,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -158,27 +156,12 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
     this.repoId = repoId;
   }
 
-  /**
-   * @deprecated Use {@link #getCreationTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public final DateTime getCreationTime() {
-    return creationTime.getTimestampDateTime();
-  }
-
-  public final Instant getCreationTimeInstant() {
+  public final Instant getCreationTime() {
     return creationTime.getTimestamp();
   }
 
   public String getCreationRegistrarId() {
     return creationRegistrarId;
-  }
-
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getLastEppUpdateDateTime() {
-    return toDateTime(lastEppUpdateTime);
   }
 
   public Instant getLastEppUpdateTime() {
@@ -201,12 +184,6 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
 
   public final ImmutableSet<StatusValue> getStatusValues() {
     return nullToEmptyImmutableCopy(statuses);
-  }
-
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getDeletionDateTime() {
-    return toDateTime(deletionTime);
   }
 
   public Instant getDeletionTime() {
@@ -260,15 +237,6 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
       return thisCastToDerived();
     }
 
-    /**
-     * @deprecated Use {@link #setCreationTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public B setCreationTime(DateTime creationTime) {
-      return setCreationTime(toInstant(creationTime));
-    }
-
     /** Set the time this resource was created. Should only be used in tests. */
     @VisibleForTesting
     public B setCreationTimeForTest(Instant creationTime) {
@@ -276,29 +244,10 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
       return thisCastToDerived();
     }
 
-    /**
-     * @deprecated Use {@link #setCreationTimeForTest(Instant)}
-     */
-    @Deprecated
-    @VisibleForTesting
-    @SuppressWarnings("InlineMeSuggester")
-    public B setCreationTimeForTest(DateTime creationTime) {
-      return setCreationTimeForTest(toInstant(creationTime));
-    }
-
     /** Set the time after which this resource should be considered deleted. */
     public B setDeletionTime(Instant deletionTime) {
       getInstance().deletionTime = deletionTime;
       return thisCastToDerived();
-    }
-
-    /**
-     * @deprecated Use {@link #setDeletionTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public B setDeletionTime(DateTime deletionTime) {
-      return setDeletionTime(toInstant(deletionTime));
     }
 
     /** Set the current sponsoring registrar. */
@@ -317,15 +266,6 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
     public B setLastEppUpdateTime(Instant lastEppUpdateTime) {
       getInstance().lastEppUpdateTime = lastEppUpdateTime;
       return thisCastToDerived();
-    }
-
-    /**
-     * @deprecated Use {@link #setLastEppUpdateTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public B setLastEppUpdateTime(DateTime lastEppUpdateTime) {
-      return setLastEppUpdateTime(toInstant(lastEppUpdateTime));
     }
 
     /** Set the registrar who last performed a {@literal <update>} on this resource. */

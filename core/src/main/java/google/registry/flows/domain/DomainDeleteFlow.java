@@ -40,6 +40,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.union;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
@@ -162,7 +163,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     } else {
       builder = existingDomain.asBuilder();
     }
-    builder.setLastEppUpdateTime(now).setLastEppUpdateRegistrarId(registrarId);
+    builder.setLastEppUpdateTime(toInstant(now)).setLastEppUpdateRegistrarId(registrarId);
     Duration redemptionGracePeriodLength = tld.getRedemptionGracePeriodLength();
     Duration pendingDeleteLength = tld.getPendingDeleteLength();
     Optional<DomainDeleteSuperuserExtension> domainDeleteSuperuserExtension =
@@ -187,13 +188,13 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
     DateTime deletionTime = now.plus(durationUntilDelete);
     if (durationUntilDelete.equals(Duration.ZERO)) {
-      builder.setDeletionTime(now).setStatusValues(null);
+      builder.setDeletionTime(toInstant(now)).setStatusValues(null);
     } else {
       DateTime redemptionTime = now.plus(redemptionGracePeriodLength);
       asyncTaskEnqueuer.enqueueAsyncResave(
           existingDomain.createVKey(), now, ImmutableSortedSet.of(redemptionTime, deletionTime));
       builder
-          .setDeletionTime(deletionTime)
+          .setDeletionTime(toInstant(deletionTime))
           .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
           // Clear out all old grace periods and add REDEMPTION, which does not include a key to a
           // billing event because there isn't one for a domain delete.
@@ -242,7 +243,8 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
         entitiesToInsert.add(
-            BillingCancellation.forGracePeriod(gracePeriod, now, domainHistoryId, targetId));
+            BillingCancellation.forGracePeriod(
+                gracePeriod, toInstant(now), domainHistoryId, targetId));
         if (gracePeriod.getBillingEvent() != null) {
           // Take the amount of registration time being refunded off the expiration time.
           // This can be either add grace periods or renew grace periods.
@@ -290,7 +292,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
                 .setResultCode(
-                    newDomain.getDeletionDateTime().isAfter(now)
+                    newDomain.getDeletionTime().isAfter(toInstant(now))
                         ? SUCCESS_WITH_ACTION_PENDING
                         : SUCCESS)
                 .setResponseExtensions(
@@ -343,7 +345,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
               cancelledRecords,
               DomainTransactionRecord.create(
                   domain.getTld(),
-                  now.plus(durationUntilDelete),
+                  toInstant(now.plus(durationUntilDelete)),
                   inAddGracePeriod
                       ? TransactionReportField.DELETED_DOMAINS_GRACE
                       : TransactionReportField.DELETED_DOMAINS_NOGRACE,
@@ -380,7 +382,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
       Domain existingDomain, HistoryEntryId domainHistoryId, DateTime now, DateTime deletionTime) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(existingDomain.getPersistedCurrentSponsorRegistrarId())
-        .setEventTime(now)
+        .setEventTime(toInstant(now))
         .setDomainHistoryId(domainHistoryId)
         .setMsg(
             String.format(
@@ -421,7 +423,10 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     if (gracePeriod.getType() == GracePeriodStatus.AUTO_RENEW) {
       // If we updated the autorenew billing event, reuse it.
       DateTime autoRenewTime =
-          billingRecurrence.getRecurrenceTimeOfYear().getLastInstanceBeforeOrAt(now);
+          toDateTime(
+              billingRecurrence
+                  .getRecurrenceTimeOfYear()
+                  .getLastInstanceBeforeOrAt(toInstant(now)));
       return getDomainRenewCost(targetId, toInstant(autoRenewTime), 1);
     }
     return tm().loadByKey(checkNotNull(gracePeriod.getBillingEvent())).getCost();

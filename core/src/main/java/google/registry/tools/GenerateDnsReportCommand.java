@@ -19,6 +19,7 @@ import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.model.tld.Tlds.assertTldExists;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.beust.jcommander.Parameter;
@@ -80,7 +81,8 @@ final class GenerateDnsReportCommand implements Command {
                           .list());
       for (Domain domain : domains) {
         // Skip deleted domains and domains that don't get published to DNS.
-        if (isBeforeOrAt(domain.getDeletionDateTime(), now) || !domain.shouldPublishToDns()) {
+        if (isBeforeOrAt(domain.getDeletionTime(), toInstant(now))
+            || !domain.shouldPublishToDns()) {
           continue;
         }
         write(domain);
@@ -89,7 +91,7 @@ final class GenerateDnsReportCommand implements Command {
       Iterable<Host> nameservers = tm().transact(() -> tm().loadAllOf(Host.class));
       for (Host nameserver : nameservers) {
         // Skip deleted hosts and external hosts.
-        if (isBeforeOrAt(nameserver.getDeletionDateTime(), now)
+        if (isBeforeOrAt(nameserver.getDeletionTime(), toInstant(now))
             || nameserver.getInetAddresses().isEmpty()) {
           continue;
         }

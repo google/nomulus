@@ -90,7 +90,7 @@ public final class DomainTransferQueryFlow implements TransactionalFlow {
     }
     DateTime newExpirationTime = null;
     if (transferData.getTransferStatus().isApproved()) {
-      newExpirationTime = transferData.getTransferredRegistrationExpirationDateTime();
+      newExpirationTime = toDateTime(transferData.getTransferredRegistrationExpirationTime());
     } else if (transferData.getTransferStatus().equals(TransferStatus.PENDING)) {
       newExpirationTime =
           toDateTime(

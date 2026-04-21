@@ -50,12 +50,14 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusHours;
 import static google.registry.util.DateTimeUtils.plusMonths;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toDateTime;
@@ -241,7 +243,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
-            .setBillingTime(toDateTime(plusDays(TIME_BEFORE_FLOW, 1)))
+            .setBillingTime(plusDays(TIME_BEFORE_FLOW, 1))
             .setBillingEvent(graceBillingEvent.createVKey())
             .setDomainHistory(historyEntryDomainDelete)
             .build());
@@ -262,7 +264,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setCost(cost)
         .setPeriodYears(2)
         .setEventTime(minusDays(TIME_BEFORE_FLOW, 4))
-        .setBillingTime(toDateTime(plusDays(TIME_BEFORE_FLOW, 1)))
+        .setBillingTime(plusDays(TIME_BEFORE_FLOW, 1))
         .setDomainHistory(earlierHistoryEntry)
         .build();
   }
@@ -274,7 +276,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setTargetId("example.tld")
         .setRegistrarId(registrarId)
         .setEventTime(A_MONTH_FROM_NOW)
-        .setRecurrenceEndTime(END_OF_TIME)
+        .setRecurrenceEndTime(END_INSTANT)
         .setDomainHistory(earlierHistoryEntry);
   }
 
@@ -602,7 +604,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // The poll message in the future to the gaining registrar should be gone too, but there
     // should be one at the current time to the gaining registrar.
     PollMessage gainingPollMessage = getOnlyPollMessage("NewRegistrar");
-    assertThat(gainingPollMessage.getEventTime()).isEqualTo(clock.nowUtc());
+    assertThat(gainingPollMessage.getEventTime()).isEqualTo(clock.now());
     assertThat(
             gainingPollMessage
                 .getResponseData()
@@ -973,10 +975,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
             DomainTransactionRecord.create(
-                "tld",
-                clock.now().plus(java.time.Duration.ofHours(3)),
-                DELETED_DOMAINS_NOGRACE,
-                1));
+                "tld", plusHours(clock.now(), 3), DELETED_DOMAINS_NOGRACE, 1));
   }
 
   @Test
@@ -1002,10 +1001,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
             DomainTransactionRecord.create(
-                "tld",
-                clock.now().plus(java.time.Duration.ofHours(3)),
-                DELETED_DOMAINS_NOGRACE,
-                1));
+                "tld", plusHours(clock.now(), 3), DELETED_DOMAINS_NOGRACE, 1));
   }
 
   /** Verifies that if there's no add grace period, we still cancel out valid renew records */
@@ -1033,7 +1029,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(
             DomainTransactionRecord.create(
-                "tld", clock.now().plus(java.time.Duration.ofHours(3)), DELETED_DOMAINS_NOGRACE, 1),
+                "tld", plusHours(clock.now(), 3), DELETED_DOMAINS_NOGRACE, 1),
             renewRecord.asBuilder().setReportAmount(-1).build());
   }
 

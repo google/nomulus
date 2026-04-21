@@ -31,6 +31,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
@@ -147,7 +148,7 @@ class DomainTransferCancelFlowTest
         .hasOtherRegistrarId("TheRegistrar");
     // The only billing event left should be the original autorenew event, now reopened.
     assertBillingEvents(
-        getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_OF_TIME).build());
+        getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_INSTANT).build());
     // The poll message (in the future) to the gaining registrar for implicit ack should be gone.
     assertThat(getPollMessages("NewRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();
     // The poll message in the future to the losing registrar should be gone too, but there should

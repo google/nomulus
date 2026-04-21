@@ -41,8 +41,8 @@ import google.registry.persistence.IsolationLevel;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow for acknowledging {@link PollMessage}s.
@@ -83,7 +83,7 @@ public final class PollAckFlow implements MutatingFlow {
       throw new InvalidMessageIdException(messageId);
     }
 
-    final DateTime now = tm().getTransactionTime();
+    final Instant now = tm().getTxTime();
 
     // Load the message to be acked. If a message is queued to be delivered in the future, we treat
     // it as if it doesn't exist yet. Same for if the message ID year isn't the same as the actual

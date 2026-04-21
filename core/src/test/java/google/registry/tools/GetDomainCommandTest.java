@@ -18,6 +18,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -75,7 +76,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistResource(
         DatabaseHelper.newDomain("example.tld")
             .asBuilder()
-            .setDeletionTime(fakeClock.nowUtc().plusDays(1))
+            .setDeletionTime(plusDays(fakeClock.now(), 1))
             .build());
     runCommand("example.tld", "--read_timestamp=" + fakeClock.nowUtc().plusMonths(1));
     assertInStdout("Domain 'example.tld' does not exist or is deleted");

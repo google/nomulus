@@ -18,8 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.minusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.common.TimeOfYear;
 import google.registry.persistence.VKey;
@@ -37,7 +35,6 @@ import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /**
  * A recurring billable event.
@@ -113,29 +110,11 @@ public class BillingRecurrence extends BillingBase {
   @Column(name = "renewalPriceBehavior", nullable = false)
   RenewalPriceBehavior renewalPriceBehavior = RenewalPriceBehavior.DEFAULT;
 
-  /**
-   * @deprecated Use {@link #getRecurrenceEndTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getRecurrenceEndTime() {
-    return toDateTime(recurrenceEndTime);
-  }
-
-  public Instant getRecurrenceEndTimeInstant() {
+  public Instant getRecurrenceEndTime() {
     return recurrenceEndTime;
   }
 
-  /**
-   * @deprecated Use {@link #getRecurrenceLastExpansionInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getRecurrenceLastExpansion() {
-    return toDateTime(recurrenceLastExpansion);
-  }
-
-  public Instant getRecurrenceLastExpansionInstant() {
+  public Instant getRecurrenceLastExpansion() {
     return recurrenceLastExpansion;
   }
 
@@ -174,27 +153,9 @@ public class BillingRecurrence extends BillingBase {
       super(instance);
     }
 
-    /**
-     * @deprecated Use {@link #setRecurrenceEndTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public Builder setRecurrenceEndTime(DateTime recurrenceEndTime) {
-      return setRecurrenceEndTime(toInstant(recurrenceEndTime));
-    }
-
     public Builder setRecurrenceEndTime(Instant recurrenceEndTime) {
       getInstance().recurrenceEndTime = recurrenceEndTime;
       return this;
-    }
-
-    /**
-     * @deprecated Use {@link #setRecurrenceLastExpansion(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public Builder setRecurrenceLastExpansion(DateTime recurrenceLastExpansion) {
-      return setRecurrenceLastExpansion(toInstant(recurrenceLastExpansion));
     }
 
     public Builder setRecurrenceLastExpansion(Instant recurrenceLastExpansion) {

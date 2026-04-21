@@ -31,7 +31,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry.Type;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +48,7 @@ class HistoryEntryTest extends EntityTestCase {
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("foobar")
-            .setReportingTime(fakeClock.nowUtc())
+            .setReportingTime(fakeClock.now())
             .setReportField(TransactionReportField.NET_ADDS_1_YR)
             .setReportAmount(1)
             .build();
@@ -59,7 +59,7 @@ class HistoryEntryTest extends EntityTestCase {
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(fakeClock.nowUtc())
+            .setModificationTime(fakeClock.now())
             .setRegistrarId("TheRegistrar")
             .setOtherRegistrarId("otherClient")
             .setTrid(Trid.create("ABC-123", "server-trid"))
@@ -90,7 +90,7 @@ class HistoryEntryTest extends EntityTestCase {
             () ->
                 new DomainHistory.Builder()
                     .setRevisionId(5L)
-                    .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
+                    .setModificationTime(Instant.parse("1985-07-12T22:30:00Z"))
                     .setRegistrarId("TheRegistrar")
                     .setReason("Reason")
                     .setType(Type.DOMAIN_CREATE)
@@ -107,7 +107,7 @@ class HistoryEntryTest extends EntityTestCase {
                 new DomainHistory.Builder()
                     .setRevisionId(5L)
                     .setDomain(domain)
-                    .setModificationTime(DateTime.parse("1985-07-12T22:30.00Z"))
+                    .setModificationTime(Instant.parse("1985-07-12T22:30:00Z"))
                     .setRegistrarId("TheRegistrar")
                     .setReason("Reason")
                     .build());
@@ -140,7 +140,7 @@ class HistoryEntryTest extends EntityTestCase {
                     .setRevisionId(5L)
                     .setDomain(domain)
                     .setType(Type.DOMAIN_CREATE)
-                    .setModificationTime(DateTime.parse("1985-07-12T22:30.00Z"))
+                    .setModificationTime(Instant.parse("1985-07-12T22:30:00Z"))
                     .setReason("Reason")
                     .build());
     assertThat(thrown).hasMessageThat().isEqualTo("Registrar ID must be specified");
@@ -156,7 +156,7 @@ class HistoryEntryTest extends EntityTestCase {
                     .setRevisionId(5L)
                     .setDomain(domain)
                     .setType(Type.SYNTHETIC)
-                    .setModificationTime(DateTime.parse("1985-07-12T22:30.00Z"))
+                    .setModificationTime(Instant.parse("1985-07-12T22:30:00Z"))
                     .setRegistrarId("TheRegistrar")
                     .setReason("Reason")
                     .setRequestedByRegistrar(true)

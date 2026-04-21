@@ -83,7 +83,7 @@ final class AckPollMessagesCommand implements Command {
   private void ackPollMessagesSql() {
     tm().transact(
             () -> {
-              QueryComposer<PollMessage> query = createPollMessageQuery(clientId, clock.nowUtc());
+              QueryComposer<PollMessage> query = createPollMessageQuery(clientId, clock.now());
               if (!isNullOrEmpty(message)) {
                 query = query.where("msg", LIKE, "%" + message + "%");
               }

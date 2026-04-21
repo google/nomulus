@@ -23,8 +23,11 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.DaggerEppTestComponent;
@@ -87,7 +90,7 @@ class DeleteExpiredDomainsActionTest {
             DatabaseHelper.newDomain("bar.tld")
                 .asBuilder()
                 .setAutorenewEndTime(Optional.of(clock.nowUtc().minusDays(10)))
-                .setDeletionTime(clock.nowUtc().plusDays(17))
+                .setDeletionTime(plusDays(clock.now(), 17))
                 .build());
 
     // A non-autorenewing domain that hasn't reached its expiration time and shouldn't be touched.
@@ -168,7 +171,7 @@ class DeleteExpiredDomainsActionTest {
             new DomainHistory.Builder()
                 .setType(DOMAIN_CREATE)
                 .setDomain(pendingExpirationDomain)
-                .setModificationTime(clock.nowUtc().minusMonths(9))
+                .setModificationTime(toInstant(clock.nowUtc().minusMonths(9)))
                 .setRegistrarId(pendingExpirationDomain.getCreationRegistrarId())
                 .build());
     BillingRecurrence autorenewBillingEvent =
@@ -193,8 +196,8 @@ class DeleteExpiredDomainsActionTest {
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId("fizz.tld")
         .setRegistrarId("TheRegistrar")
-        .setEventTime(clock.nowUtc().plusYears(1))
-        .setRecurrenceEndTime(END_OF_TIME)
+        .setEventTime(plusYears(clock.now(), 1))
+        .setRecurrenceEndTime(END_INSTANT)
         .setDomainHistory(createHistoryEntry);
   }
 
@@ -203,7 +206,7 @@ class DeleteExpiredDomainsActionTest {
     return new PollMessage.Autorenew.Builder()
         .setTargetId("fizz.tld")
         .setRegistrarId("TheRegistrar")
-        .setEventTime(clock.nowUtc().plusYears(1))
+        .setEventTime(plusYears(clock.now(), 1))
         .setAutorenewEndTime(END_OF_TIME)
         .setHistoryEntry(createHistoryEntry);
   }

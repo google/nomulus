@@ -19,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.createHistoryEntryForEppRes
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -67,7 +68,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
         new PollMessage.Autorenew.Builder()
             .setId(MESSAGE_ID)
             .setRegistrarId(getRegistrarIdForFlow())
-            .setEventTime(eventTime)
+            .setEventTime(toInstant(eventTime))
             .setAutorenewEndTime(endTime)
             .setMsg("Domain was auto-renewed.")
             .setTargetId("example.com")

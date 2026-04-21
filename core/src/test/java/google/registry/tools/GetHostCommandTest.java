@@ -19,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -90,7 +91,7 @@ class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
     persistResource(
         newHost("ns1.example.tld")
             .asBuilder()
-            .setDeletionTime(fakeClock.nowUtc().plusDays(1))
+            .setDeletionTime(plusDays(fakeClock.now(), 1))
             .build());
     runCommand("ns1.example.tld", "--read_timestamp=" + fakeClock.nowUtc().plusMonths(1));
     assertInStdout("Host 'ns1.example.tld' does not exist or is deleted");

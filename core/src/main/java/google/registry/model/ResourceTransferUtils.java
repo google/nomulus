@@ -15,7 +15,6 @@
 package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
@@ -53,11 +52,11 @@ public final class ResourceTransferUtils {
         .setDomainName(domain.getForeignKey())
         .setExtendedRegistrationExpirationTime(
             ADD_EXDATE_STATUSES.contains(transferData.getTransferStatus())
-                ? transferData.getTransferredRegistrationExpirationDateTime()
+                ? transferData.getTransferredRegistrationExpirationTime()
                 : null)
         .setGainingRegistrarId(transferData.getGainingRegistrarId())
         .setLosingRegistrarId(transferData.getLosingRegistrarId())
-        .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationDateTime())
+        .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationTime())
         .setTransferRequestTime(transferData.getTransferRequestTime())
         .setTransferStatus(transferData.getTransferStatus())
         .build();
@@ -145,7 +144,7 @@ public final class ResourceTransferUtils {
                 .getTransferData()
                 .copyConstantFieldsToBuilder()
                 .setTransferStatus(transferStatus)
-                .setPendingTransferExpirationTime(toDateTime(checkNotNull(now)))
+                .setPendingTransferExpirationTime(now)
                 .build());
   }
 
@@ -191,7 +190,7 @@ public final class ResourceTransferUtils {
       Domain domain, TransferStatus transferStatus, Instant now, String lastEppUpdateRegistrarId) {
     checkArgument(transferStatus.isDenied(), "Not a denial transfer status");
     return resolvePendingTransfer(domain, transferStatus, now)
-        .setLastEppUpdateTime(toDateTime(now))
+        .setLastEppUpdateTime(now)
         .setLastEppUpdateRegistrarId(lastEppUpdateRegistrarId)
         .build();
   }

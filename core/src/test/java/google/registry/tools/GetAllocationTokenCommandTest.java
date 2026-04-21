@@ -31,6 +31,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.util.DateTimeUtils;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
@@ -99,7 +100,7 @@ Token foo was not redeemed.
                 new AllocationToken.Builder()
                     .setToken("fee")
                     .setTokenType(SINGLE_USE)
-                    .setCreationTimeForTest(DateTime.parse("2015-04-07T22:19:17.044Z"))
+                    .setCreationTimeForTest(Instant.parse("2015-04-07T22:19:17.044Z"))
                     .build(),
                 new AllocationToken.Builder()
                     .setToken("fii")
