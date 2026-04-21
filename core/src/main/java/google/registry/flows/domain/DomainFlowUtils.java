@@ -489,7 +489,7 @@ public class DomainFlowUtils {
   static <T extends CreateOrUpdate<T>> T cloneAndLinkReferences(T command, DateTime now)
       throws EppException {
     try {
-      return command.cloneAndLinkReferences(now);
+      return command.cloneAndLinkReferences(toInstant(now));
     } catch (InvalidReferencesException e) {
       throw new LinkedResourcesDoNotExistException(e.getType(), e.getForeignKeys());
     }
@@ -980,11 +980,11 @@ public class DomainFlowUtils {
     }
     // Superuser can force domain creations regardless of the current date.
     if (!isSuperuser) {
-      if (notice.getExpirationTime().isBefore(now)) {
+      if (notice.getExpirationTime().isBefore(toInstant(now))) {
         throw new ExpiredClaimException();
       }
       // An acceptance within the past 48 hours is mandated by the TMCH Functional Spec.
-      if (notice.getAcceptedTime().isBefore(now.minusHours(48))) {
+      if (notice.getAcceptedTime().isBefore(toInstant(now.minusHours(48)))) {
         throw new AcceptedTooLongAgoException();
       }
     }

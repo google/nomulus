@@ -26,8 +26,6 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.REGIS
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -40,7 +38,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
@@ -71,7 +68,6 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import org.hibernate.annotations.Type;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /** An entity representing an allocation token. */
 @Entity
@@ -339,23 +335,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return tokenType;
   }
 
-  /**
-   * @deprecated Use {@link #getCreationTime()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @JsonIgnore
-  public Optional<DateTime> getCreationDateTime() {
-    return Optional.ofNullable(toDateTime(creationTime.getTimestamp()));
-  }
+
 
   @JsonIgnore
   public TimedTransitionProperty<TokenStatus> getTokenStatusTransitions() {
     return tokenStatusTransitions;
-  }
-
-  public ImmutableSortedMap<DateTime, TokenStatus> getTokenStatusTransitionsMap() {
-    return tokenStatusTransitions.toValueMap();
   }
 
   @JsonIgnore
@@ -538,11 +522,6 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     }
 
     @VisibleForTesting
-    public Builder setCreationTimeForTest(DateTime creationTime) {
-      return setCreationTimeForTest(toInstant(creationTime));
-    }
-
-    @VisibleForTesting
     public Builder setCreationTimeForTest(Instant creationTime) {
       checkState(
           getInstance().creationTime.getTimestamp() == null, "Creation time can only be set once");
@@ -587,17 +566,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       return this;
     }
 
-    public Builder setTokenStatusTransitions(
-        ImmutableSortedMap<DateTime, TokenStatus> transitions) {
-      return setTokenStatusTransitionsInstant(
-          transitions.entrySet().stream()
-              .collect(
-                  ImmutableSortedMap.toImmutableSortedMap(
-                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
-    }
-
-    public Builder setTokenStatusTransitionsInstant(
-        ImmutableSortedMap<Instant, TokenStatus> transitions) {
+    public Builder setTokenStatusTransitions(ImmutableSortedMap<Instant, TokenStatus> transitions) {
       getInstance().tokenStatusTransitions =
           TimedTransitionProperty.makeInstant(
               transitions,

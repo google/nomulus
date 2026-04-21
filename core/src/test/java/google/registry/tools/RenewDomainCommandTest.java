@@ -80,7 +80,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
             DatabaseHelper.newDomain("domain3.tld")
                 .asBuilder()
                 .setCreationTimeForTest(Instant.parse("2015-01-05T05:05:05Z"))
-                .setRegistrationExpirationTime(DateTime.parse("2016-01-05T05:05:05Z"))
+                .setRegistrationExpirationTime(Instant.parse("2016-01-05T05:05:05Z"))
                 .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build()));
     return domains.build();

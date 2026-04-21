@@ -103,7 +103,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.getClientCertificateHash()).isEmpty();
     assertThat(registrar.getPhonePasscode()).isEqualTo("01234");
     assertThat(registrar.getCreationTime()).isIn(Range.closed(before, after));
-    assertThat(registrar.getLastUpdateTimeInstant()).isEqualTo(registrar.getCreationTime());
+    assertThat(registrar.getLastUpdateTime()).isEqualTo(registrar.getCreationTime());
     assertThat(registrar.getBlockPremiumNames()).isFalse();
     assertThat(registrar.isRegistryLockAllowed()).isFalse();
     assertThat(registrar.getPoNumber()).isEmpty();

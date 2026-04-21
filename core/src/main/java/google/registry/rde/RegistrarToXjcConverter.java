@@ -146,7 +146,7 @@ final class RegistrarToXjcConverter {
     //    the most recent RDE registrar-object modification.  This element
     //    MUST NOT be present if the rdeRegistrar object has never been
     //    modified.
-    bean.setUpDate(model.getLastUpdateTime());
+    bean.setUpDate(toDateTime(model.getLastUpdateTime()));
 
     return bean;
   }

@@ -220,8 +220,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     Optional.ofNullable(discountPremiums).ifPresent(builder::setDiscountPremiums);
     Optional.ofNullable(discountPrice).ifPresent(builder::setDiscountPrice);
     Optional.ofNullable(discountYears).ifPresent(builder::setDiscountYears);
-    Optional.ofNullable(tokenStatusTransitions)
-        .ifPresent(builder::setTokenStatusTransitionsInstant);
+    Optional.ofNullable(tokenStatusTransitions).ifPresent(builder::setTokenStatusTransitions);
 
     if (renewalPriceBehavior != null
         && renewalPriceBehavior != original.getRenewalPriceBehavior()) {

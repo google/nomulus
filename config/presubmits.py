@@ -104,7 +104,7 @@ PRESUBMITS = {
 
     # System.(out|err).println should only appear in tools/ or load-testing/
     PresubmitCheck(
-        r".*\bSystem\.(out|err)\.print", "java", {
+        r".*\bSystem\s*\.\s*(?:out|err)\s*\.\s*print.*", "java", {
             "/tools/", "/example/", "/load-testing/",
             "RegistryTestServerMain.java", "TestServerExtension.java"
         }):
@@ -139,7 +139,7 @@ PRESUBMITS = {
     ):
         "All soy templates must use strict autoescaping",
     PresubmitCheck(
-        r".*\nimport (static )?.*\.shaded\..*",
+        r".*\nimport\s+(?:static\s+)?.*\.shaded\..*",
         "java",
         {"/node_modules/"},
     ):
@@ -163,7 +163,7 @@ PRESUBMITS = {
     ):
         "Use status code from jakarta.servlet.http.HttpServletResponse.",
     PresubmitCheck(
-        r".*mock\(Response\.class\).*",
+        r".*mock\(\s*Response\.class\s*\).*",
         "java",
         {"/node_modules/"},
     ):
@@ -181,13 +181,122 @@ PRESUBMITS = {
     ):
         "Do not use javax.inject.* Use jakarta.inject.* instead.",
     PresubmitCheck(
-        r".*import jakarta.persistence.(Pre|Post)(Persist|Load|Remove|Update);",
+        r".*import\s+jakarta\.persistence\.(?:Pre|Post)(?:Persist|Load|Remove|Update)\s*;",
         "java",
         {"EntityCallbacksListener.java"},
     ):
         "Hibernate lifecycle events aren't called for embedded entities, so it's "
         "usually best to avoid them. Instead, use the annotations defined in "
-        "EntityCallbacksListener.java"
+        "EntityCallbacksListener.java",
+    PresubmitCheck(
+        r".*\.isEqualTo\(\s*Optional\.of\(.*",
+        "java",
+        {},
+    ):
+        "Do not use .isEqualTo(Optional.of(...)). Use Truth's .hasValue(...) instead.",
+    # TODO: Remove the java.time migration presubmit checks below once the entire codebase has been migrated to java.time.
+    PresubmitCheck(
+        r".*toDateTime\(\s*toInstant\(.*",
+        "java",
+        {"DateTimeUtilsTest.java"},
+    ):
+        "Do not double-wrap toDateTime(toInstant(...)).",
+    PresubmitCheck(
+        r".*toInstant\(\s*toDateTime\(.*",
+        "java",
+        {"DateTimeUtilsTest.java"},
+    ):
+        "Do not double-wrap toInstant(toDateTime(...)).",
+    PresubmitCheck(
+        r".*toInstant\([^;]*[cC]lock\.nowUtc\(\).*",
+        "java",
+        {},
+    ):
+        "Do not use toInstant(clock.nowUtc()). Use clock.now() instead.",
+    PresubmitCheck(
+        r".*toDateTime\([^;]*[cC]lock\.now\(\).*",
+        "java",
+        {},
+    ):
+        "Do not use toDateTime(clock.now()). Use clock.nowUtc() instead.",
+    PresubmitCheck(
+        r".*toInstant\([^;]*tm\(\)\.getTransactionTime\(\).*",
+        "java",
+        {},
+    ):
+        "Do not use toInstant(tm().getTransactionTime()). Use tm().getTxTime() instead.",
+    PresubmitCheck(
+        r".*toDateTime\([^;]*tm\(\)\.getTxTime\(\).*",
+        "java",
+        {},
+    ):
+        "Do not use toDateTime(tm().getTxTime()). Use tm().getTransactionTime() instead.",
+    PresubmitCheck(
+        r".*\(\s*Instant\s*\)\s*(?:this\.)?(?:fakeClock|clock)\.now\(\s*\).*",
+        "java",
+        {},
+    ):
+        "Do not unnecessarily cast clock.now() to Instant.",
+    PresubmitCheck(
+        r".*toDateTime\(\s*Instant\.now\(.*",
+        "java",
+        {},
+    ):
+        "Do not wrap Instant.now() in toDateTime. Use DateTime.now(UTC) directly.",
+    PresubmitCheck(
+        r".*toInstant\(\s*DateTime\.now\(.*",
+        "java",
+        {},
+    ):
+        "Do not wrap DateTime.now() in toInstant. Use Instant.now().truncatedTo(ChronoUnit.MILLIS) directly.",
+    PresubmitCheck(
+        r".*toDateTime\(\s*Instant\.parse\(.*",
+        "java",
+        {"DateTimeUtilsTest.java"},
+    ):
+        "Do not wrap Instant.parse in toDateTime. Use DateTime.parse directly.",
+    PresubmitCheck(
+        r".*toInstant\(\s*DateTime\.parse\(.*",
+        "java",
+        {"DateTimeUtilsTest.java"},
+    ):
+        "Do not wrap DateTime.parse in toInstant. Use Instant.parse directly.",
+    PresubmitCheck(
+        r".*cloneProjectedAtTime\(\s*toDateTime\(.*",
+        "java",
+        {},
+    ):
+        "Do not use cloneProjectedAtTime(toDateTime(...)). Use cloneProjectedAtInstant(...) instead.",
+    PresubmitCheck(
+        r".*ZoneId\.of\(\s*\"UTC\"\s*\).*",
+        "java",
+        {},
+    ):
+        "Do not use ZoneId.of(\"UTC\"). Use java.time.ZoneOffset.UTC.",
+    PresubmitCheck(
+        r".*toDateTime\(\s*END_INSTANT\s*\).*",
+        "java",
+        {"DateTimeUtilsTest.java"},
+    ):
+        "Do not wrap END_INSTANT in toDateTime. Use END_OF_TIME.",
+    PresubmitCheck(
+        r".*toInstant\(\s*END_OF_TIME\s*\).*",
+        "java",
+        {"DateTimeUtilsTest.java"},
+    ):
+        "Do not wrap END_OF_TIME in toInstant. Use END_INSTANT.",
+    PresubmitCheck(
+        r".*toDateTime\(\s*START_INSTANT\s*\).*",
+        "java",
+        {"DateTimeUtilsTest.java"},
+    ):
+        "Do not wrap START_INSTANT in toDateTime. Use START_OF_TIME.",
+    PresubmitCheck(
+        r".*toInstant\(\s*START_OF_TIME\s*\).*",
+        "java",
+        {"DateTimeUtilsTest.java"},
+    ):
+        "Do not wrap START_OF_TIME in toInstant. Use START_INSTANT."
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to

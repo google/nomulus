@@ -95,7 +95,7 @@ final class DomainToXjcConverter {
     //    identifying the end (expiration) of the domain name object's
     //    registration period.  This element MUST be present if the domain
     //    name has been allocated.
-    bean.setExDate(model.getRegistrationExpirationDateTime());
+    bean.setExDate(toDateTime(model.getRegistrationExpirationTime()));
 
     // o  An OPTIONAL <upDate> element that contains the date and time of
     //    the most recent domain-name-object modification.  This element
@@ -114,7 +114,7 @@ final class DomainToXjcConverter {
     //    the most recent domain object successful transfer.  This element
     //    MUST NOT be present if the domain name object has never been
     //    transferred.
-    bean.setTrDate(model.getLastTransferTime());
+    bean.setTrDate(toDateTime(model.getLastTransferTime()));
 
     // o  One or more <status> elements that contain the current status
     //    descriptors associated with the domain name.

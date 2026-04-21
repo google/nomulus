@@ -25,7 +25,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -42,6 +41,8 @@ import google.registry.model.registrar.Registrar.Type;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.util.CidrAddressBlock;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -275,8 +276,8 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(SAMPLE_CERT3, fakeClock.nowUtc())
-            .setFailoverClientCertificate(null, fakeClock.nowUtc())
+            .setClientCertificate(SAMPLE_CERT3, fakeClock.now())
+            .setFailoverClientCertificate(null, fakeClock.now())
             .build());
 
     Registrar registrar = loadRegistrar("NewRegistrar");
@@ -408,7 +409,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(SAMPLE_CERT, DateTime.now(UTC))
+            .setClientCertificate(SAMPLE_CERT, Instant.now().truncatedTo(ChronoUnit.MILLIS))
             .build());
     assertThat(loadRegistrar("NewRegistrar").getClientCertificate()).isPresent();
     runCommand("--cert_file=/dev/null", "--force", "NewRegistrar");

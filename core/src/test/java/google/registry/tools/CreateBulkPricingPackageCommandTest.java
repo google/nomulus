@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -31,7 +31,6 @@ import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CreateBulkPricingPackageCommand}. */
@@ -67,7 +66,7 @@ public class CreateBulkPricingPackageCommandTest
     assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(500);
     assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
     assertThat(bulkPricingPackage.getNextBillingDate())
-        .isEqualTo(DateTime.parse("2012-03-17T00:00:00Z"));
+        .isEqualTo(Instant.parse("2012-03-17T00:00:00Z"));
     assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 
@@ -176,7 +175,7 @@ public class CreateBulkPricingPackageCommandTest
     assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(0);
     assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
     assertThat(bulkPricingPackage.getNextBillingDate())
-        .isEqualTo(DateTime.parse("2012-03-17T00:00:00Z"));
+        .isEqualTo(Instant.parse("2012-03-17T00:00:00Z"));
     assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 
@@ -203,7 +202,7 @@ public class CreateBulkPricingPackageCommandTest
     assertThat(bulkPricingPackage.getMaxDomains()).isEqualTo(100);
     assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(500);
     assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
-    assertThat(bulkPricingPackage.getNextBillingDate()).isEqualTo(END_OF_TIME);
+    assertThat(bulkPricingPackage.getNextBillingDate()).isEqualTo(END_INSTANT);
     assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 

@@ -39,6 +39,7 @@ import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -47,7 +48,6 @@ import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusMinutes;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -174,7 +174,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
               .setTargetId(getUniqueIdFromCommand())
               .setRegistrarId("TheRegistrar")
               .setEventTime(expirationTime)
-              .setRecurrenceEndTime(toInstant(END_OF_TIME))
+              .setRecurrenceEndTime(END_INSTANT)
               .setDomainHistory(historyEntryDomainCreate)
               .setRenewalPriceBehavior(renewalPriceBehavior)
               .setRenewalPrice(renewalPrice)
@@ -311,8 +311,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(toInstant(domain.getRegistrationExpirationDateTime()))
-            .setRecurrenceEndTime(toInstant(END_OF_TIME))
+            .setEventTime(domain.getRegistrationExpirationTime())
+            .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistory(historyEntryDomainRenew)
             .build());
     // There should only be the new autorenew poll message, as the old one will have been deleted
@@ -321,7 +321,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(toInstant(domain.getRegistrationExpirationDateTime()))
+            .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRenew)
@@ -667,7 +667,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(plusDays(clock.now(), 1), TokenStatus.VALID)
@@ -691,7 +691,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setTokenType(UNLIMITED_USE)
             .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -716,7 +716,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setTokenType(UNLIMITED_USE)
             .setAllowedTlds(ImmutableSet.of("example"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)

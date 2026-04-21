@@ -23,9 +23,9 @@ import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.registrar.Registrar;
 import google.registry.server.RegistryTestServer;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -80,7 +80,10 @@ public class ConsoleScreenshotTest {
     server.setRegistrarRoles(ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER));
     Registrar registrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     registrar =
-        registrar.asBuilder().setLastPocVerificationDate(DateTime.now(DateTimeZone.UTC)).build();
+        registrar
+            .asBuilder()
+            .setLastPocVerificationDate(Instant.now().truncatedTo(ChronoUnit.MILLIS))
+            .build();
     persistResource(registrar);
     loadHomePage();
   }

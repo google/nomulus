@@ -106,23 +106,23 @@ public class BulkDomainTransferActionTest {
     // The cloneProjectedAtTime calls are necessary to resolve the transfers, even though the
     // transfers have a time period of 0
     activeDomain = loadByEntity(activeDomain);
-    assertThat(activeDomain.cloneProjectedAtInstant(now).getCurrentSponsorRegistrarId())
+    assertThat(activeDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
         .isEqualTo("NewRegistrar");
     assertThat(activeDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(runTime);
 
     // The other three domains shouldn't change
     alreadyTransferredDomain = loadByEntity(alreadyTransferredDomain);
-    assertThat(alreadyTransferredDomain.cloneProjectedAtInstant(now).getCurrentSponsorRegistrarId())
+    assertThat(alreadyTransferredDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
         .isEqualTo("NewRegistrar");
     assertThat(alreadyTransferredDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
 
     pendingDeleteDomain = loadByEntity(pendingDeleteDomain);
-    assertThat(pendingDeleteDomain.cloneProjectedAtInstant(now).getCurrentSponsorRegistrarId())
+    assertThat(pendingDeleteDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
         .isEqualTo("TheRegistrar");
     assertThat(pendingDeleteDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
 
     deletedDomain = loadByEntity(deletedDomain);
-    assertThat(deletedDomain.cloneProjectedAtInstant(now).getCurrentSponsorRegistrarId())
+    assertThat(deletedDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
         .isEqualTo("TheRegistrar");
     assertThat(deletedDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
   }

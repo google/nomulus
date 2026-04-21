@@ -32,7 +32,6 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -299,7 +298,7 @@ class UniformRapidSuspensionCommandTest
         DatabaseHelper.newDomain("evil.tld")
             .asBuilder()
             .setCreationTimeForTest(Instant.parse("2021-10-01T05:01:11Z"))
-            .setRegistrationExpirationTime(DateTime.parse("2022-10-01T05:01:11Z"))
+            .setRegistrationExpirationTime(Instant.parse("2022-10-01T05:01:11Z"))
             .setPersistedCurrentSponsorRegistrarId("CharlestonRoad")
             .build(),
         defaultDsData,
@@ -336,7 +335,7 @@ class UniformRapidSuspensionCommandTest
         DatabaseHelper.newDomain("evil.tld")
             .asBuilder()
             .setCreationTimeForTest(Instant.parse("2021-10-01T05:01:11Z"))
-            .setRegistrationExpirationTime(DateTime.parse("2022-10-01T05:01:11Z"))
+            .setRegistrationExpirationTime(Instant.parse("2022-10-01T05:01:11Z"))
             .setPersistedCurrentSponsorRegistrarId("CharlestonRoad")
             .build(),
         defaultDsData,
@@ -374,7 +373,7 @@ class UniformRapidSuspensionCommandTest
         DatabaseHelper.newDomain("evil.tld")
             .asBuilder()
             .setCreationTimeForTest(Instant.parse("2021-10-01T05:01:11Z"))
-            .setRegistrationExpirationTime(DateTime.parse("2022-10-01T05:01:11Z"))
+            .setRegistrationExpirationTime(Instant.parse("2022-10-01T05:01:11Z"))
             .setPersistedCurrentSponsorRegistrarId("CharlestonRoad")
             .build(),
         defaultDsData,
