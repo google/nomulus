@@ -30,7 +30,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
@@ -301,7 +301,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     doSuccessfulTest("domain_info_response.xml");
   }

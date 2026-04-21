@@ -24,7 +24,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -85,7 +84,7 @@ public final class HostDeleteFlow implements MutatingFlow {
     extensionManager.validate();
     Instant now = tm().getTxTime();
     validateHostName(targetId);
-    checkLinkedDomains(targetId, toDateTime(now));
+    checkLinkedDomains(targetId, now);
     Host existingHost = loadAndVerifyExistence(Host.class, targetId, now);
     verifyNoDisallowedStatuses(existingHost, ImmutableSet.of(StatusValue.PENDING_DELETE));
     if (!isSuperuser) {

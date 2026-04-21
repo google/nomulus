@@ -533,9 +533,8 @@ public class DomainBase extends EppResource {
               GracePeriod.createForRecurrence(
                   GracePeriodStatus.AUTO_RENEW,
                   domain.getRepoId(),
-                  lastAutorenewTime.plus(
-                      Duration.ofMillis(
-                          Tld.get(domain.getTld()).getAutoRenewGracePeriodLength().getMillis())),
+                  lastAutorenewTime.plusMillis(
+                      Tld.get(domain.getTld()).getAutoRenewGracePeriodLength().getMillis()),
                   domain.getCurrentSponsorRegistrarId(),
                   domain.getAutorenewBillingEvent()));
       newLastEppUpdateTime = Optional.of(lastAutorenewTime);

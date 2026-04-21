@@ -16,7 +16,7 @@ package google.registry.rdap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import com.google.common.base.Joiner;
@@ -343,8 +343,8 @@ abstract class AbstractJsonableObject implements Jsonable {
     if (object instanceof Instant instant) {
       // According to RFC 9083 section 3, the syntax of dates and times is defined in RFC3339.
       //
-      // According to RFC3339, we should use ISO8601, so we use ISO_8601_FORMATTER.
-      return new JsonPrimitive(ISO_8601_FORMATTER.format(instant));
+      // According to RFC3339, we should use ISO8601, so we use formatInstant.
+      return new JsonPrimitive(formatInstant(instant));
     }
     if (object == null) {
       return JsonNull.INSTANCE;
