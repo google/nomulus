@@ -27,7 +27,6 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.VKeyConverter_Domain;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.InetAddressSetUserType;
-import google.registry.util.DateTimeUtils;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
@@ -39,7 +38,6 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.hibernate.annotations.Type;
-import org.joda.time.DateTime;
 
 /**
  * A persistable Host resource including mutable and non-mutable fields.
@@ -127,15 +125,8 @@ public class HostBase extends EppResource {
         "HostBase is not an actual persisted entity you can create a key to; use Host instead");
   }
 
-  @Deprecated
   @Override
-  @SuppressWarnings("InlineMeSuggester")
-  public HostBase cloneProjectedAtTime(DateTime now) {
-    return this;
-  }
-
-  @Override
-  public EppResource cloneProjectedAtInstant(Instant now) {
+  public HostBase cloneProjectedAtTime(Instant now) {
     return this;
   }
 
@@ -170,9 +161,8 @@ public class HostBase extends EppResource {
     Instant lastSuperordinateChange =
         Optional.ofNullable(getLastSuperordinateChange()).orElse(getCreationTime());
     Instant lastTransferOfCurrentSuperordinate =
-        Optional.ofNullable(superordinateDomain.getLastTransferTime())
-            .map(DateTimeUtils::toInstant)
-            .orElse(START_INSTANT);
+        Optional.ofNullable(superordinateDomain.getLastTransferTime()).orElse(START_INSTANT);
+
     return lastSuperordinateChange.isBefore(lastTransferOfCurrentSuperordinate)
         ? lastTransferOfCurrentSuperordinate
         : lastTransferTime;

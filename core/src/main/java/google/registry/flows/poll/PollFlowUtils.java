@@ -63,7 +63,7 @@ public final class PollFlowUtils {
       // If the next event falls within the bounds of the end time, then just update the eventTime
       // and re-save it for future autorenew poll messages to be delivered. Otherwise, this
       // autorenew poll message has no more events to deliver and should be deleted.
-      if (nextEventTime.isBefore(autorenewPollMessage.getAutorenewEndTimeInstant())) {
+      if (nextEventTime.isBefore(autorenewPollMessage.getAutorenewEndTime())) {
         tm().put(autorenewPollMessage.asBuilder().setEventTime(nextEventTime).build());
       } else {
         tm().delete(autorenewPollMessage.createVKey());

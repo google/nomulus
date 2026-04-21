@@ -31,6 +31,8 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActi
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RESTORE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
@@ -139,7 +141,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    boolean isExpired = existingDomain.getRegistrationExpirationDateTime().isBefore(now);
+    boolean isExpired = existingDomain.getRegistrationExpirationTime().isBefore(toInstant(now));
     FeesAndCredits feesAndCredits =
         pricingLogic.getRestorePrice(
             Tld.get(existingDomain.getTld()), targetId, toInstant(now), isExpired);
@@ -151,7 +153,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
 
     DateTime newExpirationTime =
-        existingDomain.getRegistrationExpirationDateTime().plusYears(isExpired ? 1 : 0);
+        toDateTime(plusYears(existingDomain.getRegistrationExpirationTime(), isExpired ? 1 : 0));
     // Restore the expiration time on the deleted domain, except if that's already passed, then add
     // a year and bill for it immediately, with no grace period.
     if (isExpired) {
@@ -246,7 +248,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
       String registrarId) {
     return existingDomain
         .asBuilder()
-        .setRegistrationExpirationTime(newExpirationTime)
+        .setRegistrationExpirationTime(toInstant(newExpirationTime))
         .setDeletionTime(END_INSTANT)
         .setStatusValues(null)
         .setGracePeriods(null)

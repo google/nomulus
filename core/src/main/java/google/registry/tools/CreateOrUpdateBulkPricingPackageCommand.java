@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.beust.jcommander.Parameter;
 import google.registry.model.domain.token.AllocationToken;
@@ -107,7 +108,8 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
                 Optional.ofNullable(maxCreates).ifPresent(builder::setMaxCreates);
                 Optional.ofNullable(price).ifPresent(builder::setBulkPrice);
                 Optional.ofNullable(nextBillingDate)
-                    .ifPresent(nextBillingDate -> builder.setNextBillingDate(nextBillingDate));
+                    .ifPresent(
+                        nextBillingDate -> builder.setNextBillingDate(toInstant(nextBillingDate)));
                 if (clearLastNotificationSent()) {
                   builder.setLastNotificationSent((Instant) null);
                 }

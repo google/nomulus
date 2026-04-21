@@ -14,7 +14,6 @@
 
 package google.registry.model.domain;
 
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
@@ -42,7 +41,6 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Set;
 import org.hibernate.Hibernate;
-import org.joda.time.DateTime;
 
 /**
  * A persistable domain resource including mutable and non-mutable fields.
@@ -155,12 +153,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
   }
 
   @Override
-  public Domain cloneProjectedAtTime(final DateTime now) {
-    return cloneDomainProjectedAtTime(this, toInstant(now));
-  }
-
-  @Override
-  public Domain cloneProjectedAtInstant(final Instant now) {
+  public Domain cloneProjectedAtTime(Instant now) {
     return cloneDomainProjectedAtTime(this, now);
   }
 

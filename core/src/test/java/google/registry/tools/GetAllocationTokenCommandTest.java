@@ -54,9 +54,9 @@ class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCo
                 .setDiscountYears(2)
                 .setTokenStatusTransitions(
                     ImmutableSortedMap.of(
-                        DateTimeUtils.START_OF_TIME,
+                        DateTimeUtils.START_INSTANT,
                         AllocationToken.TokenStatus.NOT_STARTED,
-                        fakeClock.nowUtc(),
+                        fakeClock.now(),
                         AllocationToken.TokenStatus.VALID))
                 .setDomainName("foo.bar")
                 .build());

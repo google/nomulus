@@ -19,6 +19,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -338,9 +339,10 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
           verify(
               oldRegistrar.getClientCertificate().isPresent(),
               "Primary cert is absent. Rotation may remove a failover certificate still in use.");
-          builder.setFailoverClientCertificate(oldRegistrar.getClientCertificate().get(), now);
+          builder.setFailoverClientCertificate(
+              oldRegistrar.getClientCertificate().get(), toInstant(now));
         }
-        builder.setClientCertificate(asciiCert, now);
+        builder.setClientCertificate(asciiCert, toInstant(now));
       }
       if (rotatePrimaryCert && clientCertificateFilename == null) {
         throw new IllegalArgumentException("--rotate_primary_cert must be used with --cert_file.");
@@ -351,7 +353,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         if (!asciiCert.equals("")) {
           certificateChecker.validateCertificate(asciiCert);
         }
-        builder.setFailoverClientCertificate(asciiCert, now);
+        builder.setFailoverClientCertificate(asciiCert, toInstant(now));
       }
       Optional.ofNullable(ianaId).ifPresent(i -> builder.setIanaIdentifier(i.orElse(null)));
       Optional.ofNullable(poNumber).ifPresent(builder::setPoNumber);

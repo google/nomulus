@@ -14,8 +14,6 @@
 
 package google.registry.model.domain;
 
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import google.registry.xml.UtcInstantAdapter;
@@ -24,7 +22,6 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.time.Instant;
-import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned when renewing a domain. */
 @XmlRootElement(name = "renData")
@@ -44,26 +41,9 @@ public class DomainRenewData implements ResponseData {
     return instance;
   }
 
-  /**
-   * @deprecated Use {@link #create(String, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static DomainRenewData create(String name, DateTime expirationDate) {
-    return create(name, toInstant(expirationDate));
-  }
-
   /** Returns the expiration date. */
   public Instant getExpirationDate() {
     return expirationDate;
   }
 
-  /**
-   * @deprecated Use {@link #getExpirationDate()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getExpirationDateTime() {
-    return toDateTime(expirationDate);
-  }
 }

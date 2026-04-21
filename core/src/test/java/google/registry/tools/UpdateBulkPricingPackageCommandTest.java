@@ -30,7 +30,6 @@ import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -59,8 +58,8 @@ public class UpdateBulkPricingPackageCommandTest
             .setMaxDomains(100)
             .setMaxCreates(500)
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
-            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
-            .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
+            .setNextBillingDate(Instant.parse("2012-11-12T05:00:00Z"))
+            .setLastNotificationSent(Instant.parse("2010-11-12T05:00:00Z"))
             .build();
     tm().transact(() -> tm().put(bulkPricingPackage));
   }
@@ -83,7 +82,7 @@ public class UpdateBulkPricingPackageCommandTest
     assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(1000);
     assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 2000));
     assertThat(bulkPricingPackage.getNextBillingDate())
-        .isEqualTo(DateTime.parse("2013-03-17T00:00:00Z"));
+        .isEqualTo(Instant.parse("2013-03-17T00:00:00Z"));
     assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 
@@ -132,7 +131,7 @@ public class UpdateBulkPricingPackageCommandTest
     assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(1000);
     assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 2000));
     assertThat(bulkPricingPackage.getNextBillingDate())
-        .isEqualTo(DateTime.parse("2013-03-17T00:00:00Z"));
+        .isEqualTo(Instant.parse("2013-03-17T00:00:00Z"));
     assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 
@@ -153,7 +152,7 @@ public class UpdateBulkPricingPackageCommandTest
     assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(1000);
     assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 2000));
     assertThat(bulkPricingPackage.getNextBillingDate())
-        .isEqualTo(DateTime.parse("2012-11-12T05:00:00Z"));
+        .isEqualTo(Instant.parse("2012-11-12T05:00:00Z"));
     assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 
@@ -174,7 +173,7 @@ public class UpdateBulkPricingPackageCommandTest
     assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(1000);
     assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
     assertThat(bulkPricingPackage.getNextBillingDate())
-        .isEqualTo(DateTime.parse("2013-03-17T00:00:00Z"));
+        .isEqualTo(Instant.parse("2013-03-17T00:00:00Z"));
     assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 
@@ -190,8 +189,8 @@ public class UpdateBulkPricingPackageCommandTest
     assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(1000);
     assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 2000));
     assertThat(bulkPricingPackage.getNextBillingDate())
-        .isEqualTo(DateTime.parse("2012-11-12T05:00:00Z"));
+        .isEqualTo(Instant.parse("2012-11-12T05:00:00Z"));
     assertThat(bulkPricingPackage.getLastNotificationSent().get())
-        .isEqualTo(DateTime.parse("2010-11-12T05:00:00.000Z"));
+        .isEqualTo(Instant.parse("2010-11-12T05:00:00.000Z"));
   }
 }

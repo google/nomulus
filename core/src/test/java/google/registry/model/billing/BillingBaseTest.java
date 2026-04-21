@@ -22,11 +22,11 @@ import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.SerializeUtils.serializeDeserialize;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -43,11 +43,11 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.util.DateTimeUtils;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -100,10 +100,12 @@ public class BillingBaseTest extends EntityTestCase {
                 .setTokenType(UNLIMITED_USE)
                 .setDiscountFraction(0.5)
                 .setTokenStatusTransitions(
-                    ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                        .put(DateTimeUtils.START_OF_TIME, TokenStatus.NOT_STARTED)
-                        .put(DateTime.now(UTC), TokenStatus.VALID)
-                        .put(DateTime.now(UTC).plusWeeks(8), TokenStatus.ENDED)
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, TokenStatus.NOT_STARTED)
+                        .put(Instant.now().truncatedTo(ChronoUnit.MILLIS), TokenStatus.VALID)
+                        .put(
+                            Instant.now().truncatedTo(ChronoUnit.MILLIS).plus(Duration.ofDays(56)),
+                            TokenStatus.ENDED)
                         .build())
                 .build());
 

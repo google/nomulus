@@ -649,16 +649,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return creationTime.getTimestamp();
   }
 
-  /**
-   * @deprecated Use {@link #getCreationTime()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @JsonIgnore
-  public DateTime getCreationDateTime() {
-    return toDateTime(creationTime.getTimestamp());
-  }
-
   public boolean getEscrowEnabled() {
     return escrowEnabled;
   }

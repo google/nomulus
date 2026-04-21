@@ -79,7 +79,7 @@ final class TlsCredentialsTest {
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(SAMPLE_CERT, clock.nowUtc())
+            .setClientCertificate(SAMPLE_CERT, clock.now())
             .build());
     assertThrows(
         MissingRegistrarCertificateException.class,
@@ -97,7 +97,7 @@ final class TlsCredentialsTest {
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(SAMPLE_CERT, clock.nowUtc())
+            .setClientCertificate(SAMPLE_CERT, clock.now())
             .setIpAddressAllowList(ImmutableSet.of(CidrAddressBlock.create("3.5.8.13")))
             .build());
 
@@ -118,7 +118,7 @@ final class TlsCredentialsTest {
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(SAMPLE_CERT, clock.nowUtc())
+            .setClientCertificate(SAMPLE_CERT, clock.now())
             .setIpAddressAllowList(ImmutableSet.of(CidrAddressBlock.create("3.5.8.13")))
             .build());
 
@@ -155,8 +155,8 @@ final class TlsCredentialsTest {
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(null, clock.nowUtc())
-            .setFailoverClientCertificate(null, clock.nowUtc())
+            .setClientCertificate(null, clock.now())
+            .setFailoverClientCertificate(null, clock.now())
             .build());
     // This would throw a RegistrarCertificateNotConfiguredException if cert hashes wren't bypassed.
     tls.validateCertificateHash(Registrar.loadByRegistrarId("TheRegistrar").get());
@@ -173,8 +173,8 @@ final class TlsCredentialsTest {
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(null, clock.nowUtc())
-            .setFailoverClientCertificate(SAMPLE_CERT, clock.nowUtc())
+            .setClientCertificate(null, clock.now())
+            .setFailoverClientCertificate(SAMPLE_CERT, clock.now())
             .build());
     tls.validateCertificateHash(Registrar.loadByRegistrarId("TheRegistrar").get());
   }

@@ -124,7 +124,7 @@ public final class DomainInfoFlow implements MutatingFlow {
             .setCreationTime(domain.getCreationTime())
             .setLastEppUpdateTime(domain.getLastEppUpdateTime())
             .setRegistrationExpirationTime(domain.getRegistrationExpirationTime())
-            .setLastTransferTime(domain.getLastTransferTimeInstant());
+            .setLastTransferTime(domain.getLastTransferTime());
 
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
