@@ -17,6 +17,7 @@ package google.registry.model;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.minusDays;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.host.Host;
@@ -39,7 +40,7 @@ public class EppResourceTest extends EntityTestCase {
         .containsExactly(originalHost.createVKey(), originalHost);
     Host modifiedHost =
         persistResource(
-            originalHost.asBuilder().setLastTransferTime(fakeClock.nowUtc().minusDays(60)).build());
+            originalHost.asBuilder().setLastTransferTime(minusDays(fakeClock.now(), 60)).build());
     assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalHost.createVKey())))
         .containsExactly(originalHost.createVKey(), originalHost);
     assertThat(ForeignKeyUtils.loadResource(Host.class, "ns1.example.com", fakeClock.nowUtc()))

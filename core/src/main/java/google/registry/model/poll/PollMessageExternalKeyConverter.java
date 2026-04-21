@@ -16,6 +16,8 @@ package google.registry.model.poll;
 
 import com.google.common.base.Splitter;
 import google.registry.persistence.VKey;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -41,7 +43,10 @@ public final class PollMessageExternalKeyConverter {
 
   /** Returns an external poll message ID for the given poll message. */
   public static String makePollMessageExternalId(PollMessage pollMessage) {
-    return String.format("%d-%d", pollMessage.getId(), pollMessage.getEventTime().getYear());
+    return String.format(
+        "%d-%d",
+        pollMessage.getId(),
+        ZonedDateTime.ofInstant(pollMessage.getEventTime(), ZoneOffset.UTC).getYear());
   }
 
   /**

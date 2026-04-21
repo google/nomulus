@@ -355,7 +355,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * The unicode-aware representation of the TLD associated with this {@link Tld}.
    *
    * <p>This will be equal to {@link #tldStr} for ASCII TLDs, but will be non-ASCII for IDN TLDs. We
-   * store this in a field so that it will be retained upon import into BigQuery.
+   * store this in a field so that it will be retained upon import into BigQuery. import
+   * java.time.Instant;
    */
   @Column(nullable = false)
   String tldUnicode;
@@ -652,9 +653,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /**
    * @deprecated Use {@link #getCreationTime()}
    */
-  @JsonIgnore
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
+  @JsonIgnore
   public DateTime getCreationDateTime() {
     return toDateTime(creationTime.getTimestamp());
   }

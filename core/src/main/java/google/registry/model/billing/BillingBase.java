@@ -17,8 +17,6 @@ package google.registry.model.billing;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
@@ -38,7 +36,6 @@ import jakarta.persistence.MappedSuperclass;
 import java.time.Instant;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** A billable event in a domain's lifecycle. */
 @MappedSuperclass
@@ -173,16 +170,7 @@ public abstract class BillingBase extends ImmutableObject
     return domainRepoId;
   }
 
-  /**
-   * @deprecated Use {@link #getEventTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getEventTime() {
-    return toDateTime(eventTime);
-  }
-
-  public Instant getEventTimeInstant() {
+  public Instant getEventTime() {
     return eventTime;
   }
 
@@ -236,15 +224,6 @@ public abstract class BillingBase extends ImmutableObject
     public B setRegistrarId(String registrarId) {
       getInstance().clientId = registrarId;
       return thisCastToDerived();
-    }
-
-    /**
-     * @deprecated Use {@link #setEventTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public B setEventTime(DateTime eventTime) {
-      return setEventTime(toInstant(eventTime));
     }
 
     public B setEventTime(Instant eventTime) {

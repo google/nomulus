@@ -121,7 +121,7 @@ public final class DomainInfoFlow implements MutatingFlow {
             .setStatusValues(domain.getStatusValues())
             .setNameservers(
                 hostsRequest.requestDelegated() ? domain.loadNameserverHostNames() : null)
-            .setCreationTime(domain.getCreationTimeInstant())
+            .setCreationTime(domain.getCreationTime())
             .setLastEppUpdateTime(domain.getLastEppUpdateTime())
             .setRegistrationExpirationTime(domain.getRegistrationExpirationTime())
             .setLastTransferTime(domain.getLastTransferTimeInstant());

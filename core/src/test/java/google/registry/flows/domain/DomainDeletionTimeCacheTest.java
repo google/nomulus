@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.plusMinutes;
 import static google.registry.util.DateTimeUtils.toDateTime;
 
 import google.registry.model.domain.Domain;
@@ -87,7 +88,7 @@ public class DomainDeletionTimeCacheTest {
   void testCache_expires() {
     Domain domain = persistActiveDomain("domain.tld");
     assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_OF_TIME);
-    Instant elevenMinutesFromNow = clock.now().plus(java.time.Duration.ofMinutes(11));
+    Instant elevenMinutesFromNow = plusMinutes(clock.now(), 11);
     persistDomainAsDeleted(domain, toDateTime(elevenMinutesFromNow));
     clock.advanceBy(Duration.standardMinutes(30));
     assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(toDateTime(elevenMinutesFromNow));

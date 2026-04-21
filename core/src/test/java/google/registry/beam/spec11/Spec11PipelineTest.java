@@ -287,7 +287,7 @@ class Spec11PipelineTest {
         .setDomainName(domainName)
         .setRepoId(repoId)
         .setCreationRegistrarId(registrar.getRegistrarId())
-        .setLastEppUpdateTime(fakeClock.nowUtc())
+        .setLastEppUpdateTime(fakeClock.now())
         .setLastEppUpdateRegistrarId(registrar.getRegistrarId())
         .setLastTransferTime(fakeClock.nowUtc())
         .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())

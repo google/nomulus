@@ -96,9 +96,9 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
         .map(
             existingRecurrence -> {
               TimeOfYear timeOfYear = existingRecurrence.getRecurrenceTimeOfYear();
-              Instant newLastExpansion = timeOfYear.getLastInstanceBeforeOrAtInstant(now);
+              Instant newLastExpansion = timeOfYear.getLastInstanceBeforeOrAt(now);
               // event time should be the next date of billing in the future
-              Instant eventTime = timeOfYear.getNextInstanceAtOrAfterInstant(now);
+              Instant eventTime = timeOfYear.getNextInstanceAtOrAfter(now);
               return existingRecurrence
                   .asBuilder()
                   .setRecurrenceEndTime(END_INSTANT)
@@ -123,10 +123,10 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
                               "Domain %s does not exist or has been deleted", domainName)));
       BillingRecurrence billingRecurrence = tm().loadByKey(domain.getAutorenewBillingEvent());
       checkArgument(
-          !billingRecurrence.getRecurrenceEndTimeInstant().equals(END_INSTANT),
-          "Domain %s's recurrence's end date is already END_OF_TIME",
+          !billingRecurrence.getRecurrenceEndTime().equals(END_INSTANT),
+          "Domain %s's recurrence's end date is already END_INSTANT",
           domainName);
-      // Double-check that there are no non-linked BillingRecurrences that have an END_OF_TIME end.
+      // Double-check that there are no non-linked BillingRecurrences that have an END_INSTANT end.
       // If this is the case, something has been mis-linked.
       ImmutableList<BillingRecurrence> allRecurrencesForDomain =
           tm().createQueryComposer(BillingRecurrence.class)
@@ -135,9 +135,9 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
       allRecurrencesForDomain.forEach(
           recurrence ->
               checkArgument(
-                  !recurrence.getRecurrenceEndTimeInstant().equals(END_INSTANT),
+                  !recurrence.getRecurrenceEndTime().equals(END_INSTANT),
                   "There exists a recurrence with id %s for domain %s with an end date of"
-                      + " END_OF_TIME",
+                      + " END_INSTANT",
                   recurrence.getId(),
                   domainName));
 

@@ -73,7 +73,7 @@ final class GetHistoryEntriesCommand implements Command {
       System.out.printf(
           "Client: %s\nTime: %s\nClient TRID: %s\nServer TRID: %s\n%s\n",
           entry.getRegistrarId(),
-          entry.getModificationTimeInstant(),
+          entry.getModificationTime(),
           entry.getTrid() == null ? null : entry.getTrid().getClientTransactionId().orElse(null),
           entry.getTrid() == null ? null : entry.getTrid().getServerTransactionId(),
           entry.getXmlBytes() == null

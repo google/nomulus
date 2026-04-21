@@ -263,7 +263,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
                             .collect(toImmutableSet()),
                         secDnsUpdate.get())
                     : domain.getDsData())
-            .setLastEppUpdateTime(now)
+            .setLastEppUpdateTime(toInstant(now))
             .setLastEppUpdateRegistrarId(registrarId)
             .addStatusValues(add.getStatusValues())
             .removeStatusValues(remove.getStatusValues())
@@ -319,8 +319,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
                   .setTargetId(targetId)
                   .setRegistrarId(registrarId)
                   .setCost(Tld.get(existingDomain.getTld()).getServerStatusChangeBillingCost())
-                  .setEventTime(now)
-                  .setBillingTime(now)
+                  .setEventTime(toInstant(now))
+                  .setBillingTime(toInstant(now))
                   .setDomainHistory(historyEntry)
                   .build());
         }
@@ -369,7 +369,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
     return Optional.ofNullable(
         new PollMessage.OneTime.Builder()
             .setHistoryEntry(historyEntry)
-            .setEventTime(now)
+            .setEventTime(toInstant(now))
             .setRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
             .setMsg(msg)
             .setResponseData(

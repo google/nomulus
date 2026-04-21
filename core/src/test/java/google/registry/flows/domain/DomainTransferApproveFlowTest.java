@@ -43,7 +43,6 @@ import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -214,7 +213,7 @@ class DomainTransferApproveFlowTest
     assertTransferApproved(domain, originalTransferData);
     assertAboutDomains().that(domain).hasRegistrationExpirationTime(expectedExpirationTime);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
-        .isEqualTo(toDateTime(expectedExpirationTime));
+        .isEqualTo(expectedExpirationTime);
     // The poll message (in the future) to the losing registrar for implicit ack should be gone.
     assertThat(getPollMessages(domain, "TheRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();
 
@@ -222,9 +221,7 @@ class DomainTransferApproveFlowTest
     // should be one at the current time to the gaining registrar, as well as one at the domain's
     // autorenew time.
     assertThat(getPollMessages(domain, "NewRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
-    assertThat(
-            getPollMessages(
-                domain, "NewRegistrar", toDateTime(domain.getRegistrationExpirationTime())))
+    assertThat(getPollMessages(domain, "NewRegistrar", domain.getRegistrationExpirationTime()))
         .hasSize(2);
 
     PollMessage gainingTransferPollMessage =
@@ -233,11 +230,11 @@ class DomainTransferApproveFlowTest
         getOnlyPollMessage(
             domain,
             "NewRegistrar",
-            toDateTime(domain.getRegistrationExpirationTime()),
+            domain.getRegistrationExpirationTime(),
             PollMessage.Autorenew.class);
-    assertThat(gainingTransferPollMessage.getEventTime()).isEqualTo(clock.nowUtc());
+    assertThat(gainingTransferPollMessage.getEventTime()).isEqualTo(clock.now());
     assertThat(gainingAutorenewPollMessage.getEventTime())
-        .isEqualTo(toDateTime(domain.getRegistrationExpirationTime()));
+        .isEqualTo(domain.getRegistrationExpirationTime());
     DomainTransferResponse transferResponse =
         gainingTransferPollMessage
             .getResponseData()
@@ -285,8 +282,7 @@ class DomainTransferApproveFlowTest
             .setTargetId(domain.getDomainName())
             .setEventTime(clock.now())
             .setBillingTime(
-                toDateTime(
-                    clock.now().plusMillis(registry.getTransferGracePeriodLength().getMillis())))
+                clock.now().plusMillis(registry.getTransferGracePeriodLength().getMillis()))
             .setRegistrarId("NewRegistrar")
             .setCost(Money.of(USD, 11).multipliedBy(expectedYearsToCharge))
             .setPeriodYears(expectedYearsToCharge)
@@ -318,8 +314,7 @@ class DomainTransferApproveFlowTest
             GracePeriod.create(
                 GracePeriodStatus.TRANSFER,
                 domain.getRepoId(),
-                toDateTime(
-                    clock.now().plusMillis(registry.getTransferGracePeriodLength().getMillis())),
+                clock.now().plusMillis(registry.getTransferGracePeriodLength().getMillis()),
                 "NewRegistrar",
                 null),
             transferBillingEvent));
@@ -517,9 +512,8 @@ class DomainTransferApproveFlowTest
             .setRegistrarId("TheRegistrar")
             .setEventTime(clock.now()) // The cancellation happens at the moment of transfer.
             .setBillingTime(
-                toDateTime(
-                    oldExpirationTime.plusMillis(
-                        Tld.get("tld").getAutoRenewGracePeriodLength().getMillis())))
+                oldExpirationTime.plusMillis(
+                    Tld.get("tld").getAutoRenewGracePeriodLength().getMillis()))
             .setBillingRecurrence(domain.getAutorenewBillingEvent()));
   }
 

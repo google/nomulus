@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -176,14 +177,14 @@ class ExportDomainListsActionTest {
                 GracePeriod.createWithoutBillingEvent(
                     GracePeriodStatus.REDEMPTION,
                     redemption.getRepoId(),
-                    clock.nowUtc().plusDays(20),
+                    plusDays(clock.now(), 20),
                     redemption.getCurrentSponsorRegistrarId()))
             .build());
     persistResource(
         persistActiveDomain("pendingdelete.tld")
             .asBuilder()
             .addStatusValue(StatusValue.PENDING_DELETE)
-            .setDeletionTime(clock.nowUtc().plusDays(3))
+            .setDeletionTime(plusDays(clock.now(), 3))
             .build());
 
     action.run();

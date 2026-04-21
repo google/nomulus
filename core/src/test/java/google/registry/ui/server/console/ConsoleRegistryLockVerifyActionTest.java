@@ -87,8 +87,8 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     saveRegistryLock(
         createDefaultLockBuilder()
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(clock.now())
+            .setUnlockRequestTime(clock.now())
             .build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_OK);
@@ -121,8 +121,8 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
     saveRegistryLock(
         createDefaultLockBuilder()
             .isSuperuser(true)
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(clock.now())
+            .setUnlockRequestTime(clock.now())
             .build());
     user =
         user.asBuilder()
@@ -172,8 +172,8 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
     saveRegistryLock(
         createDefaultLockBuilder()
             .isSuperuser(true)
-            .setLockCompletionTime(clock.nowUtc())
-            .setUnlockRequestTime(clock.nowUtc())
+            .setLockCompletionTime(clock.now())
+            .setUnlockRequestTime(clock.now())
             .build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);

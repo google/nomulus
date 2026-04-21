@@ -33,6 +33,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -143,7 +144,8 @@ public final class DomainTransferRejectFlow implements MutatingFlow {
         .setDomainTransactionRecords(
             union(
                 cancelingRecords,
-                DomainTransactionRecord.create(newDomain.getTld(), now, TRANSFER_NACKED, 1)))
+                DomainTransactionRecord.create(
+                    newDomain.getTld(), toInstant(now), TRANSFER_NACKED, 1)))
         .setDomain(newDomain)
         .build();
   }

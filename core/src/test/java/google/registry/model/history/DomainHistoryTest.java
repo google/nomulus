@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.newHostWithRoid;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
@@ -96,7 +96,7 @@ public class DomainHistoryTest extends EntityTestCase {
         .setGracePeriods(
             ImmutableSet.of(
                 GracePeriod.create(
-                    GracePeriodStatus.ADD, "domainRepoId", END_OF_TIME, "clientId", null)))
+                    GracePeriodStatus.ADD, "domainRepoId", END_INSTANT, "clientId", null)))
         .build();
   }
 
@@ -111,7 +111,7 @@ public class DomainHistoryTest extends EntityTestCase {
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("tld")
-            .setReportingTime(fakeClock.nowUtc())
+            .setReportingTime(fakeClock.now())
             .setReportField(TransactionReportField.NET_ADDS_1_YR)
             .setReportAmount(1)
             .build();
@@ -119,7 +119,7 @@ public class DomainHistoryTest extends EntityTestCase {
     return new DomainHistory.Builder()
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-        .setModificationTime(fakeClock.nowUtc())
+        .setModificationTime(fakeClock.now())
         .setRegistrarId("TheRegistrar")
         .setTrid(Trid.create("ABC-123", "server-trid"))
         .setBySuperuser(false)

@@ -16,6 +16,7 @@ package google.registry.testing;
 
 import static com.google.common.truth.Fact.simpleFact;
 import static com.google.common.truth.Truth.assertAbout;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
@@ -24,6 +25,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.TruthChainer.And;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -65,6 +67,11 @@ public class HistoryEntrySubject extends Subject {
   }
 
   public And<HistoryEntrySubject> hasModificationTime(DateTime modificationTime) {
+    return hasValue(
+        toInstant(modificationTime), actual.getModificationTime(), "getModificationTime()");
+  }
+
+  public And<HistoryEntrySubject> hasModificationTime(Instant modificationTime) {
     return hasValue(modificationTime, actual.getModificationTime(), "getModificationTime()");
   }
 

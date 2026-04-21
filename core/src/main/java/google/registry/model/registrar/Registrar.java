@@ -471,7 +471,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public DateTime getLastUpdateTime() {
-    return getUpdateTimestamp().getTimestampDateTime();
+    return toDateTime(getUpdateTimestamp().getTimestamp());
   }
 
   public Instant getLastUpdateTimeInstant() {

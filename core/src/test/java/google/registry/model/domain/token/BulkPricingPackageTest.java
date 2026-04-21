@@ -26,6 +26,7 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import java.time.Instant;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -51,7 +52,7 @@ public class BulkPricingPackageTest extends EntityTestCase {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(TokenType.BULK_PRICING)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
@@ -82,7 +83,7 @@ public class BulkPricingPackageTest extends EntityTestCase {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(TokenType.SINGLE_USE)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setDiscountFraction(1.0)
