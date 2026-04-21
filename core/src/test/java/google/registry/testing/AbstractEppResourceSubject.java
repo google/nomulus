@@ -21,6 +21,7 @@ import static com.google.common.truth.OptionalSubject.optionals;
 import static google.registry.model.EppResourceUtils.isActive;
 import static google.registry.testing.DatabaseHelper.getHistoryEntriesOfType;
 import static google.registry.testing.HistoryEntrySubject.historyEntries;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 
 import com.google.common.collect.ImmutableSet;
@@ -151,7 +152,7 @@ abstract class AbstractEppResourceSubject<
   }
 
   public And<S> hasDeletionTime(DateTime deletionTime) {
-    return hasValue(deletionTime, actual.getDeletionDateTime(), "getDeletionTime()");
+    return hasValue(toInstant(deletionTime), actual.getDeletionTime(), "getDeletionTime()");
   }
 
   public And<S> hasDeletionTime(Instant deletionTime) {
@@ -159,7 +160,8 @@ abstract class AbstractEppResourceSubject<
   }
 
   public And<S> hasLastEppUpdateTime(DateTime lastUpdateTime) {
-    return hasValue(lastUpdateTime, actual.getLastEppUpdateDateTime(), "has lastEppUpdateTime");
+    return hasValue(
+        toInstant(lastUpdateTime), actual.getLastEppUpdateTime(), "has lastEppUpdateTime");
   }
 
   public And<S> hasLastEppUpdateTime(Instant lastUpdateTime) {
@@ -167,8 +169,8 @@ abstract class AbstractEppResourceSubject<
   }
 
   public And<S> hasLastEppUpdateTimeAtLeast(DateTime before) {
-    DateTime lastEppUpdateTime = actual.getLastEppUpdateDateTime();
-    check("getLastEppUpdateTime()").that(lastEppUpdateTime).isAtLeast(before);
+    Instant lastEppUpdateTime = actual.getLastEppUpdateTime();
+    check("getLastEppUpdateTime()").that(lastEppUpdateTime).isAtLeast(toInstant(before));
     return andChainer();
   }
 

@@ -19,7 +19,7 @@ import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.host.Host;
@@ -52,7 +52,7 @@ class EppResourceUtilsTest {
     // Don't save a commit log, we shouldn't need one.
     Host host =
         persistResource(
-            newHost("ns1.cat.tld").asBuilder().setCreationTimeForTest(clock.nowUtc()).build());
+            newHost("ns1.cat.tld").asBuilder().setCreationTimeForTest(clock.now()).build());
     assertThat(loadAtPointInTime(host, clock.nowUtc().minus(Duration.millis(1)))).isNull();
   }
 
@@ -62,7 +62,7 @@ class EppResourceUtilsTest {
     // Don't save a commit log, we shouldn't need one.
     Host host =
         persistResource(
-            newHost("ns1.cat.tld").asBuilder().setCreationTimeForTest(START_OF_TIME).build());
+            newHost("ns1.cat.tld").asBuilder().setCreationTimeForTest(START_INSTANT).build());
     assertThat(loadAtPointInTime(host, clock.nowUtc())).isEqualTo(host);
   }
 }

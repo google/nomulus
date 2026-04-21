@@ -26,7 +26,7 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -124,7 +124,7 @@ public class DomainPricingLogicTest {
                 .setReason(Reason.RENEW)
                 .setRenewalPriceBehavior(renewalPriceBehavior)
                 .setRenewalPrice(renewalPrice.orElse(null))
-                .setRecurrenceEndTime(END_OF_TIME)
+                .setRecurrenceEndTime(END_INSTANT)
                 .setTargetId(domain.getDomainName())
                 .build());
     persistResource(

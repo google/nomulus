@@ -23,7 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistDomainWithDependentR
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.plusYears;
 
 import com.google.common.base.Ascii;
@@ -154,7 +154,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setTargetId(domain.getDomainName())
         .setRegistrarId("NewRegistrar")
         .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
-        .setRecurrenceEndTime(END_OF_TIME)
+        .setRecurrenceEndTime(END_INSTANT)
         .setDomainHistory(
             getOnlyHistoryEntryOfType(
                 domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST, DomainHistory.class))

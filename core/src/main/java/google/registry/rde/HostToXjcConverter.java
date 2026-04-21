@@ -62,7 +62,9 @@ final class HostToXjcConverter {
   /** Converts {@link Host} to {@link XjcRdeHost}. */
   static XjcRdeHost convertExternalHost(Host model) {
     return convertHostCommon(
-        model, model.getPersistedCurrentSponsorRegistrarId(), model.getLastTransferTime());
+        model,
+        model.getPersistedCurrentSponsorRegistrarId(),
+        toDateTime(model.getLastTransferTime()));
   }
 
   private static XjcRdeHost convertHostCommon(
@@ -70,8 +72,8 @@ final class HostToXjcConverter {
     XjcRdeHost bean = new XjcRdeHost();
     bean.setName(model.getHostName());
     bean.setRoid(model.getRepoId());
-    bean.setCrDate(model.getCreationTime());
-    bean.setUpDate(model.getLastEppUpdateDateTime());
+    bean.setCrDate(toDateTime(model.getCreationTime()));
+    bean.setUpDate(toDateTime(model.getLastEppUpdateTime()));
     bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));
     bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateRegistrarId(), null));
     bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));

@@ -36,8 +36,8 @@ import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import java.net.InetAddress;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Static utility functions for host flows. */
 public class HostFlowUtils {
@@ -90,8 +90,8 @@ public class HostFlowUtils {
   }
 
   /** Return the {@link Domain} this host is subordinate to, or null for external hosts. */
-  public static Optional<Domain> lookupSuperordinateDomain(
-      InternetDomainName hostName, DateTime now) throws EppException {
+  public static Optional<Domain> lookupSuperordinateDomain(InternetDomainName hostName, Instant now)
+      throws EppException {
     Optional<InternetDomainName> tld = findTldForName(hostName);
     if (tld.isEmpty()) {
       // This is an host on a TLD we don't run, therefore obviously external, so we are done.

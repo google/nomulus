@@ -26,6 +26,7 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.BulkPricingPackage;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -44,7 +45,7 @@ public class UpdateBulkPricingPackageCommandTest
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(TokenType.BULK_PRICING)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
@@ -92,7 +93,7 @@ public class UpdateBulkPricingPackageCommandTest
         new AllocationToken.Builder()
             .setToken("nullPackage")
             .setTokenType(TokenType.BULK_PRICING)
-            .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+            .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)

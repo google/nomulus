@@ -27,6 +27,7 @@ import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HostSubject.assertAboutHosts;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -55,7 +56,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.DatabaseHelper;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostCreateFlow}. */
@@ -79,7 +80,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
 
   HostCreateFlowTest() {
     setEppHostCreateInput("ns1.example.tld", null);
-    clock.setTo(DateTime.parse("1999-04-03T22:00:00.0Z"));
+    clock.setTo(Instant.parse("1999-04-03T22:00:00.0Z"));
   }
 
   private void doSuccessfulTest() throws Exception {
@@ -225,7 +226,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     persistResource(
         DatabaseHelper.newDomain("example.tld")
             .asBuilder()
-            .setDeletionTime(clock.nowUtc().plusDays(35))
+            .setDeletionTime(plusDays(clock.now(), 35))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());
     clock.advanceOneMilli();

@@ -652,9 +652,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /**
    * @deprecated Use {@link #getCreationTime()}
    */
-  @JsonIgnore
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
+  @JsonIgnore
   public DateTime getCreationDateTime() {
     return toDateTime(creationTime.getTimestamp());
   }

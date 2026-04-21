@@ -14,6 +14,7 @@
 
 package google.registry.rde;
 
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
@@ -88,7 +89,7 @@ final class DomainToXjcConverter {
     // o  An OPTIONAL <crDate> element that contains the date and time of
     //    the domain name object creation.  This element MUST be present if
     //    the domain name has been allocated.
-    bean.setCrDate(model.getCreationTime());
+    bean.setCrDate(toDateTime(model.getCreationTime()));
 
     // o  An OPTIONAL <exDate> element that contains the date and time
     //    identifying the end (expiration) of the domain name object's
@@ -100,7 +101,7 @@ final class DomainToXjcConverter {
     //    the most recent domain-name-object modification.  This element
     //    MUST NOT be present if the domain name object has never been
     //    modified.
-    bean.setUpDate(model.getLastEppUpdateDateTime());
+    bean.setUpDate(toDateTime(model.getLastEppUpdateTime()));
 
     // o  An OPTIONAL <upRr> element that contains the identifier of the
     //    registrar that last updated the domain name object.  This element
@@ -225,9 +226,9 @@ final class DomainToXjcConverter {
         XjcEppcomTrStatusType.fromValue(model.getTransferStatus().getXmlName()));
     bean.setReRr(RdeUtils.makeXjcRdeRrType(model.getGainingRegistrarId()));
     bean.setAcRr(RdeUtils.makeXjcRdeRrType(model.getLosingRegistrarId()));
-    bean.setReDate(model.getTransferRequestTime());
-    bean.setAcDate(model.getPendingTransferExpirationDateTime());
-    bean.setExDate(model.getTransferredRegistrationExpirationDateTime());
+    bean.setReDate(toDateTime(model.getTransferRequestTime()));
+    bean.setAcDate(toDateTime(model.getPendingTransferExpirationTime()));
+    bean.setExDate(toDateTime(model.getTransferredRegistrationExpirationTime()));
     return bean;
   }
 

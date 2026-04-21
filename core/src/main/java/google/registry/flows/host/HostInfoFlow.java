@@ -35,7 +35,7 @@ import google.registry.model.host.HostInfoData;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * An EPP flow that returns information about a host.
@@ -64,7 +64,7 @@ public final class HostInfoFlow implements TransactionalFlow {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate(); // There are no legal extensions for this flow.
     validateHostName(targetId);
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     Host host = loadAndVerifyExistence(Host.class, targetId, now);
     ImmutableSet.Builder<StatusValue> statusValues = new ImmutableSet.Builder<>();
     statusValues.addAll(host.getStatusValues());
@@ -77,7 +77,7 @@ public final class HostInfoFlow implements TransactionalFlow {
     // there is no superordinate domain, the host's own values for these fields will be correct.
     if (host.isSubordinate()) {
       Domain superordinateDomain =
-          tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now);
+          tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtInstant(now);
       hostInfoDataBuilder
           .setCurrentSponsorRegistrarId(superordinateDomain.getCurrentSponsorRegistrarId())
           .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));
@@ -87,7 +87,7 @@ public final class HostInfoFlow implements TransactionalFlow {
     } else {
       hostInfoDataBuilder
           .setCurrentSponsorRegistrarId(host.getPersistedCurrentSponsorRegistrarId())
-          .setLastTransferTime(host.getLastTransferTimeInstant());
+          .setLastTransferTime(host.getLastTransferTime());
     }
     return responseBuilder
         .setResData(
@@ -97,7 +97,7 @@ public final class HostInfoFlow implements TransactionalFlow {
                 .setStatusValues(statusValues.build())
                 .setInetAddresses(host.getInetAddresses())
                 .setCreationRegistrarId(host.getCreationRegistrarId())
-                .setCreationTime(host.getCreationTimeInstant())
+                .setCreationTime(host.getCreationTime())
                 .setLastEppUpdateRegistrarId(host.getLastEppUpdateRegistrarId())
                 .setLastEppUpdateTime(host.getLastEppUpdateTime())
                 .build())

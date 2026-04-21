@@ -61,7 +61,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
         .and()
         .hasRegistrarId("AdminRegistrar")
         .and()
-        .hasModificationTime(fakeClock.nowUtc())
+        .hasModificationTime(fakeClock.now())
         .and()
         .hasMetadataRequestedByRegistrar(false);
     assertPollMessages(
@@ -70,7 +70,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
             .setHistoryEntry(synthetic)
             .setMsg("This domain is bad")
             .setRegistrarId("TheRegistrar")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .build());
   }
 
@@ -93,7 +93,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
         .and()
         .hasRegistrarId("AdminRegistrar")
         .and()
-        .hasModificationTime(fakeClock.nowUtc())
+        .hasModificationTime(fakeClock.now())
         .and()
         .hasMetadataRequestedByRegistrar(false);
     assertPollMessages(
@@ -102,7 +102,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
             .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("TheRegistrar")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .build());
     assertPollMessages(
         "NewRegistrar",
@@ -110,7 +110,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
             .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("NewRegistrar")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .build());
     assertPollMessages(
         "foobaz",
@@ -118,7 +118,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
             .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("foobaz")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .build());
   }
 
@@ -138,7 +138,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
         .and()
         .hasRegistrarId("AdminRegistrar")
         .and()
-        .hasModificationTime(fakeClock.nowUtc())
+        .hasModificationTime(fakeClock.now())
         .and()
         .hasMetadataRequestedByRegistrar(false);
     assertPollMessages(
@@ -147,7 +147,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
             .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("TheRegistrar")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .build());
     assertPollMessages(
         "NewRegistrar",
@@ -155,7 +155,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
             .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("NewRegistrar")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .build());
     assertPollMessages(
         "foobaz",
@@ -163,7 +163,7 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
             .setHistoryEntry(synthetic)
             .setMsg("This domain needs work")
             .setRegistrarId("foobaz")
-            .setEventTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
             .build());
   }
 

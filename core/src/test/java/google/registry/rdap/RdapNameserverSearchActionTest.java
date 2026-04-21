@@ -25,6 +25,8 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static google.registry.testing.GsonSubject.assertAboutJson;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusMonths;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -169,7 +171,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
         FullFieldsTestEntityHelper.makeAndPersistHost(
                 "nsdeleted.cat.lol", "4.3.2.1", clock.nowUtc().minusYears(1))
             .asBuilder()
-            .setDeletionTime(clock.nowUtc().minusMonths(1))
+            .setDeletionTime(minusMonths(clock.now(), 1))
             .build());
   }
 
@@ -523,7 +525,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatchDeletedHost_foundTheOtherHost() {
-    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
     assertAboutJson()
         .that(generateActualJsonWithName("ns*.cat.lol"))
         .isEqualTo(
@@ -538,7 +540,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatchDeletedHost_notFound() {
-    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
     assertAboutJson()
         .that(generateActualJsonWithName("ns1.cat.lol"))
         .isEqualTo(generateExpectedJsonError("No nameservers found", 404));
@@ -548,7 +550,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatchDeletedHostWithWildcard_notFound() {
-    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
     assertAboutJson()
         .that(generateActualJsonWithName("cat.lo*"))
         .isEqualTo(generateExpectedJsonError("No nameservers found", 404));
@@ -764,7 +766,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testAddressMatchDeletedHost_notFound() {
-    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
     assertAboutJson()
         .that(generateActualJsonWithIp("1.2.3.4"))
         .isEqualTo(generateExpectedJsonError("No nameservers found", 404));

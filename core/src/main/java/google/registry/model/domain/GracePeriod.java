@@ -16,7 +16,6 @@ package google.registry.model.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -33,7 +32,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /**
  * A domain grace period with an expiration time.
@@ -101,22 +99,6 @@ public class GracePeriod extends GracePeriodBase {
   }
 
   /**
-   * Creates a GracePeriod for an (optional) OneTime billing event.
-   *
-   * @deprecated Use {@link #create(GracePeriodStatus, String, Instant, String, VKey)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static GracePeriod create(
-      GracePeriodStatus type,
-      String domainRepoId,
-      DateTime expirationTime,
-      String registrarId,
-      @Nullable VKey<BillingEvent> billingEventOneTime) {
-    return create(type, domainRepoId, toInstant(expirationTime), registrarId, billingEventOneTime);
-  }
-
-  /**
    * Creates a GracePeriod for an (optional) OneTime billing event and a given {@link
    * #gracePeriodId}.
    *
@@ -134,31 +116,6 @@ public class GracePeriod extends GracePeriodBase {
       @Nullable Long gracePeriodId) {
     return createInternal(
         type, domainRepoId, expirationTime, registrarId, billingEventOneTime, null, gracePeriodId);
-  }
-
-  /**
-   * Creates a GracePeriod for an (optional) OneTime billing event and a given {@link
-   * #gracePeriodId}.
-   *
-   * @deprecated Use {@link #create(GracePeriodStatus, String, Instant, String, VKey, Long)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @VisibleForTesting
-  public static GracePeriod create(
-      GracePeriodStatus type,
-      String domainRepoId,
-      DateTime expirationTime,
-      String registrarId,
-      @Nullable VKey<BillingEvent> billingEventOneTime,
-      @Nullable Long gracePeriodId) {
-    return create(
-        type,
-        domainRepoId,
-        toInstant(expirationTime),
-        registrarId,
-        billingEventOneTime,
-        gracePeriodId);
   }
 
   public static GracePeriod createFromHistory(GracePeriodHistory history) {
@@ -184,23 +141,6 @@ public class GracePeriod extends GracePeriodBase {
         type, domainRepoId, expirationTime, registrarId, null, billingEventRecurrence, null);
   }
 
-  /**
-   * Creates a GracePeriod for a Recurrence billing event.
-   *
-   * @deprecated Use {@link #createForRecurrence(GracePeriodStatus, String, Instant, String, VKey)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static GracePeriod createForRecurrence(
-      GracePeriodStatus type,
-      String domainRepoId,
-      DateTime expirationTime,
-      String registrarId,
-      VKey<BillingRecurrence> billingEventRecurrence) {
-    return createForRecurrence(
-        type, domainRepoId, toInstant(expirationTime), registrarId, billingEventRecurrence);
-  }
-
   /** Creates a GracePeriod for a Recurrence billing event and a given {@link #gracePeriodId}. */
   @VisibleForTesting
   public static GracePeriod createForRecurrence(
@@ -221,47 +161,10 @@ public class GracePeriod extends GracePeriodBase {
         gracePeriodId);
   }
 
-  /**
-   * Creates a GracePeriod for a Recurrence billing event and a given {@link #gracePeriodId}.
-   *
-   * @deprecated Use {@link #createForRecurrence(GracePeriodStatus, String, Instant, String, VKey,
-   *     Long)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @VisibleForTesting
-  public static GracePeriod createForRecurrence(
-      GracePeriodStatus type,
-      String domainRepoId,
-      DateTime expirationTime,
-      String registrarId,
-      VKey<BillingRecurrence> billingEventRecurrence,
-      @Nullable Long gracePeriodId) {
-    return createForRecurrence(
-        type,
-        domainRepoId,
-        toInstant(expirationTime),
-        registrarId,
-        billingEventRecurrence,
-        gracePeriodId);
-  }
-
   /** Creates a GracePeriod with no billing event. */
   public static GracePeriod createWithoutBillingEvent(
       GracePeriodStatus type, String domainRepoId, Instant expirationTime, String registrarId) {
     return createInternal(type, domainRepoId, expirationTime, registrarId, null, null, null);
-  }
-
-  /**
-   * Creates a GracePeriod with no billing event.
-   *
-   * @deprecated Use {@link #createWithoutBillingEvent(GracePeriodStatus, String, Instant, String)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static GracePeriod createWithoutBillingEvent(
-      GracePeriodStatus type, String domainRepoId, DateTime expirationTime, String registrarId) {
-    return createWithoutBillingEvent(type, domainRepoId, toInstant(expirationTime), registrarId);
   }
 
   /** Constructs a GracePeriod of the given type from the provided one-time BillingEvent. */
@@ -270,7 +173,7 @@ public class GracePeriod extends GracePeriodBase {
     return create(
         type,
         domainRepoId,
-        billingEvent.getBillingTimeInstant(),
+        billingEvent.getBillingTime(),
         billingEvent.getRegistrarId(),
         billingEvent.createVKey());
   }

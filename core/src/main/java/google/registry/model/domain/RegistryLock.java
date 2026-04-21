@@ -16,8 +16,6 @@ package google.registry.model.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.gson.annotations.Expose;
@@ -38,11 +36,10 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Represents a registry lock/unlock object, meaning that the domain is locked on the registry
@@ -124,19 +121,19 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
   private final CreateAutoTimestamp lockRequestTime = CreateAutoTimestamp.create((Instant) null);
 
   /** When the unlock is first requested. */
-  @Expose private DateTime unlockRequestTime;
+  @Expose private Instant unlockRequestTime;
 
   /**
    * When the user has verified the lock. If this field is null, it means the lock has not been
    * verified yet (and thus not been put into effect).
    */
-  @Expose private DateTime lockCompletionTime;
+  @Expose private Instant lockCompletionTime;
 
   /**
    * When the user has verified the unlock of this lock. If this field is null, it means the unlock
    * action has not been verified yet (and has not been put into effect).
    */
-  @Expose private DateTime unlockCompletionTime;
+  @Expose private Instant unlockCompletionTime;
 
   /** The user must provide the random verification code in order to complete the action. */
   @Column(nullable = false)
@@ -158,7 +155,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
 
   /** The duration after which we will re-lock this domain after it is unlocked. */
   @Column(columnDefinition = "interval")
-  private Duration relockDuration;
+  private org.joda.time.Duration relockDuration;
 
   public String getRepoId() {
     return repoId;
@@ -180,29 +177,20 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
     return lockRequestTime.getTimestamp();
   }
 
-  /**
-   * @deprecated Use {@link #getLockRequestTime()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getLockRequestDateTime() {
-    return toDateTime(lockRequestTime.getTimestamp());
-  }
-
   /** Returns the unlock request timestamp or null if an unlock has not been requested yet. */
-  public Optional<DateTime> getUnlockRequestTime() {
+  public Optional<Instant> getUnlockRequestTime() {
     return Optional.ofNullable(unlockRequestTime);
   }
 
   /** Returns the completion timestamp, or empty if this lock has not been completed yet. */
-  public Optional<DateTime> getLockCompletionTime() {
+  public Optional<Instant> getLockCompletionTime() {
     return Optional.ofNullable(lockCompletionTime);
   }
 
   /**
    * Returns the unlock completion timestamp, or empty if this unlock has not been completed yet.
    */
-  public Optional<DateTime> getUnlockCompletionTime() {
+  public Optional<Instant> getUnlockCompletionTime() {
     return Optional.ofNullable(unlockCompletionTime);
   }
 
@@ -214,8 +202,8 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
     return isSuperuser;
   }
 
-  public DateTime getLastUpdateTime() {
-    return getUpdateTimestamp().getTimestampDateTime();
+  public Instant getLastUpdateTime() {
+    return getUpdateTimestamp().getTimestamp();
   }
 
   public Long getRevisionId() {
@@ -233,7 +221,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
   }
 
   /** The duration after which we will re-lock this domain after it is unlocked. */
-  public Optional<Duration> getRelockDuration() {
+  public Optional<org.joda.time.Duration> getRelockDuration() {
     return Optional.ofNullable(relockDuration);
   }
 
@@ -241,41 +229,18 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
     return lockCompletionTime != null && unlockCompletionTime == null;
   }
 
-  /**
-   * Returns true iff the lock was requested &gt;= 1 hour ago and has not been verified.
-   *
-   * @deprecated Use {@link #isLockRequestExpired(Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public boolean isLockRequestExpired(DateTime now) {
-    return isLockRequestExpired(toInstant(now));
-  }
-
   /** Returns true iff the lock was requested &gt;= 1 hour ago and has not been verified. */
   public boolean isLockRequestExpired(Instant now) {
     return getLockCompletionTime().isEmpty()
-        && isBeforeOrAt(getLockRequestTime(), now.minus(java.time.Duration.ofHours(1)));
-  }
-
-  /**
-   * Returns true iff the unlock was requested &gt;= 1 hour ago and has not been verified.
-   *
-   * @deprecated Use {@link #isUnlockRequestExpired(Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public boolean isUnlockRequestExpired(DateTime now) {
-    return isUnlockRequestExpired(toInstant(now));
+        && isBeforeOrAt(getLockRequestTime(), now.minus(Duration.ofHours(1)));
   }
 
   /** Returns true iff the unlock was requested &gt;= 1 hour ago and has not been verified. */
   public boolean isUnlockRequestExpired(Instant now) {
-    Optional<DateTime> unlockRequestTimestamp = getUnlockRequestTime();
+    Optional<Instant> unlockRequestTimestamp = getUnlockRequestTime();
     return unlockRequestTimestamp.isPresent()
         && getUnlockCompletionTime().isEmpty()
-        && isBeforeOrAt(
-            toInstant(unlockRequestTimestamp.get()), now.minus(java.time.Duration.ofHours(1)));
+        && isBeforeOrAt(unlockRequestTimestamp.get(), now.minus(Duration.ofHours(1)));
   }
 
   @Override
@@ -323,17 +288,17 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
       return this;
     }
 
-    public Builder setUnlockRequestTime(DateTime unlockRequestTime) {
+    public Builder setUnlockRequestTime(Instant unlockRequestTime) {
       getInstance().unlockRequestTime = unlockRequestTime;
       return this;
     }
 
-    public Builder setLockCompletionTime(DateTime lockCompletionTime) {
+    public Builder setLockCompletionTime(Instant lockCompletionTime) {
       getInstance().lockCompletionTime = lockCompletionTime;
       return this;
     }
 
-    public Builder setUnlockCompletionTime(DateTime unlockCompletionTime) {
+    public Builder setUnlockCompletionTime(Instant unlockCompletionTime) {
       getInstance().unlockCompletionTime = unlockCompletionTime;
       return this;
     }
@@ -353,7 +318,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
       return this;
     }
 
-    public Builder setRelockDuration(@Nullable Duration relockDuration) {
+    public Builder setRelockDuration(@Nullable org.joda.time.Duration relockDuration) {
       getInstance().relockDuration = relockDuration;
       return this;
     }

@@ -22,7 +22,9 @@ import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.Iterables;
@@ -54,7 +56,7 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
     persistDomain();
     BillingRecurrence existingBillingRecurrence =
         Iterables.getOnlyElement(loadAllOf(BillingRecurrence.class));
-    assertThat(existingBillingRecurrence.getRecurrenceEndTime()).isEqualTo(END_OF_TIME);
+    assertThat(existingBillingRecurrence.getRecurrenceEndTime()).isEqualTo(END_INSTANT);
     assertThat(existingBillingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.DEFAULT);
     runCommandForced(
@@ -64,7 +66,7 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
         "--specified_renewal_price",
         "USD 9001");
     assertThat(loadByEntity(existingBillingRecurrence).getRecurrenceEndTime())
-        .isEqualTo(fakeClock.nowUtc());
+        .isEqualTo(fakeClock.now());
     assertNewBillingEventAndHistory(
         existingBillingRecurrence.getId(),
         RenewalPriceBehavior.SPECIFIED,
@@ -76,12 +78,12 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
     persistDomain();
     BillingRecurrence existingBillingRecurrence =
         Iterables.getOnlyElement(loadAllOf(BillingRecurrence.class));
-    assertThat(existingBillingRecurrence.getRecurrenceEndTime()).isEqualTo(END_OF_TIME);
+    assertThat(existingBillingRecurrence.getRecurrenceEndTime()).isEqualTo(END_INSTANT);
     assertThat(existingBillingRecurrence.getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.DEFAULT);
     runCommandForced("domain.tld", "--renewal_price_behavior", "NONPREMIUM");
     assertThat(loadByEntity(existingBillingRecurrence).getRecurrenceEndTime())
-        .isEqualTo(fakeClock.nowUtc());
+        .isEqualTo(fakeClock.now());
     assertNewBillingEventAndHistory(
         existingBillingRecurrence.getId(), RenewalPriceBehavior.NONPREMIUM, null);
   }
@@ -97,10 +99,10 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(CurrencyUnit.USD, 100))
             .build());
-    assertThat(existingBillingRecurrence.getRecurrenceEndTime()).isEqualTo(END_OF_TIME);
+    assertThat(existingBillingRecurrence.getRecurrenceEndTime()).isEqualTo(END_INSTANT);
     runCommandForced("domain.tld", "--renewal_price_behavior", "DEFAULT");
     assertThat(loadByEntity(existingBillingRecurrence).getRecurrenceEndTime())
-        .isEqualTo(fakeClock.nowUtc());
+        .isEqualTo(fakeClock.now());
     assertNewBillingEventAndHistory(
         existingBillingRecurrence.getId(), RenewalPriceBehavior.DEFAULT, null);
   }
@@ -132,7 +134,7 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
                 .setTransferData(
                     new DomainTransferData.Builder()
                         .setTransferStatus(TransferStatus.CLIENT_APPROVED)
-                        .setPendingTransferExpirationTime(fakeClock.nowUtc().minusDays(8))
+                        .setPendingTransferExpirationTime(minusDays(fakeClock.now(), 8))
                         .build())
                 .build());
     BillingRecurrence billingRecurrence = loadByKey(domain.getAutorenewBillingEvent());
@@ -191,7 +193,7 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
   void testFailure_billingAlreadyClosed() {
     Domain domain = persistDomain();
     BillingRecurrence billingRecurrence = loadByKey(domain.getAutorenewBillingEvent());
-    persistResource(billingRecurrence.asBuilder().setRecurrenceEndTime(fakeClock.nowUtc()).build());
+    persistResource(billingRecurrence.asBuilder().setRecurrenceEndTime(fakeClock.now()).build());
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
@@ -222,7 +224,7 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
             .filter(r -> r.getId() != previousId)
             .findFirst()
             .get();
-    assertThat(newBillingRecurrence.getRecurrenceEndTime()).isEqualTo(END_OF_TIME);
+    assertThat(newBillingRecurrence.getRecurrenceEndTime()).isEqualTo(END_INSTANT);
     assertThat(newBillingRecurrence.getRenewalPriceBehavior()).isEqualTo(expectedBehavior);
     assertThat(newBillingRecurrence.getRenewalPrice())
         .isEqualTo(Optional.ofNullable(expectedPrice));

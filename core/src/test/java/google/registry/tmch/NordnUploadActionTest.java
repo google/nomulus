@@ -86,7 +86,7 @@ class NordnUploadActionTest {
 
   private static final String LOCATION_URL = "http://trololol";
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
+  private final FakeClock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12.000Z"));
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
   private final CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
 
@@ -196,7 +196,7 @@ class NordnUploadActionTest {
     persistResource(
         newDomain("claims-landrush2.tld")
             .asBuilder()
-            .setCreationTimeForTest(clock.nowUtc())
+            .setCreationTimeForTest(clock.now())
             .setCreationRegistrarId("NewRegistrar")
             .setLaunchNotice(
                 LaunchNotice.create("landrush2tcn", null, null, clock.nowUtc().minusHours(2)))
@@ -206,7 +206,7 @@ class NordnUploadActionTest {
     persistResource(
         newDomain("claims-landrush1.tld")
             .asBuilder()
-            .setCreationTimeForTest(clock.nowUtc())
+            .setCreationTimeForTest(clock.now())
             .setLaunchNotice(
                 LaunchNotice.create("landrush1tcn", null, null, clock.nowUtc().minusHours(1)))
             .setLordnPhase(LordnPhase.CLAIMS)
@@ -217,7 +217,7 @@ class NordnUploadActionTest {
     persistResource(
         newDomain("sunrise2.tld")
             .asBuilder()
-            .setCreationTimeForTest(clock.nowUtc())
+            .setCreationTimeForTest(clock.now())
             .setCreationRegistrarId("NewRegistrar")
             .setSmdId("new-smdid")
             .setLordnPhase(LordnPhase.SUNRISE)
@@ -226,7 +226,7 @@ class NordnUploadActionTest {
     persistResource(
         newDomain("sunrise1.tld")
             .asBuilder()
-            .setCreationTimeForTest(clock.nowUtc())
+            .setCreationTimeForTest(clock.now())
             .setSmdId("my-smdid")
             .setLordnPhase(LordnPhase.SUNRISE)
             .build());
