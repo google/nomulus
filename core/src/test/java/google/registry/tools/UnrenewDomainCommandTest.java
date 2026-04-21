@@ -29,6 +29,7 @@ import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -106,7 +107,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
 
     assertAboutHistoryEntries()
         .that(getOnlyHistoryEntryOfType(domain, SYNTHETIC))
-        .hasModificationTime(unrenewTime)
+        .hasModificationTime(toInstant(unrenewTime))
         .and()
         .hasMetadataReason("Domain unrenewal")
         .and()
@@ -127,7 +128,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(domain.getDomainName())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .build());
     assertPollMessagesEqual(
         getPollMessages(domain),
@@ -138,19 +139,19 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .setMsg(
                     "Domain foo.tld was unrenewed by 2 years; "
                         + "now expires at 2019-12-06T13:55:01.001Z.")
-                .setEventTime(unrenewTime)
+                .setEventTime(toInstant(unrenewTime))
                 .build(),
             new PollMessage.Autorenew.Builder()
                 .setHistoryEntry(synthetic)
                 .setTargetId("foo.tld")
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(newExpirationTime)
+                .setEventTime(toInstant(newExpirationTime))
                 .setMsg("Domain was auto-renewed.")
                 .build()));
 
     // Check that fields on domain were updated correctly.
     assertThat(domain.getRegistrationExpirationDateTime()).isEqualTo(newExpirationTime);
-    assertThat(domain.getLastEppUpdateDateTime()).isEqualTo(unrenewTime);
+    assertThat(domain.getLastEppUpdateTime()).isEqualTo(toInstant(unrenewTime));
     assertThat(domain.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
   }
 
@@ -177,7 +178,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     persistResource(
         DatabaseHelper.newDomain("deleting.tld")
             .asBuilder()
-            .setDeletionTime(now.plusHours(1))
+            .setDeletionTime(toInstant(now.plusHours(1)))
             .setStatusValues(ImmutableSet.of(PENDING_DELETE))
             .build());
     persistDeletedDomain("deleted.tld", now.minusHours(1));

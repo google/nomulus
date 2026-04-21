@@ -20,6 +20,8 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -69,10 +71,10 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                         .setDomainName("test.example")
                         .setTransferStatus(TransferStatus.SERVER_APPROVED)
                         .setGainingRegistrarId(getRegistrarIdForFlow())
-                        .setTransferRequestTime(clock.nowUtc().minusDays(5))
+                        .setTransferRequestTime(minusDays(clock.now(), 5))
                         .setLosingRegistrarId("TheRegistrar")
-                        .setPendingTransferExpirationTime(clock.nowUtc().minusDays(1))
-                        .setExtendedRegistrationExpirationTime(clock.nowUtc().plusYears(1))
+                        .setPendingTransferExpirationTime(minusDays(clock.now(), 1))
+                        .setExtendedRegistrationExpirationTime(plusYears(clock.now(), 1))
                         .build()))
             .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
@@ -202,7 +204,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
         persistResource(
             new HostHistory.Builder()
                 .setRegistrarId("NewRegistrar")
-                .setModificationTime(clock.nowUtc().minusDays(1))
+                .setModificationTime(minusDays(clock.now(), 1))
                 .setType(HistoryEntry.Type.HOST_DELETE)
                 .setHost(host)
                 .build());

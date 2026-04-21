@@ -25,6 +25,10 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntr
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.GsonSubject.assertAboutJson;
 import static google.registry.testing.TestDataHelper.loadFile;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusMonths;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 
 import com.google.common.collect.ImmutableList;
@@ -129,12 +133,12 @@ class RdapJsonFormatterTest {
                                     new DomainTransferData.Builder()
                                         .setTransferStatus(TransferStatus.PENDING)
                                         .setGainingRegistrarId("NewRegistrar")
-                                        .setTransferRequestTime(clock.nowUtc().minusDays(1))
+                                        .setTransferRequestTime(minusDays(clock.now(), 1))
                                         .setLosingRegistrarId("TheRegistrar")
                                         .setPendingTransferExpirationTime(
-                                            clock.nowUtc().plusYears(100))
+                                            plusYears(clock.now(), 100))
                                         .setTransferredRegistrationExpirationTime(
-                                            DateTime.parse("2111-10-08T00:44:59Z"))
+                                            Instant.parse("2111-10-08T00:44:59Z"))
                                         .build())
                                 .build())
                         .createVKey())
@@ -143,14 +147,14 @@ class RdapJsonFormatterTest {
         persistResource(
             makeDomain("cat.みんな", hostIpv4, hostIpv6, registrar)
                 .asBuilder()
-                .setCreationTimeForTest(clock.nowUtc().minusMonths(4))
-                .setLastEppUpdateTime(clock.nowUtc().minusMonths(1))
+                .setCreationTimeForTest(minusMonths(clock.now(), 4))
+                .setLastEppUpdateTime(toInstant(clock.nowUtc().minusMonths(1)))
                 .build());
     domainNoNameserversNoTransfers =
         persistResource(
             makeDomain("fish.みんな", null, null, registrar)
                 .asBuilder()
-                .setCreationTimeForTest(clock.nowUtc())
+                .setCreationTimeForTest(clock.now())
                 .setLastEppUpdateTime((Instant) null)
                 .build());
 

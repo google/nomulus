@@ -20,42 +20,18 @@ import static google.registry.persistence.transaction.QueryComposer.Comparator.L
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.transaction.QueryComposer;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Static utility functions for poll flows. */
 public final class PollFlowUtils {
 
-  /**
-   * Returns the number of poll messages for the given registrar that are not in the future.
-   *
-   * @deprecated Use {@link #getPollMessageCount(String, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static int getPollMessageCount(String registrarId, DateTime now) {
-    return getPollMessageCount(registrarId, toInstant(now));
-  }
-
   /** Returns the number of poll messages for the given registrar that are not in the future. */
   public static int getPollMessageCount(String registrarId, Instant now) {
     return (int) createPollMessageQuery(registrarId, now).count();
-  }
-
-  /**
-   * Returns the first (by event time) poll message not in the future for this registrar.
-   *
-   * @deprecated Use {@link #getFirstPollMessage(String, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static Optional<PollMessage> getFirstPollMessage(String registrarId, DateTime now) {
-    return getFirstPollMessage(registrarId, toInstant(now));
   }
 
   /** Returns the first (by event time) poll message not in the future for this registrar. */
@@ -72,17 +48,17 @@ public final class PollFlowUtils {
    */
   public static void ackPollMessage(PollMessage pollMessage) {
     checkArgument(
-        isBeforeOrAt(pollMessage.getEventTimeInstant(), tm().getTxTime()),
+        isBeforeOrAt(pollMessage.getEventTime(), tm().getTxTime()),
         "Cannot ACK poll message with ID %s because its event time is in the future: %s",
         pollMessage.getId(),
-        pollMessage.getEventTimeInstant());
+        pollMessage.getEventTime());
     if (pollMessage instanceof PollMessage.OneTime) {
       // One-time poll messages are deleted once acked.
       tm().delete(pollMessage.createVKey());
     } else if (pollMessage instanceof PollMessage.Autorenew autorenewPollMessage) {
 
       // Move the eventTime of this autorenew poll message forward by a year.
-      Instant nextEventTime = plusYears(autorenewPollMessage.getEventTimeInstant(), 1);
+      Instant nextEventTime = plusYears(autorenewPollMessage.getEventTime(), 1);
 
       // If the next event falls within the bounds of the end time, then just update the eventTime
       // and re-save it for future autorenew poll messages to be delivered. Otherwise, this
@@ -95,19 +71,6 @@ public final class PollFlowUtils {
     } else {
       throw new IllegalArgumentException("Unknown poll message type: " + pollMessage.getClass());
     }
-  }
-
-  /**
-   * Returns the QueryComposer for poll messages from the given registrar that are not in the
-   * future.
-   *
-   * @deprecated Use {@link #createPollMessageQuery(String, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static QueryComposer<PollMessage> createPollMessageQuery(
-      String registrarId, DateTime now) {
-    return createPollMessageQuery(registrarId, toInstant(now));
   }
 
   /**

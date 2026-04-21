@@ -22,7 +22,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.HostSubject.assertAboutHosts;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -38,16 +38,15 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DatabaseHelper;
 import google.registry.util.SerializeUtils;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Host}. */
 class HostTest extends EntityTestCase {
 
-  private final DateTime day3 = fakeClock.nowUtc();
-  private final DateTime day2 = day3.minusDays(1);
-  private final DateTime day1 = day2.minusDays(1);
+  private final Instant day3 = fakeClock.now();
+  private final Instant day2 = minusDays(day3, 1);
+  private final Instant day1 = minusDays(day2, 1);
 
   private Domain domain;
   private Host host;
@@ -66,8 +65,8 @@ class HostTest extends EntityTestCase {
                     new DomainTransferData.Builder()
                         .setGainingRegistrarId("gaining")
                         .setLosingRegistrarId("losing")
-                        .setPendingTransferExpirationTime(fakeClock.nowUtc())
-                        .setTransferRequestTime(fakeClock.nowUtc())
+                        .setPendingTransferExpirationTime(fakeClock.now())
+                        .setTransferRequestTime(fakeClock.now())
                         .setTransferStatus(TransferStatus.SERVER_APPROVED)
                         .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                         .build())
@@ -79,9 +78,9 @@ class HostTest extends EntityTestCase {
                     .setRepoId("DEADBEEF-COM")
                     .setHostName("ns1.example.com")
                     .setCreationRegistrarId("thisRegistrar")
-                    .setLastEppUpdateTime(fakeClock.nowUtc())
+                    .setLastEppUpdateTime(fakeClock.now())
                     .setLastEppUpdateRegistrarId("thatRegistrar")
-                    .setLastTransferTime(fakeClock.nowUtc())
+                    .setLastTransferTime(fakeClock.now())
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
                     .setSuperordinateDomain(domain.createVKey())
@@ -213,7 +212,7 @@ class HostTest extends EntityTestCase {
             .setLastTransferTime((Instant) null)
             .setLastSuperordinateChange((Instant) null)
             .build();
-    assertThat(host.computeLastTransferTime(domain)).isEqualTo(toInstant(day2));
+    assertThat(host.computeLastTransferTime(domain)).isEqualTo(day2);
   }
 
   @Test
@@ -229,7 +228,7 @@ class HostTest extends EntityTestCase {
                     .setRepoId("DEADBEEF-COM")
                     .setHostName("ns1.example.com")
                     .setCreationRegistrarId("thisRegistrar")
-                    .setLastEppUpdateTime(fakeClock.nowUtc())
+                    .setLastEppUpdateTime(fakeClock.now())
                     .setLastEppUpdateRegistrarId("thatRegistrar")
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
@@ -245,7 +244,7 @@ class HostTest extends EntityTestCase {
     // Domain was never transferred.
     domain = domain.asBuilder().setLastTransferTime((Instant) null).build();
     host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day2).build();
-    assertThat(host.computeLastTransferTime(domain)).isEqualTo(toInstant(day1));
+    assertThat(host.computeLastTransferTime(domain)).isEqualTo(day1);
   }
 
   @Test
@@ -255,7 +254,7 @@ class HostTest extends EntityTestCase {
     // Host was made subordinate to domain on Day 3.
     domain = domain.asBuilder().setLastTransferTime(day2).build();
     host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day3).build();
-    assertThat(host.computeLastTransferTime(domain)).isEqualTo(toInstant(day1));
+    assertThat(host.computeLastTransferTime(domain)).isEqualTo(day1);
   }
 
   @Test
@@ -265,6 +264,6 @@ class HostTest extends EntityTestCase {
     // Domain was transferred on Day 3.
     domain = domain.asBuilder().setLastTransferTime(day3).build();
     host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day2).build();
-    assertThat(host.computeLastTransferTime(domain)).isEqualTo(toInstant(day3));
+    assertThat(host.computeLastTransferTime(domain)).isEqualTo(day3);
   }
 }

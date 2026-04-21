@@ -33,6 +33,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.TestCacheExtension;
 import google.registry.util.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -154,8 +155,8 @@ class EppLifecycleToolsTest extends EppTestCase {
             .setRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setCost(Money.parse("USD 44.00"))
             .setPeriodYears(4)
-            .setEventTime(DateTime.parse("2000-06-07T00:00:00Z"))
-            .setBillingTime(DateTime.parse("2000-06-12T00:00:00Z"))
+            .setEventTime(Instant.parse("2000-06-07T00:00:00Z"))
+            .setBillingTime(Instant.parse("2000-06-12T00:00:00Z"))
             .setDomainHistory(
                 getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
             .build();

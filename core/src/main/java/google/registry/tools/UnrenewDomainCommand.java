@@ -23,6 +23,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -187,7 +188,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
     DomainHistory domainHistory =
         new DomainHistory.Builder()
             .setDomain(domain)
-            .setModificationTime(now)
+            .setModificationTime(toInstant(now))
             .setBySuperuser(true)
             .setType(Type.SYNTHETIC)
             .setRegistrarId(domain.getCurrentSponsorRegistrarId())
@@ -208,12 +209,12 @@ class UnrenewDomainCommand extends ConfirmingCommand {
     // Create a new autorenew billing event and poll message starting at the new expiration time.
     BillingRecurrence newAutorenewEvent =
         newAutorenewBillingEvent(domain)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setDomainHistory(domainHistory)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(domain)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setHistoryEntry(domainHistory)
             .build();
     // End the old autorenew billing event and poll message now.
@@ -224,7 +225,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
         domain
             .asBuilder()
             .setRegistrationExpirationTime(newExpirationTime)
-            .setLastEppUpdateTime(now)
+            .setLastEppUpdateTime(toInstant(now))
             .setLastEppUpdateRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
             .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())

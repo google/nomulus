@@ -17,6 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -120,11 +121,11 @@ public final class DomainTransferUtils {
     DomainTransferData serverApproveTransferData =
         new DomainTransferData.Builder()
             .setTransferRequestTrid(trid)
-            .setTransferRequestTime(now)
+            .setTransferRequestTime(toInstant(now))
             .setGainingRegistrarId(gainingRegistrarId)
             .setLosingRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
-            .setPendingTransferExpirationTime(automaticTransferTime)
-            .setTransferredRegistrationExpirationTime(serverApproveNewExpirationTime)
+            .setPendingTransferExpirationTime(toInstant(automaticTransferTime))
+            .setTransferredRegistrationExpirationTime(toInstant(serverApproveNewExpirationTime))
             .setTransferStatus(TransferStatus.SERVER_APPROVED)
             .build();
     Tld tld = Tld.get(existingDomain.getTld());
@@ -184,7 +185,7 @@ public final class DomainTransferUtils {
       HistoryEntryId domainHistoryId) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(transferData.getGainingRegistrarId())
-        .setEventTime(transferData.getPendingTransferExpirationDateTime())
+        .setEventTime(transferData.getPendingTransferExpirationTime())
         .setMsg(transferData.getTransferStatus().getMessage())
         .setResponseData(
             ImmutableList.of(
@@ -206,7 +207,7 @@ public final class DomainTransferUtils {
       HistoryEntryId domainHistoryId) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(transferData.getLosingRegistrarId())
-        .setEventTime(transferData.getPendingTransferExpirationDateTime())
+        .setEventTime(transferData.getPendingTransferExpirationTime())
         .setMsg(transferData.getTransferStatus().getMessage())
         .setResponseData(
             ImmutableList.of(
@@ -224,10 +225,10 @@ public final class DomainTransferUtils {
         .setDomainName(targetId)
         .setGainingRegistrarId(transferData.getGainingRegistrarId())
         .setLosingRegistrarId(transferData.getLosingRegistrarId())
-        .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationDateTime())
+        .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationTime())
         .setTransferRequestTime(transferData.getTransferRequestTime())
         .setTransferStatus(transferData.getTransferStatus())
-        .setExtendedRegistrationExpirationTime(extendedRegistrationExpirationTime)
+        .setExtendedRegistrationExpirationTime(toInstant(extendedRegistrationExpirationTime))
         .build();
   }
 
@@ -239,7 +240,7 @@ public final class DomainTransferUtils {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(targetId)
         .setRegistrarId(gainingRegistrarId)
-        .setEventTime(serverApproveNewExpirationTime)
+        .setEventTime(toInstant(serverApproveNewExpirationTime))
         .setAutorenewEndTime(END_INSTANT)
         .setMsg("Domain was auto-renewed.")
         .setDomainHistoryId(domainHistoryId)
@@ -257,7 +258,7 @@ public final class DomainTransferUtils {
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)
         .setRegistrarId(gainingRegistrarId)
-        .setEventTime(serverApproveNewExpirationTime)
+        .setEventTime(toInstant(serverApproveNewExpirationTime))
         .setRecurrenceEndTime(END_INSTANT)
         .setRenewalPriceBehavior(existingBillingRecurrence.getRenewalPriceBehavior())
         .setRenewalPrice(existingBillingRecurrence.getRenewalPrice().orElse(null))
@@ -294,9 +295,10 @@ public final class DomainTransferUtils {
             domainAtTransferTime.getGracePeriodsOfType(GracePeriodStatus.AUTO_RENEW), null);
     if (autorenewGracePeriod != null && transferCost.isPresent()) {
       return Optional.of(
-          BillingCancellation.forGracePeriod(autorenewGracePeriod, now, domainHistoryId, targetId)
+          BillingCancellation.forGracePeriod(
+                  autorenewGracePeriod, toInstant(now), domainHistoryId, targetId)
               .asBuilder()
-              .setEventTime(automaticTransferTime)
+              .setEventTime(toInstant(automaticTransferTime))
               .build());
     }
     return Optional.empty();
@@ -315,8 +317,9 @@ public final class DomainTransferUtils {
         .setRegistrarId(gainingRegistrarId)
         .setCost(transferCost)
         .setPeriodYears(1)
-        .setEventTime(automaticTransferTime)
-        .setBillingTime(automaticTransferTime.plus(registry.getTransferGracePeriodLength()))
+        .setEventTime(toInstant(automaticTransferTime))
+        .setBillingTime(
+            toInstant(automaticTransferTime.plus(registry.getTransferGracePeriodLength())))
         .setDomainHistoryId(domainHistoryId)
         .build();
   }

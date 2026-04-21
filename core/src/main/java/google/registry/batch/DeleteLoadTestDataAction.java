@@ -20,7 +20,7 @@ import static google.registry.persistence.PersistenceModule.TransactionIsolation
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.RegistryEnvironment.PRODUCTION;
 
 import com.google.common.collect.ImmutableList;
@@ -99,7 +99,7 @@ public class DeleteLoadTestDataAction implements Runnable {
 
   private void deletePollMessages(String registrarId) {
     ImmutableList<PollMessage> pollMessages =
-        PollFlowUtils.createPollMessageQuery(registrarId, END_OF_TIME).list();
+        PollFlowUtils.createPollMessageQuery(registrarId, END_INSTANT).list();
     if (isDryRun) {
       logger.atInfo().log(
           "Would delete %d poll messages for registrar %s.", pollMessages.size(), registrarId);

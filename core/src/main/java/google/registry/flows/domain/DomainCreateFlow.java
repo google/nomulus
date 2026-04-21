@@ -572,7 +572,7 @@ public final class DomainCreateFlow implements MutatingFlow {
           ImmutableSet.of(
               DomainTransactionRecord.create(
                   tld.getTldStr(),
-                  now.plus(addGracePeriod),
+                  toInstant(now.plus(addGracePeriod)),
                   TransactionReportField.netAddsFieldFromYears(period.getValue()),
                   1)));
     }
@@ -607,13 +607,14 @@ public final class DomainCreateFlow implements MutatingFlow {
         .setRegistrarId(registrarId)
         .setPeriodYears(years)
         .setCost(feesAndCredits.getCreateCost())
-        .setEventTime(now)
+        .setEventTime(toInstant(now))
         .setAllocationToken(allocationToken.map(AllocationToken::createVKey).orElse(null))
         .setBillingTime(
-            now.plus(
-                isAnchorTenant
-                    ? tld.getAnchorTenantAddGracePeriodLength()
-                    : tld.getAddGracePeriodLength()))
+            toInstant(
+                now.plus(
+                    isAnchorTenant
+                        ? tld.getAnchorTenantAddGracePeriodLength()
+                        : tld.getAddGracePeriodLength())))
         .setFlags(flagsBuilder.build())
         .setDomainHistoryId(domainHistoryId)
         .build();
@@ -638,7 +639,7 @@ public final class DomainCreateFlow implements MutatingFlow {
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
-        .setEventTime(registrationExpirationTime)
+        .setEventTime(toInstant(registrationExpirationTime))
         .setRecurrenceEndTime(END_INSTANT)
         .setDomainHistoryId(domainHistoryId)
         .setRenewalPriceBehavior(renewalPriceBehavior)
@@ -651,7 +652,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
-        .setEventTime(registrationExpirationTime)
+        .setEventTime(toInstant(registrationExpirationTime))
         .setMsg("Domain was auto-renewed.")
         .setDomainHistoryId(domainHistoryId)
         .build();
@@ -685,7 +686,7 @@ public final class DomainCreateFlow implements MutatingFlow {
       String domainName, HistoryEntry historyEntry, String registrarId, DateTime now) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(registrarId)
-        .setEventTime(now)
+        .setEventTime(toInstant(now))
         .setMsg(COLLISION_MESSAGE) // Remind the registrar of the name collision policy.
         .setResponseData(
             ImmutableList.of(

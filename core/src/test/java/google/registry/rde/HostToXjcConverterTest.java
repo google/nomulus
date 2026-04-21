@@ -33,6 +33,7 @@ import google.registry.xjc.host.XjcHostStatusValueType;
 import google.registry.xjc.rdehost.XjcRdeHost;
 import google.registry.xjc.rdehost.XjcRdeHostElement;
 import java.io.ByteArrayOutputStream;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,13 +69,13 @@ public class HostToXjcConverterTest {
         HostToXjcConverter.convertSubordinateHost(
             new Host.Builder()
                 .setCreationRegistrarId("LawyerCat")
-                .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("1900-01-01T00:00:00Z"))
                 .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.foobar")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
-                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                 .setLastEppUpdateRegistrarId("CeilingCat")
-                .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                .setLastEppUpdateTime(Instant.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-roid")
                 .setStatusValues(ImmutableSet.of(StatusValue.OK))
                 .setSuperordinateDomain(domain.createVKey())
@@ -124,13 +125,13 @@ public class HostToXjcConverterTest {
         HostToXjcConverter.convertExternalHost(
             new Host.Builder()
                 .setCreationRegistrarId("LawyerCat")
-                .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("1900-01-01T00:00:00Z"))
                 .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.lol")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
-                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                 .setLastEppUpdateRegistrarId("CeilingCat")
-                .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                .setLastEppUpdateTime(Instant.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-roid")
                 .setStatusValues(ImmutableSet.of(StatusValue.OK))
                 .build());
@@ -173,13 +174,13 @@ public class HostToXjcConverterTest {
         HostToXjcConverter.convertExternalHost(
             new Host.Builder()
                 .setCreationRegistrarId("LawyerCat")
-                .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("1900-01-01T00:00:00Z"))
                 .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.lol")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
-                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                 .setLastEppUpdateRegistrarId("CeilingCat")
-                .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                .setLastEppUpdateTime(Instant.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-LOL")
                 .setStatusValues(ImmutableSet.of(StatusValue.OK))
                 .build());
@@ -196,13 +197,13 @@ public class HostToXjcConverterTest {
             HostToXjcConverter.convertExternalHost(
                 new Host.Builder()
                     .setCreationRegistrarId("LawyerCat")
-                    .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+                    .setCreationTimeForTest(Instant.parse("1900-01-01T00:00:00Z"))
                     .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                     .setHostName("ns1.love.lol")
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
-                    .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                    .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                     .setLastEppUpdateRegistrarId("CeilingCat")
-                    .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                    .setLastEppUpdateTime(Instant.parse("1920-01-01T00:00:00Z"))
                     .setRepoId("2-LOL")
                     .setStatusValues(ImmutableSet.of(StatusValue.SERVER_HOLD)) // <-- OOPS
                     .build()));
@@ -215,13 +216,13 @@ public class HostToXjcConverterTest {
         HostToXjcConverter.convertExternal(
             new Host.Builder()
                 .setCreationRegistrarId("LawyerCat")
-                .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("1900-01-01T00:00:00Z"))
                 .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.lol")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
-                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastTransferTime(Instant.parse("1910-01-01T00:00:00Z"))
                 .setLastEppUpdateRegistrarId("CeilingCat")
-                .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                .setLastEppUpdateTime(Instant.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-LOL")
                 .setStatusValues(ImmutableSet.of(StatusValue.OK))
                 .build());

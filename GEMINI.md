@@ -16,6 +16,8 @@ This document outlines foundational mandates, architectural patterns, and projec
 ## 2. Time and Precision Handling (java.time Migration)
 
 - **Idiomatic java.time Usage:** Avoid redundant conversions between `Instant` and `DateTime`. If a field or parameter is an `Instant`, use it directly. Do not convert to `DateTime` just to call a deprecated method if an `Instant` alternative exists or can be easily created. Furthermore, you should not call `toInstant()` or `toDateTime()` conversion methods when not strictly necessary; always prefer to use an alternative method that returns the correct type if one exists (e.g. use `tm().getTxTime()` which returns an `Instant` instead of calling `tm().getTransactionTime().toInstant()`).
+- **CRITICAL MISTAKE TO AVOID:** NEVER use `toInstant(clock.nowUtc())` or `toInstant(fakeClock.nowUtc())`. Both `Clock` and `FakeClock` have a `now()` method that natively returns a `java.time.Instant`. You MUST use `clock.now()` or `fakeClock.now()` directly. Converting `nowUtc()` to an Instant is an embarrassing mistake that demonstrates a lack of basic codebase familiarity.
+- **UTC Timezones:** Do not use `ZoneId.of("UTC")`. Use a statically imported `UTC` from `ZoneOffset` instead (`import static java.time.ZoneOffset.UTC;`).
 - **Millisecond Precision:** Always truncate `Instant.now()` to milliseconds (using `.truncatedTo(ChronoUnit.MILLIS)`) to maintain consistency with Joda `DateTime` and the PostgreSQL schema (which enforces millisecond precision via JPA converters).
 - **Clock Injection:**
     - Avoid direct calls to `Instant.now()`, `DateTime.now()`, `ZonedDateTime.now()`, or `System.currentTimeMillis()`.
@@ -52,6 +54,10 @@ This document outlines foundational mandates, architectural patterns, and projec
 
 ### 6. Project Dependencies
 - **Common Module:** When using `Clock` or other core utilities in a new or separate module (like `load-testing`), ensure `implementation project(':common')` is added to the module's `build.gradle`.
+
+### 7. Search and Discovery
+- **No CodeSearch:** This project is hosted on GitHub, not Google3. Do NOT use `mcp_Coding_search_for_files_codesearch` or other internal Google3 search tools.
+- **Local Grep:** Use local shell commands like `git grep` or `grep` via `run_shell_command` to search the codebase.
 
 ## Performance and Efficiency
 - **Turn Minimization:** Aim for "perfect" code in the first iteration. Iterative fixes for checkstyle or compilation errors consume significant context and time.

@@ -319,7 +319,7 @@ public class RdapJsonFormatter {
                 .setEventAction(EventAction.REGISTRATION)
                 .setEventActor(
                     Optional.ofNullable(domain.getCreationRegistrarId()).orElse("(none)"))
-                .setEventDate(domain.getCreationTimeInstant())
+                .setEventDate(domain.getCreationTime())
                 .build(),
             Event.builder()
                 .setEventAction(EventAction.EXPIRATION)
@@ -339,7 +339,7 @@ public class RdapJsonFormatter {
     // (i.e. without updating lastEppUpdateTime), that can only happen for domains that have already
     // been modified in some way. As a result, we can ignore those cases here.
     if (domain.getLastEppUpdateTime() != null
-        && domain.getLastEppUpdateTime().isAfter(domain.getCreationTimeInstant())) {
+        && domain.getLastEppUpdateTime().isAfter(domain.getCreationTime())) {
       // Creates an RDAP event object as defined by RFC 9083
       builder
           .eventsBuilder()
@@ -759,7 +759,7 @@ public class RdapJsonFormatter {
                             lastEntryOfType.put(
                                 rdapEventAction,
                                 new HistoryTimeAndRegistrar(
-                                    historyEntry.getModificationTimeInstant(),
+                                    historyEntry.getModificationTime(),
                                     historyEntry.getRegistrarId()));
                           }
                         }));

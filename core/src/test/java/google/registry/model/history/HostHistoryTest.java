@@ -74,7 +74,7 @@ public class HostHistoryTest extends EntityTestCase {
     return new HostHistory.Builder()
         .setType(HistoryEntry.Type.HOST_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-        .setModificationTime(fakeClock.nowUtc())
+        .setModificationTime(fakeClock.now())
         .setRegistrarId("TheRegistrar")
         .setTrid(Trid.create("ABC-123", "server-trid"))
         .setBySuperuser(false)

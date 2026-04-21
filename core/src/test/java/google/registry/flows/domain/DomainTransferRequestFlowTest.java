@@ -250,8 +250,7 @@ class DomainTransferRequestFlowTest
                 .setTransferPeriod(expectedPeriod)
                 .setTransferStatus(TransferStatus.SERVER_APPROVED)
                 .setPendingTransferExpirationTime(automaticTransferTime)
-                .setTransferredRegistrationExpirationTime(
-                    domain.getRegistrationExpirationDateTime())
+                .setTransferredRegistrationExpirationTime(domain.getRegistrationExpirationTime())
                 // Server-approve entity fields should all be nulled out.
                 .build());
   }
@@ -341,7 +340,7 @@ class DomainTransferRequestFlowTest
     // The domain's autorenew billing event should still point to the losing client's event.
     BillingRecurrence domainAutorenewEvent = loadByKey(domain.getAutorenewBillingEvent());
     assertThat(domainAutorenewEvent.getRegistrarId()).isEqualTo("TheRegistrar");
-    assertThat(domainAutorenewEvent.getRecurrenceEndTimeInstant()).isEqualTo(implicitTransferTime);
+    assertThat(domainAutorenewEvent.getRecurrenceEndTime()).isEqualTo(implicitTransferTime);
     // The original grace periods should remain untouched.
     assertThat(domain.getGracePeriods()).containsExactlyElementsIn(originalGracePeriods);
     // If we fast forward AUTOMATIC_TRANSFER_DAYS, the transfer should have cleared out all other
@@ -379,8 +378,8 @@ class DomainTransferRequestFlowTest
         getOnlyPollMessage("NewRegistrar", implicitTransferTime, PollMessage.OneTime.class);
     PollMessage autorenewPollMessage =
         getOnlyPollMessage("NewRegistrar", expectedExpirationTime, PollMessage.Autorenew.class);
-    assertThat(transferApprovedPollMessage.getEventTimeInstant()).isEqualTo(implicitTransferTime);
-    assertThat(autorenewPollMessage.getEventTimeInstant()).isEqualTo(expectedExpirationTime);
+    assertThat(transferApprovedPollMessage.getEventTime()).isEqualTo(implicitTransferTime);
+    assertThat(autorenewPollMessage.getEventTime()).isEqualTo(expectedExpirationTime);
     assertThat(
             transferApprovedPollMessage.getResponseData().stream()
                 .filter(TransferResponse.class::isInstance)
@@ -407,9 +406,8 @@ class DomainTransferRequestFlowTest
         getPollMessages("TheRegistrar", implicitTransferTime).stream()
             .filter(Predicates.not(Predicates.equalTo(losingTransferPendingPollMessage)))
             .collect(onlyElement());
-    assertThat(losingTransferPendingPollMessage.getEventTimeInstant()).isEqualTo(clock.now());
-    assertThat(losingTransferApprovedPollMessage.getEventTimeInstant())
-        .isEqualTo(implicitTransferTime);
+    assertThat(losingTransferPendingPollMessage.getEventTime()).isEqualTo(clock.now());
+    assertThat(losingTransferApprovedPollMessage.getEventTime()).isEqualTo(implicitTransferTime);
     assertThat(
             losingTransferPendingPollMessage.getResponseData().stream()
                 .filter(TransferResponse.class::isInstance)
@@ -451,9 +449,7 @@ class DomainTransferRequestFlowTest
         .hasLastEppUpdateTime(implicitTransferTime)
         .and()
         .hasLastEppUpdateRegistrarId("NewRegistrar");
-    assertThat(
-            loadByKey(domainAfterAutomaticTransfer.getAutorenewBillingEvent())
-                .getEventTimeInstant())
+    assertThat(loadByKey(domainAfterAutomaticTransfer.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expectedExpirationTime);
     // And after the expected grace time, the grace period should be gone.
     Domain afterGracePeriod =
@@ -1062,10 +1058,8 @@ class DomainTransferRequestFlowTest
     // Set the domain to have auto-renewed long enough ago that it is still in the autorenew grace
     // period at the transfer request time, but will have exited it by the automatic transfer time.
     Instant autorenewTime =
-        clock
-            .now()
-            .minusMillis(Tld.get("tld").getAutoRenewGracePeriodLength().getMillis())
-            .plus(java.time.Duration.ofDays(1));
+        plusDays(
+            clock.now().minusMillis(Tld.get("tld").getAutoRenewGracePeriodLength().getMillis()), 1);
     Instant expirationTime = plusYears(autorenewTime, 1);
     domain =
         persistResource(
@@ -1125,14 +1119,10 @@ class DomainTransferRequestFlowTest
             .setRegistrarId("TheRegistrar")
             // The cancellation happens at the moment of transfer.
             .setEventTime(
-                toDateTime(
-                    clock
-                        .now()
-                        .plusMillis(Tld.get("tld").getAutomaticTransferLength().getMillis())))
+                clock.now().plusMillis(Tld.get("tld").getAutomaticTransferLength().getMillis()))
             .setBillingTime(
-                toDateTime(
-                    autorenewTime.plusMillis(
-                        Tld.get("tld").getAutoRenewGracePeriodLength().getMillis())))
+                autorenewTime.plusMillis(
+                    Tld.get("tld").getAutoRenewGracePeriodLength().getMillis()))
             // The cancellation should refer to the old autorenew billing event.
             .setBillingRecurrence(existingAutorenewEvent));
   }
@@ -1159,14 +1149,10 @@ class DomainTransferRequestFlowTest
             .setRegistrarId("TheRegistrar")
             // The cancellation happens at the moment of transfer.
             .setEventTime(
-                toDateTime(
-                    clock
-                        .now()
-                        .plusMillis(Tld.get("tld").getAutomaticTransferLength().getMillis())))
+                clock.now().plusMillis(Tld.get("tld").getAutomaticTransferLength().getMillis()))
             .setBillingTime(
-                toDateTime(
-                    expirationTime.plusMillis(
-                        Tld.get("tld").getAutoRenewGracePeriodLength().getMillis())))
+                expirationTime.plusMillis(
+                    Tld.get("tld").getAutoRenewGracePeriodLength().getMillis()))
             // The cancellation should refer to the old autorenew billing event.
             .setBillingRecurrence(existingAutorenewEvent));
   }
@@ -1225,8 +1211,7 @@ class DomainTransferRequestFlowTest
         domain,
         new BillingEvent.Builder()
             .setBillingTime(
-                toDateTime(
-                    plusDays(now, 10))) // 5 day pending transfer + 5 day billing grace period
+                plusDays(now, 10)) // 5 day pending transfer + 5 day billing grace period
             .setEventTime(plusDays(now, 5))
             .setRegistrarId("NewRegistrar")
             .setCost(Money.of(USD, new BigDecimal("11.00")))
@@ -1282,8 +1267,7 @@ class DomainTransferRequestFlowTest
         domain,
         new BillingEvent.Builder()
             .setBillingTime(
-                toDateTime(
-                    plusDays(now, 10))) // 5 day pending transfer + 5 day billing grace period
+                plusDays(now, 10)) // 5 day pending transfer + 5 day billing grace period
             .setEventTime(plusDays(now, 5))
             .setRegistrarId("NewRegistrar")
             .setCost(Money.of(USD, new BigDecimal("18.79")))
@@ -1345,8 +1329,7 @@ class DomainTransferRequestFlowTest
         domain,
         new BillingEvent.Builder()
             .setBillingTime(
-                toDateTime(
-                    plusDays(now, 10))) // 5 day pending transfer + 5 day billing grace period
+                plusDays(now, 10)) // 5 day pending transfer + 5 day billing grace period
             .setEventTime(plusDays(now, 5))
             .setRegistrarId("NewRegistrar")
             .setCost(Money.of(USD, new BigDecimal("11.00")))
@@ -1407,8 +1390,7 @@ class DomainTransferRequestFlowTest
         domain,
         new BillingEvent.Builder()
             .setBillingTime(
-                toDateTime(
-                    plusDays(now, 10))) // 5 day pending transfer + 5 day billing grace period
+                plusDays(now, 10)) // 5 day pending transfer + 5 day billing grace period
             .setEventTime(plusDays(now, 5))
             .setRegistrarId("NewRegistrar")
             .setCost(Money.of(USD, new BigDecimal("11.00")))

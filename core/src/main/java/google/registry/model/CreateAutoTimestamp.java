@@ -15,8 +15,6 @@
 package google.registry.model;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.gson.annotations.Expose;
 import google.registry.persistence.EntityCallbacksListener.RecursivePrePersist;
@@ -25,7 +23,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** A timestamp that auto-updates when first saved to the database. */
 @Embeddable
@@ -49,28 +46,10 @@ public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerial
     return creationTime;
   }
 
-  /**
-   * @deprecated Use {@link #getTimestamp()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @Nullable
-  public DateTime getTimestampDateTime() {
-    return toDateTime(creationTime);
-  }
-
   public static CreateAutoTimestamp create(@Nullable Instant creationTime) {
     CreateAutoTimestamp instance = new CreateAutoTimestamp();
     instance.creationTime = creationTime;
     return instance;
   }
 
-  /**
-   * @deprecated Use {@link #create(Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static CreateAutoTimestamp create(@Nullable DateTime creationTime) {
-    return create(toInstant(creationTime));
-  }
 }
