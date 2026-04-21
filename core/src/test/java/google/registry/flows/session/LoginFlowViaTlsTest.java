@@ -30,8 +30,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
 import java.net.InetAddress;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -64,7 +62,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   @Override
   protected Registrar.Builder getRegistrarBuilder() {
     return super.getRegistrarBuilder()
-        .setClientCertificate(GOOD_CERT.get(), Instant.now().truncatedTo(ChronoUnit.MILLIS))
+        .setClientCertificate(GOOD_CERT.get(), clock.now())
         .setIpAddressAllowList(ImmutableList.of(CidrAddressBlock.create(GOOD_IP.get(), 32)));
   }
 

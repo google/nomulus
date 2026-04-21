@@ -82,7 +82,7 @@ class BsaCredentialTest {
     credential = spy(credential);
     doReturn("a", "b", "c").when(credential).fetchNewAuthToken();
     assertThat(credential.getAuthToken()).isEqualTo("a");
-    clock.advanceBy(AUTH_TOKEN_EXPIRY.minus(Duration.millis(1)));
+    clock.advanceBy(AUTH_TOKEN_EXPIRY.minusMillis(1));
     assertThat(credential.getAuthToken()).isEqualTo("a");
     verify(credential, times(1)).fetchNewAuthToken();
   }

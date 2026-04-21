@@ -733,7 +733,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("example")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 0),
@@ -871,7 +871,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(
+            .setTldStateTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     PREDELEGATION,
@@ -893,7 +893,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testSuccess_noClaimsNotice_forClaimsListName_afterClaimsPeriodEnd() throws Exception {
     persistClaimsList(ImmutableMap.of("example", CLAIMS_KEY));
     persistHosts();
-    persistResource(Tld.get("tld").asBuilder().setClaimsPeriodEndInstant(clock.now()).build());
+    persistResource(Tld.get("tld").asBuilder().setClaimsPeriodEnd(clock.now()).build());
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
     assertSuccessfulCreate("tld", ImmutableSet.of());
@@ -922,7 +922,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_claim_notice.xml");
     persistClaimsList(ImmutableMap.of("example-one", CLAIMS_KEY));
     persistHosts();
-    persistResource(Tld.get("tld").asBuilder().setClaimsPeriodEndInstant(clock.now()).build());
+    persistResource(Tld.get("tld").asBuilder().setClaimsPeriodEnd(clock.now()).build());
     EppException thrown = assertThrows(ClaimsPeriodEndedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -981,7 +981,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistHosts();
@@ -995,8 +995,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
-                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
+            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_STD_1_0_MAP);
@@ -1011,7 +1010,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 100)))
             .build());
     // Expects fee of $24
@@ -1215,7 +1214,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .asBuilder()
             .setReservedLists(
                 persistReservedList("anchor_tenants", "test-validate,RESERVED_FOR_ANCHOR_TENANT"))
-            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, START_DATE_SUNRISE))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, START_DATE_SUNRISE))
             .build());
     setEppInput("domain_create_anchor_tenant_signed_mark.xml", ImmutableMap.of("SMD", ENCODED_SMD));
     clock.setTo(SMD_VALID_TIME);
@@ -1241,7 +1240,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(
+            .setTldStateTransitions(
                 new ImmutableSortedMap.Builder<Instant, TldState>(Ordering.natural())
                     .put(START_INSTANT, PREDELEGATION)
                     .put(Instant.parse("1999-01-01T00:00:00Z"), QUIET_PERIOD)
@@ -1284,7 +1283,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     allocationToken =
         persistResource(
@@ -1680,7 +1679,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, START_DATE_SUNRISE))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, START_DATE_SUNRISE))
             .build());
     clock.setTo(SMD_VALID_TIME);
     setEppInput(
@@ -2119,7 +2118,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), token);
@@ -2445,10 +2444,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setEapFeeScheduleInstant(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
-            .setRenewBillingCostTransitionsInstant(
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
@@ -2636,7 +2635,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get(tld)
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 0),
@@ -2653,7 +2652,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 0),
@@ -2671,7 +2670,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 0),
@@ -2812,7 +2811,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), token);
@@ -2834,7 +2833,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), token);
@@ -2868,7 +2867,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     assertThrows(NoGeneralRegistrationsInCurrentPhaseException.class, this::runFlow);
   }
@@ -2887,7 +2886,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(
+            .setTldStateTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT, QUIET_PERIOD, plusYears(clock.now(), 1), START_DATE_SUNRISE))
             .build());
@@ -2910,7 +2909,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(
+            .setTldStateTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     QUIET_PERIOD,
@@ -3058,7 +3057,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(
+            .setTldStateTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     QUIET_PERIOD,
@@ -3089,7 +3088,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(
+            .setTldStateTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     QUIET_PERIOD,
@@ -3115,7 +3114,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitionsInstant(
+            .setTldStateTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     QUIET_PERIOD,
@@ -3313,7 +3312,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistHosts();
@@ -3327,7 +3326,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistHosts();
@@ -3341,7 +3340,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistHosts();
@@ -3355,8 +3354,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
-                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
+            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_06_MAP);
@@ -3371,8 +3369,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
-                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
+            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_11_MAP);
@@ -3387,8 +3384,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
-                ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
+            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 8)))
             .build());
     // Expects fee of $24
     setEppInput("domain_create_fee.xml", FEE_12_MAP);
@@ -3529,7 +3525,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 100)))
             .build());
     // Expects fee of $24
@@ -3545,7 +3541,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 100)))
             .build());
     // Expects fee of $24
@@ -3561,7 +3557,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitionsInstant(
+            .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 100)))
             .build());
     // Expects fee of $24
@@ -3948,7 +3944,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("example")
             .asBuilder()
-            .setEapFeeScheduleInstant(
+            .setEapFeeSchedule(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 0),

@@ -239,7 +239,7 @@ public class BsaValidateActionTest {
     persistBsaLabel("label");
     Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
     fakeClock.advanceBy(
-        org.joda.time.Duration.millis(MAX_STALENESS.minus(Duration.ofSeconds(1)).toMillis()));
+        org.joda.time.Duration.millis(MAX_STALENESS.minusSeconds(1).toMillis()));
     assertThat(action.isStalenessAllowed(domain)).isTrue();
   }
 

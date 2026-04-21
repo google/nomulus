@@ -26,8 +26,8 @@ import static google.registry.testing.DatabaseHelper.loadExistingUser;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -49,6 +49,7 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
@@ -84,25 +85,24 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     Tld registry = Tld.get(tldName);
     assertThat(registry).isNotNull();
     assertThat(registry.getRoidSuffix()).isEqualTo(roidSuffix);
-    assertThat(registry.getTldState(DateTime.now(UTC))).isEqualTo(tldState);
+    assertThat(registry.getTldState(Instant.now())).isEqualTo(tldState);
     assertThat(registry.getDnsWriters()).containsExactly("VoidDnsWriter");
     assertThat(registry.getPremiumListName()).hasValue("default_sandbox_list");
     assertThat(registry.getAddGracePeriodLength()).isEqualTo(Duration.standardMinutes(60));
     assertThat(registry.getRedemptionGracePeriodLength()).isEqualTo(Duration.standardMinutes(10));
     assertThat(registry.getPendingDeleteLength()).isEqualTo(Duration.standardMinutes(5));
-    ImmutableSortedMap<DateTime, Money> eapFeeSchedule = registry.getEapFeeScheduleAsMap();
+    ImmutableSortedMap<Instant, Money> eapFeeSchedule = registry.getEapFeeScheduleAsMap();
     if (!isEarlyAccess) {
-      assertThat(eapFeeSchedule)
-          .isEqualTo(ImmutableSortedMap.of(new DateTime(0), Money.of(USD, 0)));
+      assertThat(eapFeeSchedule).isEqualTo(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 0)));
     } else {
       assertThat(eapFeeSchedule)
           .isEqualTo(
               ImmutableSortedMap.of(
-                  new DateTime(0),
+                  START_INSTANT,
                   Money.of(USD, 0),
-                  DateTime.parse("2018-03-01T00:00:00Z"),
+                  Instant.parse("2018-03-01T00:00:00Z"),
                   Money.of(USD, 100),
-                  DateTime.parse("2030-03-01T00:00:00Z"),
+                  Instant.parse("2030-03-01T00:00:00Z"),
                   Money.of(USD, 0)));
     }
   }

@@ -22,6 +22,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -41,8 +42,6 @@ import google.registry.model.registrar.Registrar.Type;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.util.CidrAddressBlock;
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -409,7 +408,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(SAMPLE_CERT, Instant.now().truncatedTo(ChronoUnit.MILLIS))
+            .setClientCertificate(SAMPLE_CERT, fakeClock.now())
             .build());
     assertThat(loadRegistrar("NewRegistrar").getClientCertificate()).isPresent();
     runCommand("--cert_file=/dev/null", "--force", "NewRegistrar");
@@ -483,13 +482,13 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1300))))
+                ImmutableSortedMap.of(START_INSTANT, Money.of(JPY, new BigDecimal(1300))))
             .setRestoreBillingCost(Money.of(JPY, new BigDecimal(1700)))
             .setServerStatusChangeBillingCost(Money.of(JPY, new BigDecimal(1900)))
             .setRegistryLockOrUnlockBillingCost(Money.of(JPY, new BigDecimal(2700)))
             .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1100))))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(JPY)))
+                ImmutableSortedMap.of(START_INSTANT, Money.of(JPY, new BigDecimal(1100))))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(JPY)))
             .setPremiumList(null)
             .build());
     persistResource(

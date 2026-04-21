@@ -53,7 +53,7 @@ class EppResourceUtilsTest {
     Host host =
         persistResource(
             newHost("ns1.cat.tld").asBuilder().setCreationTimeForTest(clock.now()).build());
-    assertThat(loadAtPointInTime(host, clock.nowUtc().minus(Duration.millis(1)))).isNull();
+    assertThat(loadAtPointInTime(host, clock.nowUtc().minusMillis(1))).isNull();
   }
 
   @Test

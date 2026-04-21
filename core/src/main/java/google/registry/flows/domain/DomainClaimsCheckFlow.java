@@ -49,10 +49,10 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that checks whether domain labels are trademarked.
@@ -103,7 +103,7 @@ public final class DomainClaimsCheckFlow implements TransactionalFlow {
           checkAllowedAccessToTld(registrarId, tldStr);
           checkHasBillingAccount(registrarId, tldStr);
           Tld tld = Tld.get(tldStr);
-          DateTime now = clock.nowUtc();
+          Instant now = clock.now();
           verifyNotInPredelegation(tld, now);
           verifyClaimsPeriodNotEnded(tld, now);
         }

@@ -40,9 +40,7 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
@@ -184,7 +182,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
               .setTargetId(getUniqueIdFromCommand())
               .setRegistrarId("TheRegistrar")
               .setEventTime(expirationTime)
-              .setAutorenewEndTime(END_OF_TIME)
+              .setAutorenewEndTime(END_INSTANT)
               .setMsg("Domain was auto-renewed.")
               .setHistoryEntry(historyEntryDomainCreate)
               .build();
@@ -322,7 +320,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(END_INSTANT)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRenew)
             .build());
@@ -826,7 +824,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
             .setEventTime(reloadResourceByForeignKey().getRegistrationExpirationTime())
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(END_INSTANT)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRenew)
             .build());
@@ -932,7 +930,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistDomain();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -947,10 +945,10 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .asBuilder()
             .setCurrency(EUR)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 13)))
+                ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 7)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
             .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 20))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .build());
@@ -975,10 +973,10 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
             .setRestoreBillingCost(Money.ofMajor(JPY, 800))
@@ -1569,7 +1567,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1581,7 +1579,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistDomain();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1594,7 +1592,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistDomain();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1607,7 +1605,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     persistDomain();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1622,10 +1620,10 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .asBuilder()
             .setCurrency(EUR)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 13)))
+                ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 7)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
             .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 20))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .build());
@@ -1642,10 +1640,10 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .asBuilder()
             .setCurrency(EUR)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 13)))
+                ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 7)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
             .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 20))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .build());
@@ -1662,10 +1660,10 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .asBuilder()
             .setCurrency(EUR)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 13)))
+                ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 7)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
             .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 20))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .build());
@@ -1819,7 +1817,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1880,7 +1878,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1941,7 +1939,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken1.createVKey()))
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();

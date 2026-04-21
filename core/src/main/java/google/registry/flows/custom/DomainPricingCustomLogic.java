@@ -23,8 +23,8 @@ import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.flows.domain.FeesAndCredits;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.tld.Tld;
+import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /**
  * A no-op base class to customize {@link DomainPricingLogic}.
@@ -79,7 +79,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
       FeesAndCredits feesAndCredits,
       Tld tld,
       InternetDomainName domainName,
-      DateTime asOfDate,
+      Instant asOfDate,
       int years) {
 
     public static Builder newBuilder() {
@@ -96,7 +96,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       Builder setDomainName(InternetDomainName domainName);
 
-      Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(Instant asOfDate);
 
       Builder setYears(int years);
 
@@ -109,7 +109,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
       FeesAndCredits feesAndCredits,
       Tld tld,
       InternetDomainName domainName,
-      DateTime asOfDate,
+      Instant asOfDate,
       int years) {
 
     public static Builder newBuilder() {
@@ -126,7 +126,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       Builder setDomainName(InternetDomainName domainName);
 
-      Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(Instant asOfDate);
 
       Builder setYears(int years);
 
@@ -136,7 +136,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
   /** A record to encapsulate parameters for a call to {@link #customizeRestorePrice} . */
   public record RestorePriceParameters(
-      FeesAndCredits feesAndCredits, Tld tld, InternetDomainName domainName, DateTime asOfDate) {
+      FeesAndCredits feesAndCredits, Tld tld, InternetDomainName domainName, Instant asOfDate) {
 
     public static Builder newBuilder() {
       return new AutoBuilder_DomainPricingCustomLogic_RestorePriceParameters_Builder();
@@ -152,7 +152,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       Builder setDomainName(InternetDomainName domainName);
 
-      Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(Instant asOfDate);
 
       RestorePriceParameters build();
     }
@@ -160,7 +160,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
   /** A record to encapsulate parameters for a call to {@link #customizeTransferPrice} . */
   public record TransferPriceParameters(
-      FeesAndCredits feesAndCredits, Tld tld, InternetDomainName domainName, DateTime asOfDate) {
+      FeesAndCredits feesAndCredits, Tld tld, InternetDomainName domainName, Instant asOfDate) {
 
     public static Builder newBuilder() {
       return new AutoBuilder_DomainPricingCustomLogic_TransferPriceParameters_Builder();
@@ -176,7 +176,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       Builder setDomainName(InternetDomainName domainName);
 
-      Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(Instant asOfDate);
 
       TransferPriceParameters build();
     }
@@ -184,7 +184,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
   /** A record to encapsulate parameters for a call to {@link #customizeUpdatePrice} . */
   public record UpdatePriceParameters(
-      FeesAndCredits feesAndCredits, Tld tld, InternetDomainName domainName, DateTime asOfDate) {
+      FeesAndCredits feesAndCredits, Tld tld, InternetDomainName domainName, Instant asOfDate) {
 
     public static Builder newBuilder() {
       return new AutoBuilder_DomainPricingCustomLogic_UpdatePriceParameters_Builder();
@@ -200,7 +200,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
       Builder setDomainName(InternetDomainName domainName);
 
-      Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(Instant asOfDate);
 
       UpdatePriceParameters build();
     }

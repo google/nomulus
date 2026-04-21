@@ -47,7 +47,7 @@ class TimeOfYearTest {
     // This should be a year later because we stepped forward a millisecond
     assertThat(
             TimeOfYear.fromInstant(march1)
-                .getNextInstanceAtOrAfter(march1.plus(Duration.ofMillis(1))))
+                .getNextInstanceAtOrAfter(march1.plusMillis(1)))
         .isEqualTo(plusYears(march1, 1));
   }
 
@@ -58,7 +58,7 @@ class TimeOfYearTest {
     // This should be a year earlier because we stepped backward a millisecond
     assertThat(
             TimeOfYear.fromInstant(march1)
-                .getLastInstanceBeforeOrAt(march1.minus(Duration.ofMillis(1))))
+                .getLastInstanceBeforeOrAt(march1.minusMillis(1)))
         .isEqualTo(minusYears(march1, 1));
   }
 

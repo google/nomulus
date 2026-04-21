@@ -14,6 +14,7 @@
 
 package google.registry.reporting.icann;
 
+import static google.registry.util.DateTimeUtils.plusMinutes;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -82,7 +83,7 @@ class IcannReportingStagingActionTest {
         new TaskMatcher()
             .path("/_dr/task/icannReportingUpload")
             .method(HttpMethod.POST)
-            .scheduleTime(clock.nowUtc().plus(Duration.standardMinutes(2))));
+            .scheduleTime(plusMinutes(clock.nowUtc(), 2)));
   }
 
   @Test

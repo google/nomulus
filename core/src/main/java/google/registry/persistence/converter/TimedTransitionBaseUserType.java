@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
-import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static google.registry.util.DateTimeUtils.parseInstant;
 
 import com.google.common.collect.ImmutableSortedMap;
@@ -47,9 +47,7 @@ public abstract class TimedTransitionBaseUserType<V extends Serializable>
   @Override
   Map<String, String> toStringMap(TimedTransitionProperty<V> map) {
     return map.toValueMapInstant().entrySet().stream()
-        .collect(
-            toImmutableMap(
-                e -> ISO_8601_FORMATTER.format(e.getKey()), e -> valueToString(e.getValue())));
+        .collect(toImmutableMap(e -> formatInstant(e.getKey()), e -> valueToString(e.getValue())));
   }
 
   @Override

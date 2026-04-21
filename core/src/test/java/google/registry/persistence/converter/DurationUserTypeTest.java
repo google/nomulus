@@ -14,6 +14,7 @@
 
 package google.registry.persistence.converter;
 
+import static google.registry.util.DateTimeUtils.plusHours;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -71,7 +72,7 @@ public class DurationUserTypeTest {
   @Test
   void testRoundTripLargeNumberOfDays() {
     Duration testDuration =
-        Duration.standardDays(10001).plus(Duration.standardHours(100)).plus(Duration.millis(790));
+        plusHours(Duration.standardDays(10001), 100).plus(Duration.millis(790));
     assertPersistedEntityHasSameDuration(testDuration);
   }
 

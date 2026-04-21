@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.console;
 
+import static google.registry.util.DateTimeUtils.plusHours;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
@@ -122,7 +123,7 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
           case REGISTRY_LOCK -> ConsolePermission.REGISTRY_LOCK;
         };
     checkPermission(user, request.getRegistrarId(), requiredVerifyPermission);
-    if (request.getRequestTime().plus(Duration.ofHours(1)).isBefore(tm().getTxTime())) {
+    if (plusHours(request.getRequestTime(), 1).isBefore(tm().getTxTime())) {
       throw createVerificationCodeException();
     }
     return request;

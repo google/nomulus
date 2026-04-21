@@ -33,8 +33,6 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -70,9 +68,9 @@ import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that approves a pending transfer on a domain.
@@ -127,7 +125,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
     extensionManager.register(MetadataExtension.class, AllocationTokenExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     AllocationTokenFlowUtils.loadAllocationTokenFromExtension(
         registrarId, targetId, now, eppInput.getSingleExtension(AllocationTokenExtension.class));
@@ -169,9 +167,9 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                                 // billing event should not be passed in.
                                 hasBulkToken ? null : existingBillingRecurrence)
                             .getRenewCost())
-                    .setEventTime(toInstant(now))
+                    .setEventTime(now)
                     .setBillingTime(
-                        toInstant(now.plus(Tld.get(tldStr).getTransferGracePeriodLength())))
+                        now.plusMillis(Tld.get(tldStr).getTransferGracePeriodLength().getMillis()))
                     .setDomainHistoryId(domainHistoryId)
                     .build());
 
@@ -188,18 +186,15 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
       // still needs to be charged for the auto-renew.
       if (billingEvent.isPresent()) {
         entitiesToInsert.add(
-            BillingCancellation.forGracePeriod(
-                autorenewGrace, toInstant(now), domainHistoryId, targetId));
+            BillingCancellation.forGracePeriod(autorenewGrace, now, domainHistoryId, targetId));
       }
     }
     // Close the old autorenew event and poll message at the transfer time (aka now). This may end
     // up deleting the poll message.
     updateAutorenewRecurrenceEndTime(
         existingDomain, existingBillingRecurrence, now, domainHistoryId);
-    DateTime newExpirationTime =
-        toDateTime(
-            computeExDateForApprovalTime(
-                existingDomain, toInstant(now), transferData.getTransferPeriod()));
+    Instant newExpirationTime =
+        computeExDateForApprovalTime(existingDomain, now, transferData.getTransferPeriod());
     // Create a new autorenew event starting at the expiration time.
     BillingRecurrence autorenewEvent =
         new BillingRecurrence.Builder()
@@ -207,7 +202,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
-            .setEventTime(toInstant(newExpirationTime))
+            .setEventTime(newExpirationTime)
             .setRenewalPriceBehavior(
                 hasBulkToken
                     ? RenewalPriceBehavior.DEFAULT
@@ -221,7 +216,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
         new PollMessage.Autorenew.Builder()
             .setTargetId(targetId)
             .setRegistrarId(gainingRegistrarId)
-            .setEventTime(toInstant(newExpirationTime))
+            .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_INSTANT)
             .setMsg("Domain was auto-renewed.")
             .setDomainHistoryId(domainHistoryId)
@@ -238,9 +233,9 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                 partiallyApprovedDomain
                     .getTransferData()
                     .asBuilder()
-                    .setTransferredRegistrationExpirationTime(toInstant(newExpirationTime))
+                    .setTransferredRegistrationExpirationTime(newExpirationTime)
                     .build())
-            .setRegistrationExpirationTime(toInstant(newExpirationTime))
+            .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(autorenewEvent.createVKey())
             .setAutorenewPollMessage(gainingClientAutorenewPollMessage.createVKey())
             // Remove all the old grace periods and add a new one for the transfer.
@@ -252,7 +247,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                                 GracePeriod.forBillingEvent(
                                     GracePeriodStatus.TRANSFER, existingDomain.getRepoId(), event)))
                     .orElseGet(ImmutableSet::of))
-            .setLastEppUpdateTime(toInstant(now))
+            .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)
             // Even if the existing domain had a bulk token, that bulk token should be removed
             // on transfer
@@ -276,14 +271,12 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
     return responseBuilder
         .setResData(
             createTransferResponse(
-                targetId,
-                newDomain.getTransferData(),
-                toDateTime(newDomain.getRegistrationExpirationTime())))
+                targetId, newDomain.getTransferData(), newDomain.getRegistrationExpirationTime()))
         .build();
   }
 
   private DomainHistory buildDomainHistory(
-      Domain newDomain, Tld tld, DateTime now, String gainingRegistrarId) {
+      Domain newDomain, Tld tld, Instant now, String gainingRegistrarId) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(
             newDomain,
@@ -299,7 +292,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                 cancelingRecords,
                 DomainTransactionRecord.create(
                     newDomain.getTld(),
-                    toInstant(now.plus(tld.getTransferGracePeriodLength())),
+                    now.plusMillis(tld.getTransferGracePeriodLength().getMillis()),
                     TRANSFER_SUCCESSFUL,
                     1)))
         .build();

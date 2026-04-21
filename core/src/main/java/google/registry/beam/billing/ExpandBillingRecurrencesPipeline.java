@@ -313,7 +313,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
       recurrenceLastExpansionTime = latestOf(recurrenceLastExpansionTime, eventTime);
       oneTimesToExpandCounter.inc();
       Instant billingTime =
-          eventTime.plus(Duration.ofMillis(tld.getAutoRenewGracePeriodLength().getMillis()));
+          eventTime.plusMillis(tld.getAutoRenewGracePeriodLength().getMillis());
       // Note that the DomainHistory is created as of transaction time, as opposed to event time.
       // This might be counterintuitive because other DomainHistories are created at the time
       // mutation events occur, such as in DomainDeleteFlow or DomainRenewFlow. Therefore, it is

@@ -14,6 +14,7 @@
 
 package google.registry.model.domain;
 
+import static google.registry.util.DateTimeUtils.minusHours;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -232,7 +233,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
   /** Returns true iff the lock was requested &gt;= 1 hour ago and has not been verified. */
   public boolean isLockRequestExpired(Instant now) {
     return getLockCompletionTime().isEmpty()
-        && isBeforeOrAt(getLockRequestTime(), now.minus(Duration.ofHours(1)));
+        && isBeforeOrAt(getLockRequestTime(), minusHours(now, 1));
   }
 
   /** Returns true iff the unlock was requested &gt;= 1 hour ago and has not been verified. */
@@ -240,7 +241,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
     Optional<Instant> unlockRequestTimestamp = getUnlockRequestTime();
     return unlockRequestTimestamp.isPresent()
         && getUnlockCompletionTime().isEmpty()
-        && isBeforeOrAt(unlockRequestTimestamp.get(), now.minus(Duration.ofHours(1)));
+        && isBeforeOrAt(unlockRequestTimestamp.get(), minusHours(now, 1));
   }
 
   @Override

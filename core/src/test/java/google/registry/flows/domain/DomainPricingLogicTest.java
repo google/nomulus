@@ -28,6 +28,8 @@ import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.minusHours;
+import static google.registry.util.DateTimeUtils.plusHours;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -56,7 +58,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.util.Clock;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
@@ -89,7 +90,7 @@ public class DomainPricingLogicTest {
         persistResource(
             Tld.get("example")
                 .asBuilder()
-                .setRenewBillingCostTransitionsInstant(
+                .setRenewBillingCostTransitions(
                     ImmutableSortedMap.of(
                         START_INSTANT, Money.of(USD, 1), clock.now(), Money.of(USD, 10)))
                 .setPremiumList(persistPremiumList("tld2", USD, "premium,USD 100"))
@@ -137,13 +138,12 @@ public class DomainPricingLogicTest {
     ImmutableSortedMap<Instant, TldState> transitions =
         ImmutableSortedMap.<Instant, TldState>naturalOrder()
             .put(START_INSTANT, TldState.PREDELEGATION)
-            .put(clock.now().minus(Duration.ofHours(1)), TldState.START_DATE_SUNRISE)
-            .put(clock.now().plus(Duration.ofHours(1)), TldState.GENERAL_AVAILABILITY)
+            .put(minusHours(clock.now(), 1), TldState.START_DATE_SUNRISE)
+            .put(plusHours(clock.now(), 1), TldState.GENERAL_AVAILABILITY)
             .build();
     createTld("sunrise");
     Tld sunriseTld =
-        persistResource(
-            Tld.get("sunrise").asBuilder().setTldStateTransitionsInstant(transitions).build());
+        persistResource(Tld.get("sunrise").asBuilder().setTldStateTransitions(transitions).build());
     assertThat(
             domainPricingLogic.getCreatePrice(
                 sunriseTld, "domain.sunrise", clock.now(), 2, false, true, Optional.empty()))

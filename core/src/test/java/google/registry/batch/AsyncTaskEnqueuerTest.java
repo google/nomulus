@@ -14,6 +14,8 @@
 
 package google.registry.batch;
 
+import static google.registry.util.DateTimeUtils.plusHours;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
@@ -79,7 +81,7 @@ public class AsyncTaskEnqueuerTest {
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, host.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, clock.nowUtc().toString())
-            .scheduleTime(clock.nowUtc().plus(Duration.standardDays(5))));
+            .scheduleTime(plusDays(clock.nowUtc(), 5)));
   }
 
   @Test
@@ -100,7 +102,7 @@ public class AsyncTaskEnqueuerTest {
             .param(PARAM_RESOURCE_KEY, host.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, now.toString())
             .param(PARAM_RESAVE_TIMES, "2015-05-20T14:34:56.000Z,2015-05-21T15:34:56.000Z")
-            .scheduleTime(clock.nowUtc().plus(Duration.standardHours(24))));
+            .scheduleTime(plusHours(clock.nowUtc(), 24)));
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)

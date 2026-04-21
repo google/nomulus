@@ -14,6 +14,7 @@
 
 package google.registry.bsa.persistence;
 
+import static google.registry.util.DateTimeUtils.plusHours;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
@@ -294,7 +295,7 @@ class QueriesTest {
                 bsaQuery(() -> queryMissedRegisteredUnblockables("tld2", fakeClock.now())))
         .containsExactly(
             new DomainLifeSpan("label2.tld2", time1, END_INSTANT),
-            new DomainLifeSpan("label3.tld2", time2, time2.plus(Duration.ofHours(1))));
+            new DomainLifeSpan("label3.tld2", time2, plusHours(time2, 1)));
 
     BsaTestingUtils.persistUnblockableDomain(
         UnblockableDomain.of("label2", "tld2", UnblockableDomain.Reason.REGISTERED));
@@ -303,7 +304,7 @@ class QueriesTest {
     assertThat(
             (ImmutableList<DomainLifeSpan>)
                 bsaQuery(() -> queryMissedRegisteredUnblockables("tld2", fakeClock.now())))
-        .containsExactly(new DomainLifeSpan("label3.tld2", time2, time2.plus(Duration.ofHours(1))));
+        .containsExactly(new DomainLifeSpan("label3.tld2", time2, plusHours(time2, 1)));
   }
 
   @Test

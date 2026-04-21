@@ -86,7 +86,7 @@ class EnqueuePollMessageCommand extends MutatingCommand {
             () -> {
               Domain domain =
                   ResourceFlowUtils.loadAndVerifyExistence(
-                      Domain.class, domainName, tm().getTransactionTime());
+                      Domain.class, domainName, tm().getTxTime());
               ImmutableList<String> registrarIds;
               if (sendToAll) {
                 registrarIds =
@@ -116,7 +116,7 @@ class EnqueuePollMessageCommand extends MutatingCommand {
                     new PollMessage.OneTime.Builder()
                         .setRegistrarId(registrarId)
                         .setHistoryEntry(historyEntry)
-                        .setEventTime(tm().getTransactionTime())
+                        .setEventTime(tm().getTxTime())
                         .setMsg(message)
                         .build());
               }

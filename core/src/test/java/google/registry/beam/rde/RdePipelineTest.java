@@ -14,6 +14,7 @@
 
 package google.registry.beam.rde;
 
+import static google.registry.util.DateTimeUtils.plusDays;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
@@ -442,11 +443,11 @@ public class RdePipelineTest {
             "soy_2000-01-01_full_S1_R1-report.xml.ghostryde");
 
     assertThat(loadCursorTime(CursorType.BRDA))
-        .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
+        .isEquivalentAccordingToCompareTo(plusDays(now, 1));
     assertThat(loadRevision(now, THIN)).isEqualTo(1);
 
     assertThat(loadCursorTime(RDE_STAGING))
-        .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
+        .isEquivalentAccordingToCompareTo(plusDays(now, 1));
     assertThat(loadRevision(now, FULL)).isEqualTo(1);
     cloudTasksHelper.assertTasksEnqueued(
         "brda",

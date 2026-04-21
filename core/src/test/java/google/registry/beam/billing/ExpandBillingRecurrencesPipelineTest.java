@@ -14,6 +14,7 @@
 
 package google.registry.beam.billing;
 
+import static google.registry.util.DateTimeUtils.minusHours;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
@@ -165,12 +166,12 @@ public class ExpandBillingRecurrencesPipelineTest {
   void testSuccess_expandSingleEvent_deletedDuringGracePeriod() {
     domain =
         persistResource(
-            domain.asBuilder().setDeletionTime(endTime.minus(Duration.ofHours(2))).build());
+            domain.asBuilder().setDeletionTime(minusHours(endTime, 2)).build());
     billingRecurrence =
         persistResource(
             billingRecurrence
                 .asBuilder()
-                .setRecurrenceEndTime(endTime.minus(Duration.ofHours(2)))
+                .setRecurrenceEndTime(minusHours(endTime, 2))
                 .build());
     runPipeline();
 

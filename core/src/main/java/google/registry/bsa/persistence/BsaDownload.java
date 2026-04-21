@@ -17,7 +17,7 @@ package google.registry.bsa.persistence;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.bsa.DownloadStage.DONE;
 import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
-import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
+import static google.registry.util.DateTimeUtils.formatInstant;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
@@ -84,7 +84,7 @@ class BsaDownload {
    */
   String getJobName() {
     // Return a value based on job start time, which is unique.
-    return ISO_8601_FORMATTER.format(getCreationTime()).toLowerCase(Locale.ROOT).replace(":", "");
+    return formatInstant(getCreationTime()).toLowerCase(Locale.ROOT).replace(":", "");
   }
 
   boolean isDone() {

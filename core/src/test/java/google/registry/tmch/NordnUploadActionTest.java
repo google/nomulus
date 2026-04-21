@@ -26,6 +26,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.minusHours;
 import static jakarta.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static google.registry.util.DateTimeUtils.minusHours;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -61,7 +62,6 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -118,7 +118,7 @@ class NordnUploadActionTest {
     createTld("tld");
     persistResource(Tld.get("tld").asBuilder().setLordnUsername("lolcat").build());
     persistSunriseModeDomain();
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(org.joda.time.Duration.standardDays(1));
     persistClaimsModeDomain();
     action.clock = clock;
     action.cloudTasksUtils = cloudTasksUtils;
@@ -203,13 +203,14 @@ class NordnUploadActionTest {
                 LaunchNotice.create("landrush2tcn", null, null, minusHours(clock.now(), 2)))
             .setLordnPhase(LordnPhase.CLAIMS)
             .build());
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(org.joda.time.Duration.standardDays(1));
     persistResource(
         newDomain("claims-landrush1.tld")
             .asBuilder()
             .setCreationTimeForTest(clock.now())
             .setLaunchNotice(
-                LaunchNotice.create("landrush1tcn", null, null, minusHours(clock.now(), 1)))
+                LaunchNotice.create(
+                    "landrush1tcn", null, null, clock.now().minus(java.time.Duration.ofHours(1))))
             .setLordnPhase(LordnPhase.CLAIMS)
             .build());
   }
@@ -223,7 +224,7 @@ class NordnUploadActionTest {
             .setSmdId("new-smdid")
             .setLordnPhase(LordnPhase.SUNRISE)
             .build());
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(org.joda.time.Duration.standardDays(1));
     persistResource(
         newDomain("sunrise1.tld")
             .asBuilder()
