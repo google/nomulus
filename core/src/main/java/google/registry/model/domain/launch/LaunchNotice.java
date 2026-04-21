@@ -17,8 +17,6 @@ package google.registry.model.domain.launch;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.hash.Hashing.crc32;
 import static com.google.common.io.BaseEncoding.base16;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Ascii;
@@ -34,7 +32,6 @@ import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.XmlValue;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** The claims notice id from the claims phase. */
 @XmlType(propOrder = {"noticeId", "expirationTime", "acceptedTime"})
@@ -82,29 +79,11 @@ public class LaunchNotice extends ImmutableObject implements UnsafeSerializable 
     return Optional.ofNullable(noticeId).orElse(EMPTY_NOTICE_ID);
   }
 
-  /**
-   * @deprecated Use {@link #getExpirationTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getExpirationTime() {
-    return toDateTime(expirationTime);
-  }
-
-  public Instant getExpirationTimeInstant() {
+  public Instant getExpirationTime() {
     return expirationTime;
   }
 
-  /**
-   * @deprecated Use {@link #getAcceptedTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getAcceptedTime() {
-    return toDateTime(acceptedTime);
-  }
-
-  public Instant getAcceptedTimeInstant() {
+  public Instant getAcceptedTime() {
     return acceptedTime;
   }
 
@@ -123,7 +102,7 @@ public class LaunchNotice extends ImmutableObject implements UnsafeSerializable 
     checkArgument(CharMatcher.inRange('0', '9').matchesAllOf(noticeId));
 
     // The checksum in the first 8 chars must match the crc32 of label + expiration + notice id.
-    String stringToHash = domainLabel + getExpirationTimeInstant().getEpochSecond() + noticeId;
+    String stringToHash = domainLabel + getExpirationTime().getEpochSecond() + noticeId;
     int computedChecksum = crc32().hashString(stringToHash, UTF_8).asInt();
     if (checksum != computedChecksum) {
       throw new InvalidChecksumException();
@@ -144,13 +123,4 @@ public class LaunchNotice extends ImmutableObject implements UnsafeSerializable 
     return instance;
   }
 
-  /**
-   * @deprecated Use {@link #create(String, String, Instant, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static LaunchNotice create(
-      String tcnId, String validatorId, DateTime expirationTime, DateTime acceptedTime) {
-    return create(tcnId, validatorId, toInstant(expirationTime), toInstant(acceptedTime));
   }
-}

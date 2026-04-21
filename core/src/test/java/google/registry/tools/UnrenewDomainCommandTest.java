@@ -42,6 +42,8 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DatabaseHelper;
+import google.registry.util.DateTimeUtils;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +54,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    fakeClock.setTo(DateTime.parse("2016-12-06T13:55:01Z"));
+    fakeClock.setTo(Instant.parse("2016-12-06T13:55:01Z"));
     command.clock = fakeClock;
     command.printStream = System.out;
   }
@@ -79,13 +81,13 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(
             ForeignKeyUtils.loadResource(Domain.class, "foo.tld", fakeClock.nowUtc())
                 .get()
-                .getRegistrationExpirationDateTime())
-        .isEqualTo(DateTime.parse("2019-12-06T13:55:01.001Z"));
+                .getRegistrationExpirationTime())
+        .isEqualTo(Instant.parse("2019-12-06T13:55:01.001Z"));
     assertThat(
             ForeignKeyUtils.loadResource(Domain.class, "bar.tld", fakeClock.nowUtc())
                 .get()
-                .getRegistrationExpirationDateTime())
-        .isEqualTo(DateTime.parse("2018-12-06T13:55:01.002Z"));
+                .getRegistrationExpirationTime())
+        .isEqualTo(Instant.parse("2018-12-06T13:55:01.002Z"));
     assertInStdout("Successfully unrenewed all domains.");
   }
 
@@ -98,16 +100,16 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         fakeClock.nowUtc(),
         fakeClock.nowUtc(),
         fakeClock.nowUtc().plusYears(5));
-    DateTime newExpirationTime = fakeClock.nowUtc().plusYears(3);
+    Instant newExpirationTime = DateTimeUtils.plusYears(fakeClock.now(), 3);
     fakeClock.advanceOneMilli();
     runCommandForced("-p", "2", "foo.tld");
-    DateTime unrenewTime = fakeClock.nowUtc();
+    Instant unrenewTime = fakeClock.now();
     fakeClock.advanceOneMilli();
     Domain domain = ForeignKeyUtils.loadResource(Domain.class, "foo.tld", fakeClock.nowUtc()).get();
 
     assertAboutHistoryEntries()
         .that(getOnlyHistoryEntryOfType(domain, SYNTHETIC))
-        .hasModificationTime(toInstant(unrenewTime))
+        .hasModificationTime(unrenewTime)
         .and()
         .hasMetadataReason("Domain unrenewal")
         .and()
@@ -128,7 +130,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(domain.getDomainName())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(toInstant(newExpirationTime))
+            .setEventTime(newExpirationTime)
             .build());
     assertPollMessagesEqual(
         getPollMessages(domain),
@@ -139,19 +141,19 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .setMsg(
                     "Domain foo.tld was unrenewed by 2 years; "
                         + "now expires at 2019-12-06T13:55:01.001Z.")
-                .setEventTime(toInstant(unrenewTime))
+                .setEventTime(unrenewTime)
                 .build(),
             new PollMessage.Autorenew.Builder()
                 .setHistoryEntry(synthetic)
                 .setTargetId("foo.tld")
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(toInstant(newExpirationTime))
+                .setEventTime(newExpirationTime)
                 .setMsg("Domain was auto-renewed.")
                 .build()));
 
     // Check that fields on domain were updated correctly.
-    assertThat(domain.getRegistrationExpirationDateTime()).isEqualTo(newExpirationTime);
-    assertThat(domain.getLastEppUpdateTime()).isEqualTo(toInstant(unrenewTime));
+    assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
+    assertThat(domain.getLastEppUpdateTime()).isEqualTo(unrenewTime);
     assertThat(domain.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
   }
 

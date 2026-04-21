@@ -52,7 +52,7 @@ public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
     Instant now = clock.now();
     return possibleDomain
         .filter(domain -> now.isBefore(domain.getDeletionTime()))
-        .map(domain -> domain.cloneProjectedAtInstant(now));
+        .map(domain -> domain.cloneProjectedAtTime(now));
   }
 
   @Override

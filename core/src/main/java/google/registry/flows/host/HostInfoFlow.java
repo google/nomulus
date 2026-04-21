@@ -77,7 +77,7 @@ public final class HostInfoFlow implements TransactionalFlow {
     // there is no superordinate domain, the host's own values for these fields will be correct.
     if (host.isSubordinate()) {
       Domain superordinateDomain =
-          tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtInstant(now);
+          tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now);
       hostInfoDataBuilder
           .setCurrentSponsorRegistrarId(superordinateDomain.getCurrentSponsorRegistrarId())
           .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));

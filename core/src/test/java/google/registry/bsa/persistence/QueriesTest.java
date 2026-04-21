@@ -34,7 +34,6 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -284,7 +283,7 @@ class QueriesTest {
     // Deleted in the future
     persistDomainAsDeleted(
         newDomain("label3.tld2").asBuilder().setCreationTimeForTest(fakeClock.now()).build(),
-        toDateTime(fakeClock.now().plus(Duration.ofHours(1))));
+        fakeClock.nowUtc().plusHours(1));
     fakeClock.advanceOneMilli();
     assertThat(
             (ImmutableList<DomainLifeSpan>)

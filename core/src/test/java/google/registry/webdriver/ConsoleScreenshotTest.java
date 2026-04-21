@@ -17,6 +17,7 @@ package google.registry.webdriver;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.console.GlobalRole;
@@ -80,7 +81,10 @@ public class ConsoleScreenshotTest {
     server.setRegistrarRoles(ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER));
     Registrar registrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     registrar =
-        registrar.asBuilder().setLastPocVerificationDate(DateTime.now(DateTimeZone.UTC)).build();
+        registrar
+            .asBuilder()
+            .setLastPocVerificationDate(toInstant(DateTime.now(DateTimeZone.UTC)))
+            .build();
     persistResource(registrar);
     loadHomePage();
   }

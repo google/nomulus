@@ -25,9 +25,10 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.DaggerEppTestComponent;
@@ -89,7 +90,7 @@ class DeleteExpiredDomainsActionTest {
         persistResource(
             DatabaseHelper.newDomain("bar.tld")
                 .asBuilder()
-                .setAutorenewEndTime(Optional.of(clock.nowUtc().minusDays(10)))
+                .setAutorenewEndTime(Optional.of(minusDays(clock.now(), 10)))
                 .setDeletionTime(plusDays(clock.now(), 17))
                 .build());
 
@@ -98,7 +99,7 @@ class DeleteExpiredDomainsActionTest {
         persistResource(
             DatabaseHelper.newDomain("baz.tld")
                 .asBuilder()
-                .setAutorenewEndTime(Optional.of(clock.nowUtc().plusDays(15)))
+                .setAutorenewEndTime(Optional.of(plusDays(clock.now(), 15)))
                 .build());
 
     // A non-autorenewing domain that is past its expiration time and should be deleted.
@@ -171,7 +172,7 @@ class DeleteExpiredDomainsActionTest {
             new DomainHistory.Builder()
                 .setType(DOMAIN_CREATE)
                 .setDomain(pendingExpirationDomain)
-                .setModificationTime(toInstant(clock.nowUtc().minusMonths(9)))
+                .setModificationTime(minusMonths(clock.now(), 9))
                 .setRegistrarId(pendingExpirationDomain.getCreationRegistrarId())
                 .build());
     BillingRecurrence autorenewBillingEvent =
@@ -182,7 +183,7 @@ class DeleteExpiredDomainsActionTest {
         persistResource(
             pendingExpirationDomain
                 .asBuilder()
-                .setAutorenewEndTime(Optional.of(clock.nowUtc().minusDays(10)))
+                .setAutorenewEndTime(Optional.of(minusDays(clock.now(), 10)))
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
                 .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());

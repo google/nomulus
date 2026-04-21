@@ -259,7 +259,7 @@ class DomainTransferApproveFlowTest
     // After the expected grace time, the grace period should be gone.
     assertThat(
             domain
-                .cloneProjectedAtInstant(
+                .cloneProjectedAtTime(
                     clock.now().plusMillis(registry.getTransferGracePeriodLength().getMillis()))
                 .getGracePeriods())
         .isEmpty();
@@ -917,7 +917,7 @@ class DomainTransferApproveFlowTest
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(plusDays(clock.now(), 1), TokenStatus.VALID)
@@ -937,7 +937,7 @@ class DomainTransferApproveFlowTest
             .setTokenType(UNLIMITED_USE)
             .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -958,7 +958,7 @@ class DomainTransferApproveFlowTest
             .setTokenType(UNLIMITED_USE)
             .setAllowedTlds(ImmutableSet.of("example"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)

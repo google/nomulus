@@ -293,7 +293,7 @@ class AllocationTokenFlowUtilsTest {
     // the promo would be valid, but it was cancelled 12 hours ago
     persistResource(
         createOneMonthPromoTokenBuilder(minusDays(clock.now(), 1))
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, NOT_STARTED)
                     .put(minusMonths(clock.now(), 1), VALID)
@@ -485,7 +485,7 @@ class AllocationTokenFlowUtilsTest {
     return new AllocationToken.Builder()
         .setToken("tokeN")
         .setTokenType(UNLIMITED_USE)
-        .setTokenStatusTransitionsInstant(
+        .setTokenStatusTransitions(
             ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                 .put(START_INSTANT, NOT_STARTED)
                 .put(promoStart, VALID)

@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.model.domain.launch.LaunchNotice;
@@ -47,7 +47,7 @@ class GenerateLordnCommandTest extends CommandTestCase<GenerateLordnCommand> {
     persistResource(
         DatabaseHelper.newDomain("fleecey.tld")
             .asBuilder()
-            .setLaunchNotice(LaunchNotice.create("smd3", "validator", START_OF_TIME, START_OF_TIME))
+            .setLaunchNotice(LaunchNotice.create("smd3", "validator", START_INSTANT, START_INSTANT))
             .setSmdId("smd3")
             .build());
     Path claimsCsv = outputDir.resolve("claims.csv");

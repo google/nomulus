@@ -29,7 +29,6 @@ import static google.registry.testing.GsonSubject.assertAboutJson;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -304,7 +303,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             HistoryEntry.Type.DOMAIN_DELETE,
             Period.create(1, Period.Unit.YEARS),
             "deleted",
-            toDateTime(minusMonths(clock.now(), 6))));
+            clock.nowUtc().minusMonths(6)));
   }
 
   private void createManyDomainsAndHosts(
