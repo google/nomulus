@@ -16,6 +16,7 @@ package google.registry.ui.server.console;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -75,7 +76,7 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
                 .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
                 .setActingUser(fteUser)
                 .setDescription("TheRegistrar|Some change")
-                .setModificationTime(clock.nowUtc())
+                .setModificationTime(toDateTime(clock.now()))
                 .setUrl("/test")
                 .setMethod("POST")
                 .build(),
@@ -83,7 +84,7 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
                 .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
                 .setActingUser(noPermissionUser)
                 .setDescription("TheRegistrar|Another change")
-                .setModificationTime(clock.nowUtc())
+                .setModificationTime(toDateTime(clock.now()))
                 .setUrl("/test")
                 .setMethod("POST")
                 .build(),
@@ -91,7 +92,7 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
                 .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
                 .setActingUser(fteUser)
                 .setDescription("OtherRegistrar|Some change")
-                .setModificationTime(clock.nowUtc())
+                .setModificationTime(toDateTime(clock.now()))
                 .setUrl("/test")
                 .setMethod("POST")
                 .build()));

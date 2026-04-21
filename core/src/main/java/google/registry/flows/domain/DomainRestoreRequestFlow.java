@@ -164,14 +164,14 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
 
     BillingRecurrence autorenewEvent =
         newAutorenewBillingEvent(existingDomain)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setRecurrenceEndTime(END_INSTANT)
             .setDomainHistoryId(domainHistoryId)
             .build();
     entitiesToInsert.add(autorenewEvent);
     PollMessage.Autorenew autorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
-            .setEventTime(newExpirationTime)
+            .setEventTime(toInstant(newExpirationTime))
             .setAutorenewEndTime(END_INSTANT)
             .setDomainHistoryId(domainHistoryId)
             .build();
@@ -204,7 +204,10 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
         .setDomainTransactionRecords(
             ImmutableSet.of(
                 DomainTransactionRecord.create(
-                    newDomain.getTld(), now, TransactionReportField.RESTORED_DOMAINS, 1)))
+                    newDomain.getTld(),
+                    toInstant(now),
+                    TransactionReportField.RESTORED_DOMAINS,
+                    1)))
         .build();
   }
 
@@ -253,7 +256,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
         // Clear the autorenew end time so if it had expired but is now explicitly being restored,
         // it won't immediately be deleted again.
         .setAutorenewEndTime(Optional.empty())
-        .setLastEppUpdateTime(now)
+        .setLastEppUpdateTime(toInstant(now))
         .setLastEppUpdateRegistrarId(registrarId)
         .build();
   }
@@ -273,8 +276,8 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     return new BillingEvent.Builder()
         .setTargetId(targetId)
         .setRegistrarId(registrarId)
-        .setEventTime(now)
-        .setBillingTime(now)
+        .setEventTime(toInstant(now))
+        .setBillingTime(toInstant(now))
         .setPeriodYears(1)
         .setCost(cost)
         .setDomainHistoryId(domainHistoryId);

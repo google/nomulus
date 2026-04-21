@@ -128,8 +128,8 @@ public class CreateCancellationsForBillingEventsCommandTest
             .setRegistrarId("TheRegistrar")
             .setCost(Money.of(CurrencyUnit.USD, 10))
             .setPeriodYears(2)
-            .setEventTime(fakeClock.nowUtc())
-            .setBillingTime(fakeClock.nowUtc())
+            .setEventTime(fakeClock.now())
+            .setBillingTime(fakeClock.now())
             .setFlags(ImmutableSet.of())
             .setDomainHistory(
                 Iterables.getOnlyElement(

@@ -252,6 +252,22 @@ public abstract class DateTimeUtils {
     return (instant == null) ? null : org.joda.time.Instant.ofEpochMilli(instant.toEpochMilli());
   }
 
+  public static Instant plusHours(Instant instant, long hours) {
+    return instant.plus(hours, java.time.temporal.ChronoUnit.HOURS);
+  }
+
+  public static Instant minusHours(Instant instant, long hours) {
+    return instant.minus(hours, java.time.temporal.ChronoUnit.HOURS);
+  }
+
+  public static Instant plusMinutes(Instant instant, long minutes) {
+    return instant.plus(minutes, java.time.temporal.ChronoUnit.MINUTES);
+  }
+
+  public static Instant minusMinutes(Instant instant, long minutes) {
+    return instant.minus(minutes, java.time.temporal.ChronoUnit.MINUTES);
+  }
+
   public static Instant plusDays(Instant instant, int days) {
     return instant.atZone(ZoneOffset.UTC).plusDays(days).toInstant();
   }

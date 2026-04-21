@@ -23,8 +23,8 @@ import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
 import google.registry.testing.TruthChainer.And;
+import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** Truth subject for asserting things about {@link Host} instances. */
 public final class HostSubject extends AbstractEppResourceSubject<Host, HostSubject> {
@@ -40,15 +40,15 @@ public final class HostSubject extends AbstractEppResourceSubject<Host, HostSubj
     return assertAbout(HostSubject::new);
   }
 
-  public And<HostSubject> hasLastTransferTime(DateTime lastTransferTime) {
+  public And<HostSubject> hasLastTransferTime(Instant lastTransferTime) {
     return hasValue(lastTransferTime, actual.getLastTransferTime(), "has lastTransferTime");
   }
 
-  public And<HostSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
+  public And<HostSubject> hasLastTransferTimeNotEqualTo(Instant lastTransferTime) {
     return doesNotHaveValue(lastTransferTime, actual.getLastTransferTime(), "lastTransferTime");
   }
 
-  public And<HostSubject> hasLastSuperordinateChange(DateTime lastSuperordinateChange) {
+  public And<HostSubject> hasLastSuperordinateChange(Instant lastSuperordinateChange) {
     return hasValue(
         lastSuperordinateChange,
         actual.getLastSuperordinateChange(),

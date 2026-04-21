@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.loadByKeysIfPresent;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
@@ -30,6 +31,7 @@ import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +52,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     domainHistory =
         persistResource(
             new DomainHistory.Builder()
-                .setModificationTime(fakeClock.nowUtc())
+                .setModificationTime(fakeClock.now())
                 .setDomain(domain)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
@@ -73,10 +75,10 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
         .containsExactly(futurePollMessage);
     assertInStdout(
-        "624-2013,2013-05-01T22:33:44.000Z,ninelives",
-        "316-2014,2014-01-01T22:33:44.000Z,foobar",
-        "791-2015,2015-01-08T22:33:44.000Z,ginger");
-    assertNotInStdout("123-2015,2015-09-01T22:33:44.000Z,notme");
+        "624-2013,2013-05-01T22:33:44Z,ninelives",
+        "316-2014,2014-01-01T22:33:44Z,foobar",
+        "791-2015,2015-01-08T22:33:44Z,ginger");
+    assertNotInStdout("123-2015,2015-09-01T22:33:44Z,notme");
   }
 
   @Test
@@ -90,20 +92,20 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
                 .setHistoryEntry(domainHistory)
-                .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
+                .setEventTime(Instant.parse("2011-04-15T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
                 .build());
     Autorenew resaved =
-        autorenew.asBuilder().setEventTime(DateTime.parse("2012-04-15T22:33:44Z")).build();
+        autorenew.asBuilder().setEventTime(Instant.parse("2012-04-15T22:33:44Z")).build();
     VKey<Autorenew> pm3 = autorenew.createVKey();
     runCommand("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3)).values())
         .containsExactly(resaved);
     assertInStdout(
-        "625-2011,2011-04-15T22:33:44.000Z,autorenew",
-        "624-2013,2013-05-01T22:33:44.000Z,ninelives",
-        "316-2014,2014-01-01T22:33:44.000Z,foobar");
+        "625-2011,2011-04-15T22:33:44Z,autorenew",
+        "624-2013,2013-05-01T22:33:44Z,ninelives",
+        "316-2014,2014-01-01T22:33:44Z,foobar");
   }
 
   @Test
@@ -117,7 +119,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
                 .setHistoryEntry(domainHistory)
-                .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
+                .setEventTime(Instant.parse("2011-04-15T22:33:44Z"))
                 .setAutorenewEndTime(DateTime.parse("2012-01-01T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
@@ -126,9 +128,9 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     runCommand("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3))).isEmpty();
     assertInStdout(
-        "625-2011,2011-04-15T22:33:44.000Z,autorenew",
-        "624-2013,2013-05-01T22:33:44.000Z,ninelives",
-        "316-2014,2014-01-01T22:33:44.000Z,foobar");
+        "625-2011,2011-04-15T22:33:44Z,autorenew",
+        "624-2013,2013-05-01T22:33:44Z,ninelives",
+        "316-2014,2014-01-01T22:33:44Z,foobar");
   }
 
   @Test
@@ -163,7 +165,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                 .setId(2474L)
                 .setHistoryEntry(domainHistory)
                 .setRegistrarId("NewRegistrar")
-                .setEventTime(DateTime.parse("2013-06-01T22:33:44Z"))
+                .setEventTime(Instant.parse("2013-06-01T22:33:44Z"))
                 .setMsg("baaaahh")
                 .build());
     VKey<OneTime> pm3 = notMatched.createVKey();
@@ -193,7 +195,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             .setId(id)
             .setHistoryEntry(domainHistory)
             .setRegistrarId("TheRegistrar")
-            .setEventTime(eventTime)
+            .setEventTime(toInstant(eventTime))
             .setMsg(message)
             .build());
   }

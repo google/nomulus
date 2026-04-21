@@ -27,6 +27,7 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.BulkPricingPackage;
+import java.time.Instant;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -49,7 +50,7 @@ public class GetBulkPricingPackageCommandTest
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(TokenType.BULK_PRICING)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
@@ -77,7 +78,7 @@ public class GetBulkPricingPackageCommandTest
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(TokenType.BULK_PRICING)
-                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
@@ -101,7 +102,7 @@ public class GetBulkPricingPackageCommandTest
             new AllocationToken.Builder()
                 .setToken("123abc")
                 .setTokenType(TokenType.BULK_PRICING)
-                .setCreationTimeForTest(DateTime.parse("2012-11-12T05:00:00Z"))
+                .setCreationTimeForTest(Instant.parse("2012-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)

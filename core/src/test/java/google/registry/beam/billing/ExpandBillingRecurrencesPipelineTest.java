@@ -154,7 +154,7 @@ public class ExpandBillingRecurrencesPipelineTest {
         defaultOneTime(getOnlyAutoRenewHistory()),
         billingRecurrence
             .asBuilder()
-            .setRecurrenceLastExpansion(plusYears(domain.getCreationTimeInstant(), 1))
+            .setRecurrenceLastExpansion(plusYears(domain.getCreationTime(), 1))
             .build());
 
     // Assert about Cursor.
@@ -184,7 +184,7 @@ public class ExpandBillingRecurrencesPipelineTest {
         defaultOneTime(getOnlyAutoRenewHistory()),
         billingRecurrence
             .asBuilder()
-            .setRecurrenceLastExpansion(plusYears(domain.getCreationTimeInstant(), 1))
+            .setRecurrenceLastExpansion(plusYears(domain.getCreationTime(), 1))
             .build());
 
     // Assert about Cursor.
@@ -213,7 +213,7 @@ public class ExpandBillingRecurrencesPipelineTest {
         defaultOneTime(getOnlyAutoRenewHistory()),
         billingRecurrence
             .asBuilder()
-            .setRecurrenceLastExpansion(plusYears(domain.getCreationTimeInstant(), 1))
+            .setRecurrenceLastExpansion(plusYears(domain.getCreationTime(), 1))
             .build());
 
     // Assert that the cursor did not change.
@@ -226,8 +226,7 @@ public class ExpandBillingRecurrencesPipelineTest {
         persistResource(
             billingRecurrence
                 .asBuilder()
-                .setRecurrenceEndTime(
-                    billingRecurrence.getEventTimeInstant().minus(1, ChronoUnit.DAYS))
+                .setRecurrenceEndTime(billingRecurrence.getEventTime().minus(1, ChronoUnit.DAYS))
                 .build());
     runPipeline();
     assertNoExpansionsHappened();
@@ -251,7 +250,7 @@ public class ExpandBillingRecurrencesPipelineTest {
         persistResource(
             billingRecurrence
                 .asBuilder()
-                .setEventTime(minusYears(billingRecurrence.getEventTimeInstant(), 1))
+                .setEventTime(minusYears(billingRecurrence.getEventTime(), 1))
                 .setRecurrenceEndTime(startTime.plus(6, ChronoUnit.HOURS))
                 .build());
     runPipeline();
@@ -316,7 +315,7 @@ public class ExpandBillingRecurrencesPipelineTest {
         defaultOneTime(getOnlyAutoRenewHistory()),
         billingRecurrence
             .asBuilder()
-            .setRecurrenceLastExpansion(plusYears(domain.getCreationTimeInstant(), 1))
+            .setRecurrenceLastExpansion(plusYears(domain.getCreationTime(), 1))
             .build());
 
     // Assert that the cursor did not move.
@@ -355,7 +354,7 @@ public class ExpandBillingRecurrencesPipelineTest {
         defaultOneTime(getOnlyAutoRenewHistory()),
         billingRecurrence
             .asBuilder()
-            .setRecurrenceLastExpansion(plusYears(domain.getCreationTimeInstant(), 1))
+            .setRecurrenceLastExpansion(plusYears(domain.getCreationTime(), 1))
             .build());
     assertBillingEventsForResource(
         otherDomain,
@@ -363,7 +362,7 @@ public class ExpandBillingRecurrencesPipelineTest {
             otherDomain, getOnlyAutoRenewHistory(otherDomain), otherBillingRecurrence, 100),
         otherBillingRecurrence
             .asBuilder()
-            .setRecurrenceLastExpansion(plusYears(otherDomain.getCreationTimeInstant(), 1))
+            .setRecurrenceLastExpansion(plusYears(otherDomain.getCreationTime(), 1))
             .build());
 
     // Assert about Cursor.
@@ -387,7 +386,7 @@ public class ExpandBillingRecurrencesPipelineTest {
                     DomainTransactionRecord.create(
                         domain.getTld(),
                         // We report this when the autorenew grace period ends.
-                        plusYears(domain.getCreationTimeInstant(), 2)
+                        plusYears(domain.getCreationTime(), 2)
                             .plus(
                                 Duration.ofMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis())),
                         TransactionReportField.netRenewsFieldFromYears(1),
@@ -404,21 +403,21 @@ public class ExpandBillingRecurrencesPipelineTest {
                         h.getDomainTransactionRecords().stream()
                             .findFirst()
                             .get()
-                            .getReportingTimeInstant()))
+                            .getReportingTime()))
             .collect(toImmutableList());
     assertBillingEventsForResource(
         domain,
         defaultOneTime(histories.get(0)),
         defaultOneTime(histories.get(1))
             .asBuilder()
-            .setEventTime(plusYears(domain.getCreationTimeInstant(), 2))
+            .setEventTime(plusYears(domain.getCreationTime(), 2))
             .setBillingTime(
-                plusYears(domain.getCreationTimeInstant(), 2)
+                plusYears(domain.getCreationTime(), 2)
                     .plus(Duration.ofMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis())))
             .build(),
         billingRecurrence
             .asBuilder()
-            .setRecurrenceLastExpansion(plusYears(domain.getCreationTimeInstant(), 2))
+            .setRecurrenceLastExpansion(plusYears(domain.getCreationTime(), 2))
             .build());
 
     // Assert about Cursor.
@@ -472,7 +471,7 @@ public class ExpandBillingRecurrencesPipelineTest {
                 DomainTransactionRecord.create(
                     domain.getTld(),
                     // We report this when the autorenew grace period ends.
-                    plusYears(domain.getCreationTimeInstant(), 1)
+                    plusYears(domain.getCreationTime(), 1)
                         .plus(Duration.ofMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis())),
                     TransactionReportField.netRenewsFieldFromYears(1),
                     1)))
@@ -487,11 +486,11 @@ public class ExpandBillingRecurrencesPipelineTest {
       Domain domain, DomainHistory history, BillingRecurrence billingRecurrence, int cost) {
     return new BillingEvent.Builder()
         .setBillingTime(
-            plusYears(domain.getCreationTimeInstant(), 1)
+            plusYears(domain.getCreationTime(), 1)
                 .plus(Duration.ofMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis())))
         .setRegistrarId("TheRegistrar")
         .setCost(Money.of(USD, cost))
-        .setEventTime(plusYears(domain.getCreationTimeInstant(), 1))
+        .setEventTime(plusYears(domain.getCreationTime(), 1))
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW, Flag.SYNTHETIC))
         .setPeriodYears(1)
         .setReason(Reason.RENEW)

@@ -32,7 +32,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -117,13 +117,13 @@ class DomainTransferRejectFlowTest
     assertLastHistoryContainsResource(domain);
     // The only billing event left should be the original autorenew event, now reopened.
     assertBillingEvents(
-        getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_OF_TIME).build());
+        getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_INSTANT).build());
     // The poll message (in the future) to the losing registrar for implicit ack should be gone.
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();
     // The poll message in the future to the gaining registrar should be gone too, but there
     // should be one at the current time to the gaining registrar.
     PollMessage gainingPollMessage = getOnlyPollMessage("NewRegistrar");
-    assertThat(gainingPollMessage.getEventTime()).isEqualTo(clock.nowUtc());
+    assertThat(gainingPollMessage.getEventTime()).isEqualTo(clock.now());
     assertThat(
             gainingPollMessage
                 .getResponseData()

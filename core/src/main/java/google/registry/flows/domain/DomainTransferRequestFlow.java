@@ -257,11 +257,12 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
             domainHistoryId.getRevisionId(),
             new DomainTransferData.Builder()
                 .setTransferRequestTrid(trid)
-                .setTransferRequestTime(now)
+                .setTransferRequestTime(toInstant(now))
                 .setGainingRegistrarId(gainingClientId)
                 .setLosingRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
-                .setPendingTransferExpirationTime(automaticTransferTime)
-                .setTransferredRegistrationExpirationTime(serverApproveNewExpirationTime),
+                .setPendingTransferExpirationTime(toInstant(automaticTransferTime))
+                .setTransferredRegistrationExpirationTime(
+                    toInstant(serverApproveNewExpirationTime)),
             serverApproveEntities,
             period);
     // Create a poll message to notify the losing registrar that a transfer was requested.
@@ -269,7 +270,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
         createLosingTransferPollMessage(
                 targetId, pendingTransferData, serverApproveNewExpirationTime, domainHistoryId)
             .asBuilder()
-            .setEventTime(now)
+            .setEventTime(toInstant(now))
             .build();
     // End the old autorenew event and poll message at the implicit transfer time. This may delete
     // the poll message if it has no events left. Note that if the automatic transfer succeeds, then
@@ -282,7 +283,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
             .asBuilder()
             .setTransferData(pendingTransferData)
             .addStatusValue(StatusValue.PENDING_TRANSFER)
-            .setLastEppUpdateTime(now)
+            .setLastEppUpdateTime(toInstant(now))
             .setLastEppUpdateRegistrarId(gainingClientId)
             .build();
     DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now, period);
@@ -374,8 +375,9 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
             ImmutableSet.of(
                 DomainTransactionRecord.create(
                     tld.getTldStr(),
-                    now.plus(tld.getAutomaticTransferLength())
-                        .plus(tld.getTransferGracePeriodLength()),
+                    toInstant(
+                        now.plus(tld.getAutomaticTransferLength())
+                            .plus(tld.getTransferGracePeriodLength())),
                     TransactionReportField.TRANSFER_SUCCESSFUL,
                     1)))
         .build();

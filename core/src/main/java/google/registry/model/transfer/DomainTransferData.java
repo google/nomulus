@@ -18,8 +18,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullToEmpty;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -46,7 +44,6 @@ import jakarta.persistence.Embedded;
 import java.time.Instant;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** Transfer data for domain. */
 @Embeddable
@@ -168,13 +165,6 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
   @Nullable
   public Trid getTransferRequestTrid() {
     return transferRequestTrid;
-  }
-
-  @Nullable
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getTransferredRegistrationExpirationDateTime() {
-    return toDateTime(transferredRegistrationExpirationTime);
   }
 
   @Nullable
@@ -345,13 +335,6 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
      * @deprecated Use {@link #setTransferredRegistrationExpirationTime(Instant)}
      */
     @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public Builder setTransferredRegistrationExpirationTime(
-        DateTime transferredRegistrationExpirationTime) {
-      return setTransferredRegistrationExpirationTime(
-          toInstant(transferredRegistrationExpirationTime));
-    }
-
     public Builder setServerApproveBillingEvent(VKey<BillingEvent> serverApproveBillingEvent) {
       getInstance().serverApproveBillingEvent = serverApproveBillingEvent;
       return this;

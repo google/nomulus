@@ -26,6 +26,10 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntr
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static google.registry.testing.GsonSubject.assertAboutJson;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusMonths;
+import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -141,7 +145,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             makeDomain("cat.lol", hostNs1CatLol, hostNs2CatLol, registrar)
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.cat.lol", "ns2.cat.lol"))
-                .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+                .setCreationTimeForTest(minusYears(clock.now(), 3))
                 .setCreationRegistrarId("TheRegistrar")
                 .build());
     persistResource(
@@ -163,7 +167,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                             clock.nowUtc().minusYears(2))),
                     registrar)
                 .asBuilder()
-                .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+                .setCreationTimeForTest(minusYears(clock.now(), 3))
                 .setCreationRegistrarId("TheRegistrar")
                 .build());
     // cat.example
@@ -184,7 +188,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                             clock.nowUtc().minusYears(2))),
                     registrar)
                 .asBuilder()
-                .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+                .setCreationTimeForTest(minusYears(clock.now(), 3))
                 .setCreationRegistrarId("TheRegistrar")
                 .build());
     // cat.みんな
@@ -205,7 +209,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                             clock.nowUtc().minusYears(2))),
                     registrar)
                 .asBuilder()
-                .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+                .setCreationTimeForTest(minusYears(clock.now(), 3))
                 .setCreationRegistrarId("TheRegistrar")
                 .build());
     // cat.1.test
@@ -227,7 +231,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                     registrar)
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.cat.1.test"))
-                .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+                .setCreationTimeForTest(minusYears(clock.now(), 3))
                 .setCreationRegistrarId("TheRegistrar")
                 .build());
 
@@ -293,15 +297,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   }
 
   private void deleteCatLol() {
-    persistResource(
-        domainCatLol.asBuilder().setDeletionTime(clock.nowUtc().minusMonths(6)).build());
+    persistResource(domainCatLol.asBuilder().setDeletionTime(minusMonths(clock.now(), 6)).build());
     persistResource(
         makeHistoryEntry(
             domainCatLol,
             HistoryEntry.Type.DOMAIN_DELETE,
             Period.create(1, Period.Unit.YEARS),
             "deleted",
-            clock.nowUtc().minusMonths(6)));
+            toDateTime(minusMonths(clock.now(), 6))));
   }
 
   private void createManyDomainsAndHosts(
@@ -328,13 +331,13 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
           makeDomain(domainName, null, null, registrar)
               .asBuilder()
               .setNameservers(hostKeys)
-              .setCreationTimeForTest(clock.nowUtc().minusYears(3))
+              .setCreationTimeForTest(minusYears(clock.now(), 3))
               .setCreationRegistrarId("TheRegistrar");
       if (domainName.equals(mainDomainName)) {
         builder.setSubordinateHosts(subordinateHostnamesBuilder.build());
       }
       if (i % numTotalDomainsPerActiveDomain != 0) {
-        builder = builder.setDeletionTime(clock.nowUtc().minusDays(1));
+        builder = builder.setDeletionTime(minusDays(clock.now(), 1));
       }
       domainsBuilder.add(builder.build());
     }
@@ -877,7 +880,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testDomainMatchDeletedDomain_notFound() {
-    persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatLol, minusDays(clock.now(), 1));
     runNotFoundTest(RequestType.NAME, "cat.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
@@ -885,7 +888,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   @Test
   void testDomainMatchDeletedDomain_notFound_deletedNotRequested() {
     login("evilregistrar");
-    persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatLol, minusDays(clock.now(), 1));
     runNotFoundTest(RequestType.NAME, "cat.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
@@ -903,7 +906,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   void testDomainMatchDeletedDomain_notFound_loggedInAsOtherRegistrar() {
     login("otherregistrar");
     action.includeDeletedParam = Optional.of(true);
-    persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatLol, minusDays(clock.now(), 1));
     runNotFoundTest(RequestType.NAME, "cat.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L), 404);
   }
@@ -919,15 +922,15 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testDomainMatchDeletedDomainWithWildcard_notFound() {
-    persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatLol, minusDays(clock.now(), 1));
     runNotFoundTest(RequestType.NAME, "cat.lo*", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L), 404);
   }
 
   @Test
   void testDomainMatchDeletedDomainsWithWildcardAndTld_notFound() {
-    persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
-    persistDomainAsDeleted(domainCatLol2, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatLol, minusDays(clock.now(), 1));
+    persistDomainAsDeleted(domainCatLol2, minusDays(clock.now(), 1));
     runNotFoundTest(RequestType.NAME, "cat*.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L), 404);
   }
@@ -1338,7 +1341,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   void testNameserverMatchDeletedDomain_notFound_loggedInAsOtherRegistrar() {
     login("otherregistrar");
     action.includeDeletedParam = Optional.of(true);
-    persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatLol, minusDays(clock.now(), 1));
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns2.cat.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(0L), Optional.of(1L), 404);
   }
@@ -1355,36 +1358,36 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   @Test
   void testNameserverMatchOneDeletedDomain_foundTheOther() {
     login("evilregistrar");
-    persistDomainAsDeleted(domainCatExample, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatExample, minusDays(clock.now(), 1));
     runSuccessfulTestWithCatLol(RequestType.NS_LDH_NAME, "ns1.cat.lol", "rdap_domain.json");
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
   @Test
   void testNameserverMatchTwoDeletedDomains_notFound() {
-    persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
-    persistDomainAsDeleted(domainCatExample, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatLol, minusDays(clock.now(), 1));
+    persistDomainAsDeleted(domainCatExample, minusDays(clock.now(), 1));
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1.cat.lol", "No domains found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(0L), Optional.of(1L), 404);
   }
 
   @Test
   void testNameserverMatchDeletedNameserver_notFound() {
-    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1.cat.lol", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
   @Test
   void testNameserverMatchDeletedNameserverWithWildcard_notFound() {
-    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1.cat.l*", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
   @Test
   void testNameserverMatchDeletedNameserverWithWildcardAndSuffix_notFound() {
-    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1*.cat.lol", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
@@ -1614,7 +1617,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   void testAddressMatchDeletedDomain_notFound_loggedInAsOtherRegistrar() {
     login("otherregistrar");
     action.includeDeletedParam = Optional.of(true);
-    persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatLol, minusDays(clock.now(), 1));
     runNotFoundTest(RequestType.NS_IP, "bad:f00d:cafe:0:0:0:15:beef", "No domains found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.of(0L), Optional.of(1L), 404);
   }
@@ -1632,7 +1635,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   @Test
   void testAddressMatchOneDeletedDomain_foundTheOther() {
     login("evilregistrar");
-    persistDomainAsDeleted(domainCatExample, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatExample, minusDays(clock.now(), 1));
     rememberWildcardType("1.2.3.4");
     assertAboutJson()
         .that(generateActualJson(RequestType.NS_IP, "1.2.3.4"))
@@ -1650,15 +1653,15 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testAddressMatchTwoDeletedDomains_notFound() {
-    persistDomainAsDeleted(domainCatLol, clock.nowUtc().minusDays(1));
-    persistDomainAsDeleted(domainCatExample, clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(domainCatLol, minusDays(clock.now(), 1));
+    persistDomainAsDeleted(domainCatExample, minusDays(clock.now(), 1));
     runNotFoundTest(RequestType.NS_IP, "1.2.3.4", "No domains found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.of(0L), Optional.of(1L), 404);
   }
 
   @Test
   void testAddressMatchDeletedNameserver_notFound() {
-    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
     runNotFoundTest(RequestType.NS_IP, "1.2.3.4", "No domains found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.empty(), Optional.of(0L), 404);
   }

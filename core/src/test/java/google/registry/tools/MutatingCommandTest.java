@@ -24,7 +24,6 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -34,9 +33,9 @@ import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -67,9 +66,8 @@ public class MutatingCommandTest {
     createTld("tld");
     host1 = persistActiveHost("host1.example.tld");
     host2 = persistActiveHost("host2.example.tld");
-    newHost1 = host1.asBuilder()
-        .setLastEppUpdateTime(DateTime.parse("2014-09-09T09:09:09.000Z"))
-        .build();
+    newHost1 =
+        host1.asBuilder().setLastEppUpdateTime(Instant.parse("2014-09-09T09:09:09.000Z")).build();
     newHost2 = host2.asBuilder().setPersistedCurrentSponsorRegistrarId("Registrar2").build();
   }
 
@@ -331,8 +329,7 @@ public class MutatingCommandTest {
           @Override
           protected void init() {
             stageEntityChange(host1, newHost1);
-            stageEntityChange(
-                host1, host1.asBuilder().setLastEppUpdateTime(DateTime.now(UTC)).build());
+            stageEntityChange(host1, host1.asBuilder().setLastEppUpdateTime(Instant.now()).build());
           }
         };
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);

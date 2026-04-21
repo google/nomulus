@@ -34,7 +34,7 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
@@ -155,7 +155,7 @@ public class MosApiModuleTest {
     KeyPair keyPair = keyGen.generateKeyPair();
     this.generatedPrivateKey = keyPair.getPrivate();
     DateTimeFormatter formatter =
-        DateTimeFormatter.ofPattern("yyyyMMddHHmmss'Z'").withZone(ZoneId.of("UTC"));
+        DateTimeFormatter.ofPattern("yyyyMMddHHmmss'Z'").withZone(ZoneOffset.UTC);
     Instant now = Instant.parse("2021-01-01T00:00:00Z");
     Instant end = plusYears(now, 1);
     // Convert string to Bouncy Castle Time objects
