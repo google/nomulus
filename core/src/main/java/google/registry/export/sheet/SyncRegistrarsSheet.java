@@ -26,6 +26,7 @@ import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
 import static google.registry.model.registrar.RegistrarPoc.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -64,7 +65,8 @@ class SyncRegistrarsSheet {
   boolean wereRegistrarsModified() {
     Optional<Cursor> cursor =
         tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET)));
-    Instant lastUpdateTime = cursor.isEmpty() ? START_INSTANT : cursor.get().getCursorTimeInstant();
+    Instant lastUpdateTime =
+        cursor.isEmpty() ? START_INSTANT : toInstant(cursor.get().getCursorTime());
     for (Registrar registrar : Registrar.loadAllCached()) {
       if (DateTimeUtils.isAtOrAfter(registrar.getLastUpdateTime(), lastUpdateTime)) {
         return true;

@@ -19,7 +19,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -28,8 +28,8 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityYamlUtils;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
+import java.time.Instant;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,9 +52,9 @@ class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
             .setDriveFolderId("driveFolder")
             .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(
-                    START_OF_TIME,
+                    START_INSTANT,
                     Money.of(USD, 8),
-                    DateTime.parse("2020-01-01T00:00:00Z"),
+                    Instant.parse("2020-01-01T00:00:00Z"),
                     Money.of(USD, 25)))
             .setPremiumList(premiumList)
             .build());

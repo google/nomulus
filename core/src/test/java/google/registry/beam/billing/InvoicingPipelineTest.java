@@ -24,7 +24,7 @@ import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.util.logging.Level.SEVERE;
 import static org.joda.money.CurrencyUnit.CAD;
 import static org.joda.money.CurrencyUnit.JPY;
@@ -335,7 +335,7 @@ class InvoicingPipelineTest {
             .build();
     persistResource(registrar);
     Tld test =
-        newTld("test", "TEST", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
+        newTld("test", "TEST", ImmutableSortedMap.of(START_INSTANT, GENERAL_AVAILABILITY))
             .asBuilder()
             .setInvoicingEnabled(true)
             .build();
@@ -449,13 +449,13 @@ AND cr.id IS NULL
     persistResource(registrar3);
 
     Tld test =
-        newTld("test", "TEST", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
+        newTld("test", "TEST", ImmutableSortedMap.of(START_INSTANT, GENERAL_AVAILABILITY))
             .asBuilder()
             .setInvoicingEnabled(true)
             .build();
     persistResource(test);
     Tld hello =
-        newTld("hello", "HELLO", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
+        newTld("hello", "HELLO", ImmutableSortedMap.of(START_INSTANT, GENERAL_AVAILABILITY))
             .asBuilder()
             .setInvoicingEnabled(true)
             .build();

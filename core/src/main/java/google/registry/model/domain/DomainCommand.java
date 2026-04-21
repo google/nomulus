@@ -383,7 +383,7 @@ public class DomainCommand {
 
   /** Loads host keys to cached EPP resources by their foreign keys. */
   private static ImmutableMap<String, VKey<Host>> loadByForeignKeysCached(
-      Set<String> foreignKeys, Instant now) throws InvalidReferencesException {
+      final Set<String> foreignKeys, Instant now) throws InvalidReferencesException {
     ImmutableMap<String, VKey<Host>> fks =
         ForeignKeyUtils.loadKeysByCacheIfEnabled(Host.class, foreignKeys, now);
     if (!fks.keySet().equals(foreignKeys)) {

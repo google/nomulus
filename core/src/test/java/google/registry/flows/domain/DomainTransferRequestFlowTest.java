@@ -47,7 +47,6 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static google.registry.testing.HostSubject.assertAboutHosts;
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
@@ -798,7 +797,7 @@ class DomainTransferRequestFlowTest
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD))
             .build());
     doSuccessfulTest("domain_transfer_request.xml", "domain_transfer_request_response.xml");
   }
@@ -1022,10 +1021,10 @@ class DomainTransferRequestFlowTest
             .asBuilder()
             .setCurrency(JPY)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(JPY, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 800))
             .setRestoreBillingCost(Money.ofMajor(JPY, 800))
@@ -1486,7 +1485,7 @@ class DomainTransferRequestFlowTest
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 20)))
             .build());
     EppException thrown =
         assertThrows(

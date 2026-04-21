@@ -29,6 +29,7 @@ import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,7 +43,6 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DatabaseHelper;
-import google.registry.util.DateTimeUtils;
 import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -100,7 +100,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         fakeClock.nowUtc(),
         fakeClock.nowUtc(),
         fakeClock.nowUtc().plusYears(5));
-    Instant newExpirationTime = DateTimeUtils.plusYears(fakeClock.now(), 3);
+    Instant newExpirationTime = plusYears(fakeClock.now(), 3);
     fakeClock.advanceOneMilli();
     runCommandForced("-p", "2", "foo.tld");
     Instant unrenewTime = fakeClock.now();

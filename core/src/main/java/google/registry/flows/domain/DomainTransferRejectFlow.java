@@ -31,9 +31,8 @@ import static google.registry.model.reporting.DomainTransactionRecord.Transactio
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REJECT;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.union;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -57,7 +56,6 @@ import google.registry.model.transfer.TransferStatus;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that rejects a pending transfer on a domain.
@@ -112,18 +110,18 @@ public final class DomainTransferRejectFlow implements MutatingFlow {
     Domain newDomain =
         denyPendingTransfer(
             existingDomain, TransferStatus.CLIENT_REJECTED, toDateTime(now), registrarId);
-    DomainHistory domainHistory = buildDomainHistory(newDomain, tld, toDateTime(now));
+    DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now);
     tm().update(newDomain);
     tm().insertAll(
             domainHistory,
             createGainingTransferPollMessage(
-                targetId, newDomain.getTransferData(), null, toDateTime(now), domainHistoryId));
+                targetId, newDomain.getTransferData(), null, now, domainHistoryId));
     // Reopen the autorenew event and poll message that we closed for the implicit transfer. This
     // may end up recreating the poll message if it was deleted upon the transfer request.
     BillingRecurrence existingBillingRecurrence =
         tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     updateAutorenewRecurrenceEndTime(
-        existingDomain, existingBillingRecurrence, END_OF_TIME, domainHistory.getHistoryEntryId());
+        existingDomain, existingBillingRecurrence, END_INSTANT, domainHistory.getHistoryEntryId());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());
@@ -132,7 +130,7 @@ public final class DomainTransferRejectFlow implements MutatingFlow {
         .build();
   }
 
-  private DomainHistory buildDomainHistory(Domain newDomain, Tld tld, DateTime now) {
+  private DomainHistory buildDomainHistory(Domain newDomain, Tld tld, Instant now) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(
             newDomain,
@@ -144,8 +142,7 @@ public final class DomainTransferRejectFlow implements MutatingFlow {
         .setDomainTransactionRecords(
             union(
                 cancelingRecords,
-                DomainTransactionRecord.create(
-                    newDomain.getTld(), toInstant(now), TRANSFER_NACKED, 1)))
+                DomainTransactionRecord.create(newDomain.getTld(), now, TRANSFER_NACKED, 1)))
         .setDomain(newDomain)
         .build();
   }

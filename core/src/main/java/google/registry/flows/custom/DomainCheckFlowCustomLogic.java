@@ -25,7 +25,7 @@ import google.registry.flows.domain.DomainCheckFlow;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.CheckData.DomainCheck;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * A no-op base class for {@link DomainCheckFlow} custom logic.
@@ -75,7 +75,7 @@ public class DomainCheckFlowCustomLogic extends BaseFlowCustomLogic {
    *     but can be overridden in v&gt;=0.12 of the fee extension.
    */
   public record AfterValidationParameters(
-      ImmutableMap<String, InternetDomainName> domainNames, DateTime asOfDate) {
+      ImmutableMap<String, InternetDomainName> domainNames, Instant asOfDate) {
 
     public static Builder newBuilder() {
       return new AutoBuilder_DomainCheckFlowCustomLogic_AfterValidationParameters_Builder();
@@ -87,7 +87,7 @@ public class DomainCheckFlowCustomLogic extends BaseFlowCustomLogic {
 
       Builder setDomainNames(ImmutableMap<String, InternetDomainName> domainNames);
 
-      Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(Instant asOfDate);
 
       AfterValidationParameters build();
     }
@@ -102,7 +102,7 @@ public class DomainCheckFlowCustomLogic extends BaseFlowCustomLogic {
   public record BeforeResponseParameters(
       ImmutableList<DomainCheck> domainChecks,
       ImmutableList<? extends ResponseExtension> responseExtensions,
-      DateTime asOfDate) {
+      Instant asOfDate) {
 
     public static Builder newBuilder() {
       return new AutoBuilder_DomainCheckFlowCustomLogic_BeforeResponseParameters_Builder();
@@ -116,7 +116,7 @@ public class DomainCheckFlowCustomLogic extends BaseFlowCustomLogic {
 
       Builder setResponseExtensions(ImmutableList<? extends ResponseExtension> responseExtensions);
 
-      Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(Instant asOfDate);
 
       BeforeResponseParameters build();
     }
