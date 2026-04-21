@@ -189,7 +189,7 @@ public final class FullFieldsTestEntityHelper {
             .setRepoId(generateNewDomainRoid(getTldFromDomainName(Idn.toASCII(domain))))
             .setLastEppUpdateTime(Instant.parse("2009-05-29T20:13:00Z"))
             .setCreationTimeForTest(Instant.parse("2000-10-08T00:45:00Z"))
-            .setRegistrationExpirationTime(DateTime.parse("2110-10-08T00:44:59Z"))
+            .setRegistrationExpirationTime(Instant.parse("2110-10-08T00:44:59Z"))
             .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
             .setCreationRegistrarId(registrar.getRegistrarId())
             .setStatusValues(

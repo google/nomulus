@@ -208,7 +208,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         new PollMessage.Autorenew.Builder()
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
+            .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
@@ -276,7 +276,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         new PollMessage.Autorenew.Builder()
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationDateTime())
+            .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
@@ -322,7 +322,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     persistResource(
         reloadResourceByForeignKey()
             .asBuilder()
-            .setAutorenewEndTimeInstant(Optional.of(plusYears(clock.now(), 2)))
+            .setAutorenewEndTime(Optional.of(plusYears(clock.now(), 2)))
             .build());
     assertThat(reloadResourceByForeignKey().getAutorenewEndTime()).isPresent();
     runFlowAssertResponse(

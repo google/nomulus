@@ -345,7 +345,7 @@ class DomainTransferRequestFlowTest
     assertThat(domain.getGracePeriods()).containsExactlyElementsIn(originalGracePeriods);
     // If we fast forward AUTOMATIC_TRANSFER_DAYS, the transfer should have cleared out all other
     // grace periods, but expect a transfer grace period (if there was a transfer billing event).
-    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtInstant(implicitTransferTime);
+    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
     if (expectTransferBillingEvent) {
       assertGracePeriods(
           domainAfterAutomaticTransfer.getGracePeriods(),
@@ -440,7 +440,7 @@ class DomainTransferRequestFlowTest
       Instant expectedExpirationTime, Instant implicitTransferTime, Period expectedPeriod)
       throws Exception {
     Tld registry = Tld.get(domain.getTld());
-    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtInstant(implicitTransferTime);
+    Domain domainAfterAutomaticTransfer = domain.cloneProjectedAtTime(implicitTransferTime);
     assertTransferApproved(domainAfterAutomaticTransfer, implicitTransferTime, expectedPeriod);
     assertAboutDomains()
         .that(domainAfterAutomaticTransfer)
@@ -453,7 +453,7 @@ class DomainTransferRequestFlowTest
         .isEqualTo(expectedExpirationTime);
     // And after the expected grace time, the grace period should be gone.
     Domain afterGracePeriod =
-        domain.cloneProjectedAtInstant(
+        domain.cloneProjectedAtTime(
             clock
                 .now()
                 .plusMillis(registry.getAutomaticTransferLength().getMillis())
@@ -1795,7 +1795,7 @@ class DomainTransferRequestFlowTest
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(plusDays(clock.now(), 1), TokenStatus.VALID)
@@ -1816,7 +1816,7 @@ class DomainTransferRequestFlowTest
             .setTokenType(UNLIMITED_USE)
             .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)

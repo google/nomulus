@@ -35,6 +35,7 @@ import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verify
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
@@ -192,7 +193,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     existingDomain = maybeApplyBulkPricingRemovalToken(existingDomain, allocationToken);
 
     DateTime newExpirationTime =
-        plusYears(existingDomain.getRegistrationExpirationDateTime(), years); // Uncapped
+        toDateTime(plusYears(existingDomain.getRegistrationExpirationTime(), years)); // Uncapped
     validateRegistrationPeriod(now, newExpirationTime);
     Optional<FeeRenewCommandExtension> feeRenew =
         eppInput.getSingleExtension(FeeRenewCommandExtension.class);
@@ -240,7 +241,7 @@ public final class DomainRenewFlow implements MutatingFlow {
             .asBuilder()
             .setLastEppUpdateTime(toInstant(now))
             .setLastEppUpdateRegistrarId(registrarId)
-            .setRegistrationExpirationTime(newExpirationTime)
+            .setRegistrationExpirationTime(toInstant(newExpirationTime))
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
             .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
             .addGracePeriod(
@@ -277,7 +278,7 @@ public final class DomainRenewFlow implements MutatingFlow {
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
                 .setDomain(newDomain)
-                .setResData(DomainRenewData.create(targetId, newExpirationTime))
+                .setResData(DomainRenewData.create(targetId, toInstant(newExpirationTime)))
                 .setResponseExtensions(createResponseExtensions(feesAndCredits, feeRenew))
                 .build());
     persistEntityChanges(entityChanges);
@@ -331,7 +332,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     // If the date they specify doesn't match the expiration, fail. (This is an idempotence check).
     if (!command
         .getCurrentExpirationDate()
-        .equals(existingDomain.getRegistrationExpirationDateTime().toLocalDate())) {
+        .equals(toDateTime(existingDomain.getRegistrationExpirationTime()).toLocalDate())) {
       throw new IncorrectCurrentExpirationDateException();
     }
   }

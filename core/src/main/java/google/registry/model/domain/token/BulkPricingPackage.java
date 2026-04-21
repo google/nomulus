@@ -17,8 +17,6 @@ package google.registry.model.domain.token;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.Buildable;
@@ -38,7 +36,6 @@ import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /**
  * An entity representing a bulk pricing promotion. Note that this table is still called
@@ -107,29 +104,11 @@ public class BulkPricingPackage extends ImmutableObject implements Buildable {
     return bulkPrice;
   }
 
-  /**
-   * @deprecated Use {@link #getNextBillingDateInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getNextBillingDate() {
-    return toDateTime(nextBillingDate);
-  }
-
-  public Instant getNextBillingDateInstant() {
+  public Instant getNextBillingDate() {
     return nextBillingDate;
   }
 
-  /**
-   * @deprecated Use {@link #getLastNotificationSentInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public Optional<DateTime> getLastNotificationSent() {
-    return Optional.ofNullable(toDateTime(lastNotificationSent));
-  }
-
-  public Optional<Instant> getLastNotificationSentInstant() {
+  public Optional<Instant> getLastNotificationSent() {
     return Optional.ofNullable(lastNotificationSent);
   }
 
@@ -197,28 +176,10 @@ public class BulkPricingPackage extends ImmutableObject implements Buildable {
       return this;
     }
 
-    /**
-     * @deprecated Use {@link #setNextBillingDate(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public Builder setNextBillingDate(DateTime nextBillingDate) {
-      return setNextBillingDate(toInstant(nextBillingDate));
-    }
-
     public Builder setNextBillingDate(Instant nextBillingDate) {
       checkArgumentNotNull(nextBillingDate, "Next billing date must not be null");
       getInstance().nextBillingDate = nextBillingDate;
       return this;
-    }
-
-    /**
-     * @deprecated Use {@link #setLastNotificationSent(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public Builder setLastNotificationSent(@Nullable DateTime lastNotificationSent) {
-      return setLastNotificationSent(toInstant(lastNotificationSent));
     }
 
     public Builder setLastNotificationSent(@Nullable Instant lastNotificationSent) {

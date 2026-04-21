@@ -16,7 +16,6 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
@@ -161,7 +160,7 @@ public final class ResourceTransferUtils {
     checkArgument(transferStatus.isApproved(), "Not an approval transfer status");
     Domain.Builder builder = resolvePendingTransfer(domain, transferStatus, now);
     return builder
-        .setLastTransferTime(toDateTime(now))
+        .setLastTransferTime(now)
         .setPersistedCurrentSponsorRegistrarId(domain.getTransferData().getGainingRegistrarId())
         .build();
   }

@@ -118,7 +118,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         persistResource(
             makeRegistrar1()
                 .asBuilder()
-                .setFailoverClientCertificate(cert.get(), clock.nowUtc())
+                .setFailoverClientCertificate(cert.get(), clock.now())
                 .build());
     persistSampleContacts(registrar, Type.TECH);
     assertThat(
@@ -140,7 +140,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         persistResource(
             makeRegistrar1()
                 .asBuilder()
-                .setFailoverClientCertificate(cert.get(), clock.nowUtc())
+                .setFailoverClientCertificate(cert.get(), clock.now())
                 .build());
     persistSampleContacts(registrar, Type.ADMIN);
     assertThat(
@@ -211,7 +211,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         persistResource(
             makeRegistrar1()
                 .asBuilder()
-                .setFailoverClientCertificate(cert.get(), clock.nowUtc())
+                .setFailoverClientCertificate(cert.get(), clock.now())
                 .build());
     ImmutableList<RegistrarPoc> contacts =
         ImmutableList.of(
@@ -340,7 +340,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     persistResource(registrar);
     action.updateLastNotificationSentDate(registrar, clock.nowUtc(), CertificateType.PRIMARY);
     assertThat(loadByEntity(registrar).getLastExpiringCertNotificationSentDate())
-        .isEqualTo(clock.nowUtc());
+        .isEqualTo(clock.now());
   }
 
   @Test
@@ -356,7 +356,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     persistResource(registrar);
     action.updateLastNotificationSentDate(registrar, clock.nowUtc(), CertificateType.FAILOVER);
     assertThat(loadByEntity(registrar).getLastExpiringFailoverCertNotificationSentDate())
-        .isEqualTo(clock.nowUtc());
+        .isEqualTo(clock.now());
   }
 
   @Test
@@ -690,11 +690,11 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
     if (failOverCertificate != null) {
       builder.setFailoverClientCertificate(
-          certificateChecker.serializeCertificate(failOverCertificate), clock.nowUtc());
+          certificateChecker.serializeCertificate(failOverCertificate), clock.now());
     }
     if (certificate != null) {
       builder.setClientCertificate(
-          certificateChecker.serializeCertificate(certificate), clock.nowUtc());
+          certificateChecker.serializeCertificate(certificate), clock.now());
     }
     return builder;
   }

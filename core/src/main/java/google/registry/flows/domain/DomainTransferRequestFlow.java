@@ -232,7 +232,8 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     //
     // See b/19430703#comment17 and https://www.icann.org/news/advisory-2002-06-06-en for the
     // policy documentation for transfers subsuming autorenews within the autorenew grace period.
-    Domain domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
+    Domain domainAtTransferTime =
+        existingDomain.cloneProjectedAtTime(toInstant(automaticTransferTime));
     // The new expiration time if there is a server approval.
     DateTime serverApproveNewExpirationTime =
         toDateTime(

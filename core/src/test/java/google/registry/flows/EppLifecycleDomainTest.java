@@ -488,8 +488,9 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
 
     // Make sure that in the future, the domain expiration is unchanged after deletion
-    Domain clonedDomain = domain.cloneProjectedAtTime(deleteTime.plusYears(5));
-    assertThat(clonedDomain.getRegistrationExpirationDateTime()).isEqualTo(createTime.plusYears(2));
+    Domain clonedDomain = domain.cloneProjectedAtTime(toInstant(deleteTime.plusYears(5)));
+    assertThat(clonedDomain.getRegistrationExpirationTime())
+        .isEqualTo(toInstant(createTime.plusYears(2)));
   }
 
   @Test

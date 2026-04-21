@@ -30,7 +30,6 @@ import google.registry.model.domain.token.BulkPricingPackage;
 import java.time.Instant;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -64,8 +63,8 @@ public class GetBulkPricingPackageCommandTest
             .setMaxDomains(100)
             .setMaxCreates(500)
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
-            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
-            .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
+            .setNextBillingDate(Instant.parse("2012-11-12T05:00:00Z"))
+            .setLastNotificationSent(Instant.parse("2010-11-12T05:00:00Z"))
             .build();
     tm().transact(() -> tm().put(bulkPricingPackage));
     runCommand("abc123");
@@ -94,8 +93,8 @@ public class GetBulkPricingPackageCommandTest
                             .setMaxDomains(100)
                             .setMaxCreates(500)
                             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
-                            .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
-                            .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
+                            .setNextBillingDate(Instant.parse("2012-11-12T05:00:00Z"))
+                            .setLastNotificationSent(Instant.parse("2010-11-12T05:00:00Z"))
                             .build()));
     AllocationToken token2 =
         persistResource(
@@ -118,8 +117,8 @@ public class GetBulkPricingPackageCommandTest
                             .setMaxDomains(1000)
                             .setMaxCreates(700)
                             .setBulkPrice(Money.of(CurrencyUnit.USD, 3000))
-                            .setNextBillingDate(DateTime.parse("2014-11-12T05:00:00Z"))
-                            .setLastNotificationSent(DateTime.parse("2013-11-12T05:00:00Z"))
+                            .setNextBillingDate(Instant.parse("2014-11-12T05:00:00Z"))
+                            .setLastNotificationSent(Instant.parse("2013-11-12T05:00:00Z"))
                             .build()));
 
     runCommand("abc123", "123abc");

@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.findDuplicates;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.beust.jcommander.Parameter;
@@ -76,7 +77,8 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
       SoyMapData soyMapData =
           new SoyMapData(
               "domainName", domain.getDomainName(),
-              "expirationDate", domain.getRegistrationExpirationDateTime().toString(DATE_FORMATTER),
+              "expirationDate",
+                  DATE_FORMATTER.print(toDateTime(domain.getRegistrationExpirationTime())),
               "period", String.valueOf(period));
 
       if (requestedByRegistrar != null) {

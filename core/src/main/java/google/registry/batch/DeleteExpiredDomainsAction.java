@@ -172,7 +172,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
                 () -> {
                   Domain transDomain = tm().loadByKey(domain.createVKey());
                   if (domain.getAutorenewEndTime().isEmpty()
-                      || domain.getAutorenewEndTime().get().isAfter(tm().getTransactionTime())) {
+                      || domain.getAutorenewEndTime().get().isAfter(tm().getTxTime())) {
                     logger.atSevere().log(
                         "Failed to delete domain %s because of its autorenew end time: %s.",
                         transDomain.getDomainName(), transDomain.getAutorenewEndTime());

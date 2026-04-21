@@ -92,8 +92,7 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
   }
 
   public And<DomainSubject> hasLastTransferTime(Instant lastTransferTime) {
-    return hasValue(
-        lastTransferTime, toInstant(actual.getLastTransferTime()), "getLastTransferTime()");
+    return hasValue(lastTransferTime, actual.getLastTransferTime(), "getLastTransferTime()");
   }
 
   public And<DomainSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
@@ -102,7 +101,7 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
 
   public And<DomainSubject> hasLastTransferTimeNotEqualTo(Instant lastTransferTime) {
     return doesNotHaveValue(
-        lastTransferTime, toInstant(actual.getLastTransferTime()), "getLastTransferTime()");
+        lastTransferTime, actual.getLastTransferTime(), "getLastTransferTime()");
   }
 
   public And<DomainSubject> hasDeletePollMessage() {
@@ -130,13 +129,11 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
   public And<DomainSubject> hasAutorenewEndTime(Instant autorenewEndTime) {
     checkArgumentNotNull(autorenewEndTime, "Use hasNoAutorenewEndTime() instead");
     return hasValue(
-        autorenewEndTime,
-        toInstant(actual.getAutorenewEndTime().orElse(null)),
-        "getAutorenewEndTime()");
+        autorenewEndTime, actual.getAutorenewEndTime().orElse(null), "getAutorenewEndTime()");
   }
 
   public And<DomainSubject> hasNoAutorenewEndTime() {
-    return hasNoValue(actual.getAutorenewEndTimeInstant(), "getAutorenewEndTime()");
+    return hasNoValue(actual.getAutorenewEndTime(), "getAutorenewEndTime()");
   }
 
   public static SimpleSubjectBuilder<DomainSubject, Domain> assertAboutDomains() {

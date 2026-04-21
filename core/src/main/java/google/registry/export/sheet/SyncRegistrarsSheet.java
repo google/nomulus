@@ -25,7 +25,8 @@ import static google.registry.model.registrar.RegistrarPoc.Type.MARKETING;
 import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
 import static google.registry.model.registrar.RegistrarPoc.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -40,6 +41,7 @@ import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
@@ -63,7 +65,8 @@ class SyncRegistrarsSheet {
   boolean wereRegistrarsModified() {
     Optional<Cursor> cursor =
         tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET)));
-    DateTime lastUpdateTime = cursor.isEmpty() ? START_OF_TIME : cursor.get().getCursorTime();
+    Instant lastUpdateTime =
+        cursor.isEmpty() ? START_INSTANT : toInstant(cursor.get().getCursorTime());
     for (Registrar registrar : Registrar.loadAllCached()) {
       if (DateTimeUtils.isAtOrAfter(registrar.getLastUpdateTime(), lastUpdateTime)) {
         return true;

@@ -81,7 +81,7 @@ class DomainCommandTest extends ResourceCommandTestCase {
     persistActiveHost("ns2.example.net");
     DomainCommand.Create create =
         (DomainCommand.Create) loadEppResourceCommand("domain_create.xml");
-    create.cloneAndLinkReferences(fakeClock.nowUtc());
+    create.cloneAndLinkReferences(fakeClock.now());
   }
 
   @Test
@@ -91,8 +91,7 @@ class DomainCommandTest extends ResourceCommandTestCase {
     DomainCommand.Create create =
         (DomainCommand.Create) loadEppResourceCommand("domain_create_with_contacts.xml");
     assertThrows(
-        RegistrantProhibitedException.class,
-        () -> create.cloneAndLinkReferences(fakeClock.nowUtc()));
+        RegistrantProhibitedException.class, () -> create.cloneAndLinkReferences(fakeClock.now()));
   }
 
   @Test
@@ -101,15 +100,14 @@ class DomainCommandTest extends ResourceCommandTestCase {
         (DomainCommand.Create)
             loadEppResourceCommand("domain_create_missing_non_registrant_contacts.xml");
     assertThrows(
-        RegistrantProhibitedException.class,
-        () -> create.cloneAndLinkReferences(fakeClock.nowUtc()));
+        RegistrantProhibitedException.class, () -> create.cloneAndLinkReferences(fakeClock.now()));
   }
 
   @Test
   void testCreate_emptyCommand_cloneAndLinkReferences() throws Exception {
     DomainCommand.Create create =
         (DomainCommand.Create) loadEppResourceCommand("domain_create_empty.xml");
-    create.cloneAndLinkReferences(fakeClock.nowUtc());
+    create.cloneAndLinkReferences(fakeClock.now());
   }
 
   @Test
@@ -134,7 +132,7 @@ class DomainCommandTest extends ResourceCommandTestCase {
     persistActiveHost("ns2.example.com");
     DomainCommand.Update update =
         (DomainCommand.Update) loadEppResourceCommand("domain_update.xml");
-    update.cloneAndLinkReferences(fakeClock.nowUtc());
+    update.cloneAndLinkReferences(fakeClock.now());
   }
 
   @Test
@@ -144,7 +142,7 @@ class DomainCommandTest extends ResourceCommandTestCase {
     DomainCommand.Update update =
         (DomainCommand.Update) loadEppResourceCommand("domain_update_with_contacts.xml");
     assertThrows(
-        ContactsProhibitedException.class, () -> update.cloneAndLinkReferences(fakeClock.nowUtc()));
+        ContactsProhibitedException.class, () -> update.cloneAndLinkReferences(fakeClock.now()));
   }
 
   @Test
@@ -152,7 +150,7 @@ class DomainCommandTest extends ResourceCommandTestCase {
     // This EPP command wouldn't be allowed for policy reasons, but should clone-and-link fine.
     DomainCommand.Update update =
         (DomainCommand.Update) loadEppResourceCommand("domain_update_empty.xml");
-    update.cloneAndLinkReferences(fakeClock.nowUtc());
+    update.cloneAndLinkReferences(fakeClock.now());
   }
 
   @Test

@@ -295,7 +295,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     persistResource(
         domain
             .asBuilder()
-            .setRegistrationExpirationTime(fakeClock.nowUtc().plusDays(360))
+            .setRegistrationExpirationTime(plusDays(fakeClock.now(), 360))
             .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
             .setGracePeriods(
                 ImmutableSet.of(

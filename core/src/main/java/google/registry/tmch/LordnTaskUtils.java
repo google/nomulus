@@ -16,7 +16,6 @@ package google.registry.tmch;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.base.Joiner;
 import google.registry.model.domain.Domain;
@@ -58,7 +57,7 @@ public final class LordnTaskUtils {
             domain.getLaunchNotice().getNoticeId().getTcnId(),
             getIanaIdentifier(domain.getCreationRegistrarId()),
             ISO_8601_FORMATTER.format(domain.getCreationTime()), // Used as creation time.
-            ISO_8601_FORMATTER.format(toInstant(domain.getLaunchNotice().getAcceptedTime())));
+            ISO_8601_FORMATTER.format(domain.getLaunchNotice().getAcceptedTime()));
   }
 
   /** Retrieves the IANA identifier for a registrar by its ID. */
