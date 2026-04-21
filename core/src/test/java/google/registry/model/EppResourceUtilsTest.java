@@ -27,7 +27,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -53,7 +52,7 @@ class EppResourceUtilsTest {
     Host host =
         persistResource(
             newHost("ns1.cat.tld").asBuilder().setCreationTimeForTest(clock.now()).build());
-    assertThat(loadAtPointInTime(host, clock.nowUtc().minus(Duration.millis(1)))).isNull();
+    assertThat(loadAtPointInTime(host, clock.nowUtc().minusMillis(1))).isNull();
   }
 
   @Test

@@ -16,12 +16,14 @@ package google.registry.model;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.collect.Ordering.natural;
-import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static google.registry.util.DateTimeUtils.parseInstant;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.KeyDeserializer;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -64,6 +66,8 @@ public class EntityYamlUtils {
     module.addSerializer(CreateAutoTimestamp.class, new CreateAutoTimestampSerializer());
     module.addDeserializer(CreateAutoTimestamp.class, new CreateAutoTimestampDeserializer());
     module.addSerializer(Duration.class, new DurationSerializer());
+    module.addKeySerializer(Instant.class, new InstantKeySerializer());
+    module.addKeyDeserializer(Instant.class, new InstantKeyDeserializer());
     module.addSerializer(Instant.class, new InstantSerializer());
     module.addDeserializer(Instant.class, new InstantDeserializer());
     ObjectMapper mapper =
@@ -416,7 +420,7 @@ public class EntityYamlUtils {
       if (value.getTimestamp() == null) {
         gen.writeNull();
       } else {
-        gen.writeString(ISO_8601_FORMATTER.format(value.getTimestamp()));
+        gen.writeString(formatInstant(value.getTimestamp()));
       }
     }
   }
@@ -441,6 +445,24 @@ public class EntityYamlUtils {
   }
 
   /** A custom JSON serializer for {@link Instant}. */
+
+  /** A custom JSON key serializer for {@link Instant}. */
+  public static class InstantKeySerializer extends JsonSerializer<Instant> {
+    @Override
+    public void serialize(Instant value, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
+      gen.writeFieldName(formatInstant(value));
+    }
+  }
+
+  /** A custom JSON key deserializer for {@link Instant}. */
+  public static class InstantKeyDeserializer extends KeyDeserializer {
+    @Override
+    public Object deserializeKey(String key, DeserializationContext ctxt) throws IOException {
+      return parseInstant(key);
+    }
+  }
+
   public static class InstantSerializer extends StdSerializer<Instant> {
 
     public InstantSerializer() {
@@ -450,7 +472,7 @@ public class EntityYamlUtils {
     @Override
     public void serialize(Instant value, JsonGenerator gen, SerializerProvider provider)
         throws IOException {
-      gen.writeString(ISO_8601_FORMATTER.format(value));
+      gen.writeString(formatInstant(value));
     }
   }
 

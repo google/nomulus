@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -126,7 +127,8 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
       throws ResourceFlowUtils.ResourceDoesNotExistException {
     superuser = true;
     DateTime now = clock.nowUtc();
-    Domain domain = ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, now);
+    Domain domain =
+        ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, toInstant(now));
     Set<String> missingHosts =
         difference(newHosts, ForeignKeyUtils.loadKeys(Host.class, newHosts, now).keySet());
     checkArgument(missingHosts.isEmpty(), "Hosts do not exist: %s", missingHosts);

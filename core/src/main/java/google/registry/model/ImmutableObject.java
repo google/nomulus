@@ -16,7 +16,7 @@ package google.registry.model;
 
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Maps.transformValues;
-import static google.registry.util.DateTimeUtils.ISO_8601_FORMATTER;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.stream.Collectors.toCollection;
@@ -143,7 +143,7 @@ public abstract class ImmutableObject implements Cloneable {
     for (Entry<Field, Object> entry : getSignificantFields().entrySet()) {
       Object value = entry.getValue();
       if (value instanceof Instant instant) {
-        value = ISO_8601_FORMATTER.format(instant);
+        value = formatInstant(instant);
       }
       sortedFields.put(entry.getKey().getName(), value);
     }
@@ -161,7 +161,7 @@ public abstract class ImmutableObject implements Cloneable {
               ? entry.getValue()
               : hydrate(entry.getValue());
       if (value instanceof Instant instant) {
-        value = ISO_8601_FORMATTER.format(instant);
+        value = formatInstant(instant);
       }
       sortedFields.put(field.getName(), value);
     }
@@ -187,7 +187,7 @@ public abstract class ImmutableObject implements Cloneable {
       return immutableObject.toHydratedString();
     }
     if (value instanceof Instant instant) {
-      return ISO_8601_FORMATTER.format(instant);
+      return formatInstant(instant);
     }
     return value;
   }
@@ -225,7 +225,7 @@ public abstract class ImmutableObject implements Cloneable {
           // original ImmutableObject might have been the result of a cloneEmptyToNull call).
           .collect(toList());
     } else if (o instanceof Instant instant) {
-      return ISO_8601_FORMATTER.format(instant);
+      return formatInstant(instant);
     } else if (o instanceof Number || o instanceof Boolean) {
       return o;
     } else {

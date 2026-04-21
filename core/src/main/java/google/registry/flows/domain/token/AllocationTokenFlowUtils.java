@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
@@ -43,9 +42,9 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Utility functions for dealing with {@link AllocationToken}s in domain flows. */
 public class AllocationTokenFlowUtils {
@@ -72,7 +71,7 @@ public class AllocationTokenFlowUtils {
   public static Optional<AllocationToken> loadAllocationTokenFromExtension(
       String registrarId,
       String domainName,
-      DateTime now,
+      Instant now,
       Optional<AllocationTokenExtension> extension)
       throws NonexistentAllocationTokenException, AllocationTokenInvalidException {
     if (extension.isEmpty()) {
@@ -91,7 +90,7 @@ public class AllocationTokenFlowUtils {
    */
   public static Optional<AllocationToken> loadTokenFromExtensionOrGetDefault(
       String registrarId,
-      DateTime now,
+      Instant now,
       Optional<AllocationTokenExtension> extension,
       Tld tld,
       String domainName,
@@ -166,9 +165,8 @@ public class AllocationTokenFlowUtils {
    */
   @VisibleForTesting
   static boolean tokenIsValidAgainstDomain(
-      InternetDomainName domainName, AllocationToken token, CommandName commandName, DateTime now) {
-    if (discountTokenInvalidForPremiumName(
-        token, isDomainPremium(domainName.toString(), toInstant(now)))) {
+      InternetDomainName domainName, AllocationToken token, CommandName commandName, Instant now) {
+    if (discountTokenInvalidForPremiumName(token, isDomainPremium(domainName.toString(), now))) {
       return false;
     }
     if (!token.getAllowedEppActions().isEmpty()
@@ -194,7 +192,7 @@ public class AllocationTokenFlowUtils {
       String domainName,
       CommandName commandName,
       String registrarId,
-      DateTime now,
+      Instant now,
       Optional<Integer> years,
       DomainPricingLogic pricingLogic)
       throws EppException {
@@ -234,7 +232,7 @@ public class AllocationTokenFlowUtils {
       String domainName,
       AllocationToken token,
       CommandName commandName,
-      DateTime now,
+      Instant now,
       Optional<Integer> years,
       DomainPricingLogic pricingLogic)
       throws EppException {
@@ -244,13 +242,12 @@ public class AllocationTokenFlowUtils {
       case CREATE ->
           pricingLogic
               .getCreatePrice(
-                  tld, domainName, toInstant(now), yearsForAction, false, false, Optional.of(token))
+                  tld, domainName, now, yearsForAction, false, false, Optional.of(token))
               .getTotalCost()
               .getAmount();
       case RENEW ->
           pricingLogic
-              .getRenewPrice(
-                  tld, domainName, toInstant(now), yearsForAction, null, Optional.of(token))
+              .getRenewPrice(tld, domainName, now, yearsForAction, null, Optional.of(token))
               .getTotalCost()
               .getAmount();
       default -> BigDecimal.ZERO;
@@ -259,7 +256,7 @@ public class AllocationTokenFlowUtils {
 
   /** Loads a given token and validates it against the registrar, time, etc */
   private static AllocationToken loadAndValidateToken(
-      String token, String registrarId, String domainName, DateTime now)
+      String token, String registrarId, String domainName, Instant now)
       throws NonexistentAllocationTokenException, AllocationTokenInvalidException {
     if (Strings.isNullOrEmpty(token)) {
       // We load the token directly from the input XML. If it's null or empty we should throw
@@ -283,7 +280,7 @@ public class AllocationTokenFlowUtils {
   }
 
   private static void validateTokenEntity(
-      AllocationToken token, String registrarId, String domainName, DateTime now)
+      AllocationToken token, String registrarId, String domainName, Instant now)
       throws AllocationTokenInvalidException {
     if (token.isRedeemed()) {
       throw new AlreadyRedeemedAllocationTokenException();

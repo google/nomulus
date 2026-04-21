@@ -30,6 +30,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.minusHours;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
@@ -57,7 +58,6 @@ import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -69,6 +69,7 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.hibernate.cfg.AvailableSettings;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -163,15 +164,10 @@ public class ExpandBillingRecurrencesPipelineTest {
 
   @Test
   void testSuccess_expandSingleEvent_deletedDuringGracePeriod() {
-    domain =
-        persistResource(
-            domain.asBuilder().setDeletionTime(endTime.minus(Duration.ofHours(2))).build());
+    domain = persistResource(domain.asBuilder().setDeletionTime(minusHours(endTime, 2)).build());
     billingRecurrence =
         persistResource(
-            billingRecurrence
-                .asBuilder()
-                .setRecurrenceEndTime(endTime.minus(Duration.ofHours(2)))
-                .build());
+            billingRecurrence.asBuilder().setRecurrenceEndTime(minusHours(endTime, 2)).build());
     runPipeline();
 
     // Assert about DomainHistory, no transaction record should have been written.
@@ -371,7 +367,7 @@ public class ExpandBillingRecurrencesPipelineTest {
 
   @Test
   void testSuccess_expandMultipleEvents_multipleEventTime() {
-    clock.advanceBy(org.joda.time.Duration.standardDays(365));
+    clock.advanceBy(Duration.standardDays(365));
     endTime = plusYears(endTime, 1);
     options.setEndTime(endTime.toString());
 
@@ -387,8 +383,7 @@ public class ExpandBillingRecurrencesPipelineTest {
                         domain.getTld(),
                         // We report this when the autorenew grace period ends.
                         plusYears(domain.getCreationTime(), 2)
-                            .plus(
-                                Duration.ofMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis())),
+                            .plusMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis()),
                         TransactionReportField.netRenewsFieldFromYears(1),
                         1)))
             .build());
@@ -413,7 +408,7 @@ public class ExpandBillingRecurrencesPipelineTest {
             .setEventTime(plusYears(domain.getCreationTime(), 2))
             .setBillingTime(
                 plusYears(domain.getCreationTime(), 2)
-                    .plus(Duration.ofMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis())))
+                    .plusMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis()))
             .build(),
         billingRecurrence
             .asBuilder()
@@ -472,7 +467,7 @@ public class ExpandBillingRecurrencesPipelineTest {
                     domain.getTld(),
                     // We report this when the autorenew grace period ends.
                     plusYears(domain.getCreationTime(), 1)
-                        .plus(Duration.ofMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis())),
+                        .plusMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis()),
                     TransactionReportField.netRenewsFieldFromYears(1),
                     1)))
         .build();
@@ -487,7 +482,7 @@ public class ExpandBillingRecurrencesPipelineTest {
     return new BillingEvent.Builder()
         .setBillingTime(
             plusYears(domain.getCreationTime(), 1)
-                .plus(Duration.ofMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis())))
+                .plusMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis()))
         .setRegistrarId("TheRegistrar")
         .setCost(Money.of(USD, cost))
         .setEventTime(plusYears(domain.getCreationTime(), 1))

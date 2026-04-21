@@ -17,11 +17,11 @@ package google.registry.model.smd;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.minusHours;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.EntityTestCase;
 import jakarta.persistence.OptimisticLockException;
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +35,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   void testSave_success() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
-            fakeClock.now(), ImmutableMap.of("mark", fakeClock.now().minus(Duration.ofHours(1))));
+            fakeClock.now(), ImmutableMap.of("mark", minusHours(fakeClock.now(), 1)));
     list = SignedMarkRevocationListDao.save(list);
     SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.load();
     assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list);
@@ -45,7 +45,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   void testSave_retrySuccess() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
-            fakeClock.now(), ImmutableMap.of("mark", fakeClock.now().minus(Duration.ofHours(1))));
+            fakeClock.now(), ImmutableMap.of("mark", minusHours(fakeClock.now(), 1)));
     AtomicBoolean isFirstAttempt = new AtomicBoolean(true);
     tm().transact(
             () -> {
@@ -72,7 +72,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   void testSave_multipleVersions() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
-            fakeClock.now(), ImmutableMap.of("mark", fakeClock.now().minus(Duration.ofHours(1))));
+            fakeClock.now(), ImmutableMap.of("mark", minusHours(fakeClock.now(), 1)));
     SignedMarkRevocationListDao.save(list);
     assertThat(SignedMarkRevocationListDao.load().isSmdRevoked("mark", fakeClock.now())).isTrue();
 

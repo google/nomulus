@@ -55,7 +55,6 @@ import google.registry.util.Clock;
 import google.registry.util.SystemClock;
 import jakarta.inject.Singleton;
 import java.io.Serializable;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
@@ -312,8 +311,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
     for (Instant eventTime : eventTimesToExpand) {
       recurrenceLastExpansionTime = latestOf(recurrenceLastExpansionTime, eventTime);
       oneTimesToExpandCounter.inc();
-      Instant billingTime =
-          eventTime.plus(Duration.ofMillis(tld.getAutoRenewGracePeriodLength().getMillis()));
+      Instant billingTime = eventTime.plusMillis(tld.getAutoRenewGracePeriodLength().getMillis());
       // Note that the DomainHistory is created as of transaction time, as opposed to event time.
       // This might be counterintuitive because other DomainHistories are created at the time
       // mutation events occur, such as in DomainDeleteFlow or DomainRenewFlow. Therefore, it is

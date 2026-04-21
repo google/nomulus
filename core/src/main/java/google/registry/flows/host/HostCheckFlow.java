@@ -62,7 +62,7 @@ public final class HostCheckFlow implements TransactionalFlow {
     ImmutableList<String> hostnames = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(hostnames, maxChecks);
     ImmutableSet<String> existingIds =
-        ForeignKeyUtils.loadKeys(Host.class, hostnames, clock.nowUtc()).keySet();
+        ForeignKeyUtils.loadKeys(Host.class, hostnames, clock.now()).keySet();
     ImmutableList.Builder<HostCheck> checks = new ImmutableList.Builder<>();
     for (String hostname : hostnames) {
       HostFlowUtils.validateHostName(hostname);

@@ -69,12 +69,17 @@ public abstract class DateTimeUtils {
    * <p>Handles large/negative years by using a sign prefix if necessary, compatible with {@link
    * Instant#parse}.
    */
-  public static final DateTimeFormatter ISO_8601_FORMATTER =
+  private static final DateTimeFormatter ISO_8601_FORMATTER =
       new DateTimeFormatterBuilder()
           .appendValue(ChronoField.YEAR, 4, 10, SignStyle.NORMAL)
           .appendPattern("-MM-dd'T'HH:mm:ss.SSS'Z'")
           .toFormatter()
           .withZone(ZoneOffset.UTC);
+
+  /** Formats an {@link Instant} to an ISO-8601 string. */
+  public static String formatInstant(Instant instant) {
+    return ISO_8601_FORMATTER.format(instant);
+  }
 
   /**
    * Parses an ISO-8601 string to an {@link Instant}.

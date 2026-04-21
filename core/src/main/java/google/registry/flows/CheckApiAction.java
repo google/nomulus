@@ -35,7 +35,6 @@ import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.STANDARD;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static org.json.simple.JSONValue.toJSONString;
 
@@ -61,9 +60,9 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An action that returns availability and premium checks as JSON.
@@ -131,7 +130,7 @@ public class CheckApiAction implements Runnable {
       // Throws an EppException with a reasonable error message which will be sent back to caller.
       validateDomainNameWithIdnTables(domainName);
 
-      DateTime now = replicaTm().getTransactionTime();
+      Instant now = replicaTm().getTxTime();
       Tld tld = Tld.get(domainName.parent().toString());
       try {
         verifyNotInPredelegation(tld, now);
@@ -166,7 +165,7 @@ public class CheckApiAction implements Runnable {
       metricBuilder.status(SUCCESS).availability(availability);
       responseBuilder.put("status", "success").put("available", availability.equals(AVAILABLE));
 
-      boolean isPremium = isDomainPremium(domainString, toInstant(now));
+      boolean isPremium = isDomainPremium(domainString, now);
       metricBuilder.tier(isPremium ? PREMIUM : STANDARD);
       responseBuilder.put("tier", isPremium ? "premium" : "standard");
       if (!AVAILABLE.equals(availability)) {
@@ -183,7 +182,7 @@ public class CheckApiAction implements Runnable {
     }
   }
 
-  private boolean checkExists(String domainString, DateTime now) {
+  private boolean checkExists(String domainString, Instant now) {
     return ForeignKeyUtils.loadKeyByCache(Domain.class, domainString, now).isPresent();
   }
 

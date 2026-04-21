@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.flows.domain.DomainFlowUtils.zeroInCurrency;
 import static google.registry.flows.domain.token.AllocationTokenFlowUtils.discountTokenInvalidForPremiumName;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.google.common.net.InternetDomainName;
@@ -117,7 +116,7 @@ public final class DomainPricingLogic {
             .setFeesAndCredits(feesBuilder.build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(toDateTime(dateTime))
+            .setAsOfDate(dateTime)
             .setYears(years)
             .build());
   }
@@ -188,7 +187,7 @@ public final class DomainPricingLogic {
                     .build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(toDateTime(dateTime))
+            .setAsOfDate(dateTime)
             .setYears(years)
             .build());
   }
@@ -212,7 +211,7 @@ public final class DomainPricingLogic {
             .setFeesAndCredits(feesAndCredits.build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(toDateTime(dateTime))
+            .setAsOfDate(dateTime)
             .build());
   }
 
@@ -235,7 +234,7 @@ public final class DomainPricingLogic {
                     .build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(toDateTime(dateTime))
+            .setAsOfDate(dateTime)
             .build());
   }
 
@@ -253,7 +252,7 @@ public final class DomainPricingLogic {
                     .build())
             .setTld(tld)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(toDateTime(dateTime))
+            .setAsOfDate(dateTime)
             .build());
   }
 

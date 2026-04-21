@@ -29,7 +29,7 @@ import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_CANCEL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -51,8 +51,8 @@ import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import google.registry.model.transfer.TransferStatus;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that cancels a pending transfer on a domain.
@@ -92,7 +92,7 @@ public final class DomainTransferCancelFlow implements MutatingFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyHasPendingTransfer(existingDomain);
@@ -120,7 +120,7 @@ public final class DomainTransferCancelFlow implements MutatingFlow {
     BillingRecurrence existingBillingRecurrence =
         tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     updateAutorenewRecurrenceEndTime(
-        existingDomain, existingBillingRecurrence, END_OF_TIME, domainHistory.getHistoryEntryId());
+        existingDomain, existingBillingRecurrence, END_INSTANT, domainHistory.getHistoryEntryId());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());
@@ -129,7 +129,7 @@ public final class DomainTransferCancelFlow implements MutatingFlow {
         .build();
   }
 
-  private DomainHistory buildDomainHistory(Domain newDomain, Tld tld, DateTime now) {
+  private DomainHistory buildDomainHistory(Domain newDomain, Tld tld, Instant now) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(
             newDomain,

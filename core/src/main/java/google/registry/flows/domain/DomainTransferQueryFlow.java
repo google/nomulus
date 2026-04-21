@@ -19,8 +19,6 @@ import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTi
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -38,8 +36,8 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An EPP flow that queries a pending transfer on a domain.
@@ -72,7 +70,7 @@ public final class DomainTransferQueryFlow implements TransactionalFlow {
   public EppResponse run() throws EppException {
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate(); // There are no legal extensions for this flow.
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     Domain domain = loadAndVerifyExistence(Domain.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, domain);
     // Most of the fields on the transfer response are required, so there's no way to return valid
@@ -88,14 +86,12 @@ public final class DomainTransferQueryFlow implements TransactionalFlow {
         && !registrarId.equals(transferData.getLosingRegistrarId())) {
       throw new NotAuthorizedToViewTransferException();
     }
-    DateTime newExpirationTime = null;
+    Instant newExpirationTime = null;
     if (transferData.getTransferStatus().isApproved()) {
-      newExpirationTime = toDateTime(transferData.getTransferredRegistrationExpirationTime());
+      newExpirationTime = transferData.getTransferredRegistrationExpirationTime();
     } else if (transferData.getTransferStatus().equals(TransferStatus.PENDING)) {
       newExpirationTime =
-          toDateTime(
-              computeExDateForApprovalTime(
-                  domain, toInstant(now), domain.getTransferData().getTransferPeriod()));
+          computeExDateForApprovalTime(domain, now, domain.getTransferData().getTransferPeriod());
     }
     return responseBuilder
         .setResData(createTransferResponse(targetId, transferData, newExpirationTime))

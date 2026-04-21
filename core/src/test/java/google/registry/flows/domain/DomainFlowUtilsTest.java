@@ -20,7 +20,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.CHF;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -187,10 +187,10 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             .setTldType(tldType)
             .setCurrency(CHF)
             .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(CHF, 800)))
-            .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(CHF, 800)))
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(CHF, 800)))
+            .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(CHF, 800)))
             .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(CHF, 800)))
+                ImmutableSortedMap.of(START_INSTANT, Money.ofMajor(CHF, 800)))
             .setRegistryLockOrUnlockBillingCost(Money.ofMajor(CHF, 800))
             .setServerStatusChangeBillingCost(Money.ofMajor(CHF, 800))
             .setRestoreBillingCost(Money.ofMajor(CHF, 800))

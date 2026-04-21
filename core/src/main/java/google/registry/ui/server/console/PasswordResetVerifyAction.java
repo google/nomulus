@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.ui.server.console.PasswordResetRequestAction.checkUserExistsWithRegistryLockEmail;
+import static google.registry.util.DateTimeUtils.plusHours;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -33,7 +34,6 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletResponse;
-import java.time.Duration;
 import java.util.Optional;
 
 @Action(
@@ -122,7 +122,7 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
           case REGISTRY_LOCK -> ConsolePermission.REGISTRY_LOCK;
         };
     checkPermission(user, request.getRegistrarId(), requiredVerifyPermission);
-    if (request.getRequestTime().plus(Duration.ofHours(1)).isBefore(tm().getTxTime())) {
+    if (plusHours(request.getRequestTime(), 1).isBefore(tm().getTxTime())) {
       throw createVerificationCodeException();
     }
     return request;

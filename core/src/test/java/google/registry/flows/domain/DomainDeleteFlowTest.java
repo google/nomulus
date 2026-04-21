@@ -543,7 +543,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 11),
@@ -1325,7 +1325,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 11),
@@ -1344,7 +1344,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 11),
@@ -1362,7 +1362,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setRenewBillingCostTransitionsInstant(
+            .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     Money.of(USD, 11),

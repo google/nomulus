@@ -25,7 +25,7 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.model.reporting.HistoryEntry;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * A no-op base class for {@link DomainRenewFlow} custom logic.
@@ -80,7 +80,7 @@ public class DomainRenewFlowCustomLogic extends BaseFlowCustomLogic {
   }
 
   /** A class to encapsulate parameters for a call to {@link #afterValidation}. */
-  public record AfterValidationParameters(Domain existingDomain, int years, DateTime now) {
+  public record AfterValidationParameters(Domain existingDomain, int years, Instant now) {
 
     public static Builder newBuilder() {
       return new AutoBuilder_DomainRenewFlowCustomLogic_AfterValidationParameters_Builder();
@@ -94,7 +94,7 @@ public class DomainRenewFlowCustomLogic extends BaseFlowCustomLogic {
 
       Builder setYears(int years);
 
-      Builder setNow(DateTime now);
+      Builder setNow(Instant now);
 
       AfterValidationParameters build();
     }
@@ -113,7 +113,7 @@ public class DomainRenewFlowCustomLogic extends BaseFlowCustomLogic {
       HistoryEntry historyEntry,
       EntityChanges entityChanges,
       int years,
-      DateTime now) {
+      Instant now) {
 
     public static Builder newBuilder() {
       return new AutoBuilder_DomainRenewFlowCustomLogic_BeforeSaveParameters_Builder();
@@ -133,7 +133,7 @@ public class DomainRenewFlowCustomLogic extends BaseFlowCustomLogic {
 
       Builder setYears(int years);
 
-      Builder setNow(DateTime now);
+      Builder setNow(Instant now);
 
       BeforeSaveParameters build();
     }

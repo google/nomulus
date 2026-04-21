@@ -16,7 +16,6 @@ package google.registry.flows;
 
 import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.isLinked;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -50,7 +49,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import org.joda.time.DateTime;
 
 /** Static utility functions for resource flows. */
 public final class ResourceFlowUtils {
@@ -66,8 +64,7 @@ public final class ResourceFlowUtils {
   }
 
   /** Check if there are domains linked to the host to be deleted. Throws an exception if so. */
-  public static void checkLinkedDomains(final String targetId, final DateTime now)
-      throws EppException {
+  public static void checkLinkedDomains(final String targetId, Instant now) throws EppException {
     VKey<Host> key =
         ForeignKeyUtils.loadKey(Host.class, targetId, now)
             .orElseThrow(() -> new ResourceDoesNotExistException(Host.class, targetId));
@@ -90,11 +87,6 @@ public final class ResourceFlowUtils {
   }
 
   public static <R extends EppResource & ForeignKeyedEppResource> R loadAndVerifyExistence(
-      Class<R> clazz, String targetId, DateTime now) throws ResourceDoesNotExistException {
-    return loadAndVerifyExistence(clazz, targetId, toInstant(now));
-  }
-
-  public static <R extends EppResource & ForeignKeyedEppResource> R loadAndVerifyExistence(
       Class<R> clazz, String targetId, Instant now) throws ResourceDoesNotExistException {
     return verifyExistence(clazz, targetId, ForeignKeyUtils.loadResource(clazz, targetId, now));
   }
@@ -105,7 +97,7 @@ public final class ResourceFlowUtils {
   }
 
   public static <R extends EppResource> void verifyResourceDoesNotExist(
-      Class<R> clazz, String targetId, DateTime now, String registrarId) throws EppException {
+      Class<R> clazz, String targetId, Instant now, String registrarId) throws EppException {
     Optional<R> resource = ForeignKeyUtils.loadResource(clazz, targetId, now);
     if (resource.isPresent()) {
       // These are similar exceptions, but we can track them internally as log-based metrics.

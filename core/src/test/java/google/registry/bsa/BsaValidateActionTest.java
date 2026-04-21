@@ -26,6 +26,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.time.Duration.millis;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -107,7 +108,7 @@ public class BsaValidateActionTest {
             idnChecker,
             new BsaEmailSender(gmailClient, emailRecipient),
             /* transactionBatchSize= */ 500,
-            org.joda.time.Duration.millis(MAX_STALENESS.toMillis()),
+            millis(MAX_STALENESS.toMillis()),
             fakeClock,
             response);
     createTld("app");
@@ -238,8 +239,7 @@ public class BsaValidateActionTest {
   void isStalenessAllowed_newDomain_allowed() {
     persistBsaLabel("label");
     Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
-    fakeClock.advanceBy(
-        org.joda.time.Duration.millis(MAX_STALENESS.minus(Duration.ofSeconds(1)).toMillis()));
+    fakeClock.advanceBy(millis(MAX_STALENESS.minusSeconds(1).toMillis()));
     assertThat(action.isStalenessAllowed(domain)).isTrue();
   }
 
@@ -247,7 +247,7 @@ public class BsaValidateActionTest {
   void isStalenessAllowed_newDomain_notAllowed() {
     persistBsaLabel("label");
     Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
-    fakeClock.advanceBy(org.joda.time.Duration.millis(MAX_STALENESS.toMillis()));
+    fakeClock.advanceBy(millis(MAX_STALENESS.toMillis()));
     assertThat(action.isStalenessAllowed(domain)).isFalse();
   }
 
