@@ -382,8 +382,8 @@ class AuthenticatedRegistrarAccessorTest {
 
   @Test
   void testConsoleUser_admin() {
-    google.registry.model.console.User consoleUser =
-        new google.registry.model.console.User.Builder()
+    User consoleUser =
+        new User.Builder()
             .setEmailAddress("email@email.com")
             .setUserRoles(
                 new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
@@ -408,8 +408,8 @@ class AuthenticatedRegistrarAccessorTest {
   void testConsoleUser_globalRole() {
     // Users with global roles shouldn't necessarily have access to specific registrars if they're
     // not admins
-    google.registry.model.console.User consoleUser =
-        new google.registry.model.console.User.Builder()
+    User consoleUser =
+        new User.Builder()
             .setEmailAddress("email@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
@@ -425,8 +425,8 @@ class AuthenticatedRegistrarAccessorTest {
   @Test
   void testConsoleUser_registrarRoles() {
     // Registrar employees should have OWNER access to their registrars
-    google.registry.model.console.User consoleUser =
-        new google.registry.model.console.User.Builder()
+    User consoleUser =
+        new User.Builder()
             .setEmailAddress("email@email.com")
             .setUserRoles(
                 new UserRoles.Builder()

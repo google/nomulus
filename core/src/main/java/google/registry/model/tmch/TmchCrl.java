@@ -19,12 +19,13 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.model.common.CrossTldSingleton;
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 
 /** Singleton for ICANN's TMCH CA certificate revocation list (CRL). */
-@jakarta.persistence.Entity
+@Entity
 @Immutable
 public final class TmchCrl extends CrossTldSingleton {
 

@@ -40,6 +40,7 @@ import google.registry.request.HttpException.UnprocessableEntityException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
+import jakarta.persistence.Query;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -267,7 +268,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
         replicaTm()
             .transact(
                 () -> {
-                  jakarta.persistence.Query query =
+                  Query query =
                       replicaTm()
                           .getEntityManager()
                           .createNativeQuery(queryBuilder.toString(), Host.class)

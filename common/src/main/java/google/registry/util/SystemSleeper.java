@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.util.concurrent.Uninterruptibles;
 import jakarta.inject.Inject;
 import java.io.Serializable;
+import java.time.Duration;
 import javax.annotation.concurrent.ThreadSafe;
 import org.joda.time.ReadableDuration;
 
@@ -40,6 +41,6 @@ public final class SystemSleeper implements Sleeper, Serializable {
   @Override
   public void sleepUninterruptibly(ReadableDuration duration) {
     checkArgument(duration.getMillis() >= 0);
-    Uninterruptibles.sleepUninterruptibly(java.time.Duration.ofMillis(duration.getMillis()));
+    Uninterruptibles.sleepUninterruptibly(Duration.ofMillis(duration.getMillis()));
   }
 }

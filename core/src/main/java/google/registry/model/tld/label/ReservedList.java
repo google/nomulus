@@ -38,6 +38,7 @@ import google.registry.model.tld.label.DomainLabelMetrics.MetricsReservedListMat
 import google.registry.persistence.EntityCallbacksListener.RecursivePostPersist;
 import google.registry.persistence.EntityCallbacksListener.RecursivePreRemove;
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
@@ -56,7 +57,7 @@ import javax.annotation.Nullable;
  * succeeds, we will end up with having two exact same reserved lists that differ only by
  * revisionId. This is fine though, because we only use the list with the highest revisionId.
  */
-@jakarta.persistence.Entity
+@Entity
 @Table(indexes = {@Index(columnList = "name", name = "reservedlist_name_idx")})
 public final class ReservedList
     extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry> {
@@ -103,7 +104,7 @@ public final class ReservedList
    * A reserved list entry entity, persisted to the database, that represents a single label and its
    * reservation type.
    */
-  @jakarta.persistence.Entity(name = "ReservedEntry")
+  @Entity(name = "ReservedEntry")
   public static class ReservedListEntry extends DomainLabelEntry<ReservationType, ReservedListEntry>
       implements Buildable, Serializable {
 

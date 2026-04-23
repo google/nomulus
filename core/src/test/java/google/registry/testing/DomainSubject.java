@@ -136,9 +136,7 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
   }
 
   public And<DomainSubject> hasNoAutorenewEndTime() {
-    return hasNoValue(
-        actual.getAutorenewEndTime().map(google.registry.util.DateTimeUtils::toInstant),
-        "getAutorenewEndTime()");
+    return hasNoValue(actual.getAutorenewEndTimeInstant(), "getAutorenewEndTime()");
   }
 
   public static SimpleSubjectBuilder<DomainSubject, Domain> assertAboutDomains() {

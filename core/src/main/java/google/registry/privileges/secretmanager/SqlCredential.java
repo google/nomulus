@@ -16,6 +16,7 @@ package google.registry.privileges.secretmanager;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.base.Splitter;
 import java.util.List;
 
 /**
@@ -38,7 +39,7 @@ public record SqlCredential(String login, String password) {
   }
 
   public static SqlCredential fromFormattedString(String sqlCredential) {
-    List<String> items = com.google.common.base.Splitter.on(SEPARATOR).splitToList(sqlCredential);
+    List<String> items = Splitter.on(SEPARATOR).splitToList(sqlCredential);
     checkState(items.size() == 2, "Invalid SqlCredential string.");
     return create(items.get(0), items.get(1));
   }

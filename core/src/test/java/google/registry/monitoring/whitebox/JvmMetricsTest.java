@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.monitoring.metrics.MetricRegistry;
 import com.google.monitoring.metrics.MetricRegistryImpl;
+import com.google.monitoring.metrics.VirtualMetric;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +58,7 @@ class JvmMetricsTests {
     assertThat(registry.getRegisteredMetrics()).hasSize(3);
 
     for (var metric : registry.getRegisteredMetrics()) {
-      assertThat(metric).isInstanceOf(com.google.monitoring.metrics.VirtualMetric.class);
+      assertThat(metric).isInstanceOf(VirtualMetric.class);
     }
   }
 
