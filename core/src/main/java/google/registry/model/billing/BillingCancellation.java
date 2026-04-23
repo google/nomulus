@@ -89,7 +89,7 @@ public class BillingCancellation extends BillingBase {
    * the supplied targetId and deriving other metadata (clientId, billing time, and the cancellation
    * reason) from the grace period.
    */
-  public static google.registry.model.billing.BillingCancellation forGracePeriod(
+  public static BillingCancellation forGracePeriod(
       GracePeriod gracePeriod,
       DateTime eventTime,
       HistoryEntryId domainHistoryId,
@@ -116,12 +116,12 @@ public class BillingCancellation extends BillingBase {
   }
 
   @Override
-  public VKey<google.registry.model.billing.BillingCancellation> createVKey() {
+  public VKey<BillingCancellation> createVKey() {
     return createVKey(getId());
   }
 
-  public static VKey<google.registry.model.billing.BillingCancellation> createVKey(long id) {
-    return VKey.create(google.registry.model.billing.BillingCancellation.class, id);
+  public static VKey<BillingCancellation> createVKey(long id) {
+    return VKey.create(BillingCancellation.class, id);
   }
 
   @Override
@@ -129,15 +129,12 @@ public class BillingCancellation extends BillingBase {
     return new Builder(clone(this));
   }
 
-  /**
-   * A builder for {@link google.registry.model.billing.BillingCancellation} since it is immutable.
-   */
-  public static class Builder
-      extends BillingBase.Builder<google.registry.model.billing.BillingCancellation, Builder> {
+  /** A builder for {@link BillingCancellation} since it is immutable. */
+  public static class Builder extends BillingBase.Builder<BillingCancellation, Builder> {
 
     public Builder() {}
 
-    private Builder(google.registry.model.billing.BillingCancellation instance) {
+    private Builder(BillingCancellation instance) {
       super(instance);
     }
 
@@ -157,8 +154,8 @@ public class BillingCancellation extends BillingBase {
     }
 
     @Override
-    public google.registry.model.billing.BillingCancellation build() {
-      google.registry.model.billing.BillingCancellation instance = getInstance();
+    public BillingCancellation build() {
+      BillingCancellation instance = getInstance();
       checkNotNull(instance.billingTime, "Must set billing time");
       checkNotNull(instance.reason, "Must set reason");
       checkState(

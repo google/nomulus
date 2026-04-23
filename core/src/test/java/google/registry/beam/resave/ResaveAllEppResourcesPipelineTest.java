@@ -135,7 +135,7 @@ public class ResaveAllEppResourcesPipelineTest {
     persistDomainWithDependentResources(
         "domain", "tld", toDateTime(now), toDateTime(now), toDateTime(plusYears(now, 1)));
     assertThat(loadAllOf(GracePeriod.class)).hasSize(1);
-    fakeClock.advanceBy(org.joda.time.Duration.standardDays(500));
+    fakeClock.advanceBy(Duration.standardDays(500));
     runPipeline();
     assertThat(loadAllOf(GracePeriod.class)).isEmpty();
   }

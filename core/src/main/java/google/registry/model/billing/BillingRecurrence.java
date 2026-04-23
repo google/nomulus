@@ -152,12 +152,12 @@ public class BillingRecurrence extends BillingBase {
   }
 
   @Override
-  public VKey<google.registry.model.billing.BillingRecurrence> createVKey() {
+  public VKey<BillingRecurrence> createVKey() {
     return createVKey(getId());
   }
 
-  public static VKey<google.registry.model.billing.BillingRecurrence> createVKey(Long id) {
-    return VKey.create(google.registry.model.billing.BillingRecurrence.class, id);
+  public static VKey<BillingRecurrence> createVKey(Long id) {
+    return VKey.create(BillingRecurrence.class, id);
   }
 
   @Override
@@ -165,15 +165,12 @@ public class BillingRecurrence extends BillingBase {
     return new Builder(clone(this));
   }
 
-  /**
-   * A builder for {@link google.registry.model.billing.BillingRecurrence} since it is immutable.
-   */
-  public static class Builder
-      extends BillingBase.Builder<google.registry.model.billing.BillingRecurrence, Builder> {
+  /** A builder for {@link BillingRecurrence} since it is immutable. */
+  public static class Builder extends BillingBase.Builder<BillingRecurrence, Builder> {
 
     public Builder() {}
 
-    private Builder(google.registry.model.billing.BillingRecurrence instance) {
+    private Builder(BillingRecurrence instance) {
       super(instance);
     }
 
@@ -216,8 +213,8 @@ public class BillingRecurrence extends BillingBase {
     }
 
     @Override
-    public google.registry.model.billing.BillingRecurrence build() {
-      google.registry.model.billing.BillingRecurrence instance = getInstance();
+    public BillingRecurrence build() {
+      BillingRecurrence instance = getInstance();
       checkNotNull(instance.eventTime);
       checkNotNull(instance.reason);
       // Don't require recurrenceLastExpansion to be individually set on every new Recurrence.

@@ -29,6 +29,7 @@ import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.testing.TruthChainer.And;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
+import google.registry.util.DateTimeUtils;
 import java.time.Instant;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -137,8 +138,7 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
 
   public And<DomainSubject> hasNoAutorenewEndTime() {
     return hasNoValue(
-        actual.getAutorenewEndTime().map(google.registry.util.DateTimeUtils::toInstant),
-        "getAutorenewEndTime()");
+        actual.getAutorenewEndTime().map(DateTimeUtils::toInstant), "getAutorenewEndTime()");
   }
 
   public static SimpleSubjectBuilder<DomainSubject, Domain> assertAboutDomains() {

@@ -132,10 +132,8 @@ public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
     Range<Instant> normalizedRange = range.intersection(Range.closed(START_INSTANT, END_INSTANT));
     Range<Integer> yearRange =
         Range.closed(
-            ZonedDateTime.ofInstant(normalizedRange.lowerEndpoint(), java.time.ZoneOffset.UTC)
-                .getYear(),
-            ZonedDateTime.ofInstant(normalizedRange.upperEndpoint(), java.time.ZoneOffset.UTC)
-                .getYear());
+            ZonedDateTime.ofInstant(normalizedRange.lowerEndpoint(), ZoneOffset.UTC).getYear(),
+            ZonedDateTime.ofInstant(normalizedRange.upperEndpoint(), ZoneOffset.UTC).getYear());
     return ContiguousSet.create(yearRange, integers()).stream()
         .map(this::toInstantWithYear)
         .filter(normalizedRange)
@@ -170,7 +168,7 @@ public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
   /** Get the first {@link Instant} with this month/day/millis that is at or after the start. */
   public Instant getNextInstanceAtOrAfterInstant(Instant start) {
     Instant withSameYear =
-        toInstantWithYear(ZonedDateTime.ofInstant(start, java.time.ZoneOffset.UTC).getYear());
+        toInstantWithYear(ZonedDateTime.ofInstant(start, ZoneOffset.UTC).getYear());
     return isAtOrAfter(withSameYear, start) ? withSameYear : plusYears(withSameYear, 1);
   }
 
@@ -188,7 +186,7 @@ public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
   /** Get the first {@link Instant} with this month/day/millis that is at or before the end. */
   public Instant getLastInstanceBeforeOrAtInstant(Instant end) {
     Instant withSameYear =
-        toInstantWithYear(ZonedDateTime.ofInstant(end, java.time.ZoneOffset.UTC).getYear());
+        toInstantWithYear(ZonedDateTime.ofInstant(end, ZoneOffset.UTC).getYear());
     return isBeforeOrAt(withSameYear, end) ? withSameYear : minusYears(withSameYear, 1);
   }
 
