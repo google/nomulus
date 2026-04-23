@@ -46,6 +46,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.UnimplementedCommandException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
@@ -686,8 +687,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     // This exception is referred to by its fully qualified path (rather than being imported) so
     // that it is not included in the list of exceptions thrown by DomainRestoreRequestFlow, as this
     // test EPP won't trigger the request flow at all.
-    EppException thrown = assertThrows(
-        google.registry.flows.EppException.UnimplementedCommandException.class, this::runFlow);
+    EppException thrown = assertThrows(UnimplementedCommandException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains("domain restore reports are not supported");
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }

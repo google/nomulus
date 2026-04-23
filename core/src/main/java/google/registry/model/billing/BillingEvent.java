@@ -151,12 +151,12 @@ public class BillingEvent extends BillingBase {
   }
 
   @Override
-  public VKey<google.registry.model.billing.BillingEvent> createVKey() {
+  public VKey<BillingEvent> createVKey() {
     return createVKey(getId());
   }
 
-  public static VKey<google.registry.model.billing.BillingEvent> createVKey(long id) {
-    return VKey.create(google.registry.model.billing.BillingEvent.class, id);
+  public static VKey<BillingEvent> createVKey(long id) {
+    return VKey.create(BillingEvent.class, id);
   }
 
   @Override
@@ -164,13 +164,12 @@ public class BillingEvent extends BillingBase {
     return new Builder(clone(this));
   }
 
-  /** A builder for {@link google.registry.model.billing.BillingEvent} since it is immutable. */
-  public static class Builder
-      extends BillingBase.Builder<google.registry.model.billing.BillingEvent, Builder> {
+  /** A builder for {@link BillingEvent} since it is immutable. */
+  public static class Builder extends BillingBase.Builder<BillingEvent, Builder> {
 
     public Builder() {}
 
-    private Builder(google.registry.model.billing.BillingEvent instance) {
+    private Builder(BillingEvent instance) {
       super(instance);
     }
 
@@ -229,8 +228,8 @@ public class BillingEvent extends BillingBase {
     }
 
     @Override
-    public google.registry.model.billing.BillingEvent build() {
-      google.registry.model.billing.BillingEvent instance = getInstance();
+    public BillingEvent build() {
+      BillingEvent instance = getInstance();
       checkNotNull(instance.billingTime);
       checkNotNull(instance.cost);
       checkState(!instance.cost.isNegative(), "Costs should be non-negative.");

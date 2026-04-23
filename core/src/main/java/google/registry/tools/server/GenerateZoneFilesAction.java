@@ -51,6 +51,7 @@ import java.util.Map;
 import org.hibernate.CacheMode;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
+import org.hibernate.query.SelectionQuery;
 import org.joda.time.Duration;
 
 /**
@@ -163,7 +164,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
         tm().query("FROM Domain WHERE tld = :tld AND deletionTime > :exportTime", Domain.class)
             .setParameter("tld", tld)
             .setParameter("exportTime", exportTime)
-            .unwrap(org.hibernate.query.SelectionQuery.class)
+            .unwrap(SelectionQuery.class)
             .setCacheMode(CacheMode.IGNORE)
             .scroll(ScrollMode.FORWARD_ONLY);
     for (int i = 1; scrollableResults.next(); i = (i + 1) % BATCH_SIZE) {

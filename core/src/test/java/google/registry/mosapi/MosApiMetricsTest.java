@@ -36,6 +36,7 @@ import google.registry.testing.FakeClock;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.IntStream;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -161,7 +162,7 @@ public class MosApiMetricsTest {
   @Test
   void testRecordStates_partitionsTimeSeries_atLimit() throws IOException {
     ImmutableList<TldServiceState> largeBatch =
-        java.util.stream.IntStream.range(0, 70)
+        IntStream.range(0, 70)
             .mapToObj(i -> createTldState("tld-" + i, "UP", "UP"))
             .collect(ImmutableList.toImmutableList());
     mosApiMetrics.recordStates(largeBatch);

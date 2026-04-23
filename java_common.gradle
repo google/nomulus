@@ -133,6 +133,9 @@ tasks.withType(JavaCompile).configureEach {
   // Allow assignment to injected variables: too many to fix.
   options.errorprone.disable("UnnecessaryAssignment")
 
+  // Report unnecessarily fully qualified names as warnings.
+  options.errorprone.warn("UnnecessarilyFullyQualified")
+
   options.errorprone.disableWarningsInGeneratedCode = true
   options.errorprone.errorproneArgumentProviders.add([
           asArguments: {

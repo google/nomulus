@@ -41,33 +41,32 @@ public class DatabaseExceptionTest {
 
   @Test
   void getSqlError_sqlExceptionNoDetails() {
-    assertThat(getSqlError(new java.sql.SQLException())).isEmpty();
+    assertThat(getSqlError(new SQLException())).isEmpty();
   }
 
   @Test
   void getSqlError_sqlExceptionWithSqlState() {
-    assertThat(getSqlError(new java.sql.SQLException("msg", "state")))
+    assertThat(getSqlError(new SQLException("msg", "state")))
         .contains("\tSQL Error: 0, SQLState: state, message: msg.");
   }
 
   @Test
   void getSqlError_sqlExceptionWithAllDetails() {
-    assertThat(getSqlError(new java.sql.SQLException("msg", "state", 1)))
+    assertThat(getSqlError(new SQLException("msg", "state", 1)))
         .contains("\tSQL Error: 1, SQLState: state, message: msg.");
   }
 
   @Test
   void getSqlError_chainedSqlExceptionWithAllDetails() {
-    SQLException sqlException = new java.sql.SQLException("msg", "state", 1);
+    SQLException sqlException = new SQLException("msg", "state", 1);
     assertThat(getSqlError(new Exception("not-captured", sqlException)))
         .contains("\tSQL Error: 1, SQLState: state, message: msg.");
   }
 
   @Test
   void getSqlError_multipleChainedSqlExceptionWithAllDetails() {
-    SQLException lower = new java.sql.SQLException("lower", "lower-state", 1);
-    SQLException higher =
-        new java.sql.SQLException("higher", "higher-state", 2, new Exception(lower));
+    SQLException lower = new SQLException("lower", "lower-state", 1);
+    SQLException higher = new SQLException("higher", "higher-state", 2, new Exception(lower));
     assertThat(getSqlError(new Exception(higher)))
         .contains(
             "\tSQL Error: 2, SQLState: higher-state, message: higher.\n"
