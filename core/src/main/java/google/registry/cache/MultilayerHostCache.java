@@ -44,6 +44,6 @@ public class MultilayerHostCache extends MultilayerEppResourceCache<Host> implem
 
   @Override
   protected String getJedisPrefix() {
-    return "Host__";
+    return "h_";
   }
 }

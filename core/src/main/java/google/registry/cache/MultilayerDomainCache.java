@@ -17,6 +17,7 @@ package google.registry.cache;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.Tld;
 import google.registry.util.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -57,6 +58,11 @@ public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
 
   @Override
   protected String getJedisPrefix() {
-    return "Domain__";
+    return "d_";
+  }
+
+  @Override
+  protected boolean shouldPersistToRemoteCache(Domain domain) {
+    return Tld.get(domain.getTld()).getTldType().equals(Tld.TldType.REAL);
   }
 }
