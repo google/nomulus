@@ -53,7 +53,8 @@ public class MultilayerHostCacheTest {
 
     // We should have filled the caches after one attempt to load from Valkey
     verify(jedisClient).get("Host__" + host.getRepoId());
-    verify(jedisClient).set("Host__" + host.getRepoId(), host);
+    verify(jedisClient)
+        .set(new SimplifiedJedisClient.JedisResource<>("Host__" + host.getRepoId(), host));
 
     // Further loads hit the local cache
     assertThat(cache.loadByRepoId(host.getRepoId())).hasValue(host);

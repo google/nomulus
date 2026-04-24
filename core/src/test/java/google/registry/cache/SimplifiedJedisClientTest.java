@@ -19,7 +19,10 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.EppResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
@@ -27,6 +30,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import io.github.ss_bhatt.testcontainers.valkey.ValkeyContainer;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +62,7 @@ public class SimplifiedJedisClientTest {
   void testClient_roundTrip_domain() {
     Domain domain = persistActiveDomain("example.tld");
     SimplifiedJedisClient<Domain> client = createSimplifiedClient(Domain.class);
-    client.set("Domain__example.tld", domain);
+    client.set(new SimplifiedJedisClient.JedisResource<>("Domain__example.tld", domain));
     // dsData and gracePeriods get serialized as null instead of the empty set, which is fine
     assertAboutImmutableObjects()
         .that(client.get("Domain__example.tld").get())
@@ -69,8 +73,79 @@ public class SimplifiedJedisClientTest {
   void testClient_roundTrip_host() {
     Host host = persistActiveHost("ns1.example.tld");
     SimplifiedJedisClient<Host> client = createSimplifiedClient(Host.class);
-    client.set("Host__ns1.example.tld", host);
-    assertThat(client.get("Host__ns1.example.tld")).hasValue(host);
+    client.set(new SimplifiedJedisClient.JedisResource<>("Host__repoId1", host));
+    assertThat(client.get("Host__repoId1")).hasValue(host);
+  }
+
+  @Test
+  void testSet_withExpiration() throws Exception {
+    SimplifiedJedisClient<Domain> client = createSimplifiedClient(Domain.class);
+    Domain pendingDelete =
+        persistDeletedDomain("example.tld", toDateTime(Instant.now()).plusMillis(100));
+    client.set(new SimplifiedJedisClient.JedisResource<>("Domain__example1.tld", pendingDelete));
+    Thread.sleep(101);
+    assertThat(client.get("Domain__example1.tld")).isEmpty();
+  }
+
+  @Test
+  void testPipeline_domain() {
+    Domain domain1 = persistActiveDomain("example1.tld");
+    Domain domain2 = persistActiveDomain("example2.tld");
+    Domain domain3 = persistActiveDomain("example3.tld");
+    SimplifiedJedisClient<Domain> client = createSimplifiedClient(Domain.class);
+
+    client.setAll(
+        ImmutableList.of(
+            new SimplifiedJedisClient.JedisResource<>("Domain__example1.tld", domain1),
+            new SimplifiedJedisClient.JedisResource<>("Domain__example2.tld", domain2),
+            new SimplifiedJedisClient.JedisResource<>("Domain__example3.tld", domain3)));
+
+    assertAboutImmutableObjects()
+        .that(client.get("Domain__example1.tld").get())
+        .isEqualExceptFields(domain1, "dsData", "gracePeriods");
+    assertAboutImmutableObjects()
+        .that(client.get("Domain__example2.tld").get())
+        .isEqualExceptFields(domain2, "dsData", "gracePeriods");
+    assertAboutImmutableObjects()
+        .that(client.get("Domain__example3.tld").get())
+        .isEqualExceptFields(domain3, "dsData", "gracePeriods");
+  }
+
+  @Test
+  void testPipeline_host() {
+    Host host1 = persistActiveHost("ns1.example.tld");
+    Host host2 = persistActiveHost("ns2.example.tld");
+    Host host3 = persistActiveHost("ns3.example.tld");
+    SimplifiedJedisClient<Host> client = createSimplifiedClient(Host.class);
+
+    client.setAll(
+        ImmutableList.of(
+            new SimplifiedJedisClient.JedisResource<>("Host__repoId1", host1),
+            new SimplifiedJedisClient.JedisResource<>("Host__repoId2", host2),
+            new SimplifiedJedisClient.JedisResource<>("Host__repoId3", host3)));
+
+    assertThat(client.get("Host__repoId1")).hasValue(host1);
+    assertThat(client.get("Host__repoId2")).hasValue(host2);
+    assertThat(client.get("Host__repoId3")).hasValue(host3);
+  }
+
+  @Test
+  void testDelete() {
+    Host host1 = persistActiveHost("ns1.example.tld");
+    Host host2 = persistActiveHost("ns2.example.tld");
+    Host host3 = persistActiveHost("ns3.example.tld");
+    SimplifiedJedisClient<Host> client = createSimplifiedClient(Host.class);
+
+    client.setAll(
+        ImmutableList.of(
+            new SimplifiedJedisClient.JedisResource<>("Host__repoId1", host1),
+            new SimplifiedJedisClient.JedisResource<>("Host__repoId2", host2),
+            new SimplifiedJedisClient.JedisResource<>("Host__repoId3", host3)));
+
+    client.deleteAll(ImmutableList.of("Host__repoId1", "Host__repoId2", "Host__nonexistent"));
+    assertThat(client.get("Host__repoId1")).isEmpty();
+    assertThat(client.get("Host__repoId2")).isEmpty();
+    assertThat(client.get("Host__repoId3")).hasValue(host3);
   }
 
   @Test
