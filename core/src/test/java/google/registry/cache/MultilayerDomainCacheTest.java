@@ -17,6 +17,7 @@ package google.registry.cache;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -56,8 +58,8 @@ public class MultilayerDomainCacheTest {
     assertThat(cache.loadByDomainName("example.tld")).hasValue(domain);
 
     // We should have filled the caches after one attempt to load from Valkey
-    verify(jedisClient).get("Domain__example.tld");
-    verify(jedisClient).set("Domain__example.tld", domain);
+    verify(jedisClient).get("d_example.tld");
+    verify(jedisClient).set(new SimplifiedJedisClient.JedisResource<>("d_example.tld", domain));
 
     // Further loads hit the local cache
     assertThat(cache.loadByDomainName("example.tld")).hasValue(domain);
@@ -69,8 +71,20 @@ public class MultilayerDomainCacheTest {
     // Note: we don't save the domain to SQL
     Domain domain = DatabaseHelper.newDomain("example.tld");
     // We hit the Valkey cache first
-    when(jedisClient.get(eq("Domain__example.tld"))).thenReturn(Optional.of(domain));
+    when(jedisClient.get(eq("d_example.tld"))).thenReturn(Optional.of(domain));
     assertThat(cache.loadByDomainName("example.tld")).hasValue(domain);
+  }
+
+  @Test
+  void testSkipsTestTld() {
+    persistResource(Tld.get("tld").asBuilder().setTldType(Tld.TldType.TEST).build());
+
+    Domain domain = persistActiveDomain("example.tld");
+    assertThat(cache.loadByDomainName("example.tld")).hasValue(domain);
+
+    // This time, we don't populate the remote cache because it's prober data
+    verify(jedisClient).get("d_example.tld");
+    verifyNoMoreInteractions(jedisClient);
   }
 
   @Test
