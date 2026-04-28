@@ -27,6 +27,7 @@ import google.registry.batch.RelockDomainAction;
 import google.registry.batch.ResaveAllEppResourcesPipelineAction;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
+import google.registry.batch.SyncRemoteCacheAction;
 import google.registry.bsa.BsaDownloadAction;
 import google.registry.bsa.BsaRefreshAction;
 import google.registry.bsa.BsaValidateAction;
@@ -325,6 +326,8 @@ interface RequestComponent {
   SendExpiringCertificateNotificationEmailAction sendExpiringCertificateNotificationEmailAction();
 
   SyncGroupMembersAction syncGroupMembersAction();
+
+  SyncRemoteCacheAction syncRemoteCacheAction();
 
   SyncRegistrarsSheetAction syncRegistrarsSheetAction();
 
