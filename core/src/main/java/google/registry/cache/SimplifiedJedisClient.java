@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
+import com.google.common.flogger.FluentLogger;
 import google.registry.model.EppResource;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -41,6 +42,8 @@ import redis.clients.jedis.params.SetParams;
 public class SimplifiedJedisClient<V extends EppResource> {
 
   public record JedisResource<V extends EppResource>(String key, V value) {}
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final int BATCH_SIZE = 500;
 
@@ -77,15 +80,17 @@ public class SimplifiedJedisClient<V extends EppResource> {
 
   /** Sets multiple values in the remote cache using a Jedis {@link AbstractPipeline}. */
   public void setAll(ImmutableCollection<JedisResource<V>> resources) {
+    logger.atInfo().log("Processing %d resources", resources.size());
     for (Iterable<JedisResource<V>> batch : Iterables.partition(resources, BATCH_SIZE)) {
-      AbstractPipeline pipeline = jedis.pipelined();
-      batch.forEach(
-          resource ->
-              pipeline.set(
-                  resource.key.getBytes(StandardCharsets.UTF_8),
-                  serialize(resource.value),
-                  new SetParams().pxAt(resource.value.getDeletionTime().toEpochMilli())));
-      pipeline.sync();
+      try (AbstractPipeline pipeline = jedis.pipelined()) {
+        batch.forEach(
+            resource ->
+                pipeline.set(
+                    resource.key.getBytes(StandardCharsets.UTF_8),
+                    serialize(resource.value),
+                    new SetParams().pxAt(resource.value.getDeletionTime().toEpochMilli())));
+        pipeline.sync();
+      }
     }
   }
 

@@ -85,25 +85,37 @@ public final class CacheModule {
 
   @Provides
   @Singleton
-  public static DomainCache provideDomainCache(Optional<UnifiedJedis> jedis, Clock clock) {
-    if (jedis.isEmpty()) {
-      return domainName ->
-          ForeignKeyUtils.loadResourceByCache(Domain.class, domainName, clock.now());
-    }
-    SimplifiedJedisClient<Domain> jedisClient =
-        SimplifiedJedisClient.create(Domain.class, jedis.get());
-    return new MultilayerDomainCache(jedisClient, clock);
+  public static Optional<SimplifiedJedisClient<Domain>> provideDomainJedisClient(
+      Optional<UnifiedJedis> jedis) {
+    return jedis.map(j -> SimplifiedJedisClient.create(Domain.class, j));
   }
 
   @Provides
   @Singleton
-  public static HostCache provideHostCache(Optional<UnifiedJedis> jedis) {
-    if (jedis.isEmpty()) {
+  public static Optional<SimplifiedJedisClient<Host>> provideHostJedisClient(
+      Optional<UnifiedJedis> jedis) {
+    return jedis.map(j -> SimplifiedJedisClient.create(Host.class, j));
+  }
+
+  @Provides
+  @Singleton
+  public static DomainCache provideDomainCache(
+      Optional<SimplifiedJedisClient<Domain>> domainJedisClient, Clock clock) {
+    if (domainJedisClient.isEmpty()) {
+      return domainName ->
+          ForeignKeyUtils.loadResourceByCache(Domain.class, domainName, clock.now());
+    }
+    return new MultilayerDomainCache(domainJedisClient.get(), clock);
+  }
+
+  @Provides
+  @Singleton
+  public static HostCache provideHostCache(Optional<SimplifiedJedisClient<Host>> hostJedisClient) {
+    if (hostJedisClient.isEmpty()) {
       return repoId ->
           Optional.ofNullable(EppResource.loadByCache(VKey.create(Host.class, repoId)));
     }
-    SimplifiedJedisClient<Host> jedisClient = SimplifiedJedisClient.create(Host.class, jedis.get());
-    return new MultilayerHostCache(jedisClient);
+    return new MultilayerHostCache(hostJedisClient.get());
   }
 
   @Provides
