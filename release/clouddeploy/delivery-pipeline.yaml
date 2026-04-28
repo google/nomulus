@@ -1,0 +1,11 @@
+apiVersion: deploy.cloud.google.com/v1
+kind: DeliveryPipeline
+metadata:
+  name: deploy-nomulus
+description: deploy-nomulus is a Cloud native replacement for Spinnaker that enables
+  gradual rollouts and SLA-based canary analysis for Nomulus.
+serialPipeline:
+  stages:
+  - targetId: crash
+    profiles:
+    - crash

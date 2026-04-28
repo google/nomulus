@@ -1,0 +1,21 @@
+
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: crash
+requireApproval: true
+executionConfigs:
+- usages:
+  - RENDER
+  - DEPLOY
+  - ANALYSIS
+  - POSTDEPLOY
+  executionTimeout: 3600s
+  defaultPool:
+    # Placeholder: Replace with artifact bucket name.
+    artifactStorage: gs://_artifact_bucket_
+    # Placeholder: Replace with project number.
+    serviceAccount: _project_number_-compute@developer.gserviceaccount.com
+gke:
+  # Placeholder: Replace with project ID, location, and cluster name.
+  cluster: projects/_project_id_/locations/_location_/clusters/_cluster_name_

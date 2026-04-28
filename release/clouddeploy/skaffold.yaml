@@ -1,0 +1,15 @@
+# skaffold.yaml
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: nomulus-skaffold
+profiles:
+- name: crash
+  manifests:
+    rawYaml:
+    - ../jetty/kubernetes/nomulus-crash-backend.yaml
+    - ../jetty/kubernetes/nomulus-crash-console.yaml
+    - ../jetty/kubernetes/nomulus-crash-frontend.yaml
+    - ../jetty/kubernetes/nomulus-crash-pubapi.yaml
+  deploy:
+    kubectl: { }
