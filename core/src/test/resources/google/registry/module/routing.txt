@@ -51,6 +51,7 @@ BACKEND  /_dr/task/resaveEntity                             ResaveEntityAction  
 BACKEND  /_dr/task/sendExpiringCertificateNotificationEmail SendExpiringCertificateNotificationEmailAction GET                 n  APP  ADMIN
 BACKEND  /_dr/task/syncGroupMembers                         SyncGroupMembersAction                         POST                n  APP  ADMIN
 BACKEND  /_dr/task/syncRegistrarsSheet                      SyncRegistrarsSheetAction                      POST                n  APP  ADMIN
+BACKEND  /_dr/task/syncRemoteCache                          SyncRemoteCacheAction                          POST                n  APP  ADMIN
 BACKEND  /_dr/task/tmchCrl                                  TmchCrlAction                                  POST                y  APP  ADMIN
 BACKEND  /_dr/task/tmchDnl                                  TmchDnlAction                                  POST                y  APP  ADMIN
 BACKEND  /_dr/task/tmchSmdrl                                TmchSmdrlAction                                POST                y  APP  ADMIN

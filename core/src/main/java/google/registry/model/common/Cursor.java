@@ -103,7 +103,13 @@ public class Cursor extends UpdateAutoTimestampEntity {
     ICANN_UPLOAD_TX(true),
 
     /** Cursor for tracking monthly uploads of ICANN activity reports. */
-    ICANN_UPLOAD_ACTIVITY(true);
+    ICANN_UPLOAD_ACTIVITY(true),
+
+    /** Cursor for tracking the reflection of domain changes in the remote cache. */
+    REMOTE_CACHE_DOMAIN_SYNC(false),
+
+    /** Cursor for tracking the reflection of host changes in the remote cache. */
+    REMOTE_CACHE_HOST_SYNC(false);
 
     private final boolean scoped;
 

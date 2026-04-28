@@ -147,7 +147,7 @@
 
     create table "Cursor" (
         scope text not null,
-        type text not null check ((type in ('BRDA','RDE_REPORT','RDE_STAGING','RDE_UPLOAD','RDE_UPLOAD_SFTP','RECURRING_BILLING','SYNC_REGISTRAR_SHEET','ICANN_UPLOAD_TX','ICANN_UPLOAD_ACTIVITY'))),
+        type text not null check ((type in ('BRDA','RDE_REPORT','RDE_STAGING','RDE_UPLOAD','RDE_UPLOAD_SFTP','RECURRING_BILLING','SYNC_REGISTRAR_SHEET','ICANN_UPLOAD_TX','ICANN_UPLOAD_ACTIVITY','REMOTE_CACHE_DOMAIN_SYNC','REMOTE_CACHE_HOST_SYNC'))),
         last_update_time timestamp(6) with time zone not null,
         cursor_time timestamp(6) with time zone not null,
         primary key (scope, type)
