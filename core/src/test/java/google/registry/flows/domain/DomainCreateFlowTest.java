@@ -583,7 +583,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             new AllocationToken.Builder()
                 .setTokenType(UNLIMITED_USE)
                 .setToken("abc123")
-                .setTokenStatusTransitionsInstant(
+                .setTokenStatusTransitions(
                     ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                         .put(START_INSTANT, TokenStatus.NOT_STARTED)
                         .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -1327,7 +1327,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(clock.now().plusMillis(1), TokenStatus.VALID)
@@ -1371,7 +1371,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDiscountFraction(discountFraction)
             .setDiscountYears(discountYears)
             .setDiscountPremiums(discountPremiums)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(clock.now().plusMillis(1), TokenStatus.VALID)
@@ -1408,7 +1408,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDiscountFraction(0.98)
             .setDiscountYears(2)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(clock.now().plusMillis(1), TokenStatus.VALID)
@@ -1447,7 +1447,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDomainName("rich.example")
             .setDiscountFraction(0.95555)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(clock.now().plusMillis(1), TokenStatus.VALID)
@@ -1504,7 +1504,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(plusDays(clock.now(), 1), TokenStatus.VALID)
@@ -1528,7 +1528,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setTokenType(UNLIMITED_USE)
             .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 1), TokenStatus.VALID)
@@ -1615,7 +1615,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         setupDefaultTokenWithDiscount()
             .asBuilder()
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(minusDays(clock.now(), 2), TokenStatus.VALID)
@@ -3287,7 +3287,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         setupDefaultTokenWithDiscount("NewRegistrar")
             .asBuilder()
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     TokenStatus.NOT_STARTED,
@@ -3879,7 +3879,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDiscountFraction(0.98)
             .setDiscountYears(2)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(clock.now().plusMillis(1), TokenStatus.VALID)
@@ -3988,7 +3988,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDomainName("rich.example")
             .setDiscountFraction(0.95555)
             .setDiscountPremiums(true)
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
                     .put(clock.now().plusMillis(1), TokenStatus.VALID)
@@ -4019,7 +4019,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         setupDefaultTokenWithDiscount("NewRegistrar")
             .asBuilder()
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.of(
                     START_INSTANT,
                     TokenStatus.NOT_STARTED,

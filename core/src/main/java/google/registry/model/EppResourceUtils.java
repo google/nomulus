@@ -20,7 +20,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
@@ -69,7 +68,7 @@ public final class EppResourceUtils {
   /** Helper to call {@link EppResource#cloneProjectedAtTime} without warnings. */
   @SuppressWarnings("unchecked")
   private static <T extends EppResource> T cloneProjectedAtTime(T resource, DateTime now) {
-    return (T) resource.cloneProjectedAtTime(now);
+    return (T) resource.cloneProjectedAtTime(toInstant(now));
   }
 
   /**
@@ -121,7 +120,7 @@ public final class EppResourceUtils {
     builder
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData(transferDataBuilder.build())
-        .setLastTransferTime(toDateTime(transferData.getPendingTransferExpirationTime()))
+        .setLastTransferTime(transferData.getPendingTransferExpirationTime())
         .setPersistedCurrentSponsorRegistrarId(transferData.getGainingRegistrarId());
   }
 
@@ -171,7 +170,7 @@ public final class EppResourceUtils {
     return (loadedResource == null)
         ? null
         : (isActive(loadedResource, timestamp)
-            ? (T) loadedResource.cloneProjectedAtInstant(timestamp)
+            ? (T) loadedResource.cloneProjectedAtTime(timestamp)
             : null);
   }
 

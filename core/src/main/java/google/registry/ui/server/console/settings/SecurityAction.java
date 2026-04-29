@@ -102,7 +102,7 @@ public class SecurityAction extends ConsoleApiAction {
         if (registrarParameter.getClientCertificate().isPresent()) {
           String newClientCert = registrarParameter.getClientCertificate().get();
           certificateChecker.validateCertificate(newClientCert);
-          updatedRegistrarBuilder.setClientCertificate(newClientCert, tm().getTransactionTime());
+          updatedRegistrarBuilder.setClientCertificate(newClientCert, tm().getTxTime());
           updates.add("PRIMARY_SSL_CERT_CHANGE");
         }
       }
@@ -112,8 +112,7 @@ public class SecurityAction extends ConsoleApiAction {
         if (registrarParameter.getFailoverClientCertificate().isPresent()) {
           String newFailoverCert = registrarParameter.getFailoverClientCertificate().get();
           certificateChecker.validateCertificate(newFailoverCert);
-          updatedRegistrarBuilder.setFailoverClientCertificate(
-              newFailoverCert, tm().getTransactionTime());
+          updatedRegistrarBuilder.setFailoverClientCertificate(newFailoverCert, tm().getTxTime());
           updates.add("FAILOVER_SSL_CERT_CHANGE");
         }
       }

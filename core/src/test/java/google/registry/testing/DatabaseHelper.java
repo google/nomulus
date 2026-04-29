@@ -180,7 +180,7 @@ public final class DatabaseHelper {
         .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .setCreationTimeForTest(START_INSTANT)
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
-        .setRegistrationExpirationTime(END_OF_TIME)
+        .setRegistrationExpirationTime(END_INSTANT)
         .build();
   }
 
@@ -259,7 +259,7 @@ public final class DatabaseHelper {
         newDomain(domainName)
             .asBuilder()
             .setCreationTimeForTest(toInstant(creationTime))
-            .setRegistrationExpirationTime(expirationTime)
+            .setRegistrationExpirationTime(toInstant(expirationTime))
             .build());
   }
 
@@ -535,7 +535,7 @@ public final class DatabaseHelper {
             .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .setCreationRegistrarId("TheRegistrar")
             .setCreationTimeForTest(toInstant(creationTime))
-            .setRegistrationExpirationTime(expirationTime)
+            .setRegistrationExpirationTime(toInstant(expirationTime))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")));
     Duration addGracePeriodLength = Tld.get(tld).getAddGracePeriodLength();
     if (creationTime.plus(addGracePeriodLength).isAfter(now)) {

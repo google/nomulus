@@ -45,10 +45,10 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.XmlValue;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
 /** A collection of {@link Domain} commands. */
@@ -64,7 +64,7 @@ public class DomainCommand {
    */
   public interface CreateOrUpdate<T extends CreateOrUpdate<T>> extends SingleResourceCommand {
     /** Creates a copy of this command with hard links to hosts and contacts. */
-    T cloneAndLinkReferences(DateTime now)
+    T cloneAndLinkReferences(Instant now)
         throws InvalidReferencesException, ParameterValuePolicyErrorException;
   }
 
@@ -154,7 +154,7 @@ public class DomainCommand {
 
     /** Creates a copy of this {@link Create} with hard links to hosts and contacts. */
     @Override
-    public Create cloneAndLinkReferences(DateTime now)
+    public Create cloneAndLinkReferences(Instant now)
         throws InvalidReferencesException, ParameterValuePolicyErrorException {
       Create clone = clone(this);
       clone.nameservers = linkHosts(clone.nameserverHostNames, now);
@@ -333,7 +333,7 @@ public class DomainCommand {
       }
 
       /** Creates a copy of this {@link AddRemove} with hard links to hosts and contacts. */
-      private AddRemove cloneAndLinkReferences(DateTime now)
+      private AddRemove cloneAndLinkReferences(Instant now)
           throws InvalidReferencesException, ContactsProhibitedException {
         AddRemove clone = clone(this);
         clone.nameservers = linkHosts(clone.nameserverHostNames, now);
@@ -363,7 +363,7 @@ public class DomainCommand {
      * of those classes, which is harmless because the getters do that anyways.
      */
     @Override
-    public Update cloneAndLinkReferences(DateTime now)
+    public Update cloneAndLinkReferences(Instant now)
         throws InvalidReferencesException, ParameterValuePolicyErrorException {
       Update clone = clone(this);
       clone.innerAdd = clone.getInnerAdd().cloneAndLinkReferences(now);
@@ -373,7 +373,7 @@ public class DomainCommand {
     }
   }
 
-  private static Set<VKey<Host>> linkHosts(Set<String> hostNames, DateTime now)
+  private static Set<VKey<Host>> linkHosts(Set<String> hostNames, Instant now)
       throws InvalidReferencesException {
     if (hostNames == null) {
       return null;
@@ -383,7 +383,7 @@ public class DomainCommand {
 
   /** Loads host keys to cached EPP resources by their foreign keys. */
   private static ImmutableMap<String, VKey<Host>> loadByForeignKeysCached(
-      final Set<String> foreignKeys, final DateTime now) throws InvalidReferencesException {
+      Set<String> foreignKeys, Instant now) throws InvalidReferencesException {
     ImmutableMap<String, VKey<Host>> fks =
         ForeignKeyUtils.loadKeysByCacheIfEnabled(Host.class, foreignKeys, now);
     if (!fks.keySet().equals(foreignKeys)) {

@@ -24,7 +24,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.bsa.api.UnblockableDomain;
@@ -58,7 +57,7 @@ public class DomainsRefresherTest {
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTime(Optional.of(toDateTime(fakeClock.now().minusMillis(1))))
+            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().minusMillis(1)))
             .build());
     refresher = new DomainsRefresher(START_INSTANT, fakeClock.now(), Duration.ZERO, 100);
   }

@@ -128,7 +128,7 @@ public class DomainSqlTest {
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(CurrencyUnit.USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-            .setTokenStatusTransitionsInstant(
+            .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, NOT_STARTED)
                     .put(fakeClock.now(), TokenStatus.VALID)

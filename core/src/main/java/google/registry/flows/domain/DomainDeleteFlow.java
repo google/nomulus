@@ -238,7 +238,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     }
 
     // Cancel any grace periods that were still active, and set the expiration time accordingly.
-    DateTime newExpirationTime = existingDomain.getRegistrationExpirationDateTime();
+    DateTime newExpirationTime = toDateTime(existingDomain.getRegistrationExpirationTime());
     for (GracePeriod gracePeriod : existingDomain.getGracePeriods()) {
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
@@ -257,7 +257,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
         }
       }
     }
-    builder.setRegistrationExpirationTime(newExpirationTime);
+    builder.setRegistrationExpirationTime(toInstant(newExpirationTime));
 
     Domain newDomain = builder.build();
     DomainHistory domainHistory =

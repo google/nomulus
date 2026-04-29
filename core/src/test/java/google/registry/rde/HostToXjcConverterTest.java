@@ -62,7 +62,7 @@ public class HostToXjcConverterTest {
         DatabaseHelper.newDomain("love.foobar")
             .asBuilder()
             .setPersistedCurrentSponsorRegistrarId("LeisureDog")
-            .setLastTransferTime(DateTime.parse("2010-01-01T00:00:00Z"))
+            .setLastTransferTime(Instant.parse("2010-01-01T00:00:00Z"))
             .addStatusValue(StatusValue.PENDING_TRANSFER)
             .build();
     XjcRdeHost bean =

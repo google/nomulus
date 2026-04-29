@@ -180,7 +180,7 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
           "Domain %s has a pending transfer: %s",
           domainName,
           domain.getTransferData());
-      Optional<Instant> domainAutorenewEndTime = domain.getAutorenewEndTimeInstant();
+      Optional<Instant> domainAutorenewEndTime = domain.getAutorenewEndTime();
       domainAutorenewEndTime.ifPresent(
           endTime ->
               checkArgument(

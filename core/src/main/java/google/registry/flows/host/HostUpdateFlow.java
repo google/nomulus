@@ -145,7 +145,7 @@ public final class HostUpdateFlow implements MutatingFlow {
     String newHostName = firstNonNull(suppliedNewHostName, oldHostName);
     Domain oldSuperordinateDomain =
         existingHost.isSubordinate()
-            ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtInstant(now)
+            ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
             : null;
     // Note that lookupSuperordinateDomain calls cloneProjectedAtTime on the domain for us.
     Optional<Domain> newSuperordinateDomain =

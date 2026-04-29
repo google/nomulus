@@ -16,6 +16,8 @@ package google.registry.batch;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -128,11 +130,11 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                     registrar,
                     registrar.getClientCertificate().isPresent()
                         && certificateChecker.shouldReceiveExpiringNotification(
-                            registrar.getLastExpiringCertNotificationSentDate(),
+                            toDateTime(registrar.getLastExpiringCertNotificationSentDate()),
                             registrar.getClientCertificate().get()),
                     registrar.getFailoverClientCertificate().isPresent()
                         && certificateChecker.shouldReceiveExpiringNotification(
-                            registrar.getLastExpiringFailoverCertNotificationSentDate(),
+                            toDateTime(registrar.getLastExpiringFailoverCertNotificationSentDate()),
                             registrar.getFailoverClientCertificate().get())))
         .filter(
             registrarInfo ->
@@ -210,7 +212,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                 Registrar.Builder newRegistrar = tm().loadByEntity(registrar).asBuilder();
                 switch (certificateType) {
                   case PRIMARY -> {
-                    newRegistrar.setLastExpiringCertNotificationSentDate(now);
+                    newRegistrar.setLastExpiringCertNotificationSentDate(toInstant(now));
                     tm().put(newRegistrar.build());
                     logger.atInfo().log(
                         "Updated last notification email sent date to %s for %s certificate of "
@@ -220,7 +222,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                         registrar.getRegistrarName());
                   }
                   case FAILOVER -> {
-                    newRegistrar.setLastExpiringFailoverCertNotificationSentDate(now);
+                    newRegistrar.setLastExpiringFailoverCertNotificationSentDate(toInstant(now));
                     tm().put(newRegistrar.build());
                     logger.atInfo().log(
                         "Updated last notification email sent date to %s for %s certificate of "
@@ -255,7 +257,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       if (registrarInfo.isCertExpiring()
           && sendNotificationEmail(
               registrar,
-              registrar.getLastExpiringCertNotificationSentDate(),
+              toDateTime(registrar.getLastExpiringCertNotificationSentDate()),
               CertificateType.PRIMARY,
               registrar.getClientCertificate())) {
         numEmailsSent++;
@@ -263,7 +265,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       if (registrarInfo.isFailOverCertExpiring()
           && sendNotificationEmail(
               registrar,
-              registrar.getLastExpiringFailoverCertNotificationSentDate(),
+              toDateTime(registrar.getLastExpiringFailoverCertNotificationSentDate()),
               CertificateType.FAILOVER,
               registrar.getFailoverClientCertificate())) {
         numEmailsSent++;

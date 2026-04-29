@@ -365,7 +365,7 @@ public class RdePipeline implements Serializable {
                 tm().loadByKey(
                         VKey.create(historyEntryClazz, new HistoryEntryId(repoId, revisionId))))
         .getResourceAtPointInTime()
-        .map(resource -> resource.cloneProjectedAtTime(watermark))
+        .map(resource -> resource.cloneProjectedAtTime(toInstant(watermark)))
         .get();
   }
 

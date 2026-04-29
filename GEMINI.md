@@ -135,7 +135,7 @@ This project treats Error Prone warnings as errors.
 ### 3. Build Strategy
 - **Surgical Changes**: In large-scale migrations, focus on "leaf" nodes first (Utilities -> Models -> Flows -> Actions).
 - **PR Size**: Minimize PR size by retaining Joda-Time bridge methods for high-level "Action" and "Flow" classes unless a full migration is requested. Reverting changes to DNS and Reporting logic while updating the underlying models is a valid strategy to keep PRs reviewable.
-- **Validation**: Always run `./gradlew build -x test` before attempting to run unit tests. Unit tests will not run if there are compilation errors in any part of the `core` module. Before finalizing a PR or declaring a task done, you MUST run the entire build using `./gradlew build` and verify that it succeeds completely without errors. Do not declare success if formatting checks (e.g., `spotlessCheck` or `javaIncrementalFormatCheck`) or tests fail. If formatting fails, run `./gradlew spotlessApply` and then re-run `./gradlew build` to verify everything passes.
+- **Validation**: Always run `./gradlew build -x test` before attempting to run unit tests. Unit tests will not run if there are compilation errors in any part of the `core` module. Before finalizing a PR or declaring a task done, you MUST verify your changes. **Prefer scoped builds** (e.g., `./gradlew :core:build`) if you are only modifying backend Java code. Running the global `./gradlew build` triggers the frontend `console-webapp` build, which unnecessarily runs `npmInstallDeps` and modifies `package-lock.json`. If you must run a global build, you must revert `console-webapp/package-lock.json` afterwards. Do not declare success if formatting checks (e.g., `spotlessCheck` or `javaIncrementalFormatCheck`) or tests fail. If formatting fails, run `./gradlew spotlessApply` and then re-run your build command to verify everything passes.
 
 ## 🚫 Common Pitfalls to Avoid
 
@@ -164,3 +164,4 @@ This protocol defines the standard for interacting with GitHub repositories and 
 ## 3. PR Lifecycle Management
 - **One Commit Per PR:** Ensure all changes are squashed into a single, clean commit. Use `git commit --amend --no-edit` for follow-up fixes.
 - **Clean Workspace:** Always run `git status` and verify the repository state before declaring a task complete.
+- **Package Lock:** The Gradle build automatically modifies `console-webapp/package-lock.json` via the `npmInstallDeps` task. ALWAYS revert this file (`git checkout console-webapp/package-lock.json`) before staging changes or finalizing a commit unless you explicitly modified NPM dependencies.

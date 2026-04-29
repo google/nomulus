@@ -252,7 +252,7 @@ class GenerateAllocationTokensCommand implements Command {
                     Optional.ofNullable(discountPrice).ifPresent(token::setDiscountPrice);
                     Optional.ofNullable(discountYears).ifPresent(token::setDiscountYears);
                     Optional.ofNullable(tokenStatusTransitions)
-                        .ifPresent(token::setTokenStatusTransitionsInstant);
+                        .ifPresent(token::setTokenStatusTransitions);
                     Optional.ofNullable(renewalPrice).ifPresent(token::setRenewalPrice);
                     Optional.ofNullable(domainNames)
                         .ifPresent(d -> token.setDomainName(d.removeFirst()));
