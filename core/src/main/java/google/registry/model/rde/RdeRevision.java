@@ -17,11 +17,11 @@ package google.registry.model.rde;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toJodaLocalDate;
 
 import com.google.common.base.VerifyException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestampEntity;
-import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.LocalDateConverter;
 import jakarta.persistence.Column;
@@ -32,8 +32,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
 /**
@@ -44,7 +44,7 @@ import org.joda.time.LocalDate;
  * flag is included in the generated XML.
  */
 @Entity
-@IdClass(RdeRevisionId.class)
+@IdClass(RdeRevision.RdeRevisionId.class)
 public final class RdeRevision extends UpdateAutoTimestampEntity {
 
   @Id String tld;
@@ -82,15 +82,15 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
    *
    * @return {@code 0} for first deposit generation and {@code >0} for resends
    */
-  public static int getNextRevision(String tld, DateTime date, RdeMode mode) {
-    RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
+  public static int getNextRevision(String tld, Instant date, RdeMode mode) {
+    RdeRevisionId revisionId = RdeRevisionId.create(tld, toJodaLocalDate(date), mode);
     Optional<RdeRevision> revisionOptional =
-        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey)));
+        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, revisionId)));
     return revisionOptional.map(rdeRevision -> rdeRevision.revision + 1).orElse(0);
   }
 
   /** Returns the latest revision of the report already generated for the given triplet. */
-  public static Optional<Integer> getCurrentRevision(String tld, DateTime date, RdeMode mode) {
+  public static Optional<Integer> getCurrentRevision(String tld, Instant date, RdeMode mode) {
     int nextRevision = getNextRevision(tld, date, mode);
     if (nextRevision == 0) {
       return Optional.empty();
@@ -107,12 +107,12 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
    * @throws IllegalStateException if not in a transaction
    * @throws VerifyException if the state doesn't meet the above criteria
    */
-  public static void saveRevision(String tld, DateTime date, RdeMode mode, int revision) {
+  public static void saveRevision(String tld, Instant date, RdeMode mode, int revision) {
     checkArgument(revision >= 0, "Negative revision: %s", revision);
     tm().assertInTransaction();
-    RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
+    RdeRevisionId revisionId = RdeRevisionId.create(tld, toJodaLocalDate(date), mode);
     Optional<RdeRevision> revisionOptional =
-        tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey));
+        tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, revisionId));
     if (revision == 0) {
       revisionOptional.ifPresent(
           rdeRevision -> {
@@ -133,8 +133,7 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
           revision - 1,
           revisionOptional.get());
     }
-    RdeRevision object = create(tld, date.toLocalDate(), mode, revision);
-    tm().put(object);
+    tm().put(RdeRevision.create(tld, toJodaLocalDate(date), mode, revision));
   }
 
   /** Class to represent the composite primary key of {@link RdeRevision} entity. */

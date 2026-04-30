@@ -40,12 +40,12 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
-import org.joda.time.Duration;
 
 @Action(
     service = Action.Service.BACKEND,
@@ -99,7 +99,7 @@ public class SyncRemoteCacheAction implements Runnable {
           return null;
         };
 
-    if (!lockHandler.executeWithLocks(runner, null, Duration.standardHours(1), LOCK_NAME)) {
+    if (!lockHandler.executeWithLocks(runner, null, Duration.ofHours(1), LOCK_NAME)) {
       // Send a 200-series status code to prevent this conflicting action from retrying.
       response.setStatus(SC_NO_CONTENT);
       response.setPayload("Could not acquire lock; already running?");
@@ -184,7 +184,7 @@ public class SyncRemoteCacheAction implements Runnable {
 
   private Instant getPreviousCursorTime(Cursor.CursorType cursorType) {
     return tm().loadByKeyIfPresent(Cursor.createGlobalVKey(cursorType))
-        .map(Cursor::getCursorTimeInstant)
+        .map(Cursor::getCursorTime)
         .orElse(START_INSTANT);
   }
 

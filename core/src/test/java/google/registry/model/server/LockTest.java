@@ -25,8 +25,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.server.Lock.LockState;
+import java.time.Duration;
 import java.util.Optional;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,8 +35,8 @@ import org.junit.jupiter.api.Test;
 public class LockTest extends EntityTestCase {
 
   private static final String RESOURCE_NAME = "foo";
-  private static final Duration ONE_DAY = Duration.standardDays(1);
-  private static final Duration TWO_MILLIS = Duration.millis(2);
+  private static final Duration ONE_DAY = Duration.ofDays(1);
+  private static final Duration TWO_MILLIS = Duration.ofMillis(2);
 
   private LockMetrics origLockMetrics;
 
@@ -58,7 +58,7 @@ public class LockTest extends EntityTestCase {
     Lock.lockMetrics = mock(LockMetrics.class);
     lock.release();
     verify(Lock.lockMetrics)
-        .recordRelease(RESOURCE_NAME, expectedTld, Duration.millis(expectedMillis));
+        .recordRelease(RESOURCE_NAME, expectedTld, Duration.ofMillis(expectedMillis));
     verifyNoMoreInteractions(Lock.lockMetrics);
     Lock.lockMetrics = null;
   }
@@ -81,7 +81,7 @@ public class LockTest extends EntityTestCase {
     // We can't get it again at the same time.
     assertThat(acquire("", ONE_DAY, IN_USE)).isEmpty();
     // But if we release it, it's available.
-    fakeClock.advanceBy(Duration.millis(123));
+    fakeClock.advanceBy(Duration.ofMillis(123));
     release(lock.get(), "", 123);
     assertThat(acquire("", ONE_DAY, FREE)).isPresent();
   }

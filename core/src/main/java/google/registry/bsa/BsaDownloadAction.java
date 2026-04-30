@@ -116,7 +116,7 @@ public class BsaDownloadAction implements Runnable {
 
   Void runWithinLock() {
     // Cannot enroll new TLDs after download starts. This may change if b/309175410 is fixed.
-    if (!Tlds.hasActiveBsaEnrollment(clock.nowUtc())) {
+    if (!Tlds.hasActiveBsaEnrollment(clock.now())) {
       logger.atInfo().log("No TLDs enrolled with BSA. Quitting.");
       return null;
     }
@@ -179,9 +179,7 @@ public class BsaDownloadAction implements Runnable {
           gcsClient.writeUnblockableDomains(
               schedule.jobName(),
               batches
-                  .map(
-                      batch ->
-                          applyLabelDiff(batch, lazyIdnChecker.get(), schedule, clock.nowUtc()))
+                  .map(batch -> applyLabelDiff(batch, lazyIdnChecker.get(), schedule, clock.now()))
                   .flatMap(ImmutableList::stream));
         }
         schedule.updateJobStage(DownloadStage.REPORT_START_OF_ORDER_PROCESSING);

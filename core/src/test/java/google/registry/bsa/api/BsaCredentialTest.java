@@ -36,8 +36,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.time.Duration;
 import javax.net.ssl.HttpsURLConnection;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,7 +48,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class BsaCredentialTest {
 
-  private static final Duration AUTH_TOKEN_EXPIRY = Duration.standardMinutes(30);
+  private static final Duration AUTH_TOKEN_EXPIRY = Duration.ofMinutes(30);
 
   @Mock OutputStream connectionOutputStream;
   @Mock HttpsURLConnection connection;
@@ -82,7 +82,7 @@ class BsaCredentialTest {
     credential = spy(credential);
     doReturn("a", "b", "c").when(credential).fetchNewAuthToken();
     assertThat(credential.getAuthToken()).isEqualTo("a");
-    clock.advanceBy(AUTH_TOKEN_EXPIRY.minus(Duration.millis(1)));
+    clock.advanceBy(AUTH_TOKEN_EXPIRY.minus(Duration.ofMillis(1)));
     assertThat(credential.getAuthToken()).isEqualTo("a");
     verify(credential, times(1)).fetchNewAuthToken();
   }

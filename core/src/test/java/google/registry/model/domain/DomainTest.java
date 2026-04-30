@@ -35,8 +35,8 @@ import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toInstant;
+import static java.time.ZoneOffset.UTC;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -73,10 +73,10 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -85,7 +85,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 @SuppressWarnings("WeakerAccess") // Referred to by EppInputTest.
 public class DomainTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  protected FakeClock fakeClock = new FakeClock(DateTime.now(DateTimeZone.UTC));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -673,8 +673,7 @@ public class DomainTest {
             .build();
     Domain renewed =
         domain.cloneProjectedAtTime(plusYears(domain.getRegistrationExpirationTime(), 4));
-    assertThat(renewed.getRegistrationExpirationTime().atZone(ZoneOffset.UTC).getDayOfMonth())
-        .isEqualTo(28);
+    assertThat(renewed.getRegistrationExpirationTime().atZone(UTC).getDayOfMonth()).isEqualTo(28);
   }
 
   @Test
@@ -739,7 +738,7 @@ public class DomainTest {
 
   @Test
   void testClone_doNotExtendExpirationOnDeletedDomain() {
-    DateTime now = DateTime.now(UTC);
+    DateTime now = DateTime.now(DateTimeZone.UTC);
     domain =
         persistResource(
             domain
@@ -755,7 +754,7 @@ public class DomainTest {
   @Test
   void testClone_doNotExtendExpirationOnFutureDeletedDomain() {
     // if a domain is in pending deletion (StatusValue.PENDING_DELETE), don't extend expiration
-    DateTime now = DateTime.now(UTC);
+    DateTime now = DateTime.now(DateTimeZone.UTC);
     domain =
         persistResource(
             domain
@@ -771,7 +770,7 @@ public class DomainTest {
   @Test
   void testClone_extendsExpirationForExpiredTransferredDomain() {
     // If the transfer implicitly succeeded, the expiration time should be extended
-    DateTime now = DateTime.now(UTC);
+    DateTime now = DateTime.now(DateTimeZone.UTC);
     DateTime transferExpirationTime = now.minusDays(1);
     DateTime previousExpiration = now.minusDays(2);
 
@@ -799,7 +798,7 @@ public class DomainTest {
   void testClone_extendsExpirationForNonExpiredTransferredDomain() {
     // If the transfer implicitly succeeded, the expiration time should be extended even if it
     // hadn't already expired
-    DateTime now = DateTime.now(UTC);
+    DateTime now = DateTime.now(DateTimeZone.UTC);
     DateTime transferExpirationTime = now.minusDays(1);
     DateTime previousExpiration = now.plusWeeks(2);
 
@@ -827,7 +826,7 @@ public class DomainTest {
   void testClone_removesBulkTokenFromTransferredDomain() {
     // If the transfer implicitly succeeded, the expiration time should be extended even if it
     // hadn't already expired
-    DateTime now = DateTime.now(UTC);
+    DateTime now = DateTime.now(DateTimeZone.UTC);
     DateTime transferExpirationTime = now.minusDays(1);
     DateTime previousExpiration = now.plusWeeks(2);
 
@@ -868,7 +867,7 @@ public class DomainTest {
   @Test
   void testClone_doesNotExtendExpirationForPendingTransfer() {
     // Pending transfers shouldn't affect the expiration time
-    DateTime now = DateTime.now(UTC);
+    DateTime now = DateTime.now(DateTimeZone.UTC);
     DateTime transferExpirationTime = now.plusDays(1);
     DateTime previousExpiration = now.plusWeeks(2);
 
@@ -893,7 +892,7 @@ public class DomainTest {
   @Test
   void testClone_doesNotRemoveBulkTokenForPendingTransfer() {
     // Pending transfers shouldn't affect the expiration time
-    DateTime now = DateTime.now(UTC);
+    DateTime now = DateTime.now(DateTimeZone.UTC);
     DateTime transferExpirationTime = now.plusDays(1);
     DateTime previousExpiration = now.plusWeeks(2);
 
@@ -933,7 +932,7 @@ public class DomainTest {
   void testClone_transferDuringAutorenew() {
     // When the domain is an autorenew grace period, we should not extend the registration
     // expiration by a further year--it should just be whatever the autorenew was
-    DateTime now = DateTime.now(UTC);
+    DateTime now = DateTime.now(DateTimeZone.UTC);
     DateTime transferExpirationTime = now.minusDays(1);
     DateTime previousExpiration = now.minusDays(2);
 

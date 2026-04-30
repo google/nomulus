@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -34,12 +34,11 @@ public class DnsRefreshRequestTest extends EntityTestCase {
   }
 
   private final DnsRefreshRequest request =
-      new DnsRefreshRequest(
-          DnsUtils.TargetType.DOMAIN, "test.example", "example", fakeClock.nowUtc());
+      new DnsRefreshRequest(DnsUtils.TargetType.DOMAIN, "test.example", "example", fakeClock.now());
 
   @Test
   void testPersistence() {
-    assertThat(request.getLastProcessTime()).isEqualTo(START_OF_TIME);
+    assertThat(request.getLastProcessTime()).isEqualTo(START_INSTANT);
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().insert(request));
     fakeClock.advanceOneMilli();
@@ -53,18 +52,17 @@ public class DnsRefreshRequestTest extends EntityTestCase {
     // type
     assertThrows(
         NullPointerException.class,
-        () -> new DnsRefreshRequest(null, "test.example", "example", fakeClock.nowUtc()));
+        () -> new DnsRefreshRequest(null, "test.example", "example", fakeClock.now()));
     // name
     assertThrows(
         NullPointerException.class,
-        () ->
-            new DnsRefreshRequest(DnsUtils.TargetType.DOMAIN, null, "example", fakeClock.nowUtc()));
+        () -> new DnsRefreshRequest(DnsUtils.TargetType.DOMAIN, null, "example", fakeClock.now()));
     // tld
     assertThrows(
         NullPointerException.class,
         () ->
             new DnsRefreshRequest(
-                DnsUtils.TargetType.DOMAIN, "test.example", null, fakeClock.nowUtc()));
+                DnsUtils.TargetType.DOMAIN, "test.example", null, fakeClock.now()));
     // request time
     assertThrows(
         NullPointerException.class,
@@ -75,22 +73,21 @@ public class DnsRefreshRequestTest extends EntityTestCase {
   void testUpdateProcessTime() {
     assertThat(
             assertThrows(
-                IllegalArgumentException.class,
-                () -> request.updateProcessTime(fakeClock.nowUtc())))
+                IllegalArgumentException.class, () -> request.updateProcessTime(fakeClock.now())))
         .hasMessageThat()
         .contains("must be later than request time");
 
     fakeClock.advanceOneMilli();
     fakeClock.advanceOneMilli();
 
-    DnsRefreshRequest newRequest = request.updateProcessTime(fakeClock.nowUtc());
+    DnsRefreshRequest newRequest = request.updateProcessTime(fakeClock.now());
     assertAboutImmutableObjects().that(newRequest).isEqualExceptFields(request, "lastProcessTime");
-    assertThat(newRequest.getLastProcessTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(newRequest.getLastProcessTime()).isEqualTo(fakeClock.now());
 
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> newRequest.updateProcessTime(fakeClock.nowUtc().minusMillis(1))))
+                () -> newRequest.updateProcessTime(fakeClock.now().minusMillis(1))))
         .hasMessageThat()
         .contains("must be later than the old one");
   }

@@ -24,7 +24,6 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.plusDays;
@@ -48,8 +47,8 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -57,7 +56,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link DeleteExpiredDomainsAction}. */
 class DeleteExpiredDomainsActionTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2016-06-13T20:21:22Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2016-06-13T20:21:22Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -208,7 +207,7 @@ class DeleteExpiredDomainsActionTest {
         .setTargetId("fizz.tld")
         .setRegistrarId("TheRegistrar")
         .setEventTime(plusYears(clock.now(), 1))
-        .setAutorenewEndTime(END_OF_TIME)
+        .setAutorenewEndTime(END_INSTANT)
         .setHistoryEntry(createHistoryEntry);
   }
 }

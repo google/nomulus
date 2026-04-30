@@ -47,7 +47,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +56,7 @@ import org.mockito.ArgumentCaptor;
 /** Unit tests for {@link CheckBulkComplianceAction}. */
 public class CheckBulkComplianceActionTest {
   // This is the default creation time for test data.
-  private final FakeClock clock = new FakeClock(DateTime.parse("2012-03-25TZ"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2012-03-25T00:00:00Z"));
   private static final String CREATE_LIMIT_EMAIL_SUBJECT = "create limit subject";
   private static final String DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT = "domain limit warning subject";
   private static final String DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT = "domain limit upgrade subject";

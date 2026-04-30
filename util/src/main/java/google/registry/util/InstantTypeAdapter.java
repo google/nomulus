@@ -15,6 +15,7 @@
 package google.registry.util;
 
 import static google.registry.util.DateTimeUtils.formatInstant;
+import static google.registry.util.DateTimeUtils.parseInstant;
 
 import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
@@ -27,7 +28,7 @@ public class InstantTypeAdapter extends StringBaseTypeAdapter<Instant> {
   @Override
   protected Instant fromString(String stringValue) throws IOException {
     try {
-      return DateTimeUtils.parseInstant(stringValue);
+      return parseInstant(stringValue);
     } catch (Exception e) {
       throw new IOException(e);
     }

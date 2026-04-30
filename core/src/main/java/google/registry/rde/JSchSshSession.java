@@ -25,7 +25,7 @@ import google.registry.config.RegistryConfig.Config;
 import jakarta.inject.Inject;
 import java.io.Closeable;
 import java.net.URI;
-import org.joda.time.Duration;
+import java.time.Duration;
 
 /**
  * SFTP connection {@link Session} delegate that implements {@link Closeable}.
@@ -67,9 +67,9 @@ final class JSchSshSession implements Closeable {
       if (url.getPass().isPresent()) {
         session.setPassword(url.getPass().get());
       }
-      session.setTimeout((int) sshTimeout.getMillis());
-      session.connect((int) sshTimeout.getMillis());
-      return new JSchSshSession(session, url, (int) sshTimeout.getMillis());
+      session.setTimeout((int) sshTimeout.toMillis());
+      session.connect((int) sshTimeout.toMillis());
+      return new JSchSshSession(session, url, (int) sshTimeout.toMillis());
     }
   }
 

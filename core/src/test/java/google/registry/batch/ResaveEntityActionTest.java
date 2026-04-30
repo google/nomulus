@@ -41,7 +41,7 @@ import google.registry.request.Response;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,7 +60,7 @@ public class ResaveEntityActionTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Mock private Response response;
-  private final FakeClock clock = new FakeClock(DateTime.parse("2016-02-11T10:00:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2016-02-11T10:00:00Z"));
   private AsyncTaskEnqueuer asyncTaskEnqueuer;
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
@@ -72,7 +72,7 @@ public class ResaveEntityActionTest {
   }
 
   private void runAction(
-      String resourceKey, DateTime requestedTime, ImmutableSortedSet<DateTime> resaveTimes) {
+      String resourceKey, Instant requestedTime, ImmutableSortedSet<Instant> resaveTimes) {
     ResaveEntityAction action =
         new ResaveEntityAction(
             resourceKey, requestedTime, resaveTimes, asyncTaskEnqueuer, response);
@@ -87,17 +87,17 @@ public class ResaveEntityActionTest {
             persistDomainWithDependentResources(
                 "domain",
                 "tld",
-                DateTime.parse("2016-02-06T10:00:00Z"),
-                DateTime.parse("2016-02-06T10:00:00Z"),
-                DateTime.parse("2017-01-02T10:11:00Z")),
-            DateTime.parse("2016-02-06T10:00:00Z"),
-            DateTime.parse("2016-02-11T10:00:00Z"),
-            DateTime.parse("2017-01-02T10:11:00Z"));
+                Instant.parse("2016-02-06T10:00:00Z"),
+                Instant.parse("2016-02-06T10:00:00Z"),
+                Instant.parse("2017-01-02T10:11:00Z")),
+            Instant.parse("2016-02-06T10:00:00Z"),
+            Instant.parse("2016-02-11T10:00:00Z"),
+            Instant.parse("2017-01-02T10:11:00Z"));
     clock.advanceOneMilli();
     assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
     runAction(
         domain.createVKey().stringify(),
-        DateTime.parse("2016-02-06T10:00:01Z"),
+        Instant.parse("2016-02-06T10:00:01Z"),
         ImmutableSortedSet.of());
     Domain resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getCurrentSponsorRegistrarId()).isEqualTo("NewRegistrar");
@@ -122,13 +122,13 @@ public class ResaveEntityActionTest {
                             "TheRegistrar")))
                 .build());
     clock.advanceBy(standardDays(30));
-    DateTime requestedTime = clock.nowUtc();
+    Instant requestedTime = clock.now();
 
     assertThat(domain.getGracePeriods()).isNotEmpty();
     runAction(
         domain.createVKey().stringify(),
         requestedTime,
-        ImmutableSortedSet.of(requestedTime.plusDays(5)));
+        ImmutableSortedSet.of(plusDays(requestedTime, 5)));
     Domain resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getGracePeriods()).isEmpty();
 
@@ -141,17 +141,17 @@ public class ResaveEntityActionTest {
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, resavedDomain.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, requestedTime.toString())
-            .scheduleTime(clock.nowUtc().plus(standardDays(5))));
+            .scheduleTime(clock.nowUtc().plusDays(5)));
   }
 
   @Test
   void test_queuedTaskForNonExistentDomain_failsPermanently() {
-    DateTime requestedTime = clock.nowUtc();
+    Instant requestedTime = clock.now();
     // It should complete its run without throwing an exception (that would cause a retry) ...
     runAction(
         newDomain("nonexistent.tld").createVKey().stringify(),
         requestedTime,
-        ImmutableSortedSet.of(requestedTime.plusDays(5)));
+        ImmutableSortedSet.of(plusDays(requestedTime, 5)));
     // ... and it shouldn't enqueue the subsequent re-save 5 days later.
     cloudTasksHelper.assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }

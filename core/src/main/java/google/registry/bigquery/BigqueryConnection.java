@@ -64,19 +64,19 @@ import google.registry.util.SqlTemplate;
 import google.registry.util.SystemSleeper;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Nullable;
-import org.joda.time.Duration;
 
 /** Class encapsulating parameters and state for accessing the Bigquery API. */
 public class BigqueryConnection implements AutoCloseable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final Duration MIN_POLL_INTERVAL = Duration.millis(500);
+  private static final Duration MIN_POLL_INTERVAL = Duration.ofMillis(500);
 
   @NonFinalForTesting
   private static Sleeper sleeper = new SystemSleeper();
@@ -88,7 +88,7 @@ public class BigqueryConnection implements AutoCloseable {
   private static final String TEMP_DATASET_NAME = "__temp__";
 
   /** Default time to live for temporary tables. */
-  private static final Duration TEMP_TABLE_TTL = Duration.standardHours(24);
+  private static final Duration TEMP_TABLE_TTL = Duration.ofHours(24);
 
   /** Bigquery client instance wrapped by this class. */
   private final Bigquery bigquery;
@@ -109,7 +109,7 @@ public class BigqueryConnection implements AutoCloseable {
   private boolean overwrite = false;
 
   /** Duration to wait between polls for job status. */
-  private Duration pollInterval = Duration.millis(1000);
+  private Duration pollInterval = Duration.ofSeconds(1);
 
   BigqueryConnection(Bigquery bigquery, Clock clock) {
     this.bigquery = bigquery;
@@ -146,9 +146,9 @@ public class BigqueryConnection implements AutoCloseable {
 
     public Builder setPollInterval(Duration pollInterval) {
       checkArgument(
-          !pollInterval.isShorterThan(MIN_POLL_INTERVAL),
+          pollInterval.compareTo(MIN_POLL_INTERVAL) >= 0,
           "poll interval must be at least %s ms",
-          MIN_POLL_INTERVAL.getMillis());
+          MIN_POLL_INTERVAL.toMillis());
       instance.pollInterval = pollInterval;
       return this;
     }
@@ -225,7 +225,7 @@ public class BigqueryConnection implements AutoCloseable {
       }
 
       public Builder timeToLive(Duration duration) {
-        this.table.setExpirationTime(clock.nowUtc().plus(duration).getMillis());
+        this.table.setExpirationTime(clock.now().plus(duration).toEpochMilli());
         return this;
       }
 

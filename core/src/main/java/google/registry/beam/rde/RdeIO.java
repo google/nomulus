@@ -56,6 +56,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.security.Security;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -66,8 +68,6 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 public class RdeIO {
 
@@ -163,7 +163,7 @@ public class RdeIO {
       // Determine some basic things about the deposit.
       final RdeMode mode = key.mode();
       final String tld = key.tld();
-      final DateTime watermark = key.watermark();
+      final Instant watermark = key.watermark();
       final int revision =
           Optional.ofNullable(key.revision())
               .orElseGet(() -> RdeRevision.getNextRevision(tld, watermark, mode));
@@ -259,7 +259,7 @@ public class RdeIO {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final long serialVersionUID = 5822176227753327224L;
-    private static final Duration ENQUEUE_DELAY = Duration.standardMinutes(1);
+    private static final Duration ENQUEUE_DELAY = Duration.ofMinutes(1);
 
     private final CloudTasksUtils cloudTasksUtils;
 
@@ -276,9 +276,9 @@ public class RdeIO {
                 Tld tld = Tld.get(key.tld());
                 Optional<Cursor> cursor =
                     tm().loadByKeyIfPresent(Cursor.createScopedVKey(key.cursor(), tld));
-                DateTime position = getCursorTimeOrStartOfTime(cursor);
+                Instant position = getCursorTimeOrStartOfTime(cursor);
                 checkState(key.interval() != null, "Interval must be present");
-                DateTime newPosition = key.watermark().plus(key.interval());
+                Instant newPosition = key.watermark().plus(key.interval());
                 if (!position.isBefore(newPosition)) {
                   logger.atWarning().log("Cursor has already been rolled forward.");
                   return;

@@ -22,6 +22,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.GpgSystemCommandExtension.GPG_BINARY;
 import static google.registry.testing.SystemInfo.hasCommand;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -47,11 +48,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.Instant;
 import java.util.Optional;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -116,7 +117,7 @@ public class BrdaCopyActionTest {
     createTld("lol");
     action.gcsUtils = gcsUtils;
     action.tld = "lol";
-    action.watermark = DateTime.parse("2010-10-17TZ");
+    action.watermark = Instant.parse("2010-10-17T00:00:00Z");
     action.brdaBucket = "tub";
     action.stagingBucket = "keg";
     action.receiverKey = receiverKey;
@@ -124,9 +125,10 @@ public class BrdaCopyActionTest {
     action.stagingDecryptionKey = decryptKey;
     tm().transact(
             () -> {
-              RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), RdeMode.THIN, 0);
+              RdeRevision.saveRevision(
+                  "lol", Instant.parse("2010-10-17T00:00:00Z"), RdeMode.THIN, 0);
             });
-    persistResource(Cursor.createScoped(BRDA, action.watermark.plusDays(1), Tld.get("lol")));
+    persistResource(Cursor.createScoped(BRDA, plusDays(action.watermark, 1), Tld.get("lol")));
   }
 
   @ParameterizedTest
@@ -138,8 +140,8 @@ public class BrdaCopyActionTest {
         .hasMessageThat()
         .isEqualTo(
             "Waiting on RdeStagingAction for TLD lol to copy BRDA deposit for"
-                + " 2010-10-17T00:00:00.000Z to GCS; last BRDA staging completion was before"
-                + " 2010-10-17T00:00:00.000Z");
+                + " 2010-10-17T00:00:00Z to GCS; last BRDA staging completion was before"
+                + " 2010-10-17T00:00:00Z");
   }
 
   @ParameterizedTest

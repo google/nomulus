@@ -36,10 +36,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import javax.annotation.Nullable;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
 
 /**
  * Utility class for reading and writing data in the ghostryde container format.
@@ -116,7 +116,8 @@ public final class Ghostryde {
    * set them to a constant value.
    */
   static final String INNER_FILENAME = "file.xml";
-  static final DateTime INNER_MODIFICATION_TIME = DateTime.parse("2000-01-01TZ");
+
+  static final Instant INNER_MODIFICATION_TIME = Instant.parse("2000-01-01T00:00:00Z");
 
   /** Creates a ghostryde file from an in-memory byte array. */
   public static byte[] encode(byte[] data, PGPPublicKey key) throws IOException {

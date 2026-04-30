@@ -27,7 +27,6 @@ import static google.registry.beam.rde.RdePipeline.TupleTags.REVISION_ID;
 import static google.registry.beam.rde.RdePipeline.TupleTags.SUPERORDINATE_DOMAINS;
 import static google.registry.model.reporting.HistoryEntryDao.RESOURCE_TYPES_TO_HISTORY_TYPES;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.SafeSerializationUtils.safeDeserializeCollection;
 import static google.registry.util.SafeSerializationUtils.serializeCollection;
 import static google.registry.util.SerializeUtils.decodeBase64;
@@ -72,6 +71,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.Serializable;
+import java.time.Instant;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -97,7 +97,6 @@ import org.apache.beam.sdk.values.PCollectionTuple;
 import org.apache.beam.sdk.values.TupleTag;
 import org.apache.beam.sdk.values.TupleTagList;
 import org.apache.beam.sdk.values.TypeDescriptor;
-import org.joda.time.DateTime;
 
 /**
  * Definition of a Dataflow Flex template, which generates RDE/BRDA deposits.
@@ -171,7 +170,7 @@ public class RdePipeline implements Serializable {
   private final transient RdePipelineOptions options;
   private final ValidationMode mode;
   private final ImmutableSet<PendingDeposit> pendingDeposits;
-  private final DateTime watermark;
+  private final Instant watermark;
   private final String rdeBucket;
   private final byte[] stagingKeyBytes;
   private final GcsUtils gcsUtils;
@@ -190,7 +189,7 @@ public class RdePipeline implements Serializable {
     this.options = options;
     this.mode = ValidationMode.valueOf(options.getValidationMode());
     this.pendingDeposits = decodePendingDeposits(options.getPendings());
-    ImmutableSet<DateTime> potentialWatermarks =
+    ImmutableSet<Instant> potentialWatermarks =
         pendingDeposits.stream()
             .map(PendingDeposit::watermark)
             .distinct()
@@ -324,7 +323,7 @@ public class RdePipeline implements Serializable {
                             ? "AND resource.tld IN " + "(SELECT id FROM Tld WHERE tldType = 'REAL')"
                             : ""))
                     .replace("%entity%", historyClass.getSimpleName()),
-                ImmutableMap.of("watermark", toInstant(watermark)),
+                ImmutableMap.of("watermark", watermark),
                 Object[].class,
                 row -> KV.of((String) row[0], (long) row[1]))
             .withCoder(KvCoder.of(StringUtf8Coder.of(), VarLongCoder.of())));
@@ -365,7 +364,7 @@ public class RdePipeline implements Serializable {
                 tm().loadByKey(
                         VKey.create(historyEntryClazz, new HistoryEntryId(repoId, revisionId))))
         .getResourceAtPointInTime()
-        .map(resource -> resource.cloneProjectedAtTime(toInstant(watermark)))
+        .map(resource -> resource.cloneProjectedAtTime(watermark))
         .get();
   }
 
