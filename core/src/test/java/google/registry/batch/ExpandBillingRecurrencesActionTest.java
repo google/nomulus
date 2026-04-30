@@ -16,7 +16,6 @@ package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -77,7 +76,7 @@ public class ExpandBillingRecurrencesActionTest extends BeamActionTestBase {
     tm().transact(
             () ->
                 tm().put(
-                        Cursor.createGlobal(CursorType.RECURRING_BILLING, toDateTime(cursorTime))));
+                        Cursor.createGlobal(CursorType.RECURRING_BILLING, cursorTime)));
   }
 
   @Test

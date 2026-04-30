@@ -26,7 +26,7 @@ import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
-import org.joda.time.Duration;
+import java.time.Duration;
 
 /** DNS instrumentation. */
 // TODO(b/67947699):Once load testing is done, revisit these to rename them and delete the ones that
@@ -239,15 +239,15 @@ public class DnsMetrics {
     int batchSize = numberOfDomains + numberOfHosts;
 
     processingTimePerCommitDist.record(
-        processingDuration.getMillis(), tld, status.name(), dnsWriter);
+        processingDuration.toMillis(), tld, status.name(), dnsWriter);
     processingTimePerItemDist.record(
-        processingDuration.getMillis(), batchSize, tld, status.name(), dnsWriter);
+        processingDuration.toMillis(), batchSize, tld, status.name(), dnsWriter);
 
     if (batchSize > 0) {
       normalizedProcessingTimePerCommitDist.record(
-          processingDuration.getMillis() / (double) batchSize, tld, status.name(), dnsWriter);
+          processingDuration.toMillis() / (double) batchSize, tld, status.name(), dnsWriter);
       normalizedProcessingTimePerItemDist.record(
-          processingDuration.getMillis() / (double) batchSize,
+          processingDuration.toMillis() / (double) batchSize,
           batchSize,
           tld,
           status.name(),
@@ -267,7 +267,7 @@ public class DnsMetrics {
       Duration timeSinceUpdateRequest,
       Duration timeSinceActionEnqueued) {
     updateRequestLatency.record(
-        timeSinceUpdateRequest.getMillis(), numberOfItems, tld, status.name(), dnsWriter);
-    publishQueueDelay.record(timeSinceActionEnqueued.getMillis(), tld, status.name(), dnsWriter);
+        timeSinceUpdateRequest.toMillis(), numberOfItems, tld, status.name(), dnsWriter);
+    publishQueueDelay.record(timeSinceActionEnqueued.toMillis(), tld, status.name(), dnsWriter);
   }
 }

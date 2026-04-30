@@ -17,6 +17,7 @@ package google.registry.rde;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
+import static google.registry.util.DateTimeUtils.plusDays;
 
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.config.RegistryConfig.Config;
@@ -28,9 +29,11 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Utility class that determines which RDE or BRDA deposits need to be created.
@@ -67,22 +70,22 @@ public final class PendingDepositChecker {
                 RdeMode.FULL,
                 CursorType.RDE_STAGING,
                 rdeInterval,
-                clock.nowUtc().withTimeAtStartOfDay()))
+                clock.now().truncatedTo(ChronoUnit.DAYS)))
         .putAll(
             getTldsAndWatermarksPendingDeposit(
                 RdeMode.THIN,
                 CursorType.BRDA,
                 brdaInterval,
-                advanceToDayOfWeek(clock.nowUtc().withTimeAtStartOfDay(), brdaDayOfWeek)))
+                advanceToDayOfWeek(clock.now().truncatedTo(ChronoUnit.DAYS), brdaDayOfWeek)))
         .build();
   }
 
   private ImmutableSetMultimap<String, PendingDeposit> getTldsAndWatermarksPendingDeposit(
-      RdeMode mode, CursorType cursorType, Duration interval, DateTime startingPoint) {
-    checkArgument(interval.isLongerThan(Duration.ZERO));
+      RdeMode mode, CursorType cursorType, Duration interval, Instant startingPoint) {
+    checkArgument(interval.compareTo(Duration.ZERO) > 0);
     ImmutableSetMultimap.Builder<String, PendingDeposit> builder =
         new ImmutableSetMultimap.Builder<>();
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     for (String tldStr : Tlds.getTldsOfType(TldType.REAL)) {
       Tld tld = Tld.get(tldStr);
       if (!tld.getEscrowEnabled()) {
@@ -91,9 +94,9 @@ public final class PendingDepositChecker {
       // Avoid creating a transaction unless absolutely necessary.
       Optional<Cursor> maybeCursor =
           tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, tld)));
-      DateTime cursorValue = maybeCursor.map(Cursor::getCursorTime).orElse(startingPoint);
+      Instant cursorValue = maybeCursor.map(Cursor::getCursorTime).orElse(startingPoint);
       if (isBeforeOrAt(cursorValue, now)) {
-        DateTime watermark =
+        Instant watermark =
             maybeCursor
                 .map(Cursor::getCursorTime)
                 .orElse(transactionallyInitializeCursor(tld, cursorType, startingPoint));
@@ -105,8 +108,8 @@ public final class PendingDepositChecker {
     return builder.build();
   }
 
-  private DateTime transactionallyInitializeCursor(
-      final Tld tld, final CursorType cursorType, final DateTime initialValue) {
+  private Instant transactionallyInitializeCursor(
+      Tld tld, CursorType cursorType, Instant initialValue) {
     return tm().transact(
             () -> {
               Optional<Cursor> maybeCursor =
@@ -119,9 +122,9 @@ public final class PendingDepositChecker {
             });
   }
 
-  private static DateTime advanceToDayOfWeek(DateTime date, int dayOfWeek) {
-    while (date.getDayOfWeek() != dayOfWeek) {
-      date = date.plusDays(1);
+  private static Instant advanceToDayOfWeek(Instant date, int dayOfWeek) {
+    while (date.atZone(ZoneOffset.UTC).getDayOfWeek().getValue() != dayOfWeek) {
+      date = plusDays(date, 1);
     }
     return date;
   }

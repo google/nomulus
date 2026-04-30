@@ -44,6 +44,7 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
 import google.registry.util.Concurrent;
+import google.registry.util.DateTimeUtils;
 import google.registry.util.Retrier;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -51,6 +52,7 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,7 +61,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.joda.time.Duration;
 
 /**
  * {@link DnsWriter} implementation that talks to Google Cloud DNS.
@@ -123,8 +124,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     String absoluteDomainName = getAbsoluteHostName(domainName);
 
     // Load the target domain. Note that it can be absent if this domain was just deleted.
-    Optional<Domain> domain =
-        ForeignKeyUtils.loadResource(Domain.class, domainName, clock.nowUtc());
+    Optional<Domain> domain = ForeignKeyUtils.loadResource(Domain.class, domainName, clock.now());
 
     // Return early if no DNS records should be published.
     // desiredRecordsBuilder is populated with an empty set to indicate that all existing records
@@ -148,7 +148,12 @@ public class CloudDnsWriter extends BaseDnsWriter {
       domainRecords.add(
           new ResourceRecordSet()
               .setName(absoluteDomainName)
-              .setTtl((int) tld.getDnsDsTtl().orElse(defaultDsTtl).getStandardSeconds())
+              .setTtl(
+                  (int)
+                      tld.getDnsDsTtl()
+                          .map(DateTimeUtils::toJavaDuration)
+                          .orElse(defaultDsTtl)
+                          .toSeconds())
               .setType("DS")
               .setKind("dns#resourceRecordSet")
               .setRrdatas(ImmutableList.copyOf(dsRrData)));
@@ -171,7 +176,12 @@ public class CloudDnsWriter extends BaseDnsWriter {
       domainRecords.add(
           new ResourceRecordSet()
               .setName(absoluteDomainName)
-              .setTtl((int) tld.getDnsNsTtl().orElse(defaultNsTtl).getStandardSeconds())
+              .setTtl(
+                  (int)
+                      tld.getDnsNsTtl()
+                          .map(DateTimeUtils::toJavaDuration)
+                          .orElse(defaultNsTtl)
+                          .toSeconds())
               .setType("NS")
               .setKind("dns#resourceRecordSet")
               .setRrdatas(ImmutableList.copyOf(nsRrData)));
@@ -190,7 +200,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     // Load the target host. Note that it can be absent if this host was just deleted.
     // desiredRecords is populated with an empty set to indicate that all existing records
     // should be deleted.
-    Optional<Host> host = ForeignKeyUtils.loadResource(Host.class, hostName, clock.nowUtc());
+    Optional<Host> host = ForeignKeyUtils.loadResource(Host.class, hostName, clock.now());
 
     // Return early if the host is deleted.
     if (host.isEmpty()) {

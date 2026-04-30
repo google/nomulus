@@ -19,16 +19,20 @@ import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.earliestDateTimeOf;
 import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
+import static google.registry.util.DateTimeUtils.latestDateTimeOf;
 import static google.registry.util.DateTimeUtils.latestOf;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.parseInstant;
 import static google.registry.util.DateTimeUtils.plusMonths;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.toJodaInstant;
 import static google.registry.util.DateTimeUtils.toLocalDate;
 import static google.registry.util.DateTimeUtils.toSqlDate;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -49,7 +53,7 @@ class DateTimeUtilsTest {
   @Test
   void testSuccess_earliestOf() {
     assertThat(earliestOf(START_OF_TIME, END_OF_TIME)).isEqualTo(START_OF_TIME);
-    assertThat(DateTimeUtils.earliestDateTimeOf(sampleDates)).isEqualTo(START_OF_TIME);
+    assertThat(earliestDateTimeOf(sampleDates)).isEqualTo(START_OF_TIME);
   }
 
   @Test
@@ -61,7 +65,7 @@ class DateTimeUtilsTest {
   @Test
   void testSuccess_latestOf() {
     assertThat(latestOf(START_OF_TIME, END_OF_TIME)).isEqualTo(END_OF_TIME);
-    assertThat(DateTimeUtils.latestDateTimeOf(sampleDates)).isEqualTo(END_OF_TIME);
+    assertThat(latestDateTimeOf(sampleDates)).isEqualTo(END_OF_TIME);
   }
 
   @Test
@@ -136,14 +140,12 @@ class DateTimeUtilsTest {
 
   @Test
   void testFailure_earliestOfEmpty() {
-    assertThrows(
-        IllegalArgumentException.class, () -> DateTimeUtils.earliestDateTimeOf(ImmutableList.of()));
+    assertThrows(IllegalArgumentException.class, () -> earliestDateTimeOf(ImmutableList.of()));
   }
 
   @Test
   void testFailure_latestOfEmpty() {
-    assertThrows(
-        IllegalArgumentException.class, () -> DateTimeUtils.latestDateTimeOf(ImmutableList.of()));
+    assertThrows(IllegalArgumentException.class, () -> latestDateTimeOf(ImmutableList.of()));
   }
 
   @Test
@@ -180,11 +182,11 @@ class DateTimeUtilsTest {
         .isEqualTo(DateTime.parse("2024-03-27T10:15:30.105Z"));
     assertThat(toInstant(DateTime.parse("2024-03-27T10:15:30.105Z")))
         .isEqualTo(Instant.parse("2024-03-27T10:15:30.105Z"));
-    assertThat(DateTimeUtils.toJodaInstant(Instant.parse("2024-03-27T10:15:30.105Z")))
+    assertThat(toJodaInstant(Instant.parse("2024-03-27T10:15:30.105Z")))
         .isEqualTo(org.joda.time.Instant.parse("2024-03-27T10:15:30.105Z"));
-    assertThat(DateTimeUtils.parseInstant("2024-03-27T10:15:30.105Z"))
+    assertThat(parseInstant("2024-03-27T10:15:30.105Z"))
         .isEqualTo(Instant.parse("2024-03-27T10:15:30.105Z"));
-    assertThat(DateTimeUtils.parseInstant("2024-03-27T10:15:30Z"))
+    assertThat(parseInstant("2024-03-27T10:15:30Z"))
         .isEqualTo(Instant.parse("2024-03-27T10:15:30Z"));
   }
 }

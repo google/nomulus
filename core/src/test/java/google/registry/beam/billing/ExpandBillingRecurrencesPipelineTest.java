@@ -85,7 +85,7 @@ public class ExpandBillingRecurrencesPipelineTest {
 
   private Instant endTime = Instant.parse("2021-02-02T00:00:00.000Z");
 
-  private final Cursor cursor = Cursor.createGlobal(RECURRING_BILLING, toDateTime(startTime));
+  private final Cursor cursor = Cursor.createGlobal(RECURRING_BILLING, startTime);
 
   private Domain domain;
 
@@ -193,7 +193,7 @@ public class ExpandBillingRecurrencesPipelineTest {
             () ->
                 tm().put(
                         Cursor.createGlobal(
-                            RECURRING_BILLING, toDateTime(startTime.plusMillis(1)))));
+                            RECURRING_BILLING, startTime.plusMillis(1))));
 
     PipelineExecutionException thrown =
         assertThrows(PipelineExecutionException.class, this::runPipeline);
@@ -530,7 +530,7 @@ public class ExpandBillingRecurrencesPipelineTest {
   private static void assertCursorAt(Instant expectedCursorTime) {
     Cursor cursor = tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
     assertThat(cursor).isNotNull();
-    assertThat(cursor.getCursorTimeInstant()).isEqualTo(expectedCursorTime);
+    assertThat(cursor.getCursorTime()).isEqualTo(expectedCursorTime);
   }
 
   private static void assertCursorAt(DateTime expectedCursorTime) {

@@ -47,7 +47,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  */
 public class RegistrarToXjcConverterTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2013-01-01T00:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -88,7 +88,7 @@ public class RegistrarToXjcConverterTest {
             .build();
     registrar = cloneAndSetAutoTimestamps(registrar);  // Set the creation time in 2013.
     registrar = registrar.asBuilder().setLastUpdateTime((Instant) null).build();
-    clock.setTo(DateTime.parse("2014-01-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2014-01-01T00:00:00Z"));
     registrar = cloneAndSetAutoTimestamps(registrar);  // Set the update time in 2014.
   }
 

@@ -16,7 +16,6 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.bsa.api.UnblockableDomain;
@@ -25,14 +24,14 @@ import google.registry.persistence.transaction.DatabaseException;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link BsaUnblockableDomain}. */
 public class BsaUnblockableDomainTest {
 
-  FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  FakeClock fakeClock = new FakeClock(Instant.parse("2024-01-01T00:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =

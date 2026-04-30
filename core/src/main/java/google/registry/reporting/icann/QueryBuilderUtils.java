@@ -17,8 +17,8 @@ package google.registry.reporting.icann;
 import com.google.common.io.Resources;
 import google.registry.util.ResourceUtils;
 import java.net.URL;
-import org.joda.time.YearMonth;
-import org.joda.time.format.DateTimeFormat;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 
 final class QueryBuilderUtils {
 
@@ -26,7 +26,8 @@ final class QueryBuilderUtils {
 
   /** Returns the table name of the query, suffixed with the yearMonth in _yyyyMM format. */
   static String getTableName(String queryName, YearMonth yearMonth) {
-    return String.format("%s_%s", queryName, DateTimeFormat.forPattern("yyyyMM").print(yearMonth));
+    return String.format(
+        "%s_%s", queryName, DateTimeFormatter.ofPattern("yyyyMM").format(yearMonth));
   }
 
   /** Returns {@link String} for file in {@code reporting/sql/} directory. */

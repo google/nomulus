@@ -15,18 +15,18 @@
 package google.registry.rde;
 
 import static org.bouncycastle.openpgp.PGPLiteralData.BINARY;
-import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.util.ImprovedInputStream;
 import google.registry.util.ImprovedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.Timestamp;
+import java.time.Instant;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.WillNotClose;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.joda.time.DateTime;
 
 /**
  * Input/Output stream for reading/writing PGP literal data layer.
@@ -54,12 +54,12 @@ final class RydeFileEncoding {
    */
   @CheckReturnValue
   static ImprovedOutputStream openPgpFileWriter(
-      @WillNotClose OutputStream os, String filename, DateTime modified) {
+      @WillNotClose OutputStream os, String filename, Instant modified) {
     try {
       return new ImprovedOutputStream(
           "PgpFileWriter",
           new PGPLiteralDataGenerator()
-              .open(os, BINARY, filename, modified.toDate(), new byte[BUFFER_SIZE]));
+              .open(os, BINARY, filename, Timestamp.from(modified), new byte[BUFFER_SIZE]));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -68,12 +68,12 @@ final class RydeFileEncoding {
   /** Input stream to a PGP file's data that also holds the file's metadata. */
   static class PgpFileInputStream extends ImprovedInputStream {
     private final String filename;
-    private final DateTime modified;
+    private final Instant modified;
 
     private PgpFileInputStream(PGPLiteralData literal) {
       super("PgpFileReader", literal.getDataStream());
       filename = literal.getFileName();
-      modified = new DateTime(literal.getModificationTime(), UTC);
+      modified = literal.getModificationTime().toInstant();
     }
 
     /** Returns the name of the original file. */
@@ -82,7 +82,7 @@ final class RydeFileEncoding {
     }
 
     /** Returns the time this file was created or modified. */
-    DateTime getModified() {
+    Instant getModified() {
       return modified;
     }
   }

@@ -21,7 +21,7 @@ import com.google.common.io.ByteStreams;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RydeFileEncoding}. */
@@ -31,7 +31,7 @@ final class RydeFileEncodingTest {
   void testEncodeDecode() throws Exception {
     byte[] expectedContent = "Testing 1, 2, 3".getBytes(UTF_8);
     String expectedFilename = "myFile.txt";
-    DateTime expectedModified = DateTime.parse("2015-12-25T06:30:00.000Z");
+    Instant expectedModified = Instant.parse("2015-12-25T06:30:00.000Z");
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     try (OutputStream encoder =

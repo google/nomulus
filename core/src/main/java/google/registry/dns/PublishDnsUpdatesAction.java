@@ -63,11 +63,11 @@ import google.registry.util.DomainNameUtils;
 import google.registry.util.EmailMessage;
 import jakarta.inject.Inject;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /** Task that sends domain and host updates to the DNS server. */
 @Action(
@@ -100,8 +100,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
    */
   private final String dnsWriter;
 
-  private final DateTime enqueuedTime;
-  private final DateTime itemsCreateTime;
+  private final Instant enqueuedTime;
+  private final Instant itemsCreateTime;
   private final int lockIndex;
   private final int numPublishLocks;
   private final Set<String> domains;
@@ -121,8 +121,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   @Inject
   public PublishDnsUpdatesAction(
       @Parameter(PARAM_DNS_WRITER) String dnsWriter,
-      @Parameter(PARAM_PUBLISH_TASK_ENQUEUED) DateTime enqueuedTime,
-      @Parameter(PARAM_REFRESH_REQUEST_TIME) DateTime itemsCreateTime,
+      @Parameter(PARAM_PUBLISH_TASK_ENQUEUED) Instant enqueuedTime,
+      @Parameter(PARAM_REFRESH_REQUEST_TIME) Instant itemsCreateTime,
       @Parameter(PARAM_LOCK_INDEX) int lockIndex,
       @Parameter(PARAM_NUM_PUBLISH_LOCKS) int numPublishLocks,
       @Parameter(PARAM_DOMAINS) Set<String> domains,
@@ -167,15 +167,15 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   }
 
   private void recordActionResult(ActionStatus status) {
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
 
     dnsMetrics.recordActionResult(
         tld,
         dnsWriter,
         status,
         nullToEmpty(domains).size() + nullToEmpty(hosts).size(),
-        new Duration(itemsCreateTime, now),
-        new Duration(enqueuedTime, now));
+        Duration.between(itemsCreateTime, now),
+        Duration.between(enqueuedTime, now));
     logger.atInfo().log(
         "publishDnsWriter latency statistics: TLD: %s, dnsWriter: %s, actionStatus: %s, "
             + "numItems: %d, timeSinceCreation: %s, timeInQueue: %s.",
@@ -183,8 +183,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         dnsWriter,
         status,
         nullToEmpty(domains).size() + nullToEmpty(hosts).size(),
-        new Duration(itemsCreateTime, now),
-        new Duration(enqueuedTime, now));
+        Duration.between(itemsCreateTime, now),
+        Duration.between(enqueuedTime, now));
   }
 
   /** Runs the task. */
@@ -237,7 +237,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
             .ifPresent(
                 dn -> {
                   Optional<Domain> domain =
-                      ForeignKeyUtils.loadResource(Domain.class, dn, clock.nowUtc());
+                      ForeignKeyUtils.loadResource(Domain.class, dn, clock.now());
                   if (domain.isPresent()) {
                     notifyWithEmailAboutDnsUpdateFailure(
                         domain.get().getCurrentSponsorRegistrarId(), dn, false);
@@ -250,8 +250,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
             .findFirst()
             .ifPresent(
                 hn -> {
-                  Optional<Host> host =
-                      ForeignKeyUtils.loadResource(Host.class, hn, clock.nowUtc());
+                  Optional<Host> host = ForeignKeyUtils.loadResource(Host.class, hn, clock.now());
                   if (host.isPresent()) {
                     notifyWithEmailAboutDnsUpdateFailure(
                         host.get().getPersistedCurrentSponsorRegistrarId(), hn, true);
@@ -336,7 +335,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
                 .put(PARAM_DNS_WRITER, dnsWriter)
                 .put(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
                 .put(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
-                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.now().toString())
                 .put(PARAM_REFRESH_REQUEST_TIME, itemsCreateTime.toString())
                 .put(PARAM_DOMAINS, Joiner.on(",").join(domains))
                 .put(PARAM_HOSTS, Joiner.on(",").join(hosts))
@@ -374,7 +373,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   /** Steps through the domain and host refreshes contained in the parameters and processes them. */
   private void processBatch() {
-    DateTime timeAtStart = clock.nowUtc();
+    Instant timeAtStart = clock.now();
 
     DnsWriter writer = dnsWriterProxy.getByClassNameForTld(dnsWriter, tld);
 
@@ -426,7 +425,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       actionStatus = ActionStatus.SUCCESS;
     } finally {
       recordActionResult(actionStatus);
-      Duration duration = new Duration(timeAtStart, clock.nowUtc());
+      Duration duration = Duration.between(timeAtStart, clock.now());
       dnsMetrics.recordCommit(
           tld, dnsWriter, commitStatus, duration, domainsPublished, hostsPublished);
       logger.atInfo().log(

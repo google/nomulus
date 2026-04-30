@@ -218,7 +218,7 @@ public class DeleteProberDataAction implements Runnable {
     // successfully soft-delete the domain (thus leaving its DNS entry published). We soft-delete
     // it now so that the DNS entry can be handled. The domain will then be hard-deleted the next
     // time the job is run.
-    if (EppResourceUtils.isActive(domain, tm().getTransactionTime())) {
+    if (EppResourceUtils.isActive(domain, tm().getTxTime())) {
       if (isDryRun) {
         logger.atInfo().log(
             "Would soft-delete the active domain: %s (%s).",

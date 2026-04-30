@@ -34,13 +34,14 @@ import google.registry.model.host.Host;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
+import google.registry.util.DateTimeUtils;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.Optional;
-import org.joda.time.Duration;
 import org.xbill.DNS.AAAARecord;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.DClass;
@@ -130,7 +131,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
    */
   private void publishDomain(String domainName, String requestingHostName) {
     Optional<Domain> domainOptional =
-        ForeignKeyUtils.loadResource(Domain.class, domainName, clock.nowUtc());
+        ForeignKeyUtils.loadResource(Domain.class, domainName, clock.now());
     update.delete(toAbsoluteName(domainName), Type.ANY);
     // If the domain is now deleted, then don't update DNS for it.
     if (domainOptional.isPresent()) {
@@ -194,7 +195,10 @@ public class DnsUpdateWriter extends BaseDnsWriter {
           new DSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              tld.getDnsDsTtl().orElse(dnsDefaultDsTtl).getStandardSeconds(),
+              tld.getDnsDsTtl()
+                  .map(DateTimeUtils::toJavaDuration)
+                  .orElse(dnsDefaultDsTtl)
+                  .toSeconds(),
               signerData.getKeyTag(),
               signerData.getAlgorithm(),
               signerData.getDigestType(),
@@ -219,7 +223,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
   private void addInBailiwickNameServerSet(Domain domain, Update update) {
     for (String hostName :
         intersection(domain.loadNameserverHostNames(), domain.getSubordinateHosts())) {
-      Optional<Host> host = ForeignKeyUtils.loadResource(Host.class, hostName, clock.nowUtc());
+      Optional<Host> host = ForeignKeyUtils.loadResource(Host.class, hostName, clock.now());
       checkState(host.isPresent(), "Host %s cannot be loaded", hostName);
       update.add(makeAddressSet(host.get()));
       update.add(makeV6AddressSet(host.get()));
@@ -234,7 +238,10 @@ public class DnsUpdateWriter extends BaseDnsWriter {
           new NSRecord(
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
-              tld.getDnsNsTtl().orElse(dnsDefaultNsTtl).getStandardSeconds(),
+              tld.getDnsNsTtl()
+                  .map(DateTimeUtils::toJavaDuration)
+                  .orElse(dnsDefaultNsTtl)
+                  .toSeconds(),
               toAbsoluteName(hostName));
       nameServerSet.addRR(record);
     }

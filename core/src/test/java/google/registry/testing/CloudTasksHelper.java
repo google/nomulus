@@ -53,6 +53,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -354,6 +355,10 @@ public class CloudTasksHelper implements Serializable {
     public TaskMatcher scheduleTime(Timestamp scheduleTime) {
       expected.scheduleTime = scheduleTime;
       return this;
+    }
+
+    public TaskMatcher scheduleTime(Instant scheduleTime) {
+      return scheduleTime(Timestamps.fromMillis(scheduleTime.toEpochMilli()));
     }
 
     public TaskMatcher scheduleTime(DateTime scheduleTime) {

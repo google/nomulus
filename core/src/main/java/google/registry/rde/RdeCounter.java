@@ -14,6 +14,8 @@
 
 package google.registry.rde;
 
+import static google.registry.util.DateTimeUtils.toDateTime;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import google.registry.model.rde.RdeMode;
@@ -23,11 +25,11 @@ import google.registry.xjc.rdeheader.XjcRdeHeaderCount;
 import google.registry.xjc.rdeheader.XjcRdeHeaderElement;
 import google.registry.xjc.rdereport.XjcRdeReport;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.concurrent.NotThreadSafe;
-import org.joda.time.DateTime;
 
 /** Utility class for generating a single {@link XjcRdeHeader} while marshalling a deposit. */
 @NotThreadSafe
@@ -61,13 +63,12 @@ public final class RdeCounter {
   }
 
   /** Returns an ICANN notification report as a JAXB object. */
-  public XjcRdeReport
-      makeReport(String id, DateTime watermark, XjcRdeHeader header, int revision) {
+  public XjcRdeReport makeReport(String id, Instant watermark, XjcRdeHeader header, int revision) {
     XjcRdeReport report = new XjcRdeReport();
     report.setId(id);
     report.setKind(XjcRdeDepositTypeType.FULL);
-    report.setCrDate(watermark);
-    report.setWatermark(watermark);
+    report.setCrDate(toDateTime(watermark));
+    report.setWatermark(toDateTime(watermark));
     report.setVersion(ICANN_REPORT_SPEC_VERSION);
     report.setRydeSpecEscrow(URI_ESCROW);
     report.setRydeSpecMapping(URI_MAPPING);

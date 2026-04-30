@@ -14,6 +14,7 @@
 
 package google.registry.rde;
 
+
 import static com.google.common.base.Verify.verify;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
@@ -44,10 +45,10 @@ import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import org.bouncycastle.openpgp.PGPPrivateKey;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Action that uploads a small XML RDE report to ICANN after {@link RdeUploadAction} has finished.
@@ -81,13 +82,13 @@ public final class RdeReportAction implements Runnable, EscrowTask {
   }
 
   @Override
-  public void runWithLock(DateTime watermark) throws Exception {
+  public void runWithLock(Instant watermark) throws Exception {
     Optional<Cursor> cursor =
         tm().transact(
                 () ->
                     tm().loadByKeyIfPresent(
                             Cursor.createScopedVKey(CursorType.RDE_UPLOAD, Tld.get(tld))));
-    DateTime cursorTime = getCursorTimeOrStartOfTime(cursor);
+    Instant cursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(cursorTime, watermark)) {
       throw new NoContentException(
           String.format(

@@ -17,6 +17,7 @@ package google.registry.dns;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toJavaDuration;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -24,10 +25,10 @@ import com.google.common.net.InternetDomainName;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tlds;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /** Utility class to handle DNS refresh requests. */
 public final class DnsUtils {
@@ -42,13 +43,13 @@ public final class DnsUtils {
     // Throws an IllegalArgumentException if the name is not under a managed TLD -- we only update
     // DNS for names that are under our management.
     String tld = Tlds.findTldForNameOrThrow(InternetDomainName.from(name)).toString();
-    tm().insert(new DnsRefreshRequest(type, name, tld, tm().getTransactionTime().plus(delay)));
+    tm().insert(new DnsRefreshRequest(type, name, tld, tm().getTxTime().plus(delay)));
   }
 
   private static void requestDnsRefresh(
       ImmutableCollection<String> names, TargetType type, Duration delay) {
     tm().assertInTransaction();
-    DateTime requestTime = tm().getTransactionTime().plus(delay);
+    Instant requestTime = tm().getTxTime().plus(delay);
     tm().insertAll(
             names.stream()
                 .map(
@@ -103,7 +104,7 @@ public final class DnsUtils {
     return tm().transact(
             TRANSACTION_REPEATABLE_READ,
             () -> {
-              DateTime transactionTime = tm().getTransactionTime();
+              Instant transactionTime = tm().getTxTime();
               ImmutableList<DnsRefreshRequest> requests =
                   tm().query(
                           "FROM DnsRefreshRequest WHERE tld = :tld "
@@ -150,10 +151,10 @@ public final class DnsUtils {
     if (tldName.isPresent()) {
       Tld tld = Tld.get(tldName.get().toString());
       if (tld.getDnsAPlusAaaaTtl().isPresent()) {
-        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl().get();
+        dnsAPlusAaaaTtl = toJavaDuration(tld.getDnsAPlusAaaaTtl().get());
       }
     }
-    return dnsAPlusAaaaTtl.getStandardSeconds();
+    return dnsAPlusAaaaTtl.toSeconds();
   }
 
   /** The possible values of the {@code DNS_TARGET_TYPE_PARAM} parameter. */

@@ -28,7 +28,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.deleteTestDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -55,9 +55,9 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import java.io.UncheckedIOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -74,7 +74,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class BsaRefreshFunctionalTest {
 
-  static final DateTime TEST_START_TIME = DateTime.parse("2024-01-01T00:00:00Z");
+  static final Instant TEST_START_TIME = Instant.parse("2024-01-01T00:00:00Z");
 
   static final String RESERVED_LIST_NAME = "reserved";
 
@@ -103,17 +103,16 @@ class BsaRefreshFunctionalTest {
             gcsClient,
             bsaReportSender,
             /* transactionBatchSize= */ 5,
-            /* domainCreateTxnCommitTimeLag= */ Duration.millis(1),
+            /* domainCreateTxnCommitTimeLag= */ Duration.ofMillis(1),
             emailSender,
-            new BsaLock(
-                new FakeLockHandler(/* lockSucceeds= */ true), Duration.standardSeconds(30)),
+            new BsaLock(new FakeLockHandler(/* lockSucceeds= */ true), Duration.ofSeconds(30)),
             fakeClock,
             response);
 
     initDb();
   }
 
-  private String getRefreshJobName(DateTime jobStartTime) {
+  private String getRefreshJobName(Instant jobStartTime) {
     return jobStartTime.toString() + "-refresh";
   }
 
@@ -123,7 +122,9 @@ class BsaRefreshFunctionalTest {
         .forEach(
             tld ->
                 persistResource(
-                    tld.asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build()));
+                    tld.asBuilder()
+                        .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+                        .build()));
 
     createReservedList(RESERVED_LIST_NAME, "dummy", RESERVED_FOR_SPECIFIC_USE);
     addReservedListsToTld("app", ImmutableList.of(RESERVED_LIST_NAME));
@@ -139,7 +140,7 @@ class BsaRefreshFunctionalTest {
   void newReservedDomain_addedAsUnblockable() throws Exception {
     addReservedDomainToList(
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
-    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.now());
     action.run();
     UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.app", Reason.RESERVED);
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
@@ -156,7 +157,7 @@ class BsaRefreshFunctionalTest {
   void newRegisteredDomain_addedAsUnblockable() throws Exception {
     persistActiveDomain("blocked1.dev", fakeClock.nowUtc());
     persistActiveDomain("dummy.dev", fakeClock.nowUtc());
-    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.now());
     action.run();
     UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.dev", Reason.REGISTERED);
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
@@ -178,7 +179,7 @@ class BsaRefreshFunctionalTest {
     deleteTestDomain(domain, fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
 
-    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.now());
     Mockito.reset(bsaReportSender);
     action.run();
     assertThat(queryUnblockableDomains()).isEmpty();
@@ -201,7 +202,7 @@ class BsaRefreshFunctionalTest {
     fakeClock.advanceOneMilli();
     removeReservedDomainFromList(RESERVED_LIST_NAME, ImmutableSet.of("blocked1"));
 
-    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.now());
     Mockito.reset(bsaReportSender);
     action.run();
     assertThat(queryUnblockableDomains()).isEmpty();
@@ -226,7 +227,7 @@ class BsaRefreshFunctionalTest {
     deleteTestDomain(domain, fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
 
-    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.now());
     Mockito.reset(bsaReportSender);
     action.run();
     assertThat(queryUnblockableDomains())
@@ -254,7 +255,7 @@ class BsaRefreshFunctionalTest {
     fakeClock.advanceOneMilli();
 
     Mockito.reset(bsaReportSender);
-    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.now());
     action.run();
     UnblockableDomain changed = new UnblockableDomain("blocked1.app", Reason.REGISTERED);
     assertThat(queryUnblockableDomains()).containsExactly(changed);
@@ -274,7 +275,7 @@ class BsaRefreshFunctionalTest {
     addReservedDomainToList(
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
     persistActiveDomain("blocked1.app", fakeClock.nowUtc());
-    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.now());
     action.run();
     UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.app", Reason.REGISTERED);
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
@@ -295,7 +296,7 @@ class BsaRefreshFunctionalTest {
     fakeClock.advanceOneMilli();
 
     Mockito.reset(bsaReportSender);
-    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.now());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));
@@ -320,7 +321,7 @@ class BsaRefreshFunctionalTest {
     fakeClock.advanceOneMilli();
 
     Mockito.reset(bsaReportSender);
-    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.now());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));

@@ -33,7 +33,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -41,7 +41,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link RefreshDnsOnHostRenameAction}. */
 public class RefreshDnsOnHostRenameActionTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2015-01-15T11:22:33Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2015-01-15T11:22:33Z"));
   private final FakeResponse response = new FakeResponse();
 
   @RegisterExtension

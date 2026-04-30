@@ -17,8 +17,6 @@ package google.registry.model.common;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -35,7 +33,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * Shared entity for date cursors.
@@ -156,15 +153,6 @@ public class Cursor extends UpdateAutoTimestampEntity {
     return getUpdateTimestamp().getTimestamp();
   }
 
-  /**
-   * @deprecated Use {@link #getLastUpdateTime()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getLastUpdateDateTime() {
-    return toDateTime(getUpdateTimestamp().getTimestamp());
-  }
-
   public String getScope() {
     return scope;
   }
@@ -189,28 +177,10 @@ public class Cursor extends UpdateAutoTimestampEntity {
     return create(cursorType, cursorTime, GLOBAL);
   }
 
-  /**
-   * @deprecated Use {@link #createGlobal(CursorType, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static Cursor createGlobal(CursorType cursorType, DateTime cursorTime) {
-    return createGlobal(cursorType, toInstant(cursorTime));
-  }
-
   /** Creates a new cursor instance with a given {@link Tld} scope. */
   public static Cursor createScoped(CursorType cursorType, Instant cursorTime, Tld scope) {
     checkNotNull(scope, "Cursor scope cannot be null");
     return create(cursorType, cursorTime, scope.getTldStr());
-  }
-
-  /**
-   * @deprecated Use {@link #createScoped(CursorType, Instant, Tld)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static Cursor createScoped(CursorType cursorType, DateTime cursorTime, Tld scope) {
-    return createScoped(cursorType, toInstant(cursorTime), scope);
   }
 
   /**
@@ -230,29 +200,11 @@ public class Cursor extends UpdateAutoTimestampEntity {
   /**
    * Returns the current time for a given cursor, or {@code START_INSTANT} if the cursor is null.
    */
-  public static Instant getCursorTimeOrStartOfTimeInstant(Optional<Cursor> cursor) {
-    return cursor.map(Cursor::getCursorTimeInstant).orElse(START_INSTANT);
+  public static Instant getCursorTimeOrStartOfTime(Optional<Cursor> cursor) {
+    return cursor.map(Cursor::getCursorTime).orElse(START_INSTANT);
   }
 
-  /**
-   * @deprecated Use {@link #getCursorTimeOrStartOfTimeInstant(Optional)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static DateTime getCursorTimeOrStartOfTime(Optional<Cursor> cursor) {
-    return toDateTime(getCursorTimeOrStartOfTimeInstant(cursor));
-  }
-
-  /**
-   * @deprecated Use {@link #getCursorTimeInstant()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getCursorTime() {
-    return toDateTime(cursorTime);
-  }
-
-  public Instant getCursorTimeInstant() {
+  public Instant getCursorTime() {
     return cursorTime;
   }
 

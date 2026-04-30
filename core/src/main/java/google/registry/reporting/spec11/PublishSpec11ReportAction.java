@@ -43,9 +43,9 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Set;
-import org.joda.time.LocalDate;
 import org.json.JSONException;
 
 /**
