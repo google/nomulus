@@ -14,6 +14,7 @@
 
 package google.registry.rde;
 
+
 import static com.google.common.base.Verify.verify;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.jcraft.jsch.ChannelSftp.OVERWRITE;
@@ -25,7 +26,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.rde.RdeModule.RDE_REPORT_QUEUE;
 import static google.registry.rde.RdeUtils.findMostRecentPrefixForWatermark;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Arrays.asList;
 
@@ -65,12 +66,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Action that securely uploads an RDE XML file from Cloud Storage to a trusted third party (such as
@@ -133,7 +134,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   }
 
   @Override
-  public void runWithLock(final DateTime watermark) throws Exception {
+  public void runWithLock(Instant watermark) throws Exception {
     // If a prefix is not provided,try to determine the prefix. This should only happen when the RDE
     // upload cron job runs to catch up any un-retried (i. e. expected) RDE failures.
     String actualPrefix =
@@ -142,7 +143,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     Optional<Cursor> cursor =
         tm().transact(
                 () -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(RDE_STAGING, Tld.get(tld))));
-    DateTime stagingCursorTime = getCursorTimeOrStartOfTime(cursor);
+    Instant stagingCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(stagingCursorTime, watermark)) {
       throw new NoContentException(
           String.format(
@@ -150,23 +151,23 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
                   + "last RDE staging completion was before %s",
               tld, watermark, stagingCursorTime));
     }
-    DateTime sftpCursorTime =
+    Instant sftpCursorTime =
         tm().transact(
                 () ->
                     tm().loadByKeyIfPresent(Cursor.createScopedVKey(RDE_UPLOAD_SFTP, Tld.get(tld))))
             .map(Cursor::getCursorTime)
-            .orElse(START_OF_TIME);
-    Duration timeSinceLastSftp = new Duration(sftpCursorTime, clock.nowUtc());
-    if (timeSinceLastSftp.isShorterThan(sftpCooldown)) {
+            .orElse(START_INSTANT);
+    Duration timeSinceLastSftp = Duration.between(sftpCursorTime, clock.now());
+    if (timeSinceLastSftp.compareTo(sftpCooldown) < 0) {
       throw new NoContentException(
           String.format(
               "Waiting on %d minute SFTP cooldown for TLD %s to send %s upload; "
                   + "last upload attempt was at %s (%d minutes ago)",
-              sftpCooldown.getStandardMinutes(),
+              sftpCooldown.toMinutes(),
               tld,
               watermark,
               sftpCursorTime,
-              timeSinceLastSftp.getStandardMinutes()));
+              timeSinceLastSftp.toMinutes()));
     }
     int revision =
         RdeRevision.getCurrentRevision(tld, watermark, FULL)
@@ -189,10 +190,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     logger.atInfo().log(
         "Updating RDE cursor '%s' for TLD '%s' following successful upload.", RDE_UPLOAD_SFTP, tld);
     tm().transact(
-            () ->
-                tm().put(
-                        Cursor.createScoped(
-                            RDE_UPLOAD_SFTP, tm().getTransactionTime(), Tld.get(tld))));
+            () -> tm().put(Cursor.createScoped(RDE_UPLOAD_SFTP, tm().getTxTime(), Tld.get(tld))));
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(String.format("OK %s %s\n", tld, watermark));
   }
@@ -222,7 +220,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
    */
   @VisibleForTesting
   private void upload(
-      BlobId xmlFile, long xmlLength, DateTime watermark, String name, String nameWithoutPrefix)
+      BlobId xmlFile, long xmlLength, Instant watermark, String name, String nameWithoutPrefix)
       throws Exception {
     logger.atInfo().log("Uploading XML file '%s' to remote path '%s'.", xmlFile, uploadUrl);
     try (InputStream gcsInput = gcsUtils.openInputStream(xmlFile);

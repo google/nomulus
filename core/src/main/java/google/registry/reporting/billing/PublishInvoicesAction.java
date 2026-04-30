@@ -35,7 +35,7 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import java.io.IOException;
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
 
 /**
  * Uploads the results of the {@link google.registry.beam.billing.InvoicingPipeline}.

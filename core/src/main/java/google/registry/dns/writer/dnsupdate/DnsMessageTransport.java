@@ -28,8 +28,8 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import javax.net.SocketFactory;
-import org.joda.time.Duration;
 import org.xbill.DNS.Message;
 import org.xbill.DNS.Opcode;
 
@@ -76,7 +76,7 @@ public class DnsMessageTransport {
       @Config("dnsUpdateTimeout") Duration updateTimeout) {
     this.factory = factory;
     this.updateHost = updateHost;
-    this.updateTimeout = Ints.checkedCast(updateTimeout.getMillis());
+    this.updateTimeout = Ints.checkedCast(updateTimeout.toMillis());
   }
 
   /**

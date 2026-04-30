@@ -28,8 +28,8 @@ import google.registry.groups.GmailClient;
 import google.registry.util.EmailMessage;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
+import java.time.YearMonth;
 import java.util.Optional;
-import org.joda.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -54,7 +54,7 @@ class BillingEmailUtilsTest {
       throws Exception {
     return new BillingEmailUtils(
         gmailClient,
-        new YearMonth(2017, 10),
+        YearMonth.of(2017, 10),
         new InternetAddress("my-receiver@test.com"),
         ImmutableList.of(
             new InternetAddress("hello@world.com"), new InternetAddress("hola@mundo.com")),

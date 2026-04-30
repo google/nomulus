@@ -25,7 +25,7 @@ import jakarta.inject.Qualifier;
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
 
 /** Module for dependencies required by monthly billing actions. */
 @Module

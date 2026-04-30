@@ -42,6 +42,7 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
+import static java.time.ZoneOffset.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -101,7 +102,6 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.model.transfer.TransferStatus;
 import jakarta.inject.Inject;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -194,9 +194,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     } else {
       Instant redemptionTime = now.plusMillis(redemptionGracePeriodLength.getMillis());
       asyncTaskEnqueuer.enqueueAsyncResave(
-          existingDomain.createVKey(),
-          toDateTime(now),
-          ImmutableSortedSet.of(toDateTime(redemptionTime), toDateTime(deletionTime)));
+          existingDomain.createVKey(), now, ImmutableSortedSet.of(redemptionTime, deletionTime));
       builder
           .setDeletionTime(deletionTime)
           .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
@@ -253,14 +251,11 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
           // This can be either add grace periods or renew grace periods.
           BillingEvent billingEvent = tm().loadByKey(gracePeriod.getBillingEvent());
           newExpirationTime =
-              newExpirationTime
-                  .atZone(ZoneOffset.UTC)
-                  .minusYears(billingEvent.getPeriodYears())
-                  .toInstant();
+              newExpirationTime.atZone(UTC).minusYears(billingEvent.getPeriodYears()).toInstant();
         } else if (gracePeriod.getBillingRecurrence() != null) {
           // Take 1 year off the registration if in the autorenew grace period (no need to load the
           // recurrence billing event; all autorenews are for 1 year).
-          newExpirationTime = newExpirationTime.atZone(ZoneOffset.UTC).minusYears(1).toInstant();
+          newExpirationTime = newExpirationTime.atZone(UTC).minusYears(1).toInstant();
         }
       }
     }

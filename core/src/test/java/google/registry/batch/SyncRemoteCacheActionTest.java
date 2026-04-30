@@ -135,7 +135,7 @@ class SyncRemoteCacheActionTest {
 
     assertThat(
             DatabaseHelper.loadByKey(Cursor.createGlobalVKey(REMOTE_CACHE_DOMAIN_SYNC))
-                .getCursorTimeInstant()
+                .getCursorTime()
                 .toString())
         .isEqualTo("2025-01-01T00:00:00.001Z");
   }
@@ -205,7 +205,7 @@ class SyncRemoteCacheActionTest {
 
     assertThat(
             DatabaseHelper.loadByKey(Cursor.createGlobalVKey(REMOTE_CACHE_HOST_SYNC))
-                .getCursorTimeInstant()
+                .getCursorTime()
                 .toString())
         .isEqualTo("2025-01-01T00:00:00.001Z");
   }

@@ -47,6 +47,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.util.Arrays.asList;
 import static org.joda.money.CurrencyUnit.USD;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
@@ -117,7 +118,6 @@ import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 
 /** Static utils for setting up test resources. */
@@ -321,7 +321,7 @@ public final class DatabaseHelper {
         new ReservedList.Builder()
             .setName(listName)
             .setReservedListMapFromLines(ImmutableList.copyOf(lines))
-            .setCreationTimestamp(DateTime.now(DateTimeZone.UTC))
+            .setCreationTimestamp(DateTime.now(UTC))
             .build();
     return persistReservedList(reservedList);
   }
@@ -342,7 +342,7 @@ public final class DatabaseHelper {
     PremiumList premiumList =
         partialPremiumList
             .asBuilder()
-            .setCreationTimestamp(DateTime.now(DateTimeZone.UTC))
+            .setCreationTimestamp(DateTime.now(UTC))
             .setCurrency(currencyUnit)
             .setLabelsToPrices(
                 entries.entrySet().stream()
@@ -1299,8 +1299,7 @@ public final class DatabaseHelper {
     assertNoDnsRequestsExcept();
   }
 
-  public static void assertDomainDnsRequestWithRequestTime(
-      String domainName, DateTime requestTime) {
+  public static void assertDomainDnsRequestWithRequestTime(String domainName, Instant requestTime) {
     assertThat(
             tm().transact(
                     () ->
@@ -1312,7 +1311,7 @@ public final class DatabaseHelper {
         .isEqualTo(1);
   }
 
-  public static void assertDnsRequestsWithRequestTime(DateTime requestTime, int numOfDomains) {
+  public static void assertDnsRequestsWithRequestTime(Instant requestTime, int numOfDomains) {
     assertThat(
             tm().transact(
                     () ->

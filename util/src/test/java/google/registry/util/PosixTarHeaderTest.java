@@ -18,6 +18,7 @@ import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.testing.EqualsTester;
@@ -27,7 +28,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.Test;
 
@@ -203,7 +203,7 @@ class PosixTarHeaderTest {
         new PosixTarHeader.Builder()
             .setName("(◕‿◕).txt")
             .setSize(31337)
-            .setMtime(DateTime.now(DateTimeZone.UTC))
+            .setMtime(DateTime.now(UTC))
             .build();
     byte[] bytes = header.getBytes();
     bytes[150] = '0';
@@ -239,7 +239,7 @@ class PosixTarHeaderTest {
             new PosixTarHeader.Builder()
                 .setName("(•︵•).txt") // Awwwww! It looks so sad...
                 .setSize(123)
-                .setMtime(DateTime.now(DateTimeZone.UTC))
+                .setMtime(DateTime.now(UTC))
                 .build())
         .testEquals();
   }

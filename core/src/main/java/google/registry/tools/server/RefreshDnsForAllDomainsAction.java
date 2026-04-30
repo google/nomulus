@@ -35,13 +35,13 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import jakarta.persistence.TypedQuery;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Random;
 import javax.annotation.Nullable;
 import org.apache.arrow.util.VisibleForTesting;
 import org.apache.http.HttpStatus;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * A task that enqueues DNS publish tasks on all active domains on the specified TLD(s).
@@ -136,7 +136,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
             .setParameter("tlds", tlds)
             .setParameter("activeOrDeletedSince", toInstant(activeOrDeletedSince))
             .getSingleResult();
-    Duration smear = Duration.standardSeconds(Math.max(activeDomains / refreshQps, 1));
+    Duration smear = Duration.ofSeconds(Math.max(activeDomains / refreshQps, 1));
     logger.atInfo().log("Smearing %d domain DNS refresh tasks across %s.", activeDomains, smear);
     return smear;
   }
@@ -161,7 +161,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     try {
       // Smear the task execution time over the next N seconds.
       requestDomainDnsRefresh(
-          domainBatch, Duration.standardSeconds(random.nextInt((int) smear.getStandardSeconds())));
+          domainBatch, Duration.ofSeconds(random.nextInt((int) smear.toSeconds())));
     } catch (Throwable t) {
       logger.atSevere().withCause(t).log("Error while enqueuing DNS refresh batch");
       response.setStatus(HttpStatus.SC_OK);

@@ -20,8 +20,8 @@ import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.SftpProgressMonitor;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import java.time.Duration;
+import java.time.Instant;
 
 /** A progress monitor for SFTP operations that writes status to logs periodically. */
 public class LoggingSftpProgressMonitor implements SftpProgressMonitor {
@@ -32,7 +32,7 @@ public class LoggingSftpProgressMonitor implements SftpProgressMonitor {
   private final Clock clock;
   private long bytesOfLastLog = 0;
   private int callsSinceLastLog = 0;
-  private DateTime timeOfLastLog;
+  private Instant timeOfLastLog;
 
   @Inject
   LoggingSftpProgressMonitor(Clock clock) {
@@ -49,7 +49,7 @@ public class LoggingSftpProgressMonitor implements SftpProgressMonitor {
 
   @Override
   public void init(int op, String src, String dest, long max) {
-    timeOfLastLog = clock.nowUtc();
+    timeOfLastLog = clock.now();
     logger.atInfo().log(
         "Initiating SFTP transfer from '%s' to '%s' using mode %s, max size %,d bytes.",
         src, dest, OPERATION_MODES.getOrDefault(op, "(unknown)"), max);
@@ -60,11 +60,11 @@ public class LoggingSftpProgressMonitor implements SftpProgressMonitor {
     callsSinceLastLog++;
     long bytesSinceLastLog = count - bytesOfLastLog;
     if (bytesSinceLastLog > LOGGING_CHUNK_SIZE_BYTES) {
-      DateTime now = clock.nowUtc();
+      Instant now = clock.now();
       logger.atInfo().log(
           "%,d more bytes transmitted in %,d ms; %,d bytes in total. [%,d calls to count()]",
           bytesSinceLastLog,
-          new Duration(timeOfLastLog, now).getMillis(),
+          Duration.between(timeOfLastLog, now).toMillis(),
           count,
           callsSinceLastLog);
       bytesOfLastLog = count;

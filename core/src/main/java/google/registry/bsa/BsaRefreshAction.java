@@ -67,7 +67,7 @@ public class BsaRefreshAction implements Runnable {
       GcsClient gcsClient,
       BsaReportSender bsaReportSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
-      @Config("domainCreateTxnCommitTimeLag") org.joda.time.Duration domainCreateTxnCommitTimeLag,
+      @Config("domainCreateTxnCommitTimeLag") Duration domainCreateTxnCommitTimeLag,
       BsaEmailSender emailSender,
       BsaLock bsaLock,
       Clock clock,
@@ -76,7 +76,7 @@ public class BsaRefreshAction implements Runnable {
     this.gcsClient = gcsClient;
     this.bsaReportSender = bsaReportSender;
     this.transactionBatchSize = transactionBatchSize;
-    this.domainCreateTxnCommitTimeLag = Duration.ofMillis(domainCreateTxnCommitTimeLag.getMillis());
+    this.domainCreateTxnCommitTimeLag = domainCreateTxnCommitTimeLag;
     this.emailSender = emailSender;
     this.bsaLock = bsaLock;
     this.clock = clock;

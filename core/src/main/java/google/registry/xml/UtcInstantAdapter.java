@@ -16,10 +16,10 @@ package google.registry.xml;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.util.DateTimeUtils.parseInstant;
+import static java.time.ZoneOffset.UTC;
 
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -33,7 +33,7 @@ import javax.annotation.Nullable;
 public class UtcInstantAdapter extends XmlAdapter<String, Instant> {
 
   private static final DateTimeFormatter MARSHAL_FORMAT =
-      DateTimeFormatter.ofPattern("u-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC);
+      DateTimeFormatter.ofPattern("u-MM-dd'T'HH:mm:ss'Z'").withZone(UTC);
 
   /** Same as {@link #marshal(Instant)}, but in a convenient static format. */
   public static String getFormattedString(@Nullable Instant timestamp) {

@@ -41,10 +41,10 @@ import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import jakarta.inject.Inject;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Duration;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
-import org.joda.time.Duration;
-import org.joda.time.YearMonth;
-import org.joda.time.format.DateTimeFormat;
 
 /**
  * Action that generates monthly ICANN activity and transactions reports.
@@ -138,7 +138,7 @@ public final class IcannReportingStagingAction implements Runnable {
               cloudTasksUtils.enqueue(
                   CRON_QUEUE,
                   cloudTasksUtils.createTaskWithDelay(
-                      IcannReportingUploadAction.class, POST, null, Duration.standardMinutes(2)));
+                      IcannReportingUploadAction.class, POST, null, Duration.ofMinutes(2)));
             } else {
               logger.atInfo().log("Would have enqueued report upload");
             }
@@ -166,6 +166,7 @@ public final class IcannReportingStagingAction implements Runnable {
     return IcannReportingModule.checkSubdirValid(
         overrideSubdir.orElse(
             String.format(
-                "%s/%s", DEFAULT_SUBDIR, DateTimeFormat.forPattern("yyyy-MM").print(yearMonth))));
+                "%s/%s",
+                DEFAULT_SUBDIR, DateTimeFormatter.ofPattern("yyyy-MM").format(yearMonth))));
   }
 }

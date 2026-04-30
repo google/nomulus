@@ -22,7 +22,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.tldconfig.idn.IdnTableEnum.UNCONFUSABLE_LATIN;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -39,8 +39,8 @@ import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,7 +52,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class LabelDiffUpdatesTest {
 
-  FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
+  FakeClock fakeClock = new FakeClock(Instant.parse("2023-11-09T02:08:57.880Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -74,7 +74,7 @@ class LabelDiffUpdatesTest {
             () ->
                 tm().put(
                         tld.asBuilder()
-                            .setBsaEnrollStartTime(Optional.of(START_OF_TIME))
+                            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
                             .setIdnTables(ImmutableSet.of(UNCONFUSABLE_LATIN))
                             .build()));
     app = tm().transact(() -> tm().loadByEntity(tld));
@@ -96,7 +96,7 @@ class LabelDiffUpdatesTest {
             ImmutableList.of(BlockLabel.create("label", LabelType.DELETE, ImmutableSet.of())),
             idnChecker,
             schedule,
-            fakeClock.nowUtc());
+            fakeClock.now());
     assertThat(unblockableDomains).isEmpty();
     assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaLabel.vKey("label")))).isEmpty();
     assertThat(
@@ -121,7 +121,7 @@ class LabelDiffUpdatesTest {
                 BlockLabel.create("label", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of())),
             idnChecker,
             schedule,
-            fakeClock.nowUtc());
+            fakeClock.now());
     assertThat(unblockableDomains)
         .containsExactly(
             new UnblockableDomain("label.app", UnblockableDomain.Reason.REGISTERED),
@@ -148,7 +148,7 @@ class LabelDiffUpdatesTest {
             ImmutableList.of(BlockLabel.create("label", LabelType.CREATE, ImmutableSet.of())),
             idnChecker,
             schedule,
-            fakeClock.nowUtc());
+            fakeClock.now());
     assertThat(unblockableDomains)
         .containsExactly(
             new UnblockableDomain("label.app", UnblockableDomain.Reason.REGISTERED),

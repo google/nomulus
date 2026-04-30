@@ -22,20 +22,20 @@ import static org.mockito.Mockito.verify;
 
 import google.registry.model.server.Lock;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link LockHandler}. */
 final class LockHandlerImplTest {
 
-  private static final Duration ONE_DAY = Duration.standardDays(1);
+  private static final Duration ONE_DAY = Duration.ofDays(1);
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2001-08-29T12:20:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2001-08-29T12:20:00Z"));
 
   private static class CountingCallable implements Callable<Void> {
     int numCalled;
@@ -58,7 +58,7 @@ final class LockHandlerImplTest {
 
     @Override
     public Void call() throws Exception {
-      clock.advanceBy(Duration.standardSeconds(77));
+      clock.advanceBy(Duration.ofSeconds(77));
       throw exception;
     }
   }
@@ -102,7 +102,7 @@ final class LockHandlerImplTest {
         .hasMessageThat()
         .isEqualTo(
             "Execution on locks 'resourceName' for TLD 'tld'"
-                + " timed out after PT77S; started at 2001-08-29T12:20:00.000Z");
+                + " timed out after PT1M17S; started at 2001-08-29T12:20:00Z");
     verify(lock, times(1)).release();
   }
 

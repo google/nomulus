@@ -36,7 +36,7 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeResponse;
 import java.io.IOException;
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -71,7 +71,7 @@ class PublishInvoicesActionTest {
             emailUtils,
             dataflow,
             response,
-            new YearMonth(2017, 10),
+            YearMonth.of(2017, 10),
             cloudTasksUtils);
   }
 

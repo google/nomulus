@@ -14,6 +14,7 @@
 
 package google.registry.rde;
 
+
 import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.rde.RdeMode.THIN;
@@ -40,11 +41,11 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.Optional;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
 
 /**
  * Action that re-encrypts a BRDA escrow deposit and puts it into the upload bucket.
@@ -77,7 +78,11 @@ public final class BrdaCopyAction implements Runnable {
   @Inject @Config("brdaBucket") String brdaBucket;
   @Inject @Config("rdeBucket") String stagingBucket;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
-  @Inject @Parameter(RdeModule.PARAM_WATERMARK) DateTime watermark;
+
+  @Inject
+  @Parameter(RdeModule.PARAM_WATERMARK)
+  Instant watermark;
+
   @Inject @Parameter(RdeModule.PARAM_PREFIX) Optional<String> prefix;
   @Inject @Key("brdaReceiverKey") PGPPublicKey receiverKey;
   @Inject @Key("brdaSigningKey") PGPKeyPair signingKey;
@@ -98,7 +103,7 @@ public final class BrdaCopyAction implements Runnable {
     // Not urgent since file writes on GCS are atomic.
     Optional<Cursor> cursor =
         tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, Tld.get(tld))));
-    DateTime brdaCursorTime = getCursorTimeOrStartOfTime(cursor);
+    Instant brdaCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(brdaCursorTime, watermark)) {
       throw new NoContentException(
           String.format(

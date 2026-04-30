@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.toInstant;
+import static java.time.ZoneOffset.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -39,7 +40,6 @@ import google.registry.tools.params.NameserversParameter;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
 import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -162,7 +162,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
               domain.getDomainName(),
               "expirationDate",
               DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                  .withZone(ZoneOffset.UTC)
+                  .withZone(UTC)
                   .format(domain.getRegistrationExpirationTime()),
               // period is the number of years to renew the registration for
               "period",

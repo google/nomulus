@@ -326,6 +326,18 @@ public final class RequestParameters {
     }
   }
 
+  public static ImmutableSet<Instant> extractSetOfInstantParameters(
+      HttpServletRequest req, String name) {
+    try {
+      return extractSetOfParameters(req, name).stream()
+          .filter(not(String::isEmpty))
+          .map(Instant::parse)
+          .collect(toImmutableSet());
+    } catch (DateTimeParseException e) {
+      throw new BadRequestException("Bad ISO 8601 timestamp: " + name);
+    }
+  }
+
   /**
    * Returns all GET or POST date parameters associated with {@code name}, or an empty set if none.
    *

@@ -28,8 +28,8 @@ import google.registry.reporting.billing.BillingModule.InvoiceDirectoryPrefix;
 import google.registry.util.EmailMessage;
 import jakarta.inject.Inject;
 import jakarta.mail.internet.InternetAddress;
+import java.time.YearMonth;
 import java.util.Optional;
-import org.joda.time.YearMonth;
 
 /** Utility functions for sending emails involving monthly invoices. */
 public class BillingEmailUtils {

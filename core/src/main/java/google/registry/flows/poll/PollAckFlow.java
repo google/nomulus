@@ -83,7 +83,7 @@ public final class PollAckFlow implements MutatingFlow {
       throw new InvalidMessageIdException(messageId);
     }
 
-    final Instant now = tm().getTxTime();
+    Instant now = tm().getTxTime();
 
     // Load the message to be acked. If a message is queued to be delivered in the future, we treat
     // it as if it doesn't exist yet. Same for if the message ID year isn't the same as the actual

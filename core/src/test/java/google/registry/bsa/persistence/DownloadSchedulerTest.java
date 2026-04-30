@@ -22,7 +22,6 @@ import static google.registry.bsa.DownloadStage.MAKE_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.bsa.persistence.DownloadScheduler.fetchTwoMostRecentDownloads;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.Duration.standardSeconds;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -33,9 +32,9 @@ import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,8 +43,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link DownloadScheduler} */
 class DownloadSchedulerTest {
 
-  static final Duration DOWNLOAD_INTERVAL = Duration.standardMinutes(30);
-  static final Duration MAX_NOP_INTERVAL = Duration.standardDays(1);
+  static final Duration DOWNLOAD_INTERVAL = Duration.ofMinutes(30);
+  static final Duration MAX_NOP_INTERVAL = Duration.ofDays(1);
 
   FakeClock fakeClock = new FakeClock(Instant.parse("2023-11-09T02:08:57.880Z"));
 
@@ -151,14 +150,14 @@ class DownloadSchedulerTest {
   @Test
   void doneJob_cronEarlyWithJitter_newSchedule() {
     insertOneJobAndAdvanceClock(DONE);
-    fakeClock.advanceBy(DOWNLOAD_INTERVAL.minus(standardSeconds(5)));
+    fakeClock.advanceBy(DOWNLOAD_INTERVAL.minus(Duration.ofSeconds(5)));
     assertThat(scheduler.schedule()).isPresent();
   }
 
   @Test
   void doneJob_cronEarlyMoreThanJitter_newSchedule() {
     insertOneJobAndAdvanceClock(DONE);
-    fakeClock.advanceBy(DOWNLOAD_INTERVAL.minus(standardSeconds(6)));
+    fakeClock.advanceBy(DOWNLOAD_INTERVAL.minus(Duration.ofSeconds(6)));
     assertThat(scheduler.schedule()).isEmpty();
   }
 

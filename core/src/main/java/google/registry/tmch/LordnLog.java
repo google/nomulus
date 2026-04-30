@@ -22,12 +22,12 @@ import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.re2j.Pattern;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import org.joda.time.DateTime;
 
 /**
  * Parser of LORDN log responses from the MarksDB server during the NORDN process.
@@ -127,16 +127,16 @@ public final class LordnLog implements Iterable<Entry<String, LordnLog.Result>> 
 
   private final String logId;
   private final Status status;
-  private final DateTime logCreation;
-  private final DateTime lordnCreation;
+  private final Instant logCreation;
+  private final Instant lordnCreation;
   private final boolean hasWarnings;
   private final ImmutableMap<String, Result> results;
 
   private LordnLog(
       String logId,
       Status status,
-      DateTime logCreation,
-      DateTime lordnCreation,
+      Instant logCreation,
+      Instant lordnCreation,
       boolean hasWarnings,
       ImmutableMap<String, Result> results) {
     this.logId = logId;
@@ -155,11 +155,11 @@ public final class LordnLog implements Iterable<Entry<String, LordnLog.Result>> 
     return status;
   }
 
-  public DateTime getLogCreation() {
+  public Instant getLogCreation() {
     return logCreation;
   }
 
-  public DateTime getLordnCreation() {
+  public Instant getLordnCreation() {
     return lordnCreation;
   }
 
@@ -204,12 +204,12 @@ public final class LordnLog implements Iterable<Entry<String, LordnLog.Result>> 
 
     // +  <LORDN Log creation datetime>, date and time in UTC that the
     //    LORDN Log was created.
-    DateTime logCreation = DateTime.parse(firstLine.get(1));
+    Instant logCreation = Instant.parse(firstLine.get(1));
 
     // +  <LORDN file creation datetime>, date and time in UTC of
     //    creation for the LORDN file that this log file is referring
     //    to.
-    DateTime lordnCreation = DateTime.parse(firstLine.get(2));
+    Instant lordnCreation = Instant.parse(firstLine.get(2));
 
     // +  <LORDN Log Identifier>, unique identifier of the LORDN Log
     //    provided by the TMDB.  This identifier could be used by the
