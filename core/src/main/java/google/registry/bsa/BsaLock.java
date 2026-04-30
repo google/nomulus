@@ -17,8 +17,8 @@ package google.registry.bsa;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.lock.LockHandler;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.concurrent.Callable;
-import org.joda.time.Duration;
 
 /** Helper for guarding all BSA related work with a common lock. */
 public class BsaLock {

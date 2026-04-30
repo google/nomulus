@@ -18,8 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static org.joda.time.Duration.standardDays;
-import static org.joda.time.Duration.standardSeconds;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -34,8 +32,9 @@ import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,9 +48,9 @@ public class EscrowTaskRunnerTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final EscrowTask task = mock(EscrowTask.class);
-  private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2000-01-01T00:00:00Z"));
 
-  private DateTimeZone previousDateTimeZone;
+  private ZoneId previousDateTimeZone;
   private EscrowTaskRunner runner;
   private Tld registry;
 
@@ -62,64 +61,77 @@ public class EscrowTaskRunnerTest {
     runner = new EscrowTaskRunner();
     runner.clock = clock;
     runner.lockHandler = new FakeLockHandler(true);
-    previousDateTimeZone = DateTimeZone.getDefault();
-    DateTimeZone.setDefault(DateTimeZone.forID("America/New_York")); // Make sure UTC stuff works.
+    previousDateTimeZone = ZoneId.systemDefault();
+    // java.time.ZoneId does not have a global setDefault
+    System.setProperty("user.timezone", "America/New_York"); // Make sure UTC stuff works.
   }
 
   @AfterEach
   void afterEach() {
-    DateTimeZone.setDefault(previousDateTimeZone);
+    // Restore timezone
+    System.setProperty("user.timezone", previousDateTimeZone.getId());
   }
 
   @Test
   void testRun_cursorIsToday_advancesCursorToTomorrow() throws Exception {
-    clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
+    clock.setTo(Instant.parse("2006-06-06T00:30:00Z"));
     persistResource(
-        Cursor.createScoped(CursorType.RDE_STAGING, DateTime.parse("2006-06-06TZ"), registry));
+        Cursor.createScoped(
+            CursorType.RDE_STAGING, Instant.parse("2006-06-06T00:00:00Z"), registry));
     runner.lockRunAndRollForward(
-        task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1));
-    verify(task).runWithLock(DateTime.parse("2006-06-06TZ"));
+        task, registry, Duration.ofSeconds(30), CursorType.RDE_STAGING, Duration.ofDays(1));
+    verify(task).runWithLock(Instant.parse("2006-06-06T00:00:00Z"));
     Cursor cursor = loadByKey(Cursor.createScopedVKey(CursorType.RDE_STAGING, registry));
-    assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-06-07TZ"));
+    assertThat(cursor.getCursorTime()).isEqualTo(Instant.parse("2006-06-07T00:00:00Z"));
   }
 
   @Test
   void testRun_cursorMissing_assumesTodayAndAdvancesCursorToTomorrow() throws Exception {
-    clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
+    clock.setTo(Instant.parse("2006-06-06T00:30:00Z"));
     runner.lockRunAndRollForward(
-        task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1));
-    verify(task).runWithLock(DateTime.parse("2006-06-06TZ"));
+        task, registry, Duration.ofSeconds(30), CursorType.RDE_STAGING, Duration.ofDays(1));
+    verify(task).runWithLock(Instant.parse("2006-06-06T00:00:00Z"));
     Cursor cursor = loadByKey(Cursor.createScopedVKey(CursorType.RDE_STAGING, registry));
-    assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-06-07TZ"));
+    assertThat(cursor.getCursorTime()).isEqualTo(Instant.parse("2006-06-07T00:00:00Z"));
   }
 
   @Test
   void testRun_cursorInTheFuture_doesNothing() {
-    clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
+    clock.setTo(Instant.parse("2006-06-06T00:30:00Z"));
     persistResource(
-        Cursor.createScoped(CursorType.RDE_STAGING, DateTime.parse("2006-06-07TZ"), registry));
+        Cursor.createScoped(
+            CursorType.RDE_STAGING, Instant.parse("2006-06-07T00:00:00Z"), registry));
     NoContentException thrown =
         assertThrows(
             NoContentException.class,
             () ->
                 runner.lockRunAndRollForward(
-                    task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1)));
+                    task,
+                    registry,
+                    Duration.ofSeconds(30),
+                    CursorType.RDE_STAGING,
+                    Duration.ofDays(1)));
     assertThat(thrown).hasMessageThat().contains("Already completed");
   }
 
   @Test
   void testRun_lockIsntAvailable_throws503() {
     String lockName = "EscrowTaskRunner " + task.getClass().getSimpleName();
-    clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
+    clock.setTo(Instant.parse("2006-06-06T00:30:00Z"));
     persistResource(
-        Cursor.createScoped(CursorType.RDE_STAGING, DateTime.parse("2006-06-06TZ"), registry));
+        Cursor.createScoped(
+            CursorType.RDE_STAGING, Instant.parse("2006-06-06T00:00:00Z"), registry));
     runner.lockHandler = new FakeLockHandler(false);
     ServiceUnavailableException thrown =
         assertThrows(
             ServiceUnavailableException.class,
             () ->
                 runner.lockRunAndRollForward(
-                    task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1)));
+                    task,
+                    registry,
+                    Duration.ofSeconds(30),
+                    CursorType.RDE_STAGING,
+                    Duration.ofDays(1)));
     assertThat(thrown).hasMessageThat().contains("Lock in use: " + lockName + " for TLD: lol");
   }
 }

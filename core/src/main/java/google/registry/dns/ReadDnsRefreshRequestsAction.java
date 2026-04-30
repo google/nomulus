@@ -28,7 +28,7 @@ import static google.registry.dns.DnsUtils.deleteRequests;
 import static google.registry.dns.DnsUtils.readAndUpdateRequestsWithLatestProcessTime;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DomainNameUtils.getSecondLevelDomain;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -49,10 +49,10 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Action for fanning out DNS refresh tasks by TLD, using data taken from {@link DnsRefreshRequest}
@@ -104,11 +104,11 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
       logger.atInfo().log("The queue updated is paused for TLD: %s.", tld);
       return;
     }
-    DateTime requestedEndTime = clock.nowUtc().plus(requestedMaximumDuration);
+    Instant requestedEndTime = clock.now().plus(requestedMaximumDuration);
     // See getLockIndex(), requests are evenly distributed to [1, numDnsPublishLocks], so each
     // bucket would be roughly the size of tldUpdateBatchSize.
     int processBatchSize = tldUpdateBatchSize * Tld.get(tld).getNumDnsPublishLocks();
-    while (requestedEndTime.isAfter(clock.nowUtc())) {
+    while (requestedEndTime.isAfter(clock.now())) {
       ImmutableList<DnsRefreshRequest> requests =
           readAndUpdateRequestsWithLatestProcessTime(
               tld, requestedMaximumDuration, processBatchSize);
@@ -165,7 +165,7 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
   void enqueueUpdates(int lockIndex, int numPublishLocks, Collection<DnsRefreshRequest> requests) {
     ImmutableList.Builder<String> domainsBuilder = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> hostsBuilder = new ImmutableList.Builder<>();
-    DateTime earliestRequestTime = END_OF_TIME;
+    Instant earliestRequestTime = END_INSTANT;
     for (DnsRefreshRequest request : requests) {
       if (request.getRequestTime().isBefore(earliestRequestTime)) {
         earliestRequestTime = request.getRequestTime();
@@ -189,7 +189,7 @@ public final class ReadDnsRefreshRequestsAction implements Runnable {
                   .put(PARAM_DNS_WRITER, dnsWriter)
                   .put(PARAM_LOCK_INDEX, Integer.toString(lockIndex))
                   .put(PARAM_NUM_PUBLISH_LOCKS, Integer.toString(numPublishLocks))
-                  .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
+                  .put(PARAM_PUBLISH_TASK_ENQUEUED, clock.now().toString())
                   .put(PARAM_REFRESH_REQUEST_TIME, earliestRequestTime.toString())
                   .put(PARAM_DOMAINS, Joiner.on(',').join(domains))
                   .put(PARAM_HOSTS, Joiner.on(',').join(hosts))

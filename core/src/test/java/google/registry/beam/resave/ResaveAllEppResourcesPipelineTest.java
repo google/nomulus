@@ -27,6 +27,7 @@ import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTra
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toDateTime;
+import static java.time.temporal.ChronoUnit.DAYS;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,7 +45,6 @@ import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.FakeClock;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
@@ -101,11 +101,11 @@ public class ResaveAllEppResourcesPipelineTest {
             persistDomainWithDependentResources(
                 "domain",
                 "tld",
-                toDateTime(now.minus(5, ChronoUnit.DAYS)),
-                toDateTime(now.minus(5, ChronoUnit.DAYS)),
+                toDateTime(now.minus(5, DAYS)),
+                toDateTime(now.minus(5, DAYS)),
                 toDateTime(plusYears(now, 2))),
-            toDateTime(now.minus(4, ChronoUnit.DAYS)),
-            toDateTime(now.minus(1, ChronoUnit.DAYS)),
+            toDateTime(now.minus(4, DAYS)),
+            toDateTime(now.minus(1, DAYS)),
             toDateTime(plusYears(now, 2)));
     assertThat(domain.getStatusValues()).contains(StatusValue.PENDING_TRANSFER);
     assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(now);

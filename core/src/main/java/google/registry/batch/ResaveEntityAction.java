@@ -30,8 +30,8 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * An action that re-saves a given entity, typically after a certain amount of time has passed.
@@ -50,16 +50,16 @@ public class ResaveEntityAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final String resourceKey;
-  private final DateTime requestedTime;
-  private final ImmutableSortedSet<DateTime> resaveTimes;
+  private final Instant requestedTime;
+  private final ImmutableSortedSet<Instant> resaveTimes;
   private final AsyncTaskEnqueuer asyncTaskEnqueuer;
   private final Response response;
 
   @Inject
   ResaveEntityAction(
       @Parameter(PARAM_RESOURCE_KEY) String resourceKey,
-      @Parameter(PARAM_REQUESTED_TIME) DateTime requestedTime,
-      @Parameter(PARAM_RESAVE_TIMES) ImmutableSet<DateTime> resaveTimes,
+      @Parameter(PARAM_REQUESTED_TIME) Instant requestedTime,
+      @Parameter(PARAM_RESAVE_TIMES) ImmutableSet<Instant> resaveTimes,
       AsyncTaskEnqueuer asyncTaskEnqueuer,
       Response response) {
     this.resourceKey = resourceKey;

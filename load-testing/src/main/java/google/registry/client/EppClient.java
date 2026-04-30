@@ -54,7 +54,6 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -261,8 +260,7 @@ public class EppClient implements Runnable {
       String outputFolder, ImmutableList<ExecutorService> loggingExecutors) throws IOException {
     return new ChannelInitializer<>() {
 
-      private final ImmutableList<String> inputList =
-          makeInputList(ZonedDateTime.now(ZoneOffset.UTC));
+      private final ImmutableList<String> inputList = makeInputList(ZonedDateTime.now(UTC));
       private final KeyPair key = getKeyPair(keyFileName);
       private final X509Certificate cert = getCertificate(certFileName);
       private final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
@@ -373,8 +371,7 @@ public class EppClient implements Runnable {
             .awaitUninterruptibly(
                 TIMEOUT_SECONDS * 1000
                     - Duration.between(
-                            channel.attr(REQUEST_SENT).get().getFirst(),
-                            ZonedDateTime.now(ZoneOffset.UTC))
+                            channel.attr(REQUEST_SENT).get().getFirst(), ZonedDateTime.now(UTC))
                         .toMillis())) {
           channel.close().syncUninterruptibly();
           killedConnections.add(channelNumber);

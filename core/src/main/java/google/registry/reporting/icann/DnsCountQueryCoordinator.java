@@ -25,7 +25,7 @@ import google.registry.bigquery.BigqueryConnection;
 import google.registry.config.RegistryConfig.Config;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
 
 /**
  * Methods for preparing and querying DNS statistics.

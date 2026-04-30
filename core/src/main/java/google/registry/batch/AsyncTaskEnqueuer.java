@@ -26,8 +26,8 @@ import google.registry.model.EppResource;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import java.time.Duration;
+import java.time.Instant;
 
 /** Helper class to enqueue tasks for handling asynchronous operations in flows. */
 public final class AsyncTaskEnqueuer {
@@ -41,7 +41,7 @@ public final class AsyncTaskEnqueuer {
   public static final String QUEUE_ASYNC_ACTIONS = "async-actions";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final Duration MAX_ASYNC_ETA = Duration.standardDays(30);
+  private static final Duration MAX_ASYNC_ETA = Duration.ofDays(30);
 
   private final CloudTasksUtils cloudTasksUtils;
 
@@ -58,12 +58,12 @@ public final class AsyncTaskEnqueuer {
    */
   public void enqueueAsyncResave(
       VKey<? extends EppResource> entityKey,
-      DateTime now,
-      ImmutableSortedSet<DateTime> whenToResave) {
-    DateTime firstResave = whenToResave.first();
+      Instant now,
+      ImmutableSortedSet<Instant> whenToResave) {
+    Instant firstResave = whenToResave.first();
     checkArgument(isBeforeOrAt(now, firstResave), "Can't enqueue a resave to run in the past");
-    Duration etaDuration = new Duration(now, firstResave);
-    if (etaDuration.isLongerThan(MAX_ASYNC_ETA)) {
+    Duration etaDuration = Duration.between(now, firstResave);
+    if (etaDuration.compareTo(MAX_ASYNC_ETA) > 0) {
       logger.atInfo().log(
           "Ignoring async re-save of %s; %s is past the ETA threshold of %s.",
           entityKey, firstResave, MAX_ASYNC_ETA);

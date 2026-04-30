@@ -30,9 +30,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.Arrays;
 import javax.net.SocketFactory;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -121,11 +121,11 @@ class DnsMessageTransportTest {
     when(mockSocket.getInputStream()).thenReturn(mockInputStream);
     when(mockSocket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
 
-    Duration testTimeout = Duration.standardSeconds(1);
+    Duration testTimeout = Duration.ofSeconds(1);
     DnsMessageTransport resolver = new DnsMessageTransport(mockFactory, UPDATE_HOST, testTimeout);
     Message expectedQuery = new Message();
     assertThrows(SocketTimeoutException.class, () -> resolver.send(expectedQuery));
-    verify(mockSocket).setSoTimeout((int) testTimeout.getMillis());
+    verify(mockSocket).setSoTimeout((int) testTimeout.toMillis());
   }
 
   @Test

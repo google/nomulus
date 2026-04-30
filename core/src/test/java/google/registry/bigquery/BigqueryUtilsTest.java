@@ -19,46 +19,45 @@ import static google.registry.bigquery.BigqueryUtils.fromBigqueryTimestampString
 import static google.registry.bigquery.BigqueryUtils.toBigqueryTimestamp;
 import static google.registry.bigquery.BigqueryUtils.toBigqueryTimestampString;
 import static google.registry.bigquery.BigqueryUtils.toJobReferenceString;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.api.services.bigquery.model.JobReference;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.concurrent.TimeUnit;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BigqueryUtils}. */
 class BigqueryUtilsTest {
 
-  private static final DateTime DATE_0 = DateTime.parse("2014-07-17T20:35:42Z");
-  private static final DateTime DATE_1 = DateTime.parse("2014-07-17T20:35:42.1Z");
-  private static final DateTime DATE_2 = DateTime.parse("2014-07-17T20:35:42.12Z");
-  private static final DateTime DATE_3 = DateTime.parse("2014-07-17T20:35:42.123Z");
+  private static final Instant DATE_0 = Instant.parse("2014-07-17T20:35:42Z");
+  private static final Instant DATE_1 = Instant.parse("2014-07-17T20:35:42.1Z");
+  private static final Instant DATE_2 = Instant.parse("2014-07-17T20:35:42.12Z");
+  private static final Instant DATE_3 = Instant.parse("2014-07-17T20:35:42.123Z");
 
   @Test
   void test_toBigqueryTimestampString() {
-    assertThat(toBigqueryTimestampString(START_OF_TIME)).isEqualTo("1970-01-01 00:00:00.000");
+    assertThat(toBigqueryTimestampString(START_INSTANT)).isEqualTo("1970-01-01 00:00:00.000");
     assertThat(toBigqueryTimestampString(DATE_0)).isEqualTo("2014-07-17 20:35:42.000");
     assertThat(toBigqueryTimestampString(DATE_1)).isEqualTo("2014-07-17 20:35:42.100");
     assertThat(toBigqueryTimestampString(DATE_2)).isEqualTo("2014-07-17 20:35:42.120");
     assertThat(toBigqueryTimestampString(DATE_3)).isEqualTo("2014-07-17 20:35:42.123");
-    assertThat(toBigqueryTimestampString(END_OF_TIME)).isEqualTo("294247-01-10 04:00:54.775");
+    assertThat(toBigqueryTimestampString(END_INSTANT)).isEqualTo("294247-01-10 04:00:54.775");
   }
 
   @Test
   void test_toBigqueryTimestampString_convertsToUtc() {
-    assertThat(toBigqueryTimestampString(START_OF_TIME.withZone(DateTimeZone.forOffsetHours(5))))
-        .isEqualTo("1970-01-01 00:00:00.000");
-    assertThat(toBigqueryTimestampString(DateTime.parse("1970-01-01T00:00:00-0500")))
+
+    assertThat(toBigqueryTimestampString(Instant.parse("1970-01-01T05:00:00Z")))
         .isEqualTo("1970-01-01 05:00:00.000");
   }
 
   @Test
   void test_fromBigqueryTimestampString_startAndEndOfTime() {
-    assertThat(fromBigqueryTimestampString("1970-01-01 00:00:00 UTC")).isEqualTo(START_OF_TIME);
-    assertThat(fromBigqueryTimestampString("294247-01-10 04:00:54.775 UTC")).isEqualTo(END_OF_TIME);
+    assertThat(fromBigqueryTimestampString("1970-01-01 00:00:00 UTC")).isEqualTo(START_INSTANT);
+    assertThat(fromBigqueryTimestampString("294247-01-10 04:00:54.775 UTC")).isEqualTo(END_INSTANT);
   }
 
   @Test
@@ -78,20 +77,20 @@ class BigqueryUtilsTest {
   @Test
   void testFailure_fromBigqueryTimestampString_nonUtcTimeZone() {
     assertThrows(
-        IllegalArgumentException.class,
+        DateTimeParseException.class,
         () -> fromBigqueryTimestampString("2014-01-01 01:01:01 +05:00"));
   }
 
   @Test
   void testFailure_fromBigqueryTimestampString_noTimeZone() {
     assertThrows(
-        IllegalArgumentException.class, () -> fromBigqueryTimestampString("2014-01-01 01:01:01"));
+        DateTimeParseException.class, () -> fromBigqueryTimestampString("2014-01-01 01:01:01"));
   }
 
   @Test
   void testFailure_fromBigqueryTimestampString_tooManyMillisecondDigits() {
     assertThrows(
-        IllegalArgumentException.class,
+        DateTimeParseException.class,
         () -> fromBigqueryTimestampString("2014-01-01 01:01:01.1234 UTC"));
   }
 
@@ -116,12 +115,12 @@ class BigqueryUtilsTest {
 
   @Test
   void test_toBigqueryTimestamp_datetimeConversion() {
-    assertThat(toBigqueryTimestamp(START_OF_TIME)).isEqualTo("0.000000");
+    assertThat(toBigqueryTimestamp(START_INSTANT)).isEqualTo("0.000000");
     assertThat(toBigqueryTimestamp(DATE_0)).isEqualTo("1405629342.000000");
     assertThat(toBigqueryTimestamp(DATE_1)).isEqualTo("1405629342.100000");
     assertThat(toBigqueryTimestamp(DATE_2)).isEqualTo("1405629342.120000");
     assertThat(toBigqueryTimestamp(DATE_3)).isEqualTo("1405629342.123000");
-    assertThat(toBigqueryTimestamp(END_OF_TIME)).isEqualTo("9223372036854.775000");
+    assertThat(toBigqueryTimestamp(END_INSTANT)).isEqualTo("9223372036854.775000");
   }
 
   @Test

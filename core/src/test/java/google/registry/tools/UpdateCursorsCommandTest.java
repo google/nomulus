@@ -26,7 +26,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldNotFoundException;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,21 +43,21 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
   void doUpdateTest() throws Exception {
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo");
     assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, registry)).getCursorTime())
-        .isEqualTo(DateTime.parse("1984-12-18TZ"));
+        .isEqualTo(Instant.parse("1984-12-18T00:00:00Z"));
     String changes = command.prompt();
     assertThat(changes)
-        .isEqualTo("Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z\n");
+        .isEqualTo("Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00Z\n");
   }
 
   void doGlobalUpdateTest() throws Exception {
     runCommandForced("--type=recurring_billing", "--timestamp=1984-12-18T00:00:00Z");
     assertThat(loadByKey(Cursor.createGlobalVKey(CursorType.RECURRING_BILLING)).getCursorTime())
-        .isEqualTo(DateTime.parse("1984-12-18TZ"));
+        .isEqualTo(Instant.parse("1984-12-18T00:00:00Z"));
     String changes = command.prompt();
     assertThat(changes)
         .isEqualTo(
             "Change cursorTime of RECURRING_BILLING for Scope:GLOBAL to"
-                + " 1984-12-18T00:00:00.000Z\n");
+                + " 1984-12-18T00:00:00Z\n");
   }
 
   @Test
@@ -68,14 +68,15 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   @Test
   void testSuccess_hasOldValue() throws Exception {
-    persistResource(Cursor.createScoped(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
+    persistResource(
+        Cursor.createScoped(CursorType.BRDA, Instant.parse("1950-12-18T00:00:00Z"), registry));
     doUpdateTest();
   }
 
   @Test
   void testSuccess_global_hasOldValue() throws Exception {
     persistResource(
-        Cursor.createGlobal(CursorType.RECURRING_BILLING, DateTime.parse("1950-12-18TZ")));
+        Cursor.createGlobal(CursorType.RECURRING_BILLING, Instant.parse("1950-12-18T00:00:00Z")));
     doGlobalUpdateTest();
   }
 
@@ -89,21 +90,22 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
   void testSuccess_multipleTlds_hasOldValue() throws Exception {
     Tld barRegistry = createTld("bar");
     Tld registry2 = Tld.get("bar");
-    persistResource(Cursor.createScoped(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
     persistResource(
-        Cursor.createScoped(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry2));
+        Cursor.createScoped(CursorType.BRDA, Instant.parse("1950-12-18T00:00:00Z"), registry));
+    persistResource(
+        Cursor.createScoped(CursorType.BRDA, Instant.parse("1950-12-18T00:00:00Z"), registry2));
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo", "bar");
     assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, registry)).getCursorTime())
-        .isEqualTo(DateTime.parse("1984-12-18TZ"));
+        .isEqualTo(Instant.parse("1984-12-18T00:00:00Z"));
     assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, barRegistry)).getCursorTime())
-        .isEqualTo(DateTime.parse("1984-12-18TZ"));
+        .isEqualTo(Instant.parse("1984-12-18T00:00:00Z"));
     String changes = command.prompt();
     assertThat(changes)
         .isEqualTo(
             """
-                Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z
-                Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z
-                """);
+            Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00Z
+            Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00Z
+            """);
   }
 
   @Test
@@ -113,16 +115,16 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
     assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(CursorType.BRDA, barRegistry))).isEmpty();
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo", "bar");
     assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, registry)).getCursorTime())
-        .isEqualTo(DateTime.parse("1984-12-18TZ"));
+        .isEqualTo(Instant.parse("1984-12-18T00:00:00Z"));
     assertThat(loadByKey(Cursor.createScopedVKey(CursorType.BRDA, barRegistry)).getCursorTime())
-        .isEqualTo(DateTime.parse("1984-12-18TZ"));
+        .isEqualTo(Instant.parse("1984-12-18T00:00:00Z"));
     String changes = command.prompt();
     assertThat(changes)
         .isEqualTo(
             """
-                Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z
-                Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z
-                """);
+            Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00Z
+            Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00Z
+            """);
   }
 
   @Test

@@ -31,6 +31,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActi
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RESTORE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static java.time.ZoneOffset.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -70,7 +71,6 @@ import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import jakarta.inject.Inject;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import org.joda.money.Money;
 
@@ -152,7 +152,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     Instant newExpirationTime =
         existingDomain
             .getRegistrationExpirationTime()
-            .atZone(ZoneOffset.UTC)
+            .atZone(UTC)
             .plusYears(isExpired ? 1 : 0)
             .toInstant();
     // Restore the expiration time on the deleted domain, except if that's already passed, then add

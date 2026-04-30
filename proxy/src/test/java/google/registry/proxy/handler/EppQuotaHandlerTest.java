@@ -36,7 +36,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +48,7 @@ class EppQuotaHandlerTest {
   private final EppQuotaHandler handler = new EppQuotaHandler(quotaManager, metrics);
   private final EmbeddedChannel channel = new EmbeddedChannel(handler);
   private final String clientCertHash = "blah/123!";
-  private final DateTime now = DateTime.now(DateTimeZone.UTC);
+  private final DateTime now = DateTime.now(UTC);
   private final Object message = new Object();
 
   private void setProtocol(Channel channel) {

@@ -15,7 +15,7 @@ package google.registry.reporting.icann;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 public class CloudDnsCountQueryCoordinatorTest {
   public CloudDnsCountQueryCoordinatorTest() {}
 
-  private final YearMonth yearMonth = new YearMonth(2017, 9);
+  private final YearMonth yearMonth = YearMonth.of(2017, 9);
   CloudDnsCountQueryCoordinator coordinator = new CloudDnsCountQueryCoordinator();
 
   @BeforeEach

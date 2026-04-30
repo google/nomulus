@@ -18,6 +18,7 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static java.time.ZoneOffset.UTC;
 
 import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableMap;
@@ -46,11 +47,11 @@ import jakarta.inject.Inject;
 import jakarta.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Action that uploads the monthly activity/transactions reports from GCS to ICANN via an HTTP PUT.
@@ -105,14 +106,13 @@ public final class IcannReportingUploadAction implements Runnable {
    * staging action is scheduled to run at 9AM UTC on that day, and there is no reason to run the
    * upload job before that. See {@code icannReportingStaging} in {@code cloud-scheduler.xml}.
    */
-  private static DateTime getScheduledTimeForCurrentMonth(DateTime time) {
-    return time.withDayOfMonth(2).withHourOfDay(10).withMinuteOfHour(0).plusMonths(1);
+  private static Instant getScheduledTimeForCurrentMonth(Instant time) {
+    return time.atZone(UTC).withDayOfMonth(2).withHour(10).withMinute(0).plusMonths(1).toInstant();
   }
 
   @Override
   public void run() {
-    if (!lockHandler.executeWithLocks(
-        this::runWithLock, null, Duration.standardHours(2), LOCK_NAME)) {
+    if (!lockHandler.executeWithLocks(this::runWithLock, null, Duration.ofHours(2), LOCK_NAME)) {
       throw new ServiceUnavailableException(String.format("Lock for %s already in use", LOCK_NAME));
     }
   }
@@ -124,7 +124,7 @@ public final class IcannReportingUploadAction implements Runnable {
 
     // If cursor time is before now, upload the corresponding report
     cursors.entrySet().stream()
-        .filter(entry -> entry.getKey().getCursorTime().isBefore(clock.nowUtc()))
+        .filter(entry -> entry.getKey().getCursorTime().isBefore(clock.now()))
         .forEach(entry -> uploadReport(entry.getKey(), entry.getValue(), reportSummaryBuilder));
     // Send email of which reports were uploaded
     emailUploadResults(reportSummaryBuilder.build());
@@ -136,13 +136,15 @@ public final class IcannReportingUploadAction implements Runnable {
   /** Uploads the report and rolls forward the cursor for that report. */
   private void uploadReport(
       Cursor cursor, String tldStr, ImmutableMap.Builder<String, Boolean> reportSummaryBuilder) {
-    DateTime cursorTime = cursor.getCursorTime();
+    Instant cursorTime = cursor.getCursorTime();
     CursorType cursorType = cursor.getType();
-    DateTime cursorTimeMinusMonth = cursorTime.withDayOfMonth(1).minusMonths(1);
+    Instant cursorTimeMinusMonth =
+        cursorTime.atZone(UTC).withDayOfMonth(1).minusMonths(1).toInstant();
     String reportSubdir =
         String.format(
             "icann/monthly/%d-%02d",
-            cursorTimeMinusMonth.getYear(), cursorTimeMinusMonth.getMonthOfYear());
+            cursorTimeMinusMonth.atZone(UTC).getYear(),
+            cursorTimeMinusMonth.atZone(UTC).getMonthValue());
     String filename = getFileName(cursorType, cursorTime, tldStr);
     final BlobId gcsFilename =
         BlobId.of(reportingBucket, String.format("%s/%s", reportSubdir, filename));
@@ -154,7 +156,7 @@ public final class IcannReportingUploadAction implements Runnable {
               "Could not upload %s report for %s because file %s (object %s in bucket %s) did not"
                   + " exist.",
               cursorType, tldStr, filename, gcsFilename.getName(), gcsFilename.getBucket());
-      if (clock.nowUtc().dayOfMonth().get() == 1) {
+      if (clock.now().atZone(UTC).getDayOfMonth() == 1) {
         logger.atInfo().log("%s This report may not have been staged yet.", logMessage);
       } else {
         logger.atSevere().log(logMessage);
@@ -202,14 +204,15 @@ public final class IcannReportingUploadAction implements Runnable {
     reportSummaryBuilder.put(filename, success);
   }
 
-  private String getFileName(CursorType cursorType, DateTime cursorTime, String tld) {
-    DateTime cursorTimeMinusMonth = cursorTime.withDayOfMonth(1).minusMonths(1);
+  private String getFileName(CursorType cursorType, Instant cursorTime, String tld) {
+    Instant cursorTimeMinusMonth =
+        cursorTime.atZone(UTC).withDayOfMonth(1).minusMonths(1).toInstant();
     return String.format(
         "%s%s%d%02d.csv",
         tld,
         (cursorType.equals(CursorType.ICANN_UPLOAD_ACTIVITY) ? "-activity-" : "-transactions-"),
-        cursorTimeMinusMonth.year().get(),
-        cursorTimeMinusMonth.monthOfYear().get());
+        cursorTimeMinusMonth.atZone(UTC).getYear(),
+        cursorTimeMinusMonth.atZone(UTC).getMonthValue());
   }
 
   /** Returns a map of each cursor to the tld. */
@@ -260,7 +263,7 @@ public final class IcannReportingUploadAction implements Runnable {
               cursorMap.getOrDefault(
                   key,
                   Cursor.createScoped(
-                      type, getScheduledTimeForCurrentMonth(clock.nowUtc()), registry));
+                      type, getScheduledTimeForCurrentMonth(clock.now()), registry));
           if (!cursorMap.containsValue(cursor)) {
             tm().put(cursor);
           }

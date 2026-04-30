@@ -13,7 +13,6 @@
 // limitations under the License.
 
 package google.registry.model;
-
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.persistence.transaction.JpaEntityCoverageExtension;
