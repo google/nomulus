@@ -21,7 +21,7 @@ import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.model.rde.RdeNamingUtils.makeRydeFilename;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdeNamingUtils}. */
@@ -29,19 +29,19 @@ class RdeNamingUtilsTest {
 
   @Test
   void testMakeRydeFilename_rdeDeposit() {
-    assertThat(makeRydeFilename("numbness", DateTime.parse("1984-12-18TZ"), FULL, 1, 0))
+    assertThat(makeRydeFilename("numbness", Instant.parse("1984-12-18T00:00:00Z"), FULL, 1, 0))
         .isEqualTo("numbness_1984-12-18_full_S1_R0");
   }
 
   @Test
   void testMakeRydeFilename_brdaDeposit() {
-    assertThat(makeRydeFilename("dreary", DateTime.parse("2000-12-18TZ"), THIN, 1, 0))
+    assertThat(makeRydeFilename("dreary", Instant.parse("2000-12-18T00:00:00Z"), THIN, 1, 0))
         .isEqualTo("dreary_2000-12-18_thin_S1_R0");
   }
 
   @Test
   void testMakeRydeFilename_revisionNumber() {
-    assertThat(makeRydeFilename("wretched", DateTime.parse("2000-12-18TZ"), THIN, 1, 123))
+    assertThat(makeRydeFilename("wretched", Instant.parse("2000-12-18T00:00:00Z"), THIN, 1, 123))
         .isEqualTo("wretched_2000-12-18_thin_S1_R123");
   }
 
@@ -49,12 +49,12 @@ class RdeNamingUtilsTest {
   void testMakeRydeFilename_timestampNotAtTheWitchingHour_throwsIae() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> makeRydeFilename("wretched", DateTime.parse("2000-12-18T04:20Z"), THIN, 1, 0));
+        () -> makeRydeFilename("wretched", Instant.parse("2000-12-18T04:20:00Z"), THIN, 1, 0));
   }
 
   @Test
   void testMakePartialName() {
-    assertThat(makePartialName("unholy", DateTime.parse("2000-12-18TZ"), THIN))
+    assertThat(makePartialName("unholy", Instant.parse("2000-12-18T00:00:00Z"), THIN))
         .isEqualTo("unholy_2000-12-18_thin");
   }
 }

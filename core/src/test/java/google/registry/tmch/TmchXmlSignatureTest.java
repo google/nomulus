@@ -26,8 +26,8 @@ import google.registry.tmch.TmchXmlSignature.CertificateSignatureException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateRevokedException;
+import java.time.Instant;
 import javax.xml.crypto.dsig.XMLSignatureException;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,7 +59,7 @@ class TmchXmlSignatureTest {
   //
   // When updating this date, also update the "time travel" dates in two tests below, which test to
   // make sure that dates before and after the validity window result in rejection.
-  private final FakeClock clock = new FakeClock(DateTime.parse("2023-01-15T23:15:37.4Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2023-01-15T23:15:37.4Z"));
 
   private byte[] smdData;
   private TmchXmlSignature tmchXmlSignature =
@@ -104,14 +104,14 @@ class TmchXmlSignatureTest {
   @Test
   void testTimeTravelBeforeCertificateWasCreated() {
     smdData = loadSmd("smd/active.smd");
-    clock.setTo(DateTime.parse("2021-05-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2021-05-01T00:00:00Z"));
     assertThrows(CertificateNotYetValidException.class, () -> tmchXmlSignature.verify(smdData));
   }
 
   @Test
   void testTimeTravelAfterCertificateHasExpired() {
     smdData = loadSmd("smd/active.smd");
-    clock.setTo(DateTime.parse("2028-06-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2028-06-01T00:00:00Z"));
     assertThrows(CertificateExpiredException.class, () -> tmchXmlSignature.verify(smdData));
   }
 

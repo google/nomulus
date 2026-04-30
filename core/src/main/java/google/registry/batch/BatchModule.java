@@ -24,9 +24,9 @@ import static google.registry.request.RequestParameters.extractOptionalBooleanPa
 import static google.registry.request.RequestParameters.extractOptionalInstantParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
-import static google.registry.request.RequestParameters.extractRequiredDatetimeParameter;
+import static google.registry.request.RequestParameters.extractRequiredInstantParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
-import static google.registry.request.RequestParameters.extractSetOfDatetimeParameters;
+import static google.registry.request.RequestParameters.extractSetOfInstantParameters;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -44,7 +44,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Dagger module for injecting common settings for batch actions. */
 @Module
@@ -98,14 +97,14 @@ public class BatchModule {
 
   @Provides
   @Parameter(PARAM_REQUESTED_TIME)
-  static DateTime provideRequestedTime(HttpServletRequest req) {
-    return extractRequiredDatetimeParameter(req, PARAM_REQUESTED_TIME);
+  static Instant provideRequestedTime(HttpServletRequest req) {
+    return extractRequiredInstantParameter(req, PARAM_REQUESTED_TIME);
   }
 
   @Provides
   @Parameter(PARAM_RESAVE_TIMES)
-  static ImmutableSet<DateTime> provideResaveTimes(HttpServletRequest req) {
-    return extractSetOfDatetimeParameters(req, PARAM_RESAVE_TIMES);
+  static ImmutableSet<Instant> provideResaveTimes(HttpServletRequest req) {
+    return extractSetOfInstantParameters(req, PARAM_RESAVE_TIMES);
   }
 
   @Provides

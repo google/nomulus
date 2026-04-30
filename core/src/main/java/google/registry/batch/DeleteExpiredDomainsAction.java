@@ -42,11 +42,11 @@ import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
-import org.joda.time.Duration;
 
 /**
  * An action that deletes all non-renewing domains whose expiration dates have now passed.
@@ -116,7 +116,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
           return null;
         };
 
-    if (!lockHandler.executeWithLocks(runner, null, Duration.standardHours(1), LOCK_NAME)) {
+    if (!lockHandler.executeWithLocks(runner, null, Duration.ofHours(1), LOCK_NAME)) {
       // Send a 200-series status code to prevent this conflicting action from retrying.
       response.setStatus(SC_NO_CONTENT);
       response.setPayload("Could not acquire lock; already running?");

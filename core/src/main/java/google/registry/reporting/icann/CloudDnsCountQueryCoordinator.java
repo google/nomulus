@@ -18,9 +18,9 @@ import com.google.common.io.Resources;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.util.ResourceUtils;
 import google.registry.util.SqlTemplate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
-import org.joda.time.YearMonth;
-import org.joda.time.format.DateTimeFormat;
 
 /**
  * DNS Count query that relies on a table Cloud DNS publishes internally to Google.
@@ -76,7 +76,7 @@ public class CloudDnsCountQueryCoordinator extends DnsCountQueryCoordinator {
             .put("PROJECT_ID", projectId)
             .put("DATASET_ID", icannReportingDataSet)
             .put("TABLE_ID", TABLE_ID)
-            .put("YEAR_MONTH", DateTimeFormat.forPattern("yyyyMM").print(yearMonth));
+            .put("YEAR_MONTH", DateTimeFormatter.ofPattern("yyyyMM").format(yearMonth));
     return queryTemplate.build();
   }
 }

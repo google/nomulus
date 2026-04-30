@@ -20,6 +20,8 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
+import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusHours;
 
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSortedSet;
@@ -31,9 +33,8 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import google.registry.util.CapturingLogHandler;
 import google.registry.util.JdkLoggerConfig;
+import java.time.Instant;
 import java.util.logging.Level;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,7 +53,7 @@ public class AsyncTaskEnqueuerTest {
 
   private AsyncTaskEnqueuer asyncTaskEnqueuer;
   private final CapturingLogHandler logHandler = new CapturingLogHandler();
-  private final FakeClock clock = new FakeClock(DateTime.parse("2015-05-18T12:34:56Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2015-05-18T12:34:56Z"));
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
   @BeforeEach
@@ -69,7 +70,7 @@ public class AsyncTaskEnqueuerTest {
   void test_enqueueAsyncResave_success() {
     Host host = persistActiveHost("ns1.example.tld");
     asyncTaskEnqueuer.enqueueAsyncResave(
-        host.createVKey(), clock.nowUtc(), ImmutableSortedSet.of(clock.nowUtc().plusDays(5)));
+        host.createVKey(), clock.now(), ImmutableSortedSet.of(plusDays(clock.now(), 5)));
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new CloudTasksHelper.TaskMatcher()
@@ -78,18 +79,18 @@ public class AsyncTaskEnqueuerTest {
             .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, host.createVKey().stringify())
-            .param(PARAM_REQUESTED_TIME, clock.nowUtc().toString())
-            .scheduleTime(clock.nowUtc().plus(Duration.standardDays(5))));
+            .param(PARAM_REQUESTED_TIME, clock.now().toString())
+            .scheduleTime(plusDays(clock.now(), 5)));
   }
 
   @Test
   void test_enqueueAsyncResave_multipleResaves() {
     Host host = persistActiveHost("ns1.example.tld");
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     asyncTaskEnqueuer.enqueueAsyncResave(
         host.createVKey(),
         now,
-        ImmutableSortedSet.of(now.plusHours(24), now.plusHours(50), now.plusHours(75)));
+        ImmutableSortedSet.of(plusHours(now, 24), plusHours(now, 50), plusHours(now, 75)));
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
@@ -99,8 +100,8 @@ public class AsyncTaskEnqueuerTest {
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, host.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, now.toString())
-            .param(PARAM_RESAVE_TIMES, "2015-05-20T14:34:56.000Z,2015-05-21T15:34:56.000Z")
-            .scheduleTime(clock.nowUtc().plus(Duration.standardHours(24))));
+            .param(PARAM_RESAVE_TIMES, "2015-05-20T14:34:56Z,2015-05-21T15:34:56Z")
+            .scheduleTime(clock.nowUtc().plusHours(24)));
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)
@@ -108,7 +109,7 @@ public class AsyncTaskEnqueuerTest {
   void test_enqueueAsyncResave_ignoresTasksTooFarIntoFuture() {
     Host host = persistActiveHost("ns1.example.tld");
     asyncTaskEnqueuer.enqueueAsyncResave(
-        host.createVKey(), clock.nowUtc(), ImmutableSortedSet.of(clock.nowUtc().plusDays(31)));
+        host.createVKey(), clock.now(), ImmutableSortedSet.of(plusDays(clock.now(), 31)));
     cloudTasksHelper.assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
     assertLogMessage(logHandler, Level.INFO, "Ignoring async re-save");
   }

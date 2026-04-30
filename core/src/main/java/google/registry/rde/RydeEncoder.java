@@ -26,12 +26,12 @@ import com.google.common.io.Closer;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.Collection;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
 
 /**
  * Stream that performs the full RyDE encryption.
@@ -59,16 +59,17 @@ public final class RydeEncoder extends FilterOutputStream {
   private boolean isClosed = false;
 
   private RydeEncoder(
-      OutputStream rydeOutput,
+      OutputStream receiverOutput,
       OutputStream sigOutput,
       long dataLength,
       String filenamePrefix,
-      DateTime modified,
+      Instant modified,
       PGPKeyPair signingKey,
       Collection<PGPPublicKey> receiverKeys) {
     super(null);
     this.sigOutput = sigOutput;
-    signer = closer.register(new RydePgpSigningOutputStream(checkNotNull(rydeOutput), signingKey));
+    signer =
+        closer.register(new RydePgpSigningOutputStream(checkNotNull(receiverOutput), signingKey));
     OutputStream encryptLayer =
         closer.register(openEncryptor(signer, RYDE_USE_INTEGRITY_PACKET, receiverKeys));
     OutputStream kompressor = closer.register(openCompressor(encryptLayer));
@@ -110,7 +111,7 @@ public final class RydeEncoder extends FilterOutputStream {
     OutputStream sigOutput;
     Long dataLength;
     String filenamePrefix;
-    DateTime modified;
+    Instant modified;
     PGPKeyPair signingKey;
     ImmutableList<PGPPublicKey> receiverKeys;
 
@@ -131,7 +132,7 @@ public final class RydeEncoder extends FilterOutputStream {
     }
 
     /** Sets the information about the unencoded data that will follow. */
-    public Builder setFileMetadata(String filenamePrefix, long dataLength, DateTime modified) {
+    public Builder setFileMetadata(String filenamePrefix, long dataLength, Instant modified) {
       this.filenamePrefix = filenamePrefix;
       this.dataLength = dataLength;
       this.modified = modified;

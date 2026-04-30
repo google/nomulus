@@ -37,10 +37,9 @@ import google.registry.testing.FakeSleeper;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Instant;
+import java.time.YearMonth;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,10 +48,10 @@ class IcannReportingStagingActionTest {
 
   private FakeResponse response = new FakeResponse();
   private IcannReportingStager stager = mock(IcannReportingStager.class);
-  private YearMonth yearMonth = new YearMonth(2017, 6);
+  private YearMonth yearMonth = YearMonth.of(2017, 6);
   private String subdir = "default/dir";
   private IcannReportingStagingAction action;
-  private FakeClock clock = new FakeClock(DateTime.parse("2021-01-02T11:00:00Z"));
+  private FakeClock clock = new FakeClock(Instant.parse("2021-01-02T11:00:00Z"));
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
   @BeforeEach
@@ -82,7 +81,7 @@ class IcannReportingStagingActionTest {
         new TaskMatcher()
             .path("/_dr/task/icannReportingUpload")
             .method(HttpMethod.POST)
-            .scheduleTime(clock.nowUtc().plus(Duration.standardMinutes(2))));
+            .scheduleTime(clock.nowUtc().plusMinutes(2)));
   }
 
   @Test
@@ -187,20 +186,20 @@ class IcannReportingStagingActionTest {
   @Test
   void testEmptySubDir_returnsDefaultSubdir() {
     action.overrideSubdir = Optional.empty();
-    assertThat(action.getSubdir(new YearMonth(2017, 6))).isEqualTo("icann/monthly/2017-06");
+    assertThat(action.getSubdir(YearMonth.of(2017, 6))).isEqualTo("icann/monthly/2017-06");
   }
 
   @Test
   void testGivenSubdir_returnsManualSubdir() {
     action.overrideSubdir = Optional.of("manual/dir");
-    assertThat(action.getSubdir(new YearMonth(2017, 6))).isEqualTo("manual/dir");
+    assertThat(action.getSubdir(YearMonth.of(2017, 6))).isEqualTo("manual/dir");
   }
 
   @Test
   void testInvalidSubdir_throwsException() {
     action.overrideSubdir = Optional.of("/whoops");
     BadRequestException thrown =
-        assertThrows(BadRequestException.class, () -> action.getSubdir(new YearMonth(2017, 6)));
+        assertThrows(BadRequestException.class, () -> action.getSubdir(YearMonth.of(2017, 6)));
     assertThat(thrown)
         .hasMessageThat()
         .contains("subdir must not start or end with a \"/\", got /whoops instead.");

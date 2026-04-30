@@ -22,8 +22,8 @@ import com.google.monitoring.metrics.IncrementableMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.model.server.Lock.LockState;
+import java.time.Duration;
 import javax.annotation.Nullable;
-import org.joda.time.Duration;
 
 /** Metrics for lock contention. */
 class LockMetrics {
@@ -67,6 +67,6 @@ class LockMetrics {
   }
 
   void recordRelease(String resourceName, @Nullable String tld, Duration duration) {
-    lockLifetimeMetric.record(duration.getMillis(), String.valueOf(tld), resourceName);
+    lockLifetimeMetric.record(duration.toMillis(), String.valueOf(tld), resourceName);
   }
 }

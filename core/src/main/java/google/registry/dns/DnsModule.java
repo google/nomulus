@@ -32,9 +32,9 @@ import google.registry.dns.writer.DnsWriterZone;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
-import org.joda.time.DateTime;
 
 /** Dagger module for the dns package. */
 @Module
@@ -68,15 +68,15 @@ public abstract class DnsModule {
 
   @Provides
   @Parameter(PARAM_PUBLISH_TASK_ENQUEUED)
-  static DateTime provideCreateTime(HttpServletRequest req) {
-    return DateTime.parse(extractRequiredParameter(req, PARAM_PUBLISH_TASK_ENQUEUED));
+  static Instant provideCreateTime(HttpServletRequest req) {
+    return Instant.parse(extractRequiredParameter(req, PARAM_PUBLISH_TASK_ENQUEUED));
   }
 
   // TODO: Retire the old header after DNS pull queue migration.
   @Provides
   @Parameter(PARAM_REFRESH_REQUEST_TIME)
-  static DateTime provideItemsCreateTime(HttpServletRequest req) {
-    return DateTime.parse(
+  static Instant provideItemsCreateTime(HttpServletRequest req) {
+    return Instant.parse(
         extractOptionalParameter(req, "itemsCreated")
             .orElse(extractRequiredParameter(req, PARAM_REFRESH_REQUEST_TIME)));
   }

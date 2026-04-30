@@ -19,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -46,9 +47,9 @@ import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import jakarta.mail.internet.InternetAddress;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -69,7 +70,7 @@ class IcannReportingUploadActionTest {
   private final TestLogHandler logHandler = new TestLogHandler();
   private final Logger loggerToIntercept =
       Logger.getLogger(IcannReportingUploadAction.class.getCanonicalName());
-  private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2000-01-01T00:00:00Z"));
 
   private IcannReportingUploadAction createAction() throws Exception {
     IcannReportingUploadAction action = new IcannReportingUploadAction();
@@ -100,19 +101,23 @@ class IcannReportingUploadActionTest {
     when(mockReporter.send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv")).thenReturn(true);
     when(mockReporter.send(PAYLOAD_FAIL, "tld-activity-200606.csv")).thenReturn(false);
     when(mockReporter.send(PAYLOAD_SUCCESS, "foo-activity-200606.csv")).thenReturn(true);
-    clock.setTo(DateTime.parse("2006-07-05T00:30:00Z"));
+    clock.setTo(Instant.parse("2006-07-05T00:30:00Z"));
     persistResource(
         Cursor.createScoped(
-            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-07-01TZ"), Tld.get("tld")));
+            CursorType.ICANN_UPLOAD_ACTIVITY,
+            Instant.parse("2006-07-01T00:00:00Z"),
+            Tld.get("tld")));
     persistResource(
         Cursor.createScoped(
-            CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-07-01TZ"), Tld.get("tld")));
+            CursorType.ICANN_UPLOAD_TX, Instant.parse("2006-07-01T00:00:00Z"), Tld.get("tld")));
     persistResource(
         Cursor.createScoped(
-            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-07-01TZ"), Tld.get("foo")));
+            CursorType.ICANN_UPLOAD_ACTIVITY,
+            Instant.parse("2006-07-01T00:00:00Z"),
+            Tld.get("foo")));
     persistResource(
         Cursor.createScoped(
-            CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-07-01TZ"), Tld.get("foo")));
+            CursorType.ICANN_UPLOAD_TX, Instant.parse("2006-07-01T00:00:00Z"), Tld.get("foo")));
     loggerToIntercept.addHandler(logHandler);
   }
 
@@ -131,23 +136,26 @@ class IcannReportingUploadActionTest {
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
                 """
-                    Report Filename - Upload status:
-                    foo-activity-200606.csv - SUCCESS
-                    foo-transactions-200606.csv - SUCCESS
-                    tld-activity-200606.csv - FAILURE
-                    tld-transactions-200606.csv - SUCCESS""",
+                Report Filename - Upload status:
+                foo-activity-200606.csv - SUCCESS
+                foo-transactions-200606.csv - SUCCESS
+                tld-activity-200606.csv - FAILURE
+                tld-transactions-200606.csv - SUCCESS\
+                """,
                 new InternetAddress("recipient@example.com")));
   }
 
   @Test
   void testSuccess_january() throws Exception {
-    clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
+    clock.setTo(Instant.parse("2006-01-22T00:30:00Z"));
     persistResource(
         Cursor.createScoped(
-            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-01-01TZ"), Tld.get("tld")));
+            CursorType.ICANN_UPLOAD_ACTIVITY,
+            Instant.parse("2006-01-01T00:00:00Z"),
+            Tld.get("tld")));
     persistResource(
         Cursor.createScoped(
-            CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-01-01TZ"), Tld.get("tld")));
+            CursorType.ICANN_UPLOAD_TX, Instant.parse("2006-01-01T00:00:00Z"), Tld.get("tld")));
     gcsUtils.createFromBytes(
         BlobId.of("basin", "icann/monthly/2005-12/tld-transactions-200512.csv"), PAYLOAD_SUCCESS);
     gcsUtils.createFromBytes(
@@ -166,9 +174,10 @@ class IcannReportingUploadActionTest {
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 2/2 succeeded",
                 """
-                    Report Filename - Upload status:
-                    tld-activity-200512.csv - SUCCESS
-                    tld-transactions-200512.csv - SUCCESS""",
+                Report Filename - Upload status:
+                tld-activity-200512.csv - SUCCESS
+                tld-transactions-200512.csv - SUCCESS\
+                """,
                 new InternetAddress("recipient@example.com")));
   }
 
@@ -181,12 +190,12 @@ class IcannReportingUploadActionTest {
     action.run();
     Cursor cursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Tld.get("tld")));
-    assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-02T10:00:00Z"));
+    assertThat(toInstant(cursor.getCursorTime())).isEqualTo(Instant.parse("2006-08-02T10:00:00Z"));
   }
 
   @Test
   void testSuccess_noUploadsNeeded() throws Exception {
-    clock.setTo(DateTime.parse("2006-5-01T00:30:00Z"));
+    clock.setTo(Instant.parse("2006-05-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
     verifyNoMoreInteractions(mockReporter);
@@ -210,11 +219,12 @@ class IcannReportingUploadActionTest {
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
                 """
-                    Report Filename - Upload status:
-                    foo-activity-200606.csv - SUCCESS
-                    foo-transactions-200606.csv - SUCCESS
-                    tld-activity-200606.csv - FAILURE
-                    tld-transactions-200606.csv - SUCCESS""",
+                Report Filename - Upload status:
+                foo-activity-200606.csv - SUCCESS
+                foo-transactions-200606.csv - SUCCESS
+                tld-activity-200606.csv - FAILURE
+                tld-transactions-200606.csv - SUCCESS\
+                """,
                 new InternetAddress("recipient@example.com")));
   }
 
@@ -238,17 +248,17 @@ class IcannReportingUploadActionTest {
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
     Cursor cursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Tld.get("tld")));
-    assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
+    assertThat(toInstant(cursor.getCursorTime())).isEqualTo(Instant.parse("2006-07-01T00:00:00Z"));
   }
 
   @Test
   void testNotRunIfCursorDateIsAfterToday() throws Exception {
-    clock.setTo(DateTime.parse("2006-05-01T00:30:00Z"));
+    clock.setTo(Instant.parse("2006-05-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
     Cursor cursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Tld.get("foo")));
-    assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
+    assertThat(toInstant(cursor.getCursorTime())).isEqualTo(Instant.parse("2006-07-01T00:00:00Z"));
     verifyNoMoreInteractions(mockReporter);
   }
 
@@ -270,20 +280,23 @@ class IcannReportingUploadActionTest {
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
                 """
-                    Report Filename - Upload status:
-                    foo-activity-200606.csv - SUCCESS
-                    foo-transactions-200606.csv - SUCCESS
-                    tld-activity-200606.csv - FAILURE
-                    tld-transactions-200606.csv - SUCCESS""",
+                Report Filename - Upload status:
+                foo-activity-200606.csv - SUCCESS
+                foo-transactions-200606.csv - SUCCESS
+                tld-activity-200606.csv - FAILURE
+                tld-transactions-200606.csv - SUCCESS\
+                """,
                 new InternetAddress("recipient@example.com")));
   }
 
   @Test
   void testFail_fileNotFound() throws Exception {
-    clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
+    clock.setTo(Instant.parse("2006-01-22T00:30:00Z"));
     persistResource(
         Cursor.createScoped(
-            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-01-01TZ"), Tld.get("tld")));
+            CursorType.ICANN_UPLOAD_ACTIVITY,
+            Instant.parse("2006-01-01T00:00:00Z"),
+            Tld.get("tld")));
     IcannReportingUploadAction action = createAction();
     action.run();
     assertAboutLogs()
@@ -299,8 +312,10 @@ class IcannReportingUploadActionTest {
   void testWarning_fileNotStagedYet() throws Exception {
     persistResource(
         Cursor.createScoped(
-            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-08-01TZ"), Tld.get("foo")));
-    clock.setTo(DateTime.parse("2006-08-01T00:30:00Z"));
+            CursorType.ICANN_UPLOAD_ACTIVITY,
+            Instant.parse("2006-08-01T00:00:00Z"),
+            Tld.get("foo")));
+    clock.setTo(Instant.parse("2006-08-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
     assertAboutLogs()
@@ -340,19 +355,21 @@ class IcannReportingUploadActionTest {
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
                 """
-                    Report Filename - Upload status:
-                    foo-activity-200606.csv - SUCCESS
-                    foo-transactions-200606.csv - SUCCESS
-                    tld-activity-200606.csv - FAILURE
-                    tld-transactions-200606.csv - SUCCESS""",
+                Report Filename - Upload status:
+                foo-activity-200606.csv - SUCCESS
+                foo-transactions-200606.csv - SUCCESS
+                tld-activity-200606.csv - FAILURE
+                tld-transactions-200606.csv - SUCCESS\
+                """,
                 new InternetAddress("recipient@example.com")));
 
     Cursor newActivityCursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Tld.get("new")));
-    assertThat(newActivityCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-02T10:00:00Z"));
+    assertThat(toInstant(newActivityCursor.getCursorTime()))
+        .isEqualTo(Instant.parse("2006-08-02T10:00:00Z"));
     Cursor newTransactionCursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_TX, Tld.get("new")));
-    assertThat(newTransactionCursor.getCursorTime())
-        .isEqualTo(DateTime.parse("2006-08-02T10:00:00Z"));
+    assertThat(toInstant(newTransactionCursor.getCursorTime()))
+        .isEqualTo(Instant.parse("2006-08-02T10:00:00Z"));
   }
 }
