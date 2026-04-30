@@ -34,6 +34,7 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
+import java.sql.Timestamp;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
@@ -161,7 +162,7 @@ public final class TmchCertificateAuthority {
       // The current production certificate expires on 2023-07-23. Future code monkey be reminded,
       // if you are looking at this code because the next line throws an exception, ask ICANN for a
       // new root certificate! (preferably before the current one expires...)
-      root.checkValidity(clock.nowUtc().toDate());
+      root.checkValidity(Timestamp.from(clock.now()));
       return root;
     } catch (Exception e) {
       if (e instanceof GeneralSecurityException generalSecurityException) {

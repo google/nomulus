@@ -14,6 +14,7 @@
 
 package google.registry.beam.spec11;
 
+import static google.registry.util.DateTimeUtils.toJodaInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -22,7 +23,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.CharStreams;
 import google.registry.util.Clock;
-import google.registry.util.DateTimeUtils;
 import google.registry.util.Retrier;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -132,9 +132,7 @@ public class SafeBrowsingTransforms {
       if (!domainNameInfoBuffer.isEmpty()) {
         ImmutableSet<KV<DomainNameInfo, ThreatMatch>> results = evaluateAndFlush();
         results.forEach(
-            (kv) ->
-                context.output(
-                    kv, DateTimeUtils.toJodaInstant(clock.now()), GlobalWindow.INSTANCE));
+            (kv) -> context.output(kv, toJodaInstant(clock.now()), GlobalWindow.INSTANCE));
       }
     }
 

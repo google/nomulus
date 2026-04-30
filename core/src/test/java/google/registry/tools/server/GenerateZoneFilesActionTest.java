@@ -23,7 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.Duration.standardDays;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
@@ -42,10 +42,9 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.Map;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -70,16 +69,16 @@ class GenerateZoneFilesActionTest {
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setDnsAPlusAaaaTtl(Duration.standardSeconds(300))
-            .setDnsNsTtl(Duration.standardSeconds(400))
-            .setDnsDsTtl(Duration.standardSeconds(500))
+            .setDnsAPlusAaaaTtl(org.joda.time.Duration.standardSeconds(300))
+            .setDnsNsTtl(org.joda.time.Duration.standardSeconds(400))
+            .setDnsDsTtl(org.joda.time.Duration.standardSeconds(500))
             .build());
     testGenerate("tldCustomTtl.zone");
   }
 
   @SuppressWarnings("AddressSelection")
   void testGenerate(String goldenFileName) throws Exception {
-    DateTime now = DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay();
+    DateTime now = DateTime.now(UTC).withTimeAtStartOfDay();
 
     ImmutableSet<InetAddress> ips =
         ImmutableSet.of(InetAddress.getByName("127.0.0.1"), InetAddress.getByName("::1"));
@@ -145,10 +144,10 @@ class GenerateZoneFilesActionTest {
     GenerateZoneFilesAction action = new GenerateZoneFilesAction();
     action.bucket = "zonefiles-bucket";
     action.gcsUtils = gcsUtils;
-    action.databaseRetention = standardDays(29);
-    action.dnsDefaultATtl = Duration.standardSeconds(11);
-    action.dnsDefaultNsTtl = Duration.standardSeconds(222);
-    action.dnsDefaultDsTtl = Duration.standardSeconds(3333);
+    action.databaseRetention = Duration.ofDays(29);
+    action.dnsDefaultATtl = Duration.ofSeconds(11);
+    action.dnsDefaultNsTtl = Duration.ofSeconds(222);
+    action.dnsDefaultDsTtl = Duration.ofSeconds(3333);
     action.clock = new FakeClock(now.plusMinutes(2));  // Move past the actions' 2 minute check.
 
     Map<String, Object> response =

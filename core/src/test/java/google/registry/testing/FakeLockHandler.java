@@ -17,9 +17,9 @@ package google.registry.testing;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 
 import google.registry.request.lock.LockHandler;
+import java.time.Duration;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
-import org.joda.time.Duration;
 
 /** A fake {@link LockHandler} where user can control if lock acquisition succeeds. */
 public class FakeLockHandler implements LockHandler {

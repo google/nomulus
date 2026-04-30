@@ -28,7 +28,7 @@ import java.net.URL;
 import java.security.SignatureException;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateNotYetValidException;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +45,7 @@ class TmchCrlActionTest extends TmchActionTestCase {
 
   @BeforeEach
   void before() {
-    clock.setTo(DateTime.parse("2023-03-24TZ"));
+    clock.setTo(Instant.parse("2023-03-24T00:00:00Z"));
   }
 
   @Test
@@ -86,7 +86,7 @@ class TmchCrlActionTest extends TmchActionTestCase {
 
   @Test
   void testFailure_crlNotYetValid() throws Exception {
-    clock.setTo(DateTime.parse("1984-01-01TZ"));
+    clock.setTo(Instant.parse("1984-01-01T00:00:00Z"));
     when(httpUrlConnection.getInputStream())
         .thenReturn(
             new ByteArrayInputStream(

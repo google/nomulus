@@ -42,10 +42,10 @@ import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
-import org.joda.time.Duration;
 
 /**
  * An action that transfers a set of domains from one registrar to another.
@@ -158,7 +158,7 @@ public class BulkDomainTransferAction implements Runnable {
           return null;
         };
 
-    if (!lockHandler.executeWithLocks(runner, null, Duration.standardHours(1), LOCK_NAME)) {
+    if (!lockHandler.executeWithLocks(runner, null, Duration.ofHours(1), LOCK_NAME)) {
       // Send a 200-series status code to prevent this conflicting action from retrying.
       response.setStatus(SC_NO_CONTENT);
       response.setPayload("Could not acquire lock; already running?");

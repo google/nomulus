@@ -17,7 +17,7 @@ package google.registry.dns.writer.dnsupdate;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
-import org.joda.time.Duration;
+import java.time.Duration;
 
 /** Dagger module that provides DNS configuration settings. */
 @Module
@@ -39,6 +39,6 @@ public class DnsUpdateConfigModule {
   @Provides
   @Config("dnsUpdateTimeout")
   public static Duration provideDnsUpdateTimeout() {
-    return Duration.standardSeconds(30);
+    return Duration.ofSeconds(30);
   }
 }

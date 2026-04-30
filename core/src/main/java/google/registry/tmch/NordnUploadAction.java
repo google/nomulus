@@ -53,10 +53,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import org.joda.time.Duration;
 
 /**
  * Action that reads the NORDN pull queues, uploads claims and sunrise marks data to TMCH, and
@@ -119,7 +119,7 @@ public final class NordnUploadAction implements Runnable {
       Ascii.toLowerCase(LordnPhase.CLAIMS.toString());
 
   /** How long to wait before attempting to verify an upload by fetching the log. */
-  private static final Duration VERIFY_DELAY = Duration.standardMinutes(30);
+  private static final Duration VERIFY_DELAY = Duration.ofMinutes(30);
 
   @Override
   public void run() {
@@ -249,6 +249,6 @@ public final class NordnUploadAction implements Runnable {
             .put(NordnVerifyAction.NORDN_LOG_ID_PARAM, actionLogId)
             .put(RequestParameters.PARAM_TLD, tld)
             .build(),
-        Duration.millis(VERIFY_DELAY.getMillis()));
+        VERIFY_DELAY);
   }
 }

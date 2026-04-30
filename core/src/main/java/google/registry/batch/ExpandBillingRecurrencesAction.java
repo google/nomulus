@@ -111,7 +111,7 @@ public class ExpandBillingRecurrencesAction implements Runnable {
                     () ->
                         tm().loadByKeyIfPresent(Cursor.createGlobalVKey(RECURRING_BILLING))
                             .orElse(Cursor.createGlobal(RECURRING_BILLING, START_INSTANT))
-                            .getCursorTimeInstant()));
+                            .getCursorTime()));
     checkArgument(
         startTime.isBefore(endTime),
         "Start time (%s) must be before end time (%s)",

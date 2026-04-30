@@ -17,17 +17,17 @@ package google.registry.reporting.icann;
 import static google.registry.reporting.icann.IcannReportingModule.ICANN_REPORTING_DATA_SET;
 import static google.registry.reporting.icann.QueryBuilderUtils.getQueryFromFile;
 import static google.registry.reporting.icann.QueryBuilderUtils.getTableName;
+import static java.time.ZoneOffset.UTC;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.SqlTemplate;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import org.joda.time.DateTime;
-import org.joda.time.LocalTime;
-import org.joda.time.YearMonth;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Utility class that produces SQL queries used to generate activity reports from Bigquery.
@@ -65,9 +65,10 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
   @Override
   public ImmutableMap<String, String> getViewQueryMap(YearMonth yearMonth) {
     // Set the earliest date to to yearMonth on day 1 at 00:00:00
-    DateTime earliestReportTime = yearMonth.toLocalDate(1).toDateTime(new LocalTime(0, 0, 0));
+    Instant earliestReportTime = yearMonth.atDay(1).atTime(0, 0, 0).toInstant(UTC);
     // Set the latest date to yearMonth on the last day at 23:59:59.999
-    DateTime latestReportTime = earliestReportTime.plusMonths(1).minusMillis(1);
+    Instant latestReportTime =
+        earliestReportTime.atZone(UTC).plusMonths(1).minus(Duration.ofMillis(1)).toInstant();
 
     ImmutableMap.Builder<String, String> queriesBuilder = ImmutableMap.builder();
     String registrarIanaIdQuery =
@@ -82,38 +83,39 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
             .build();
     queriesBuilder.put(getTableName(TOTAL_DOMAINS, yearMonth), totalDomainsQuery);
 
-    DateTimeFormatter timestampFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+    DateTimeFormatter timestampFormatter =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withZone(UTC);
     String totalNameserversQuery =
         SqlTemplate.create(getQueryFromFile(TOTAL_NAMESERVERS + ".sql"))
             .put("PROJECT_ID", projectId)
-            .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
+            .put("LATEST_REPORT_TIME", timestampFormatter.format(latestReportTime))
             .build();
     queriesBuilder.put(getTableName(TOTAL_NAMESERVERS, yearMonth), totalNameserversQuery);
 
     String transactionCountsQuery =
         SqlTemplate.create(getQueryFromFile(TRANSACTION_COUNTS + ".sql"))
             .put("PROJECT_ID", projectId)
-            .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
-            .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
+            .put("EARLIEST_REPORT_TIME", timestampFormatter.format(earliestReportTime))
+            .put("LATEST_REPORT_TIME", timestampFormatter.format(latestReportTime))
             .build();
     queriesBuilder.put(getTableName(TRANSACTION_COUNTS, yearMonth), transactionCountsQuery);
 
     String transactionTransferLosingQuery =
         SqlTemplate.create(getQueryFromFile(TRANSACTION_TRANSFER_LOSING + ".sql"))
             .put("PROJECT_ID", projectId)
-            .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
-            .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
+            .put("EARLIEST_REPORT_TIME", timestampFormatter.format(earliestReportTime))
+            .put("LATEST_REPORT_TIME", timestampFormatter.format(latestReportTime))
             .build();
     queriesBuilder.put(
         getTableName(TRANSACTION_TRANSFER_LOSING, yearMonth), transactionTransferLosingQuery);
 
     // Log table suffixes use YYYYMMDD format
-    DateTimeFormatter logTableFormatter = DateTimeFormat.forPattern("yyyyMMdd");
+    DateTimeFormatter logTableFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(UTC);
     String attemptedAddsQuery =
         SqlTemplate.create(getQueryFromFile(ATTEMPTED_ADDS + ".sql"))
             .put("PROJECT_ID", projectId)
-            .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
-            .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
+            .put("FIRST_DAY_OF_MONTH", logTableFormatter.format(earliestReportTime))
+            .put("LAST_DAY_OF_MONTH", logTableFormatter.format(latestReportTime))
             .build();
     queriesBuilder.put(getTableName(ATTEMPTED_ADDS, yearMonth), attemptedAddsQuery);
 

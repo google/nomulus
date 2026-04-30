@@ -27,6 +27,8 @@ import google.registry.model.server.Lock;
 import google.registry.util.Clock;
 import google.registry.util.TimeLimiter;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -35,8 +37,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /** Implementation of {@link LockHandler} that uses the database lock. */
 public class LockHandlerImpl implements LockHandler {
@@ -45,7 +45,7 @@ public class LockHandlerImpl implements LockHandler {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Fudge factor to make sure we kill threads before a lock actually expires. */
-  private static final Duration LOCK_TIMEOUT_FUDGE = Duration.standardSeconds(5);
+  private static final Duration LOCK_TIMEOUT_FUDGE = Duration.ofSeconds(5);
 
   private final Clock clock;
 
@@ -79,13 +79,13 @@ public class LockHandlerImpl implements LockHandler {
       Duration leaseLength,
       LockAcquirer lockAcquirer,
       String... lockNames) {
-    DateTime startTime = clock.nowUtc();
+    Instant startTime = clock.now();
     String sanitizedTld = Strings.emptyToNull(tld);
     try {
       return TimeLimiter.create()
           .callWithTimeout(
               new LockingCallable(callable, lockAcquirer, sanitizedTld, leaseLength, lockNames),
-              leaseLength.minus(LOCK_TIMEOUT_FUDGE).getMillis(),
+              leaseLength.minus(LOCK_TIMEOUT_FUDGE).toMillis(),
               TimeUnit.MILLISECONDS);
     } catch (ExecutionException | UncheckedExecutionException e) {
       // Unwrap the execution exception and throw its root cause.
@@ -96,7 +96,7 @@ public class LockHandlerImpl implements LockHandler {
                 "Execution on locks '%s' for TLD '%s' timed out after %s; started at %s",
                 Joiner.on(", ").join(lockNames),
                 Optional.ofNullable(sanitizedTld).orElse("(null)"),
-                new Duration(startTime, clock.nowUtc()),
+                Duration.between(startTime, clock.now()),
                 startTime),
             cause);
       }
@@ -132,7 +132,7 @@ public class LockHandlerImpl implements LockHandler {
         String tld,
         Duration leaseLength,
         String... lockNames) {
-      checkArgument(leaseLength.isLongerThan(LOCK_TIMEOUT_FUDGE));
+      checkArgument(leaseLength.compareTo(LOCK_TIMEOUT_FUDGE) > 0);
       this.delegate = delegate;
       this.lockAcquirer = lockAcquirer;
       this.tld = tld;

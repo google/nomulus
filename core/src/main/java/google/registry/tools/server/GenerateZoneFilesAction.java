@@ -38,6 +38,7 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
+import google.registry.util.DateTimeUtils;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -46,6 +47,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +55,6 @@ import org.hibernate.CacheMode;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.query.SelectionQuery;
-import org.joda.time.Duration;
 
 /**
  * Action that requests generation of BIND zone files for a set of TLDs at a given time.
@@ -119,7 +120,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   public Map<String, Object> handleJsonRequest(Map<String, ?> json) {
     @SuppressWarnings("unchecked")
     ImmutableSet<String> tlds = ImmutableSet.copyOf((List<String>) json.get("tlds"));
-    final Instant exportTime = Instant.parse(json.get("exportTime").toString());
+    Instant exportTime = Instant.parse(json.get("exportTime").toString());
     // We disallow exporting within the past 2 minutes because there might be outstanding writes.
     // We can only reliably call loadAtPointInTime at times that are UTC midnight and >
     // databaseRetention ago in the past.
@@ -127,10 +128,9 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     if (exportTime.isAfter(minusMinutes(now, 2))) {
       throw new BadRequestException("Invalid export time: must be > 2 minutes ago");
     }
-    if (exportTime.isBefore(now.minusMillis(databaseRetention.getMillis()))) {
+    if (exportTime.isBefore(now.minusMillis(databaseRetention.toMillis()))) {
       throw new BadRequestException(
-          String.format(
-              "Invalid export time: must be < %d days ago", databaseRetention.getStandardDays()));
+          String.format("Invalid export time: must be < %d days ago", databaseRetention.toDays()));
     }
     tlds.forEach(tld -> generateForTld(tld, exportTime));
     ImmutableList<String> filenames =
@@ -238,7 +238,10 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
           String.format(
               NS_FORMAT,
               domainLabel,
-              tld.getDnsNsTtl().orElse(dnsDefaultNsTtl).getStandardSeconds(),
+              tld.getDnsNsTtl()
+                  .map(DateTimeUtils::toJavaDuration)
+                  .orElse(dnsDefaultNsTtl)
+                  .toSeconds(),
               // Load the nameservers at the export time in case they've been renamed or deleted.
               loadAtPointInTime(nameserver, exportTime).getHostName()));
     }
@@ -247,7 +250,10 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
           String.format(
               DS_FORMAT,
               domainLabel,
-              tld.getDnsDsTtl().orElse(dnsDefaultDsTtl).getStandardSeconds(),
+              tld.getDnsDsTtl()
+                  .map(DateTimeUtils::toJavaDuration)
+                  .orElse(dnsDefaultDsTtl)
+                  .toSeconds(),
               dsData.getKeyTag(),
               dsData.getAlgorithm(),
               dsData.getDigestType(),
@@ -278,7 +284,10 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
           String.format(
               A_FORMAT,
               stripTld(host.getHostName(), tldStr),
-              tld.getDnsAPlusAaaaTtl().orElse(dnsDefaultATtl).getStandardSeconds(),
+              tld.getDnsAPlusAaaaTtl()
+                  .map(DateTimeUtils::toJavaDuration)
+                  .orElse(dnsDefaultATtl)
+                  .toSeconds(),
               rrSetClass,
               addr.getHostAddress()));
     }

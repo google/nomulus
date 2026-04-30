@@ -40,12 +40,12 @@ import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
-import org.joda.time.Duration;
 
 /** Metrics Exporter for MoSAPI. */
 public class MosApiMetrics {
@@ -67,7 +67,7 @@ public class MosApiMetrics {
 
   // Lock Constants
   private static final String LOCK_NAME = "MosApiMetricCreation";
-  private static final Duration LOCK_LEASE_TIME = Duration.standardHours(1);
+  private static final Duration LOCK_LEASE_TIME = Duration.ofHours(1);
   // Metric Names
   private static final String METRIC_TLD_STATUS = "tld_status";
   private static final String METRIC_SERVICE_STATUS = "service_status";

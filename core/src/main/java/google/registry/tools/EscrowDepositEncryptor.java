@@ -31,10 +31,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
 
 /** Utility for encrypting an RDE RyDE deposit on the Java 7 NIO file system. */
 final class EscrowDepositEncryptor {
@@ -59,7 +59,7 @@ final class EscrowDepositEncryptor {
       throws IOException, XmlException {
     try (InputStream xmlFileInput = Files.newInputStream(xmlFile);
         BufferedInputStream xmlInput = new BufferedInputStream(xmlFileInput, PEEK_BUFFER_SIZE)) {
-      DateTime watermark = RdeUtils.peekWatermark(xmlInput);
+      Instant watermark = RdeUtils.peekWatermark(xmlInput);
       String name = RdeNamingUtils.makeRydeFilename(tld, watermark, mode, 1, revision);
       Path rydePath = outdir.resolve(name + ".ryde");
       Path sigPath = outdir.resolve(name + ".sig");

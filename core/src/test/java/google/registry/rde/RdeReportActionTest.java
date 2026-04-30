@@ -26,8 +26,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
-import static org.joda.time.Duration.standardDays;
-import static org.joda.time.Duration.standardSeconds;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -58,6 +56,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
@@ -104,9 +104,9 @@ public class RdeReportActionTest {
     action.response = response;
     action.bucket = "tub";
     action.tld = "test";
-    action.interval = standardDays(1);
+    action.interval = Duration.ofDays(1);
     action.reporter = reporter;
-    action.timeout = standardSeconds(30);
+    action.timeout = Duration.ofSeconds(30);
     action.stagingDecryptionKey = new FakeKeyringModule().get().getRdeStagingDecryptionKey();
     action.runner = runner;
     action.prefix = Optional.of("job-name/");
@@ -116,10 +116,13 @@ public class RdeReportActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     registry = createTld("test");
-    persistResource(Cursor.createScoped(RDE_REPORT, DateTime.parse("2006-06-06TZ"), registry));
-    persistResource(Cursor.createScoped(RDE_UPLOAD, DateTime.parse("2006-06-07TZ"), registry));
+    persistResource(
+        Cursor.createScoped(RDE_REPORT, Instant.parse("2006-06-06T00:00:00Z"), registry));
+    persistResource(
+        Cursor.createScoped(RDE_UPLOAD, Instant.parse("2006-06-07T00:00:00Z"), registry));
     gcsUtils.createFromBytes(reportFile, Ghostryde.encode(REPORT_XML.read(), encryptKey));
-    tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 0));
+    tm().transact(
+            () -> RdeRevision.saveRevision("test", Instant.parse("2006-06-06T00:00:00Z"), FULL, 0));
     when(httpUrlConnection.getOutputStream()).thenReturn(connectionOutputStream);
     when(httpUrlConnection.getResponseCode()).thenReturn(SC_OK);
     when(httpUrlConnection.getInputStream()).thenReturn(IIRDEA_GOOD_XML.openBufferedStream());
@@ -133,7 +136,7 @@ public class RdeReportActionTest {
     action.run();
     verify(runner)
         .lockRunAndRollForward(
-            action, Tld.get("lol"), standardSeconds(30), RDE_REPORT, standardDays(1));
+            action, Tld.get("lol"), Duration.ofSeconds(30), RDE_REPORT, Duration.ofDays(1));
     verifyNoMoreInteractions(runner);
   }
 
@@ -142,7 +145,7 @@ public class RdeReportActionTest {
     createAction().runWithLock(loadRdeReportCursor());
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("OK test 2006-06-06T00:00:00.000Z\n");
+    assertThat(response.getPayload()).isEqualTo("OK test 2006-06-06T00:00:00Z\n");
 
     // Verify the HTTP request was correct.
     verify(httpUrlConnection).setRequestMethod("PUT");
@@ -164,7 +167,7 @@ public class RdeReportActionTest {
     action.runWithLock(loadRdeReportCursor());
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("OK test 2006-06-06T00:00:00.000Z\n");
+    assertThat(response.getPayload()).isEqualTo("OK test 2006-06-06T00:00:00Z\n");
 
     // Verify the HTTP request was correct.
     verify(httpUrlConnection).setRequestMethod("PUT");
@@ -204,11 +207,12 @@ public class RdeReportActionTest {
         Ghostryde.encode(
             ByteSource.wrap("BAD DATA".getBytes(StandardCharsets.UTF_8)).read(), encryptKey));
     gcsUtils.createFromBytes(otherReportFile2, Ghostryde.encode(REPORT_XML.read(), encryptKey));
-    tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 1));
+    tm().transact(
+            () -> RdeRevision.saveRevision("test", Instant.parse("2006-06-06T00:00:00Z"), FULL, 1));
     action.runWithLock(loadRdeReportCursor());
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("OK test 2006-06-06T00:00:00.000Z\n");
+    assertThat(response.getPayload()).isEqualTo("OK test 2006-06-06T00:00:00Z\n");
 
     // Verify the HTTP request was correct.
     verify(httpUrlConnection).setRequestMethod("PUT");
@@ -230,7 +234,8 @@ public class RdeReportActionTest {
     BlobId newReport = BlobId.of("tub", "job-name/test_2006-06-06_full_S1_R1-report.xml.ghostryde");
     PGPPublicKey encryptKey = new FakeKeyringModule().get().getRdeStagingEncryptionKey();
     gcsUtils.createFromBytes(newReport, Ghostryde.encode(REPORT_XML.read(), encryptKey));
-    tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 1));
+    tm().transact(
+            () -> RdeRevision.saveRevision("test", Instant.parse("2006-06-06T00:00:00Z"), FULL, 1));
     createAction().runWithLock(loadRdeReportCursor());
     assertThat(response.getStatus()).isEqualTo(200);
   }
@@ -243,22 +248,22 @@ public class RdeReportActionTest {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Waiting on RdeUploadAction for TLD test to send 2006-06-06T00:00:00.000Z report; last"
-                + " upload completion was at 1970-01-01T00:00:00.000Z");
+            "Waiting on RdeUploadAction for TLD test to send 2006-06-06T00:00:00Z report; last"
+                + " upload completion was at 1970-01-01T00:00:00Z");
   }
 
   @Test
   void testRunWithLock_uploadNotFinished_throws204() {
     persistResource(
-        Cursor.createScoped(RDE_UPLOAD, DateTime.parse("2006-06-06TZ"), Tld.get("test")));
+        Cursor.createScoped(RDE_UPLOAD, Instant.parse("2006-06-06T00:00:00Z"), Tld.get("test")));
     NoContentException thrown =
         assertThrows(
             NoContentException.class, () -> createAction().runWithLock(loadRdeReportCursor()));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Waiting on RdeUploadAction for TLD test to send 2006-06-06T00:00:00.000Z report; "
-                + "last upload completion was at 2006-06-06T00:00:00.000Z");
+            "Waiting on RdeUploadAction for TLD test to send 2006-06-06T00:00:00Z report; "
+                + "last upload completion was at 2006-06-06T00:00:00Z");
   }
 
   @Test
@@ -282,7 +287,7 @@ public class RdeReportActionTest {
     assertThat(thrown).hasMessageThat().contains("PUT failed");
   }
 
-  private DateTime loadRdeReportCursor() {
+  private Instant loadRdeReportCursor() {
     return loadByKey(Cursor.createScopedVKey(RDE_REPORT, registry)).getCursorTime();
   }
 

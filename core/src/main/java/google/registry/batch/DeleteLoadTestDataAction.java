@@ -115,7 +115,7 @@ public class DeleteLoadTestDataAction implements Runnable {
     VKey<Host> hostVKey = host.createVKey();
     // We can remove hosts from linked domains, so we should do so then delete the hosts
     ImmutableSet<VKey<Domain>> linkedDomains =
-        EppResourceUtils.getLinkedDomainKeys(hostVKey, clock.nowUtc(), null);
+        EppResourceUtils.getLinkedDomainKeys(hostVKey, clock.now(), null);
     tm().loadByKeys(linkedDomains)
         .values()
         .forEach(

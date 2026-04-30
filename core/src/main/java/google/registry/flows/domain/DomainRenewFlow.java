@@ -35,6 +35,7 @@ import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verify
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.toDateTime;
+import static java.time.ZoneOffset.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -87,7 +88,6 @@ import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import jakarta.inject.Inject;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.Duration;
@@ -194,7 +194,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     Instant newExpirationTime =
         existingDomain
             .getRegistrationExpirationTime()
-            .atZone(ZoneOffset.UTC)
+            .atZone(UTC)
             .plusYears(years)
             .toInstant(); // Uncapped
     validateRegistrationPeriod(now, newExpirationTime);

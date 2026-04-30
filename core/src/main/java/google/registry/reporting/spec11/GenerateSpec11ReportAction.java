@@ -39,8 +39,8 @@ import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.io.IOException;
-import org.joda.time.Duration;
-import org.joda.time.LocalDate;
+import java.time.Duration;
+import java.time.LocalDate;
 
 /**
  * Invokes the {@code Spec11Pipeline} Beam template via the REST api.
@@ -140,7 +140,7 @@ public class GenerateSpec11ReportAction implements Runnable {
                     jobId,
                     ReportingModule.PARAM_DATE,
                     date.toString()),
-                Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
+                Duration.ofMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
       }
       response.setStatus(SC_OK);
       response.setPayload(String.format("Launched Spec11 pipeline: %s", jobId));

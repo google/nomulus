@@ -30,10 +30,10 @@ import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
-import org.joda.time.Duration;
 
 /**
  * Action for synchronizing the registrars spreadsheet.

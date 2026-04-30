@@ -15,7 +15,7 @@
 package google.registry.reporting.icann;
 
 import com.google.common.collect.ImmutableMap;
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
 
 /** Interface defining the necessary methods to construct ICANN reporting SQL queries. */
 public interface QueryBuilder {
