@@ -16,6 +16,7 @@ package google.registry.reporting.spec11;
 
 import static com.google.common.truth.Truth.assertThat;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static java.time.ZoneOffset.UTC;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.mockito.Mockito.when;
 
@@ -28,14 +29,13 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GenerateSpec11ReportAction}. */
 class GenerateSpec11ReportActionTest extends BeamActionTestBase {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2018-06-11T12:23:56Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2018-06-11T12:23:56Z"));
   private CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
   private CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   private GenerateSpec11ReportAction action;
@@ -49,7 +49,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            clock.nowUtc().toLocalDate(),
+            clock.now().atZone(UTC).toLocalDate(),
             true,
             clock,
             response,
@@ -72,7 +72,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            clock.nowUtc().toLocalDate(),
+            clock.now().atZone(UTC).toLocalDate(),
             true,
             clock,
             response,
@@ -90,10 +90,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             .method(HttpMethod.POST)
             .param("jobId", "jobid")
             .param("date", "2018-06-11")
-            .scheduleTime(
-                clock
-                    .nowUtc()
-                    .plus(Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES))));
+            .scheduleTime(clock.nowUtc().plusMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
   }
 
   @Test
@@ -105,7 +102,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            clock.nowUtc().toLocalDate(),
+            clock.now().atZone(UTC).toLocalDate(),
             false,
             clock,
             response,

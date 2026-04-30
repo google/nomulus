@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static google.registry.util.DateTimeUtils.isAtOrAfter;
+import static google.registry.util.DateTimeUtils.toJodaDuration;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
@@ -36,13 +38,12 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
-import google.registry.util.DateTimeUtils;
 import google.registry.util.EmailMessage;
 import jakarta.inject.Inject;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Duration;
 import java.util.Optional;
-import org.joda.time.Duration;
 
 /** Task that re-locks a previously-Registry-Locked domain after a predetermined period of time. */
 @Action(
@@ -59,8 +60,8 @@ public class RelockDomainAction implements Runnable {
 
   static final int ATTEMPTS_BEFORE_SLOWDOWN = 36; // every ten minutes for six hours then every hour
   static final int FAILURES_BEFORE_EMAIL = 2; // email after three failures, one half hour
-  private static final Duration TEN_MINUTES = Duration.standardMinutes(10);
-  private static final Duration ONE_HOUR = Duration.standardHours(1);
+  private static final Duration TEN_MINUTES = Duration.ofMinutes(10);
+  private static final Duration ONE_HOUR = Duration.ofHours(1);
 
   private static final String RELOCK_SUCCESS_EMAIL_TEMPLATE =
       """
@@ -188,7 +189,7 @@ public class RelockDomainAction implements Runnable {
         "Domain %s has a pending delete.",
         domainName);
     checkArgument(
-        !DateTimeUtils.isAtOrAfter(tm().getTxTime(), domain.getDeletionTime()),
+        !isAtOrAfter(tm().getTxTime(), domain.getDeletionTime()),
         "Domain %s has been deleted.",
         domainName);
     checkArgument(
@@ -237,7 +238,8 @@ public class RelockDomainAction implements Runnable {
       }
     }
     Duration timeBeforeRetry = previousAttempts < ATTEMPTS_BEFORE_SLOWDOWN ? TEN_MINUTES : ONE_HOUR;
-    domainLockUtils.enqueueDomainRelock(timeBeforeRetry, oldUnlockRevisionId, previousAttempts + 1);
+    domainLockUtils.enqueueDomainRelock(
+        toJodaDuration(timeBeforeRetry), oldUnlockRevisionId, previousAttempts + 1);
   }
 
   private void sendSuccessEmail(RegistryLock oldLock) {

@@ -103,7 +103,7 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
    * transfers, grace periods).
    *
    * <p>The logic of what might have changed is paraphrased from {@link
-   * DomainBase#cloneProjectedAtTime(DateTime)}.
+   * DomainBase#cloneProjectedAtTime(Instant)}.
    */
   private void fastResaveDomains(Pipeline pipeline) {
     Read<String, String> repoIdRead =

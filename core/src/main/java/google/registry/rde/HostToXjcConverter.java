@@ -29,7 +29,7 @@ import google.registry.xjc.rdehost.XjcRdeHost;
 import google.registry.xjc.rdehost.XjcRdeHostElement;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /** Utility class that turns a {@link Host} resource into {@link XjcRdeHostElement}. */
 final class HostToXjcConverter {
@@ -52,7 +52,7 @@ final class HostToXjcConverter {
         convertHostCommon(
             model,
             superordinateDomain.getCurrentSponsorRegistrarId(),
-            toDateTime(model.computeLastTransferTime(superordinateDomain)));
+            model.computeLastTransferTime(superordinateDomain));
     if (superordinateDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       bean.getStatuses().add(convertStatusValue(StatusValue.PENDING_TRANSFER));
     }
@@ -62,13 +62,11 @@ final class HostToXjcConverter {
   /** Converts {@link Host} to {@link XjcRdeHost}. */
   static XjcRdeHost convertExternalHost(Host model) {
     return convertHostCommon(
-        model,
-        model.getPersistedCurrentSponsorRegistrarId(),
-        toDateTime(model.getLastTransferTime()));
+        model, model.getPersistedCurrentSponsorRegistrarId(), model.getLastTransferTime());
   }
 
   private static XjcRdeHost convertHostCommon(
-      Host model, String registrarId, DateTime lastTransferTime) {
+      Host model, String registrarId, Instant lastTransferTime) {
     XjcRdeHost bean = new XjcRdeHost();
     bean.setName(model.getHostName());
     bean.setRoid(model.getRepoId());
@@ -78,7 +76,7 @@ final class HostToXjcConverter {
     bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateRegistrarId(), null));
     bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));
     bean.setClID(registrarId);
-    bean.setTrDate(lastTransferTime);
+    bean.setTrDate(toDateTime(lastTransferTime));
     for (StatusValue status : model.getStatusValues()) {
       // TODO(b/34844887): Remove when PENDING_TRANSFER is not persisted on host resources.
       if (status.equals(StatusValue.PENDING_TRANSFER)) {

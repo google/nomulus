@@ -19,7 +19,7 @@ This document outlines foundational mandates, architectural patterns, and projec
 - **CRITICAL MISTAKES TO AVOID:**
     - NEVER use `toInstant(clock.nowUtc())` or `toInstant(fakeClock.nowUtc())`. Both `Clock` and `FakeClock` have a `now()` method that natively returns a `java.time.Instant`. You MUST use `clock.now()` or `fakeClock.now()` directly.
     - NEVER double-wrap conversions like `toInstant(toDateTime(...))` or `toDateTime(toInstant(...))`.
-    - NEVER mark `Instant` parameters or local variables as `final` unnecessarily, as it clutters the codebase.
+    - NEVER mark method parameters or local variables as `final` unnecessarily, as it clutters the codebase. For class fields and constants, use `final` where applicable (i.e. when the field is assigned once and never mutated) to enforce and communicate immutability.
     - When using test helpers like `assertThatCommand().atTime(...)` or `ForeignKeyUtils.loadResource(...)`, ALWAYS use the `Instant` overloads. DO NOT wrap `Instant` instances in `toDateTime(...)` just to pass them to deprecated overloads.
 - **UTC Timezones:** Do not use `ZoneId.of("UTC")`. Use a statically imported `UTC` from `ZoneOffset` instead (`import static java.time.ZoneOffset.UTC;`).
 - **Millisecond Precision:** Always truncate `Instant.now()` to milliseconds (using `.truncatedTo(ChronoUnit.MILLIS)`) to maintain consistency with Joda `DateTime` and the PostgreSQL schema (which enforces millisecond precision via JPA converters).
@@ -77,6 +77,7 @@ Based on historical PR reviews, avoid the following common mistakes:
 - **Immutable Types:** Declare variables, fields, and return types explicitly as Guava immutable types (e.g., `ImmutableList<T>`, `ImmutableMap<K, V>`) instead of their generic interfaces (`List<T>`, `Map<K, V>`) to clearly communicate immutability contracts to callers. Use `toImmutableList()` and `toImmutableMap()` collectors in streams rather than manually accumulating into an `ArrayList` or `HashMap`.
 - **Constructors:** Do not perform heavy logic, I/O, or external API calls inside constructors. Initialization logic should be deferred or handled in a factory method or a dedicated startup routine.
 - **Exception Handling:** Do not catch generic `Exception` or `Throwable` if a more specific exception is expected. Never "log and re-throw" the same exception; either handle it entirely (and log), or throw it up the chain. For batch processes, catch exceptions at the individual item/chunk level so one failure doesn't abort the entire batch.
+- **Optional Assertions:** Prefer Truth's `.hasValue(...)` over `.isEqualTo(Optional.of(...))` for cleaner and more descriptive assertions on `Optional` types.
 - **Fail Fast:** Validate inputs and fail fast (using `Preconditions.checkArgument` or similar) at the highest level possible rather than passing invalid state (like `null`s) deeper into business logic.
 - **Magic Numbers:** Always document magic numbers or hardcoded limits (like `50.0` or `30`) with inline comments explaining the rationale.
 - **Null Safety and Optional:** Prefer using `Optional` for any variable that is expected to potentially be null. For any other variable that can be null but cannot use an `Optional` (e.g., function parameters or return types where `Optional` is not idiomatic), it MUST be annotated with `@Nullable`. Always use the `javax.annotation.Nullable` annotation.
@@ -119,6 +120,7 @@ Before finalizing any PR or declaring a task complete, you MUST perform a thorou
 5. **Diff Scope:** Are there any formatting-only changes in files that I did not functionally modify? If so, revert them. Does the total line count of the diff align with the approved scope (e.g., ~1,000 lines for migrations)?
 6. **Commit Message:** Does the commit message title fit within 50 characters? Does the body encapsulate the entirety of the changes across the diff cleanly and professionally?
 7. **Missing Tests & Coverage:** *Perform a structured check for any new methods or modified behavior.* Did I add a new utility method (like `plusMonths(Instant, int)`) or change core logic? If so, I MUST open the corresponding test file and write tests to cover the new functionality (including edge cases, negative values, and leap years) before considering the task complete. A code review is not thorough if it only checks for compilation. I must actively ensure every new branch of logic has a test.
+8. **Package Lock:** Did I include `console-webapp/package-lock.json` in my diff? If so, I MUST revert it (`git checkout console-webapp/package-lock.json`) unless I explicitly intended to modify NPM dependencies. This file is often modified by the build process and should not be committed accidentally.
 
 Only after actively confirming these checks against your diff are you permitted to finalize the task.
 
@@ -156,20 +158,20 @@ This project treats Error Prone warnings as errors.
 
 ---
 
-# GitHub and Pull Request Protocol
+## GitHub and Pull Request Protocol
 
 This protocol defines the standard for interacting with GitHub repositories and processing Pull Request (PR) feedback.
 
-## 1. Interaction via `gh` CLI
+### 1. Interaction via `gh` CLI
 - **Primary Tool:** ALWAYS use the `gh` CLI for all GitHub-related operations (listing PRs, viewing PR content, checking status, adding comments).
 - **Credential Safety:** Never expose tokens or credentials in shell commands.
 
-## 2. Processing PR Feedback
+### 2. Processing PR Feedback
 - **Systematic Review:** When asked to address PR comments, first fetch all comments using `gh pr view <number> --json reviews,comments`.
 - **Minimal Scope Expansion:** Address comments surgically. If a fix requires changes beyond a few lines or expands the PR's original scope significantly, DO NOT implement it without explicit user approval. Instead, report the issue to the user.
 - **Verification:** After addressing feedback, run the full build (`./gradlew build`) and relevant tests to ensure no regressions were introduced.
 
-## 3. PR Lifecycle Management
+### 3. PR Lifecycle Management
 - **One Commit Per PR:** Ensure all changes are squashed into a single, clean commit. Use `git commit --amend --no-edit` for follow-up fixes.
 - **Clean Workspace:** Always run `git status` and verify the repository state before declaring a task complete.
 - **Package Lock:** The Gradle build automatically modifies `console-webapp/package-lock.json` via the `npmInstallDeps` task. ALWAYS revert this file (`git checkout console-webapp/package-lock.json`) before staging changes or finalizing a commit unless you explicitly modified NPM dependencies.

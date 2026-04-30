@@ -52,11 +52,11 @@ import jakarta.inject.Inject;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
-import org.joda.time.Duration;
 
 /** Utilities for dealing with Cloud Tasks. */
 public class CloudTasksUtils implements Serializable {
@@ -251,7 +251,7 @@ public class CloudTasksUtils implements Serializable {
         method,
         service,
         params,
-        Duration.millis(random.nextInt((int) SECONDS.toMillis(jitterSeconds.get()))));
+        Duration.ofMillis(random.nextInt((int) SECONDS.toMillis(jitterSeconds.get()))));
   }
 
   /**
@@ -302,12 +302,12 @@ public class CloudTasksUtils implements Serializable {
       Action.Service service,
       Multimap<String, String> params,
       Duration delay) {
-    if (delay.isEqual(Duration.ZERO)) {
+    if (delay.isZero()) {
       return createTask(path, method, service, params);
     }
-    checkArgument(delay.isLongerThan(Duration.ZERO), "Negative duration is not supported.");
+    checkArgument(!delay.isNegative(), "Negative duration is not supported.");
     return Task.newBuilder(createTask(path, method, service, params))
-        .setScheduleTime(Timestamps.fromMillis(clock.nowUtc().plus(delay).getMillis()))
+        .setScheduleTime(Timestamps.fromMillis(clock.now().plus(delay).toEpochMilli()))
         .build();
   }
 

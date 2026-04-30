@@ -17,6 +17,7 @@ package google.registry.webdriver;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static java.time.temporal.ChronoUnit.MILLIS;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.console.GlobalRole;
@@ -24,7 +25,6 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.model.registrar.Registrar;
 import google.registry.server.RegistryTestServer;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
@@ -80,10 +80,7 @@ public class ConsoleScreenshotTest {
     server.setRegistrarRoles(ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER));
     Registrar registrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     registrar =
-        registrar
-            .asBuilder()
-            .setLastPocVerificationDate(Instant.now().truncatedTo(ChronoUnit.MILLIS))
-            .build();
+        registrar.asBuilder().setLastPocVerificationDate(Instant.now().truncatedTo(MILLIS)).build();
     persistResource(registrar);
     loadHomePage();
   }

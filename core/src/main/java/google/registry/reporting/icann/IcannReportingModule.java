@@ -28,8 +28,8 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import jakarta.inject.Named;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
 import java.util.Optional;
-import org.joda.time.Duration;
 
 /** Module for dependencies required by ICANN monthly transactions/activity reporting. */
 @Module
@@ -101,7 +101,7 @@ public final class IcannReportingModule {
           .setExecutorService(MoreExecutors.newDirectExecutorService())
           .setDatasetId(icannReportingDataSet)
           .setOverwrite(true)
-          .setPollInterval(Duration.standardSeconds(1))
+          .setPollInterval(Duration.ofSeconds(1))
           .build();
     } catch (Throwable e) {
       throw new RuntimeException("Could not initialize BigqueryConnection!", e);

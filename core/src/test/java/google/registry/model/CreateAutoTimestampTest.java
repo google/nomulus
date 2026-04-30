@@ -67,7 +67,7 @@ public class CreateAutoTimestampTest {
 
   @Test
   void testResavingRespectsOriginalTime() {
-    final Instant oldCreateTime = minusDays(clock.now(), 1);
+    Instant oldCreateTime = minusDays(clock.now(), 1);
     tm().transact(
             () -> {
               CreateAutoTimestampTestObject object = new CreateAutoTimestampTestObject();

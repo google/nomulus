@@ -25,9 +25,9 @@ import static org.mockito.Mockito.when;
 
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
+import java.time.Duration;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +50,7 @@ public class SyncRegistrarsSheetActionTest {
     action = new SyncRegistrarsSheetAction();
     action.response = response;
     action.syncRegistrarsSheet = syncRegistrarsSheet;
-    action.timeout = Duration.standardHours(1);
+    action.timeout = Duration.ofHours(1);
     action.lockHandler = new FakeLockHandler(true);
   }
 

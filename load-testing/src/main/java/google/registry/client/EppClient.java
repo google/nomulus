@@ -15,7 +15,7 @@ package google.registry.client;
 
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
+import static java.time.ZoneOffset.UTC;
 
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
@@ -54,7 +54,6 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -71,6 +70,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /** A simple EPP client that can be used for load testing. */
 @Parameters(separators = " =")
@@ -261,8 +261,7 @@ public class EppClient implements Runnable {
       String outputFolder, ImmutableList<ExecutorService> loggingExecutors) throws IOException {
     return new ChannelInitializer<>() {
 
-      private final ImmutableList<String> inputList =
-          makeInputList(ZonedDateTime.now(ZoneOffset.UTC));
+      private final ImmutableList<String> inputList = makeInputList(ZonedDateTime.now(UTC));
       private final KeyPair key = getKeyPair(keyFileName);
       private final X509Certificate cert = getCertificate(certFileName);
       private final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
@@ -317,7 +316,8 @@ public class EppClient implements Runnable {
 
   @Override
   public void run() {
-    String outputFolder = createOutputFolder(String.format("load-tests/%s", DateTime.now(UTC)));
+    String outputFolder =
+        createOutputFolder(String.format("load-tests/%s", DateTime.now(DateTimeZone.UTC)));
     ImmutableList.Builder<ExecutorService> builder = ImmutableList.builderWithExpectedSize(5);
     for (int i = 0; i < 5; ++i) {
       builder.add(Executors.newSingleThreadExecutor());
@@ -373,8 +373,7 @@ public class EppClient implements Runnable {
             .awaitUninterruptibly(
                 TIMEOUT_SECONDS * 1000
                     - Duration.between(
-                            channel.attr(REQUEST_SENT).get().getFirst(),
-                            ZonedDateTime.now(ZoneOffset.UTC))
+                            channel.attr(REQUEST_SENT).get().getFirst(), ZonedDateTime.now(UTC))
                         .toMillis())) {
           channel.close().syncUninterruptibly();
           killedConnections.add(channelNumber);

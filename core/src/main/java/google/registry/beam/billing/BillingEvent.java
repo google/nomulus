@@ -14,6 +14,7 @@
 
 package google.registry.beam.billing;
 
+import static java.time.ZoneOffset.UTC;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -22,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
@@ -70,7 +70,7 @@ public record BillingEvent(
     String flags) {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withZone(ZoneOffset.UTC);
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withZone(UTC);
 
   private static final Pattern SYNTHETIC_REGEX = Pattern.compile("SYNTHETIC", Pattern.LITERAL);
 
@@ -164,13 +164,10 @@ public record BillingEvent(
   /** Returns the grouping key for this {@code BillingEvent}, to generate the overall invoice. */
   InvoiceGroupingKey getInvoiceGroupingKey() {
     return new InvoiceGroupingKey(
-        ZonedDateTime.ofInstant(billingTime(), ZoneOffset.UTC)
-            .toLocalDate()
-            .withDayOfMonth(1)
-            .toString(),
+        ZonedDateTime.ofInstant(billingTime(), UTC).toLocalDate().withDayOfMonth(1).toString(),
         years() == 0
             ? ""
-            : ZonedDateTime.ofInstant(billingTime(), ZoneOffset.UTC)
+            : ZonedDateTime.ofInstant(billingTime(), UTC)
                 .toLocalDate()
                 .withDayOfMonth(1)
                 .plusYears(years())

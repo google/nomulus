@@ -78,7 +78,7 @@ public final class RefreshDnsAction implements Runnable {
 
   private <T extends EppResource & ForeignKeyedEppResource>
       T loadAndVerifyExistence(Class<T> clazz, String foreignKey) {
-    return ForeignKeyUtils.loadResource(clazz, foreignKey, clock.nowUtc())
+    return ForeignKeyUtils.loadResource(clazz, foreignKey, clock.now())
         .orElseThrow(
             () ->
                 new NotFoundException(

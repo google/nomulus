@@ -40,15 +40,15 @@ import google.registry.beam.spec11.ThreatMatch;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.testing.FakeResponse;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Optional;
-import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PublishSpec11ReportAction}. */
 class PublishSpec11ReportActionTest {
 
-  private final LocalDate date = new LocalDate(2018, 6, 5);
+  private final LocalDate date = LocalDate.of(2018, 6, 5);
 
   private Dataflow dataflow;
   private Projects projects;

@@ -28,7 +28,6 @@ import static google.registry.util.DateTimeUtils.minusHours;
 import static google.registry.util.DateTimeUtils.plusHours;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.Duration.standardMinutes;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -45,7 +44,6 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,14 +57,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class SyncRegistrarsSheetTest {
 
+  private final FakeClock clock = new FakeClock(Instant.parse("2024-01-01T00:00:00Z"));
+
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @Captor private ArgumentCaptor<ImmutableList<ImmutableMap<String, String>>> rowsCaptor;
   @Mock private SheetSynchronizer sheetSynchronizer;
-
-  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
 
   private SyncRegistrarsSheet newSyncRegistrarsSheet() {
     SyncRegistrarsSheet result = new SyncRegistrarsSheet();
@@ -318,7 +316,7 @@ public class SyncRegistrarsSheetTest {
 
     Cursor cursor = loadByKey(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET));
     assertThat(cursor).isNotNull();
-    assertThat(cursor.getCursorTimeInstant()).isGreaterThan(registrarCreationTime);
+    assertThat(cursor.getCursorTime()).isGreaterThan(registrarCreationTime);
   }
 
   @Test

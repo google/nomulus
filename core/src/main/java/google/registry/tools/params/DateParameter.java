@@ -13,7 +13,6 @@
 // limitations under the License.
 
 package google.registry.tools.params;
-
 import static org.joda.time.DateTimeZone.UTC;
 
 import org.joda.time.DateTime;

@@ -39,10 +39,9 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.Retrier;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -51,7 +50,7 @@ public class CloudTasksUtilsTest {
   // Use a LinkedListMultimap to preserve order of the inserted entries for assertion.
   private final LinkedListMultimap<String, String> params = LinkedListMultimap.create();
   private final SerializableCloudTasksClient mockClient = mock(SerializableCloudTasksClient.class);
-  private final FakeClock clock = new FakeClock(DateTime.parse("2021-11-08"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2021-11-08T00:00:00Z"));
   private final CloudTasksUtils cloudTasksUtils =
       new CloudTasksUtils(
           new Retrier(new FakeSleeper(clock), 1),
@@ -78,7 +77,7 @@ public class CloudTasksUtilsTest {
             IllegalArgumentException.class,
             () ->
                 cloudTasksUtils.createTaskWithDelay(
-                    TheAction.class, GET, params, Duration.standardMinutes(-10)));
+                    TheAction.class, GET, params, Duration.ofMinutes(-10)));
     assertThat(thrown).hasMessageThat().isEqualTo("Negative duration is not supported.");
   }
 
@@ -217,8 +216,8 @@ public class CloudTasksUtilsTest {
 
     assertThat(task.getScheduleTime().getSeconds()).isNotEqualTo(0);
     Instant scheduleTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
-    Instant lowerBoundTime = Instant.ofEpochMilli(clock.nowUtc().getMillis());
-    Instant upperBound = Instant.ofEpochMilli(clock.nowUtc().plusSeconds(100).getMillis());
+    Instant lowerBoundTime = Instant.ofEpochMilli(clock.now().toEpochMilli());
+    Instant upperBound = Instant.ofEpochMilli(clock.now().plusSeconds(100).toEpochMilli());
 
     assertThat(scheduleTime.isBefore(lowerBoundTime)).isFalse();
     assertThat(upperBound.isBefore(scheduleTime)).isFalse();
@@ -248,14 +247,13 @@ public class CloudTasksUtilsTest {
   @Test
   void testSuccess_createTasks_withDelay() {
     Task task =
-        cloudTasksUtils.createTaskWithDelay(
-            TheAction.class, GET, params, Duration.standardMinutes(10));
+        cloudTasksUtils.createTaskWithDelay(TheAction.class, GET, params, Duration.ofMinutes(10));
     assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
     assertThat(task.getHttpRequest().getUrl())
         .isEqualTo("https://backend.registry.test/the/path?key1=val1&key2=val2&key1=val3");
     verifyOidcToken(task);
     assertThat(Instant.ofEpochSecond(task.getScheduleTime().getSeconds()))
-        .isEqualTo(Instant.ofEpochMilli(clock.nowUtc().plusMinutes(10).getMillis()));
+        .isEqualTo(Instant.ofEpochMilli(clock.now().plus(Duration.ofMinutes(10)).toEpochMilli()));
   }
 
   @Test

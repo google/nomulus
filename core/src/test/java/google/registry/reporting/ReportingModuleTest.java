@@ -23,10 +23,10 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.FakeClock;
 import google.registry.util.Clock;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
-import org.joda.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +38,7 @@ class ReportingModuleTest {
 
   @BeforeEach
   void beforeEach() {
-    clock = new FakeClock(DateTime.parse("2017-07-01TZ"));
+    clock = new FakeClock(Instant.parse("2017-07-01T00:00:00Z"));
   }
 
   @Test
@@ -50,7 +50,7 @@ class ReportingModuleTest {
   @Test
   void testValidYearMonthParameter_returnsThatMonth() {
     when(req.getParameter("yearMonth")).thenReturn("2017-05");
-    assertThat(ReportingModule.provideYearMonthOptional(req)).hasValue(new YearMonth(2017, 5));
+    assertThat(ReportingModule.provideYearMonthOptional(req)).hasValue(YearMonth.of(2017, 5));
   }
 
   @Test
@@ -66,16 +66,16 @@ class ReportingModuleTest {
 
   @Test
   void testEmptyYearMonth_returnsLastMonth() {
-    assertThat(ReportingModule.provideYearMonth(Optional.empty(), new LocalDate(2017, 1, 6)))
-        .isEqualTo(new YearMonth(2016, 12));
+    assertThat(ReportingModule.provideYearMonth(Optional.empty(), LocalDate.of(2017, 1, 6)))
+        .isEqualTo(YearMonth.of(2016, 12));
   }
 
   @Test
   void testGivenYearMonth_returnsThatMonth() {
     assertThat(
             ReportingModule.provideYearMonth(
-                Optional.of(new YearMonth(2017, 5)), new LocalDate(2017, 7, 6)))
-        .isEqualTo(new YearMonth(2017, 5));
+                Optional.of(YearMonth.of(2017, 5)), LocalDate.of(2017, 7, 6)))
+        .isEqualTo(YearMonth.of(2017, 5));
   }
 
   @Test
@@ -87,7 +87,7 @@ class ReportingModuleTest {
   @Test
   void testValidDateParameter_returnsThatDate() {
     when(req.getParameter("date")).thenReturn("2017-05-13");
-    assertThat(ReportingModule.provideDateOptional(req)).hasValue(new LocalDate(2017, 5, 13));
+    assertThat(ReportingModule.provideDateOptional(req)).hasValue(LocalDate.of(2017, 5, 13));
   }
 
   @Test
@@ -103,13 +103,13 @@ class ReportingModuleTest {
   @Test
   void testEmptyDate_returnsToday() {
     when(req.getParameter("date")).thenReturn(null);
-    assertThat(ReportingModule.provideDate(req, clock)).isEqualTo(new LocalDate(2017, 7, 1));
+    assertThat(ReportingModule.provideDate(req, clock)).isEqualTo(LocalDate.of(2017, 7, 1));
   }
 
   @Test
   void testGivenDate_returnsThatDate() {
     when(req.getParameter("date")).thenReturn("2017-07-02");
-    assertThat(ReportingModule.provideDate(req, clock)).isEqualTo(new LocalDate(2017, 7, 2));
+    assertThat(ReportingModule.provideDate(req, clock)).isEqualTo(LocalDate.of(2017, 7, 2));
   }
 
   @Test

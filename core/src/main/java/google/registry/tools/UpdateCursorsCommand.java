@@ -23,9 +23,9 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Tld;
-import google.registry.tools.params.DateTimeParameter;
+import google.registry.tools.params.InstantParameter;
+import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
 
 /** Modifies {@link Cursor} timestamps used by locking rolling cursor tasks, like in RDE. */
 @Parameters(separators = " =", commandDescription = "Modifies cursor timestamps used by LRC tasks")
@@ -40,9 +40,10 @@ final class UpdateCursorsCommand extends ConfirmingCommand implements Command {
   @Parameter(
       names = "--timestamp",
       description = "The new timestamp to set.",
-      validateWith = DateTimeParameter.class,
+      converter = InstantParameter.class,
+      validateWith = InstantParameter.class,
       required = true)
-  private DateTime newTimestamp;
+  private Instant newTimestamp;
 
   ImmutableList<Cursor> cursorsToUpdate;
 

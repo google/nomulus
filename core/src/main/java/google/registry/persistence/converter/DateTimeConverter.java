@@ -13,7 +13,6 @@
 // limitations under the License.
 
 package google.registry.persistence.converter;
-
 import static org.joda.time.DateTimeZone.UTC;
 
 import jakarta.persistence.AttributeConverter;

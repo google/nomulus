@@ -28,8 +28,8 @@ import google.registry.request.Response;
 import google.registry.testing.FakeClock;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.InternetAddress;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +40,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class BsaRefreshActionTest {
 
-  FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
+  FakeClock fakeClock = new FakeClock(Instant.parse("2023-11-09T02:08:57.880Z"));
 
   @Mock RefreshScheduler scheduler;
 
@@ -66,7 +66,7 @@ public class BsaRefreshActionTest {
             gcsClient,
             bsaReportSender,
             /* transactionBatchSize= */ 5,
-            /* domainCreateTxnCommitTimeLag= */ Duration.millis(1),
+            /* domainCreateTxnCommitTimeLag= */ Duration.ofMillis(1),
             new BsaEmailSender(gmailClient, emailRecipient),
             bsaLock,
             fakeClock,

@@ -65,9 +65,9 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.Lazies;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Set;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -80,7 +80,7 @@ public class PublishDnsUpdatesActionTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("1971-01-01TZ"));
+  private final FakeClock clock = new FakeClock(Instant.parse("1971-01-01T00:00:00Z"));
   private final FakeResponse response = new FakeResponse();
   private final FakeLockHandler lockHandler = new FakeLockHandler(true);
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
@@ -144,14 +144,14 @@ public class PublishDnsUpdatesActionTest {
 
     return new PublishDnsUpdatesAction(
         dnsWriterString,
-        clock.nowUtc().minusHours(1),
-        clock.nowUtc().minusHours(2),
+        clock.now().minus(Duration.ofHours(1)),
+        clock.now().minus(Duration.ofHours(2)),
         lockIndex,
         numPublishLocks,
         domains,
         hosts,
         tld,
-        Duration.standardSeconds(10),
+        Duration.ofSeconds(10),
         "Subj",
         "Body %1$s %2$s %3$s %4$s %5$s",
         "awesomeRegistry",
@@ -188,8 +188,8 @@ public class PublishDnsUpdatesActionTest {
             "correctWriter",
             ActionStatus.SUCCESS,
             1,
-            Duration.standardHours(2),
-            Duration.standardHours(1));
+            Duration.ofHours(2),
+            Duration.ofHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     assertNoDnsRequests();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
@@ -215,8 +215,8 @@ public class PublishDnsUpdatesActionTest {
             "correctWriter",
             ActionStatus.SUCCESS,
             1,
-            Duration.standardHours(2),
-            Duration.standardHours(1));
+            Duration.ofHours(2),
+            Duration.ofHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     assertNoDnsRequests();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
@@ -239,8 +239,7 @@ public class PublishDnsUpdatesActionTest {
     action.run();
 
     verify(mockLockHandler)
-        .executeWithLocks(
-            action, "xn--q9jyb4c", Duration.standardSeconds(10), "DNS updates-lock 2 of 4");
+        .executeWithLocks(action, "xn--q9jyb4c", Duration.ofSeconds(10), "DNS updates-lock 2 of 4");
   }
 
   @Test
@@ -268,8 +267,8 @@ public class PublishDnsUpdatesActionTest {
             "correctWriter",
             ActionStatus.COMMIT_FAILURE,
             5,
-            Duration.standardHours(2),
-            Duration.standardHours(1));
+            Duration.ofHours(2),
+            Duration.ofHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     assertNoDnsRequests();
   }
@@ -294,8 +293,8 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.now().toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.now().minus(Duration.ofHours(2)).toString())
             .param(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
             .param(PARAM_HOSTS, "")
             .header("content-type", "application/x-www-form-urlencoded"),
@@ -305,8 +304,8 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.now().toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.now().minus(Duration.ofHours(2)).toString())
             .param(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c")
             .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
             .header("content-type", "application/x-www-form-urlencoded"));
@@ -333,8 +332,8 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.now().toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.now().minus(Duration.ofHours(2)).toString())
             .param(PARAM_DOMAINS, "example1.xn--q9jyb4c,example2.xn--q9jyb4c")
             .param(PARAM_HOSTS, "")
             .header("content-type", "application/x-www-form-urlencoded"),
@@ -344,8 +343,8 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.now().toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.now().minus(Duration.ofHours(2)).toString())
             .param(PARAM_DOMAINS, "example3.xn--q9jyb4c,example4.xn--q9jyb4c,example5.xn--q9jyb4c")
             .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
             .header("content-type", "application/x-www-form-urlencoded"));
@@ -370,8 +369,8 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.now().toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.now().minus(Duration.ofHours(2)).toString())
             .param(PARAM_DOMAINS, "example1.xn--q9jyb4c")
             .param(PARAM_HOSTS, "")
             .header("content-type", "application/x-www-form-urlencoded"),
@@ -381,8 +380,8 @@ public class PublishDnsUpdatesActionTest {
             .param(PARAM_DNS_WRITER, "correctWriter")
             .param(PARAM_LOCK_INDEX, "1")
             .param(PARAM_NUM_PUBLISH_LOCKS, "1")
-            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.nowUtc().toString())
-            .param(PARAM_REFRESH_REQUEST_TIME, clock.nowUtc().minusHours(2).toString())
+            .param(PARAM_PUBLISH_TASK_ENQUEUED, clock.now().toString())
+            .param(PARAM_REFRESH_REQUEST_TIME, clock.now().minus(Duration.ofHours(2)).toString())
             .param(PARAM_DOMAINS, "")
             .param(PARAM_HOSTS, "ns1.example.xn--q9jyb4c")
             .header("content-type", "application/x-www-form-urlencoded"));
@@ -474,8 +473,8 @@ public class PublishDnsUpdatesActionTest {
             "correctWriter",
             ActionStatus.SUCCESS,
             5,
-            Duration.standardHours(2),
-            Duration.standardHours(1));
+            Duration.ofHours(2),
+            Duration.ofHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     assertNoDnsRequests();
   }
@@ -504,8 +503,8 @@ public class PublishDnsUpdatesActionTest {
             "correctWriter",
             ActionStatus.SUCCESS,
             5,
-            Duration.standardHours(2),
-            Duration.standardHours(1));
+            Duration.ofHours(2),
+            Duration.ofHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     assertNoDnsRequests();
   }
@@ -532,8 +531,8 @@ public class PublishDnsUpdatesActionTest {
             "correctWriter",
             ActionStatus.LOCK_FAILURE,
             5,
-            Duration.standardHours(2),
-            Duration.standardHours(1));
+            Duration.ofHours(2),
+            Duration.ofHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     assertNoDnsRequests();
   }
@@ -558,8 +557,8 @@ public class PublishDnsUpdatesActionTest {
             "correctWriter",
             ActionStatus.BAD_LOCK_INDEX,
             2,
-            Duration.standardHours(2),
-            Duration.standardHours(1));
+            Duration.ofHours(2),
+            Duration.ofHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     assertDomainDnsRequests("example.com");
     assertHostDnsRequests("ns1.example.com");
@@ -586,8 +585,8 @@ public class PublishDnsUpdatesActionTest {
             "correctWriter",
             ActionStatus.BAD_LOCK_INDEX,
             2,
-            Duration.standardHours(2),
-            Duration.standardHours(1));
+            Duration.ofHours(2),
+            Duration.ofHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     assertDomainDnsRequests("example.com");
     assertHostDnsRequests("ns1.example.com");
@@ -610,8 +609,8 @@ public class PublishDnsUpdatesActionTest {
             "wrongWriter",
             ActionStatus.BAD_WRITER,
             5,
-            Duration.standardHours(2),
-            Duration.standardHours(1));
+            Duration.ofHours(2),
+            Duration.ofHours(1));
     verifyNoMoreInteractions(dnsMetrics);
     assertDomainDnsRequests("example.com");
     assertDomainDnsRequests("example2.com");

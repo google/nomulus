@@ -23,6 +23,7 @@ import static google.registry.client.EppClient.LOGGING_REQUEST_COMPLETE;
 import static google.registry.client.EppClient.REQUEST_SENT;
 import static google.registry.client.EppClient.RESPONSE_RECEIVED;
 import static java.nio.file.StandardOpenOption.APPEND;
+import static java.time.ZoneOffset.UTC;
 
 import com.google.common.flogger.FluentLogger;
 import io.netty.buffer.ByteBuf;
@@ -37,7 +38,6 @@ import io.netty.util.concurrent.Promise;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 /** Handler that sends EPP requests and receives EPP responses. */
@@ -75,7 +75,7 @@ public class EppClientHandler extends ChannelDuplexHandler {
 
   @Override
   public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(UTC);
     ctx.channel().attr(REQUEST_SENT).get().add(now);
     ctx.channel().attr(LOGGING_REQUEST_COMPLETE).set(ctx.executor().newPromise());
     super.channelRegistered(ctx);
@@ -93,7 +93,7 @@ public class EppClientHandler extends ChannelDuplexHandler {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(UTC);
     Channel ch = ctx.channel();
     ctx.channel().attr(RESPONSE_RECEIVED).get().add(now);
     if (msg instanceof ByteBuf buffer) {
@@ -118,7 +118,7 @@ public class EppClientHandler extends ChannelDuplexHandler {
 
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(UTC);
     Channel ch = ctx.channel();
     ctx.channel().attr(REQUEST_SENT).get().add(now);
     if (msg instanceof byte[] outputBytes) {

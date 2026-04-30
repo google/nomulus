@@ -14,13 +14,16 @@
 
 package google.registry.bigquery;
 
+import static java.time.ZoneOffset.UTC;
+import static java.time.temporal.ChronoUnit.MICROS;
+
 import com.google.api.services.bigquery.model.JobReference;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.SignStyle;
+import java.time.temporal.ChronoField;
 import java.util.concurrent.TimeUnit;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.DateTimeFormatterBuilder;
-import org.joda.time.format.DateTimeParser;
-import org.joda.time.format.ISODateTimeFormat;
 
 /** Utilities related to Bigquery. */
 public class BigqueryUtils {
@@ -67,47 +70,56 @@ public class BigqueryUtils {
    *
    * <p>The general format definition is "YYYY-MM-DD HH:MM:SS.SSS[ ZZ]", where the fractional
    * seconds portion can have 0-6 decimal places (although we restrict it to 0-3 here since Joda
-   * DateTime only supports up to millisecond precision) and the zone if not specified defaults to
+   * Instant only supports up to millisecond precision) and the zone if not specified defaults to
    * UTC.
    *
    * <p>Although we expect a zone specification of "UTC" when parsing, we don't emit it when
    * printing because in some cases BigQuery does not allow any time zone specification (instead it
    * assumes UTC for whatever input you provide) for input timestamp strings (see b/16380363).
    *
-   * @see <a href="https://cloud.google.com/bigquery/data-types#timestamp-type">
-   *     BigQuery Data Types - TIMESTAMP</a>
+   * @see <a href="https://cloud.google.com/bigquery/data-types#timestamp-type">BigQuery Data Types
+   *     - TIMESTAMP</a>
    */
-  public static final DateTimeFormatter BIGQUERY_TIMESTAMP_FORMAT = new DateTimeFormatterBuilder()
-      .append(ISODateTimeFormat.date())
-      .appendLiteral(' ')
-      .append(
-          // For printing, always print out the milliseconds.
-          ISODateTimeFormat.hourMinuteSecondMillis().getPrinter(),
-          // For parsing, we need a series of parsers to correctly handle the milliseconds.
-          new DateTimeParser[] {
-              // Try to parse the time with milliseconds first, which requires at least one
-              // fractional second digit, and if that fails try to parse without milliseconds.
-              ISODateTimeFormat.hourMinuteSecondMillis().getParser(),
-              ISODateTimeFormat.hourMinuteSecond().getParser()})
-      // Print UTC as the empty string since BigQuery's TIMESTAMP() function does not accept any
-      // time zone specification, but require "UTC" on parsing.  Since we force this formatter to
-      // always use UTC below, the other arguments do not matter.  If b/16380363 ever gets resolved
-      // this could be simplified to appendLiteral(" UTC").
-      .appendTimeZoneOffset("", " UTC", false, 1, 1)
-      .toFormatter()
-      .withZoneUTC();
+  private static final DateTimeFormatter BIGQUERY_TIMESTAMP_PARSER =
+      new DateTimeFormatterBuilder()
+          .appendValue(ChronoField.YEAR, 4, 10, SignStyle.NOT_NEGATIVE)
+          .appendLiteral('-')
+          .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+          .appendLiteral('-')
+          .appendValue(ChronoField.DAY_OF_MONTH, 2)
+          .appendLiteral(' ')
+          .appendPattern("HH:mm:ss")
+          .optionalStart()
+          .appendFraction(ChronoField.MILLI_OF_SECOND, 0, 3, true)
+          .optionalEnd()
+          .appendLiteral(" UTC")
+          .toFormatter()
+          .withZone(UTC);
+
+  private static final DateTimeFormatter BIGQUERY_TIMESTAMP_PRINTER =
+      new DateTimeFormatterBuilder()
+          .appendValue(ChronoField.YEAR, 4, 10, SignStyle.NOT_NEGATIVE)
+          .appendLiteral('-')
+          .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+          .appendLiteral('-')
+          .appendValue(ChronoField.DAY_OF_MONTH, 2)
+          .appendLiteral(' ')
+          .appendPattern("HH:mm:ss")
+          .appendFraction(ChronoField.MILLI_OF_SECOND, 3, 3, true)
+          .toFormatter()
+          .withZone(UTC);
 
   /**
-   * Returns the human-readable string version of the given DateTime, suitable for conversion
-   * within BigQuery from a string literal into a BigQuery timestamp type.
+   * Returns the human-readable string version of the given Instant, suitable for conversion within
+   * BigQuery from a string literal into a BigQuery timestamp type.
    */
-  public static String toBigqueryTimestampString(DateTime dateTime) {
-    return BIGQUERY_TIMESTAMP_FORMAT.print(dateTime);
+  public static String toBigqueryTimestampString(Instant dateTime) {
+    return BIGQUERY_TIMESTAMP_PRINTER.format(dateTime);
   }
 
-  /** Returns the DateTime for a given human-readable string-formatted BigQuery timestamp. */
-  public static DateTime fromBigqueryTimestampString(String timestampString) {
-    return BIGQUERY_TIMESTAMP_FORMAT.parseDateTime(timestampString);
+  /** Returns the Instant for a given human-readable string-formatted BigQuery timestamp. */
+  public static Instant fromBigqueryTimestampString(String timestampString) {
+    return BIGQUERY_TIMESTAMP_PARSER.parse(timestampString, Instant::from);
   }
 
   /**
@@ -123,15 +135,16 @@ public class BigqueryUtils {
   }
 
   /**
-   * Converts a {@link DateTime} into a numeric string that BigQuery understands as a timestamp:
-   * the decimal number of seconds since the epoch, precise up to microseconds.
+   * Converts a time into a numeric string that BigQuery understands as a timestamp: the decimal
+   * number of seconds since the epoch, precise up to microseconds.
    *
-   * <p>Note that since {@code DateTime} only stores milliseconds, the last 3 digits will be zero.
+   * <p>Note that while {@code Instant} supports nanosecond precision, BigQuery only supports
+   * microsecond precision, so the sub-microsecond precision is truncated.
    *
    * @see <a href="https://developers.google.com/bigquery/timestamp">Data Types</a>
    */
-  public static String toBigqueryTimestamp(DateTime dateTime) {
-    return toBigqueryTimestamp(dateTime.getMillis(), TimeUnit.MILLISECONDS);
+  public static String toBigqueryTimestamp(Instant dateTime) {
+    return toBigqueryTimestamp(MICROS.between(Instant.EPOCH, dateTime), TimeUnit.MICROSECONDS);
   }
 
   /**

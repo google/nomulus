@@ -85,7 +85,7 @@ public class DomainToXjcConverterTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final DateTime now = DateTime.parse("2014-01-01T00:00:00Z");
+  private final Instant now = Instant.parse("2014-01-01T00:00:00Z");
   private final FakeClock clock = new FakeClock(now);
 
   @BeforeEach
@@ -207,7 +207,7 @@ public class DomainToXjcConverterTest {
     XjcRdeDeposit deposit = new XjcRdeDeposit();
     deposit.setId("984302");
     deposit.setType(XjcRdeDepositTypeType.FULL);
-    deposit.setWatermark(new DateTime("2012-01-01T04:20:00Z"));
+    deposit.setWatermark(DateTime.parse("2012-01-01T04:20:00Z"));
     XjcRdeMenuType menu = new XjcRdeMenuType();
     menu.setVersion("1.0");
     menu.getObjURIs().add("lol");

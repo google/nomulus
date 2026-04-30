@@ -20,14 +20,13 @@ import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.tld.Tld;
 import google.registry.util.SerializeUtils;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,12 +39,13 @@ public class CursorTest extends EntityTestCase {
 
   @BeforeEach
   void setUp() {
-    fakeClock.setTo(DateTime.parse("2010-10-17TZ"));
+    createTld("tld");
+    fakeClock.setTo(Instant.parse("2010-10-17T00:00:00Z"));
   }
 
   @Test
   void testSerializable() {
-    final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
+    Instant time = Instant.parse("2012-07-12T03:30:00.000Z");
     tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, time)));
     Cursor persisted =
         tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
@@ -54,9 +54,9 @@ public class CursorTest extends EntityTestCase {
 
   @Test
   void testSuccess_persistScopedCursor() {
-    Tld tld = createTld("tld");
+    Tld tld = Tld.get("tld");
     this.fakeClock.advanceOneMilli();
-    final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
+    Instant time = Instant.parse("2012-07-12T03:30:00.000Z");
     Cursor cursor = Cursor.createScoped(RDE_UPLOAD, time, tld);
     tm().transact(() -> tm().put(cursor));
     tm().transact(
@@ -70,7 +70,7 @@ public class CursorTest extends EntityTestCase {
 
   @Test
   void testSuccess_persistGlobalCursor() {
-    final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
+    Instant time = Instant.parse("2012-07-12T03:30:00.000Z");
     Cursor cursor = Cursor.createGlobal(RECURRING_BILLING, time);
     tm().transact(() -> tm().put(cursor));
     assertThat(tm().transact(() -> tm().loadByKey(cursor.createVKey())).getCursorTime())
@@ -79,7 +79,7 @@ public class CursorTest extends EntityTestCase {
 
   @Test
   void testFailure_VKeyWrongScope() {
-    Tld tld = createTld("tld");
+    Tld tld = Tld.get("tld");
     assertThrows(
         IllegalArgumentException.class,
         () -> Cursor.createGlobalVKey(RDE_UPLOAD),
@@ -97,23 +97,21 @@ public class CursorTest extends EntityTestCase {
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
-            () -> Cursor.createScoped(RECURRING_BILLING, START_OF_TIME, null));
+            () -> Cursor.createScoped(RECURRING_BILLING, START_INSTANT, null));
     assertThat(thrown).hasMessageThat().contains("Cursor scope cannot be null");
   }
 
   @Test
   void testFailure_nullCursorType() {
-    createTld("tld");
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
-            () -> Cursor.createScoped(null, START_OF_TIME, Tld.get("tld")));
+            () -> Cursor.createScoped(null, START_INSTANT, Tld.get("tld")));
     assertThat(thrown).hasMessageThat().contains("Cursor type cannot be null");
   }
 
   @Test
   void testFailure_nullTime() {
-    createTld("tld");
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
