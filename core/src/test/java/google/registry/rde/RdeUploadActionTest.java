@@ -26,9 +26,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.GpgSystemCommandExtension.GPG_BINARY;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.Duration.standardDays;
-import static org.joda.time.Duration.standardHours;
-import static org.joda.time.Duration.standardSeconds;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -75,9 +72,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -137,7 +135,7 @@ public class RdeUploadActionTest {
       new FakeKeyringModule().get().getRdeStagingEncryptionKey();
   private final FakeResponse response = new FakeResponse();
   private final EscrowTaskRunner runner = mock(EscrowTaskRunner.class);
-  private final FakeClock clock = new FakeClock(DateTime.parse("2010-10-17TZ"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2010-10-17T00:00:00Z"));
 
   private RdeUploadAction createAction(URI uploadUrl) {
     try (Keyring keyring = new FakeKeyringModule().get()) {
@@ -150,13 +148,13 @@ public class RdeUploadActionTest {
                   "user@ignored",
                   keyring.getRdeSshClientPrivateKey(),
                   keyring.getRdeSshClientPublicKey());
-      action.jschSshSessionFactory = new JSchSshSessionFactory(standardSeconds(3));
+      action.jschSshSessionFactory = new JSchSshSessionFactory(Duration.ofSeconds(3));
       action.response = response;
       action.bucket = "bucket";
-      action.interval = standardDays(1);
-      action.timeout = standardSeconds(23);
+      action.interval = Duration.ofDays(1);
+      action.timeout = Duration.ofSeconds(23);
       action.tld = "tld";
-      action.sftpCooldown = standardSeconds(7);
+      action.sftpCooldown = Duration.ofSeconds(7);
       action.uploadUrl = uploadUrl;
       action.receiverKey = keyring.getRdeReceiverKey();
       action.signingKey = keyring.getRdeSigningKey();
@@ -198,8 +196,8 @@ public class RdeUploadActionTest {
 
     tm().transact(
             () -> {
-              RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), FULL, 0);
-              RdeRevision.saveRevision("tld", DateTime.parse("2010-10-17TZ"), FULL, 0);
+              RdeRevision.saveRevision("lol", Instant.parse("2010-10-17T00:00:00Z"), FULL, 0);
+              RdeRevision.saveRevision("tld", Instant.parse("2010-10-17T00:00:00Z"), FULL, 0);
             });
   }
 
@@ -219,7 +217,11 @@ public class RdeUploadActionTest {
     action.run();
     verify(runner)
         .lockRunAndRollForward(
-            action, Tld.get("lol"), standardSeconds(23), CursorType.RDE_UPLOAD, standardDays(1));
+            action,
+            Tld.get("lol"),
+            Duration.ofSeconds(23),
+            CursorType.RDE_UPLOAD,
+            Duration.ofDays(1));
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
         new TaskMatcher().path(RdeReportAction.PATH).param(RequestParameters.PARAM_TLD, "lol"));
@@ -235,7 +237,11 @@ public class RdeUploadActionTest {
     action.run();
     verify(runner)
         .lockRunAndRollForward(
-            action, Tld.get("lol"), standardSeconds(23), CursorType.RDE_UPLOAD, standardDays(1));
+            action,
+            Tld.get("lol"),
+            Duration.ofSeconds(23),
+            CursorType.RDE_UPLOAD,
+            Duration.ofDays(1));
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
         new TaskMatcher()
@@ -249,15 +255,15 @@ public class RdeUploadActionTest {
   void testRunWithLock_succeedsOnThirdTry() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
-    DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    Instant stagingCursor = Instant.parse("2010-10-18T00:00:00Z");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     RdeUploadAction action = createAction(uploadUrl);
     action.lazyJsch = Lazies.of(createThrowingJSchSpy(action.lazyJsch.get(), 2));
     action.runWithLock(uploadCursor);
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00.000Z\n");
+    assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00Z\n");
     cloudTasksHelper.assertNoTasksEnqueued("rde-upload");
     assertThat(folder.list())
         .asList()
@@ -268,8 +274,8 @@ public class RdeUploadActionTest {
   void testRunWithLock_failsAfterThreeAttempts() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
-    DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    Instant stagingCursor = Instant.parse("2010-10-18T00:00:00Z");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     RdeUploadAction action = createAction(uploadUrl);
     action.lazyJsch = Lazies.of(createThrowingJSchSpy(action.lazyJsch.get(), 3));
@@ -282,8 +288,8 @@ public class RdeUploadActionTest {
   void testRunWithLock_cannotGuessPrefix() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
-    DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    Instant stagingCursor = Instant.parse("2010-10-18T00:00:00Z");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     gcsUtils.delete(GHOSTRYDE_FILE_WITH_PREFIX);
     gcsUtils.delete(LENGTH_FILE_WITH_PREFIX);
@@ -293,7 +299,7 @@ public class RdeUploadActionTest {
         assertThrows(NoContentException.class, () -> action.runWithLock(uploadCursor));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("RDE deposit for TLD tld on 2010-10-17T00:00:00.000Z does not exist");
+        .isEqualTo("RDE deposit for TLD tld on 2010-10-17T00:00:00Z does not exist");
     cloudTasksHelper.assertNoTasksEnqueued("rde-upload");
     assertThat(folder.list()).isEmpty();
   }
@@ -302,8 +308,8 @@ public class RdeUploadActionTest {
   void testRunWithLock_copiesOnGcs_withPrefix() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
-    DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    Instant stagingCursor = Instant.parse("2010-10-18T00:00:00Z");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     RdeUploadAction action = createAction(uploadUrl);
     action.prefix = Optional.of(JOB_PREFIX + "-job-name/");
@@ -313,7 +319,7 @@ public class RdeUploadActionTest {
     action.runWithLock(uploadCursor);
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00.000Z\n");
+    assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00Z\n");
     cloudTasksHelper.assertNoTasksEnqueued("rde-upload");
     // Assert that both files are written to SFTP and GCS, and that the contents are identical.
     String rydeFilename = "tld_2010-10-17_full_S1_R0.ryde";
@@ -331,8 +337,8 @@ public class RdeUploadActionTest {
   void testRunWithLock_copiesOnGcs_withoutPrefix() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
-    DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    Instant stagingCursor = Instant.parse("2010-10-18T00:00:00Z");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     RdeUploadAction action = createAction(uploadUrl);
     gcsUtils.delete(GHOSTRYDE_FILE);
@@ -353,7 +359,7 @@ public class RdeUploadActionTest {
     action.runWithLock(uploadCursor);
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00.000Z\n");
+    assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00Z\n");
     cloudTasksHelper.assertNoTasksEnqueued("rde-upload");
     // Assert that both files are written to SFTP and GCS, and that the contents are identical.
     String rydeFilename = "tld_2010-10-17_full_S1_R0.ryde";
@@ -369,11 +375,12 @@ public class RdeUploadActionTest {
 
   @Test
   void testRunWithLock_resend() throws Exception {
-    tm().transact(() -> RdeRevision.saveRevision("tld", DateTime.parse("2010-10-17TZ"), FULL, 1));
+    tm().transact(
+            () -> RdeRevision.saveRevision("tld", Instant.parse("2010-10-17T00:00:00Z"), FULL, 1));
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
-    DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    Instant stagingCursor = Instant.parse("2010-10-18T00:00:00Z");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     BlobId ghostrydeR1FileWithPrefix =
         BlobId.of("bucket", JOB_PREFIX + "-job-name/tld_2010-10-17_full_S1_R1.xml.ghostryde");
@@ -391,7 +398,7 @@ public class RdeUploadActionTest {
     createAction(uploadUrl).runWithLock(uploadCursor);
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00.000Z\n");
+    assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00Z\n");
     cloudTasksHelper.assertNoTasksEnqueued("rde-upload");
     assertThat(folder.list())
         .asList()
@@ -403,8 +410,8 @@ public class RdeUploadActionTest {
     assumeTrue(hasCommand(GPG_BINARY + " --version"));
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
-    DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    Instant stagingCursor = Instant.parse("2010-10-18T00:00:00Z");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     createAction(uploadUrl).runWithLock(uploadCursor);
     // Only verify signature for SFTP versions, since we check elsewhere that the GCS files are
@@ -425,15 +432,15 @@ public class RdeUploadActionTest {
   void testRunWithLock_nonexistentCursor_throws204() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
     RdeUploadAction action = createAction(uploadUrl);
     NoContentException thrown =
         assertThrows(NoContentException.class, () -> action.runWithLock(uploadCursor));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Waiting on RdeStagingAction for TLD tld to send 2010-10-17T00:00:00.000Z upload; last"
-                + " RDE staging completion was before 1970-01-01T00:00:00.000Z");
+            "Waiting on RdeStagingAction for TLD tld to send 2010-10-17T00:00:00Z upload; last"
+                + " RDE staging completion was before 1970-01-01T00:00:00Z");
     cloudTasksHelper.assertNoTasksEnqueued("rde-upload");
     assertThat(folder.list()).isEmpty();
   }
@@ -441,25 +448,26 @@ public class RdeUploadActionTest {
   @Test
   void testRunWithLock_stagingNotFinished_throws204() {
     URI url = URI.create("sftp://user:password@localhost:32323/");
-    DateTime stagingCursor = DateTime.parse("2010-10-17TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    Instant stagingCursor = Instant.parse("2010-10-17T00:00:00Z");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     NoContentException thrown =
         assertThrows(NoContentException.class, () -> createAction(url).runWithLock(uploadCursor));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Waiting on RdeStagingAction for TLD tld to send 2010-10-17T00:00:00.000Z upload; "
-                + "last RDE staging completion was before 2010-10-17T00:00:00.000Z");
+            "Waiting on RdeStagingAction for TLD tld to send 2010-10-17T00:00:00Z upload; "
+                + "last RDE staging completion was before 2010-10-17T00:00:00Z");
   }
 
   @Test
   void testRunWithLock_sftpCooldownNotPassed_throws204() {
     RdeUploadAction action = createAction(URI.create("sftp://user:password@localhost:32323/"));
-    action.sftpCooldown = standardHours(2);
-    DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
-    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    DateTime sftpCursor = uploadCursor.minusMinutes(97); // Within the 2-hour cooldown period.
+    action.sftpCooldown = Duration.ofHours(2);
+    Instant stagingCursor = Instant.parse("2010-10-18T00:00:00Z");
+    Instant uploadCursor = Instant.parse("2010-10-17T00:00:00Z");
+    Instant sftpCursor =
+        uploadCursor.minus(Duration.ofMinutes(97)); // Within the 2-hour cooldown period.
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     persistResource(Cursor.createScoped(RDE_UPLOAD_SFTP, sftpCursor, Tld.get("tld")));
     NoContentException thrown =
@@ -467,8 +475,8 @@ public class RdeUploadActionTest {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Waiting on 120 minute SFTP cooldown for TLD tld to send 2010-10-17T00:00:00.000Z"
-                + " upload; last upload attempt was at 2010-10-16T22:23:00.000Z (97 minutes"
+            "Waiting on 120 minute SFTP cooldown for TLD tld to send 2010-10-17T00:00:00Z"
+                + " upload; last upload attempt was at 2010-10-16T22:23:00Z (97 minutes"
                 + " ago)");
   }
 

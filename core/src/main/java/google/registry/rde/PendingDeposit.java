@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.apache.beam.sdk.coders.AtomicCoder;
@@ -29,8 +31,6 @@ import org.apache.beam.sdk.coders.BooleanCoder;
 import org.apache.beam.sdk.coders.NullableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.coders.VarIntCoder;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Container representing a single RDE or BRDA XML escrow deposit that needs to be created.
@@ -68,8 +68,8 @@ public record PendingDeposit(
     @Nullable Integer revision)
     implements Serializable {
 
-  public DateTime watermark() {
-    return DateTime.parse(watermarkStr);
+  public Instant watermark() {
+    return Instant.parse(watermarkStr);
   }
 
   public Duration interval() {
@@ -79,14 +79,14 @@ public record PendingDeposit(
   @Serial private static final long serialVersionUID = 3141095605225904433L;
 
   public static PendingDeposit create(
-      String tld, DateTime watermark, RdeMode mode, CursorType cursor, Duration interval) {
+      String tld, Instant watermark, RdeMode mode, CursorType cursor, Duration interval) {
     return new PendingDeposit(
         false, tld, watermark.toString(), mode, cursor, interval.toString(), null, null);
   }
 
   public static PendingDeposit createInManualOperation(
       String tld,
-      DateTime watermark,
+      Instant watermark,
       RdeMode mode,
       String directoryWithTrailingSlash,
       @Nullable Integer revision) {

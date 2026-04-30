@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.NetworkUtils.pickUnusedPort;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
@@ -60,12 +60,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -81,7 +81,7 @@ public class UploadBsaUnavailableDomainsActionTest {
 
   private static final String API_URL = "https://upload.test/bsa";
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2024-02-02T02:02:02Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2024-02-02T02:02:02Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -112,7 +112,7 @@ public class UploadBsaUnavailableDomainsActionTest {
         Tld.get("tld")
             .asBuilder()
             .setReservedLists(reservedList)
-            .setBsaEnrollStartTime(Optional.of(START_OF_TIME))
+            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
             .setTldType(TldType.REAL)
             .build());
     action =

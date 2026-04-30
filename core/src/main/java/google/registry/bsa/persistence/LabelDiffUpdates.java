@@ -37,9 +37,9 @@ import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
+import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
 
 /** Applies the BSA label diffs from the latest BSA download. */
 public final class LabelDiffUpdates {
@@ -60,7 +60,7 @@ public final class LabelDiffUpdates {
       ImmutableList<BlockLabel> labels,
       IdnChecker idnChecker,
       DownloadSchedule schedule,
-      DateTime now) {
+      Instant now) {
     ImmutableList.Builder<UnblockableDomain> nonBlockedDomains = new ImmutableList.Builder<>();
     ImmutableMap<LabelType, ImmutableList<BlockLabel>> labelsByType =
         ImmutableMap.copyOf(
@@ -134,7 +134,7 @@ public final class LabelDiffUpdates {
   }
 
   static ImmutableList<UnblockableDomain> tallyUnblockableDomainsForNewLabels(
-      ImmutableList<BlockLabel> labels, IdnChecker idnChecker, DateTime now) {
+      ImmutableList<BlockLabel> labels, IdnChecker idnChecker, Instant now) {
     ImmutableList.Builder<UnblockableDomain> nonBlockedDomains = new ImmutableList.Builder<>();
 
     for (BlockLabel label : labels) {

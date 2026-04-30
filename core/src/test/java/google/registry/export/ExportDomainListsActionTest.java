@@ -22,7 +22,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -49,6 +48,8 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.FakeClock;
+import google.registry.util.DateTimeUtils;
+import java.time.Instant;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,7 @@ class ExportDomainListsActionTest {
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final ArgumentCaptor<byte[]> bytesExportedToDrive = ArgumentCaptor.forClass(byte[].class);
   private ExportDomainListsAction action;
-  private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2020-02-02T02:02:02Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -192,7 +193,7 @@ class ExportDomainListsActionTest {
     verifyExportedToDrive(
         "brouhaha",
         "registered_domains_tld.txt",
-        "active.tld,\npendingdelete.tld,2020-02-05T02:02:02.000Z\nredemption.tld,");
+        "active.tld,\npendingdelete.tld,2020-02-05T02:02:02Z\nredemption.tld,");
   }
 
   @Test
@@ -261,7 +262,7 @@ class ExportDomainListsActionTest {
         new FeatureFlag()
             .asBuilder()
             .setFeatureName(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, status))
+            .setStatusMap(ImmutableSortedMap.of(DateTimeUtils.START_OF_TIME, status))
             .build());
   }
 }

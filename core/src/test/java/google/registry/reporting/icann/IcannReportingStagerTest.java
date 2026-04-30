@@ -33,19 +33,19 @@ import google.registry.gcs.GcsUtils;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import java.time.Instant;
+import java.time.YearMonth;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import org.joda.time.DateTime;
-import org.joda.time.YearMonth;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingStager}. */
 class IcannReportingStagerTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2026-01-26T21:06:12.284Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2026-01-26T21:06:12.284Z"));
   private BigqueryConnection bigquery = mock(BigqueryConnection.class);
   FakeResponse response = new FakeResponse();
-  private YearMonth yearMonth = new YearMonth(2017, 6);
+  private YearMonth yearMonth = YearMonth.of(2017, 6);
   private String subdir = "icann/monthly/2017-06";
   private GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 

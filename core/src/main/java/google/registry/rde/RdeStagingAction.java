@@ -59,9 +59,10 @@ import google.registry.util.RegistryEnvironment;
 import google.registry.xml.ValidationMode;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Action that kicks off a Dataflow job to stage escrow deposit XML files on GCS for RDE/BRDA for
@@ -237,7 +238,11 @@ public final class RdeStagingAction implements Runnable {
   @Inject @Parameter(RdeModule.PARAM_DIRECTORY) Optional<String> directory;
   @Inject @Parameter(RdeModule.PARAM_MODE) ImmutableSet<String> modeStrings;
   @Inject @Parameter(RequestParameters.PARAM_TLDS) ImmutableSet<String> tlds;
-  @Inject @Parameter(RdeModule.PARAM_WATERMARKS) ImmutableSet<DateTime> watermarks;
+
+  @Inject
+  @Parameter(RdeModule.PARAM_WATERMARKS)
+  ImmutableSet<Instant> watermarks;
+
   @Inject @Parameter(RdeModule.PARAM_REVISION) Optional<Integer> revision;
   @Inject @Parameter(RdeModule.PARAM_LENIENT) boolean lenient;
   @Inject @Key("rdeStagingEncryptionKey") byte[] stagingKeyBytes;
@@ -271,7 +276,7 @@ public final class RdeStagingAction implements Runnable {
                         .setJobName(
                             createJobName(
                                 String.format(
-                                    "rde-%s", watermark.toString("yyyy-MM-dd't'HH-mm-ss'z'")),
+                                    "rde-%s", RdeUtils.RDE_WATERMARK_FORMATTER.format(watermark)),
                                 clock))
                         .setContainerSpecGcsPath(
                             String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
@@ -340,7 +345,7 @@ public final class RdeStagingAction implements Runnable {
         Multimaps.filterValues(
             pendingDepositChecker.getTldsAndWatermarksPendingDepositForRdeAndBrda(),
             pending -> {
-              if (clock.nowUtc().isBefore(pending.watermark().plus(transactionCooldown))) {
+              if (clock.now().isBefore(pending.watermark().plus(transactionCooldown))) {
                 logger.atInfo().log(
                     "Ignoring within %s cooldown: %s", transactionCooldown, pending);
                 return false;
@@ -384,8 +389,8 @@ public final class RdeStagingAction implements Runnable {
     // In theory, BRDA deposits should be on a specific day of the week, but in manual mode, let the
     // user create deposits on other days. But dates should definitely be at the start of the day;
     // otherwise, confusion is likely.
-    for (DateTime watermark : watermarks) {
-      if (!watermark.equals(watermark.withTimeAtStartOfDay())) {
+    for (Instant watermark : watermarks) {
+      if (!watermark.equals(watermark.truncatedTo(ChronoUnit.DAYS))) {
         throw new BadRequestException("Watermarks must be at the start of a day.");
       }
     }
@@ -398,7 +403,7 @@ public final class RdeStagingAction implements Runnable {
         new ImmutableSetMultimap.Builder<>();
 
     for (String tld : tlds) {
-      for (DateTime watermark : watermarks) {
+      for (Instant watermark : watermarks) {
         for (RdeMode mode : modes) {
           pendingsBuilder.put(
               tld,

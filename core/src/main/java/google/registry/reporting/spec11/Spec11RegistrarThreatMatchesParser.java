@@ -15,6 +15,7 @@
 package google.registry.reporting.spec11;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.util.DateTimeUtils.toJodaLocalDate;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.cloud.storage.BlobId;
@@ -31,8 +32,8 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.LocalDate;
 import java.util.Optional;
-import org.joda.time.LocalDate;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -99,7 +100,8 @@ public class Spec11RegistrarThreatMatchesParser {
   }
 
   private BlobId getGcsFilename(LocalDate localDate) {
-    return BlobId.of(reportingBucket, Spec11Pipeline.getSpec11ReportFilePath(localDate));
+    return BlobId.of(
+        reportingBucket, Spec11Pipeline.getSpec11ReportFilePath(toJodaLocalDate(localDate)));
   }
 
   private RegistrarThreatMatches parseRegistrarThreatMatch(String line) throws JSONException {

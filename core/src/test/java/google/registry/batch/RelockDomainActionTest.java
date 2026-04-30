@@ -51,9 +51,9 @@ import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.StringGenerator.Alphabets;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,7 +71,7 @@ public class RelockDomainActionTest {
   private static final String LOCK_EMAIL_ADDRESS = "Marla.Singer.RegistryLock@crr.com";
 
   private final FakeResponse response = new FakeResponse();
-  private final FakeClock clock = new FakeClock(DateTime.parse("2015-05-18T12:34:56Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2015-05-18T12:34:56Z"));
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
   private final DomainLockUtils domainLockUtils =
       new DomainLockUtils(
@@ -130,7 +130,7 @@ public class RelockDomainActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload()).isEqualTo("Re-lock failed: Unknown revision ID 12128675309");
-    assertTaskEnqueued(1, 12128675309L, Duration.standardMinutes(10)); // should retry, transient
+    assertTaskEnqueued(1, 12128675309L, Duration.ofMinutes(10)); // should retry, transient
   }
 
   @Test
@@ -169,7 +169,7 @@ public class RelockDomainActionTest {
 
   @Test
   void testFailure_domainDeleted() throws Exception {
-    persistDomainAsDeleted(domain, clock.nowUtc());
+    persistDomainAsDeleted(domain, clock.now());
     action.run();
     String expectedFailureMessage = "Domain example.tld has been deleted.";
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -248,7 +248,7 @@ public class RelockDomainActionTest {
     assertTaskEnqueued(
         RelockDomainAction.ATTEMPTS_BEFORE_SLOWDOWN + 1,
         oldLock.getRevisionId(),
-        Duration.standardHours(1));
+        Duration.ofHours(1));
   }
 
   private void assertSuccessEmailSent() throws Exception {
@@ -304,7 +304,7 @@ public class RelockDomainActionTest {
   }
 
   private void assertTaskEnqueued(int numAttempts) {
-    assertTaskEnqueued(numAttempts, oldLock.getRevisionId(), Duration.standardMinutes(10));
+    assertTaskEnqueued(numAttempts, oldLock.getRevisionId(), Duration.ofMinutes(10));
   }
 
   private void assertTaskEnqueued(int numAttempts, long oldUnlockRevisionId, Duration duration) {
@@ -317,7 +317,7 @@ public class RelockDomainActionTest {
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(oldUnlockRevisionId))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, String.valueOf(numAttempts))
-            .scheduleTime(clock.nowUtc().plus(duration)));
+            .scheduleTime(clock.nowUtc().plusMillis((int) duration.toMillis())));
   }
 
   private RelockDomainAction createAction(Long oldUnlockRevisionId) throws Exception {

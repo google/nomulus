@@ -34,11 +34,11 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * A lock on some shared resource.
@@ -79,11 +79,11 @@ public class Lock extends ImmutableObject implements Serializable {
 
   /** When the lock can be considered implicitly released. */
   @Column(nullable = false)
-  DateTime expirationTime;
+  Instant expirationTime;
 
   /** When was the lock acquired. Used for logging. */
   @Column(nullable = false)
-  DateTime acquiredTime;
+  Instant acquiredTime;
 
   /** The resource name used to create the lock. */
   @Column(nullable = false)
@@ -95,7 +95,7 @@ public class Lock extends ImmutableObject implements Serializable {
   @Id
   String scope;
 
-  public DateTime getExpirationTime() {
+  public Instant getExpirationTime() {
     return expirationTime;
   }
 
@@ -109,10 +109,7 @@ public class Lock extends ImmutableObject implements Serializable {
    * namespace).
    */
   private static Lock create(
-      String resourceName,
-      String scope,
-      DateTime acquiredTime,
-      Duration leaseLength) {
+      String resourceName, String scope, Instant acquiredTime, Duration leaseLength) {
     checkArgument(!Strings.isNullOrEmpty(resourceName), "resourceName cannot be null or empty");
     Lock instance = new Lock();
     // Add the scope to the Lock's id so that it is unique for locks acquiring the same resource
@@ -130,7 +127,7 @@ public class Lock extends ImmutableObject implements Serializable {
   }
 
   record AcquireResult(
-      DateTime transactionTime,
+      Instant transactionTime,
       @Nullable Lock existingLock,
       @Nullable Lock newLock,
       LockState lockState) {}
@@ -138,7 +135,7 @@ public class Lock extends ImmutableObject implements Serializable {
   private static void logAcquireResult(AcquireResult acquireResult) {
     try {
       Lock lock = acquireResult.existingLock();
-      DateTime now = acquireResult.transactionTime();
+      Instant now = acquireResult.transactionTime();
       switch (acquireResult.lockState()) {
         case IN_USE ->
             logger.atInfo().log(
@@ -170,7 +167,7 @@ public class Lock extends ImmutableObject implements Serializable {
     String scope = tld != null ? tld : GLOBAL;
     Callable<AcquireResult> lockAcquirer =
         () -> {
-          DateTime now = tm().getTransactionTime();
+          Instant now = tm().getTxTime();
 
           // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
           Lock lock =
@@ -233,7 +230,7 @@ public class Lock extends ImmutableObject implements Serializable {
             tm().delete(key);
 
             lockMetrics.recordRelease(
-                resourceName, scope, new Duration(acquiredTime, tm().getTransactionTime()));
+                resourceName, scope, Duration.between(acquiredTime, tm().getTxTime()));
           } else {
             logger.atSevere().log(
                 "The lock we acquired was transferred to someone else before we"

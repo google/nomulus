@@ -194,9 +194,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     } else {
       Instant redemptionTime = now.plusMillis(redemptionGracePeriodLength.getMillis());
       asyncTaskEnqueuer.enqueueAsyncResave(
-          existingDomain.createVKey(),
-          toDateTime(now),
-          ImmutableSortedSet.of(toDateTime(redemptionTime), toDateTime(deletionTime)));
+          existingDomain.createVKey(), now, ImmutableSortedSet.of(redemptionTime, deletionTime));
       builder
           .setDeletionTime(deletionTime)
           .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))

@@ -28,7 +28,8 @@ import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.minusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -49,11 +50,11 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.RegistryEnvironment;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link DeleteProberDataAction}. */
 class DeleteProberDataActionTest {
 
-  private static final DateTime DELETION_TIME = DateTime.parse("2010-01-01T00:00:00.000Z");
+  private static final Instant DELETION_TIME = Instant.parse("2010-01-01T00:00:00.000Z");
 
   private final FakeClock clock = new FakeClock(Instant.parse("2021-01-01T00:00:00Z"));
 
@@ -270,7 +271,7 @@ class DeleteProberDataActionTest {
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.blah.ib-any.test"))
                 .build(),
-            clock.nowUtc().minusYears(1));
+            minusYears(clock.now(), 1));
     action.run();
 
     assertAllExist(ImmutableSet.of(domainWithSubord));
@@ -293,32 +294,32 @@ class DeleteProberDataActionTest {
    * Persists and returns a domain and a descendant history entry, billing event, and poll message.
    */
   private static Set<ImmutableObject> persistDomainAndDescendants(String fqdn) {
-    Domain domain = persistDeletedDomain(fqdn, DELETION_TIME);
+    Domain domain = persistDeletedDomain(fqdn, toDateTime(DELETION_TIME));
     DomainHistory historyEntry =
         persistResource(
             new DomainHistory.Builder()
                 .setDomain(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setRegistrarId("TheRegistrar")
-                .setModificationTime(toInstant(DELETION_TIME.minusYears(3)))
+                .setModificationTime(minusYears(DELETION_TIME, 3))
                 .build());
     BillingEvent billingEvent =
         persistResource(
             new BillingEvent.Builder()
                 .setDomainHistory(historyEntry)
-                .setBillingTime(toInstant(DELETION_TIME.plusYears(1)))
+                .setBillingTime(plusYears(DELETION_TIME, 1))
                 .setCost(Money.parse("USD 10"))
                 .setPeriodYears(1)
                 .setReason(Reason.CREATE)
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(toInstant(DELETION_TIME))
+                .setEventTime(DELETION_TIME)
                 .setTargetId(fqdn)
                 .build());
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setHistoryEntry(historyEntry)
-                .setEventTime(toInstant(DELETION_TIME))
+                .setEventTime(DELETION_TIME)
                 .setRegistrarId("TheRegistrar")
                 .setMsg("Domain registered")
                 .build());
@@ -327,7 +328,7 @@ class DeleteProberDataActionTest {
             GracePeriod.create(
                 ADD,
                 domain.getRepoId(),
-                toInstant(DELETION_TIME.plusDays(5)),
+                DELETION_TIME.plus(Duration.ofDays(5)),
                 "TheRegistrar",
                 billingEvent.createVKey()));
     domain = persistResource(domain.asBuilder().addGracePeriod(gracePeriod).build());

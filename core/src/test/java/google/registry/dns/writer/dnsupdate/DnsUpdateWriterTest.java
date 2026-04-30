@@ -44,10 +44,10 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,7 +83,7 @@ public class DnsUpdateWriterTest {
   @Mock private DnsMessageTransport mockResolver;
   @Captor private ArgumentCaptor<Update> updateCaptor;
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("1971-01-01TZ"));
+  private final FakeClock clock = new FakeClock(Instant.parse("1971-01-01T00:00:00Z"));
 
   private DnsUpdateWriter writer;
 
@@ -92,8 +92,14 @@ public class DnsUpdateWriterTest {
     createTld("tld");
     when(mockResolver.send(any(Update.class))).thenReturn(messageWithResponseCode(Rcode.NOERROR));
 
-    writer = new DnsUpdateWriter(
-        "tld", Duration.ZERO, Duration.ZERO, Duration.ZERO, mockResolver, clock);
+    writer =
+        new DnsUpdateWriter(
+            "tld",
+            java.time.Duration.ZERO,
+            java.time.Duration.ZERO,
+            java.time.Duration.ZERO,
+            mockResolver,
+            clock);
   }
 
   @Test

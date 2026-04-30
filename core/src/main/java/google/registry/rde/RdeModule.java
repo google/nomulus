@@ -17,8 +17,8 @@ package google.registry.rde;
 import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
-import static google.registry.request.RequestParameters.extractRequiredDatetimeParameter;
-import static google.registry.request.RequestParameters.extractSetOfDatetimeParameters;
+import static google.registry.request.RequestParameters.extractRequiredInstantParameter;
+import static google.registry.request.RequestParameters.extractSetOfInstantParameters;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
 
 import com.google.common.collect.ImmutableSet;
@@ -28,8 +28,8 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Dagger module for RDE package. */
 @Module
@@ -49,14 +49,14 @@ public abstract class RdeModule {
 
   @Provides
   @Parameter(PARAM_WATERMARK)
-  static DateTime provideWatermark(HttpServletRequest req) {
-    return extractRequiredDatetimeParameter(req, PARAM_WATERMARK);
+  static Instant provideWatermark(HttpServletRequest req) {
+    return extractRequiredInstantParameter(req, PARAM_WATERMARK);
   }
 
   @Provides
   @Parameter(PARAM_WATERMARKS)
-  static ImmutableSet<DateTime> provideWatermarks(HttpServletRequest req) {
-    return extractSetOfDatetimeParameters(req, PARAM_WATERMARKS);
+  static ImmutableSet<Instant> provideWatermarks(HttpServletRequest req) {
+    return extractSetOfInstantParameters(req, PARAM_WATERMARKS);
   }
 
   @Provides

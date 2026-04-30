@@ -32,10 +32,10 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Random;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -69,8 +69,8 @@ public class RefreshDnsForAllDomainsActionTest {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
-    assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc());
+    assertDomainDnsRequestWithRequestTime("foo.bar", clock.now());
+    assertDomainDnsRequestWithRequestTime("low.bar", clock.now());
   }
 
   @Test
@@ -86,8 +86,8 @@ public class RefreshDnsForAllDomainsActionTest {
             Optional.of(7),
             Optional.empty(),
             new Random());
-    tm().transact(() -> action.refreshBatch(Optional.empty(), Duration.standardMinutes(1000)));
-    tm().transact(() -> action.refreshBatch(Optional.empty(), Duration.standardMinutes(1000)));
+    tm().transact(() -> action.refreshBatch(Optional.empty(), Duration.ofMinutes(1000)));
+    tm().transact(() -> action.refreshBatch(Optional.empty(), Duration.ofMinutes(1000)));
     ImmutableList<DnsRefreshRequest> refreshRequests =
         tm().transact(
                 () ->
@@ -104,7 +104,7 @@ public class RefreshDnsForAllDomainsActionTest {
     persistActiveDomain("foo.bar");
     persistDeletedDomain("deleted.bar", clock.nowUtc().minusYears(1));
     action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
+    assertDomainDnsRequestWithRequestTime("foo.bar", clock.now());
     assertNoDnsRequestsExcept("foo.bar");
   }
 
@@ -123,9 +123,9 @@ public class RefreshDnsForAllDomainsActionTest {
     persistDeletedDomain("deleted3.bar", clock.nowUtc().minusYears(3));
     persistDeletedDomain("deleted5.bar", clock.nowUtc().minusYears(5));
     action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
-    assertDomainDnsRequestWithRequestTime("deleted1.bar", clock.nowUtc());
-    assertDomainDnsRequestWithRequestTime("deleted3.bar", clock.nowUtc());
+    assertDomainDnsRequestWithRequestTime("foo.bar", clock.now());
+    assertDomainDnsRequestWithRequestTime("deleted1.bar", clock.now());
+    assertDomainDnsRequestWithRequestTime("deleted3.bar", clock.now());
 
     assertNoDnsRequestsExcept("foo.bar", "deleted1.bar", "deleted3.bar");
   }
@@ -137,8 +137,8 @@ public class RefreshDnsForAllDomainsActionTest {
     persistActiveDomain("low.bar");
     persistActiveDomain("ignore.baz");
     action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
-    assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc());
+    assertDomainDnsRequestWithRequestTime("foo.bar", clock.now());
+    assertDomainDnsRequestWithRequestTime("low.bar", clock.now());
     assertNoDnsRequestsExcept("foo.bar", "low.bar");
   }
 
@@ -148,6 +148,6 @@ public class RefreshDnsForAllDomainsActionTest {
       persistActiveDomain(String.format("test%s.bar", i));
     }
     action.run();
-    assertDnsRequestsWithRequestTime(clock.nowUtc(), 11);
+    assertDnsRequestsWithRequestTime(clock.now(), 11);
   }
 }

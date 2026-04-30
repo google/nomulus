@@ -15,6 +15,7 @@
 package google.registry.rde;
 
 import static com.google.common.base.Verify.verify;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.flogger.FluentLogger;
@@ -41,9 +42,9 @@ import jakarta.xml.bind.MarshalException;
 import java.io.ByteArrayOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Collection;
 import javax.annotation.concurrent.NotThreadSafe;
-import org.joda.time.DateTime;
 
 /** XML document <i>fragment</i> marshaller for RDE. */
 @NotThreadSafe
@@ -61,7 +62,7 @@ public final class RdeMarshaller implements Serializable {
 
   /** Returns top-portion of XML document. */
   public String makeHeader(
-      String depositId, DateTime watermark, Collection<String> uris, int revision) {
+      String depositId, Instant watermark, Collection<String> uris, int revision) {
     // We can't make JAXB marshal half an element. So we're going to use a kludge where we provide
     // it with the minimum data necessary to marshal a deposit, and then cut it up by manually.
     XjcRdeMenuType menu = new XjcRdeMenuType();
@@ -74,7 +75,7 @@ public final class RdeMarshaller implements Serializable {
     contents.getContents().add(new XjcRdePolicyElement(policy));
     XjcRdeDeposit deposit = new XjcRdeDeposit();
     deposit.setId(depositId);
-    deposit.setWatermark(watermark);
+    deposit.setWatermark(toDateTime(watermark));
     deposit.setType(XjcRdeDepositTypeType.FULL);
     if (revision > 0) {
       deposit.setResend(revision);

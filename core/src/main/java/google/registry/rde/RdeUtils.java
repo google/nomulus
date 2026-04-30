@@ -28,10 +28,9 @@ import google.registry.xml.XmlException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.joda.time.DateTime;
-import org.joda.time.ReadableInstant;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 /** Helper methods for RDE. */
 public final class RdeUtils {
@@ -39,18 +38,17 @@ public final class RdeUtils {
   /** Number of bytes in head of XML deposit that will contain the information we want. */
   private static final int PEEK_SIZE = 2048;
 
+  public static final DateTimeFormatter RDE_WATERMARK_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd't'HH-mm-ss'z'").withZone(ZoneOffset.UTC);
+
   /** Regular expression for extracting creation timestamp from a raw XML deposit. */
   private static final Pattern WATERMARK_PATTERN = Pattern.compile("[<:]watermark>\\s*([^<\\s]+)");
 
-  /** Standard ISO date/time formatter without milliseconds. Used for watermarks. */
-  private static final DateTimeFormatter DATETIME_FORMATTER =
-      ISODateTimeFormat.dateTimeNoMillis().withZoneUTC();
-
   /**
-   * Look at some bytes from {@code xmlInput} to ensure it appears to be a FULL XML deposit and
-   * then use a regular expression to extract the watermark timestamp which is returned.
+   * Look at some bytes from {@code xmlInput} to ensure it appears to be a FULL XML deposit and then
+   * use a regular expression to extract the watermark timestamp which is returned.
    */
-  public static DateTime peekWatermark(BufferedInputStream xmlInput)
+  public static Instant peekWatermark(BufferedInputStream xmlInput)
       throws IOException, XmlException {
     xmlInput.mark(PEEK_SIZE);
     byte[] peek = new byte[PEEK_SIZE];
@@ -70,16 +68,16 @@ public final class RdeUtils {
     if (!watermarkMatcher.find()) {
       throw new XmlException("Could not find RDE watermark in XML");
     }
-    return DATETIME_FORMATTER.parseDateTime(watermarkMatcher.group(1));
+    return Instant.parse(watermarkMatcher.group(1));
   }
 
   /** Find the most recent folder in the given GCS bucket for the given watermark. */
   public static String findMostRecentPrefixForWatermark(
-      DateTime watermark, String bucket, String tld, GcsUtils gcsUtils) throws NoContentException {
+      Instant watermark, String bucket, String tld, GcsUtils gcsUtils) throws NoContentException {
     // The prefix is always in the format of: rde-2022-02-21t00-00-00z-2022-02-21t00-07-33z, where
     // the first datetime is the watermark and the second one is the time when the RDE beam job
     // launched. We search for the latest folder that starts with "rde-[watermark]".
-    String partialPrefix = String.format("rde-%s", watermark.toString("yyyy-MM-dd't'HH-mm-ss'z'"));
+    String partialPrefix = String.format("rde-%s", RDE_WATERMARK_FORMATTER.format(watermark));
     String latestFilenameSuffix = null;
     try {
       latestFilenameSuffix =
@@ -106,8 +104,8 @@ public final class RdeUtils {
    * big-endian byte-array which is then converted to a base32 string without padding that's no
    * longer than 13 chars because {@code 13 = Ceiling[Log[32, 2^64]]}. How lucky!
    */
-  public static String timestampToId(ReadableInstant timestamp) {
-    byte[] bytes = ByteBuffer.allocate(8).putLong(timestamp.getMillis()).array();
+  public static String timestampToId(Instant timestamp) {
+    byte[] bytes = ByteBuffer.allocate(8).putLong(timestamp.toEpochMilli()).array();
     return BaseEncoding.base32().omitPadding().encode(bytes);
   }
 

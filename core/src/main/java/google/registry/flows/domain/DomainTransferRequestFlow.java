@@ -35,7 +35,6 @@ import static google.registry.flows.domain.DomainTransferUtils.createTransferSer
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -284,9 +283,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now, period);
 
     asyncTaskEnqueuer.enqueueAsyncResave(
-        newDomain.createVKey(),
-        toDateTime(now),
-        ImmutableSortedSet.of(toDateTime(automaticTransferTime)));
+        newDomain.createVKey(), now, ImmutableSortedSet.of(automaticTransferTime));
     tm().put(newDomain);
     tm().putAll(serverApproveEntities);
     tm().insertAll(domainHistory, requestPollMessage);
