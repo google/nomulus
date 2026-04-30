@@ -14,7 +14,9 @@
 
 package google.registry.persistence.converter;
 
-import google.registry.util.DateTimeUtils;
+import static google.registry.util.DateTimeUtils.toLocalDate;
+import static google.registry.util.DateTimeUtils.toSqlDate;
+
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import java.sql.Date;
@@ -26,11 +28,11 @@ public class LocalDateConverter implements AttributeConverter<LocalDate, Date> {
 
   @Override
   public Date convertToDatabaseColumn(LocalDate attribute) {
-    return attribute == null ? null : DateTimeUtils.toSqlDate(attribute);
+    return attribute == null ? null : toSqlDate(attribute);
   }
 
   @Override
   public LocalDate convertToEntityAttribute(Date dbData) {
-    return dbData == null ? null : DateTimeUtils.toLocalDate(dbData);
+    return dbData == null ? null : toLocalDate(dbData);
   }
 }

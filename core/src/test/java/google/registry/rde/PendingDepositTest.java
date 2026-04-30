@@ -21,16 +21,16 @@ import static google.registry.util.SafeSerializationUtils.safeDeserialize;
 import static google.registry.util.SerializeUtils.deserialize;
 import static google.registry.util.SerializeUtils.serialize;
 
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PendingDeposit}. */
 public class PendingDepositTest {
-  private final DateTime now = DateTime.parse("2000-01-01TZ");
+  private final Instant now = Instant.parse("2000-01-01T00:00:00Z");
 
   PendingDeposit pendingDeposit =
-      PendingDeposit.create("soy", now, FULL, RDE_STAGING, Duration.standardDays(1));
+      PendingDeposit.create("soy", now, FULL, RDE_STAGING, Duration.ofDays(1));
 
   PendingDeposit manualPendingDeposit =
       PendingDeposit.createInManualOperation("soy", now, FULL, "/", null);

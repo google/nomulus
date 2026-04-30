@@ -89,6 +89,11 @@ public final class FakeClock implements Clock {
     currentTimeMillis.addAndGet(duration.getMillis());
   }
 
+  /** Advances clock by some duration. */
+  public void advanceBy(java.time.Duration duration) {
+    currentTimeMillis.addAndGet(duration.toMillis());
+  }
+
   /** Sets the time to the specified instant. */
   public void setTo(ReadableInstant time) {
     currentTimeMillis.set(time.getMillis());

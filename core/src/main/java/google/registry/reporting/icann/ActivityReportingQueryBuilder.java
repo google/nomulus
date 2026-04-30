@@ -23,10 +23,9 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.util.SqlTemplate;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import org.joda.time.LocalDate;
-import org.joda.time.YearMonth;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 
 /** Utility class that produces SQL queries used to generate activity reports from Bigquery. */
 public final class ActivityReportingQueryBuilder implements QueryBuilder {
@@ -64,9 +63,9 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
   /** Sets the month we're doing activity reporting for, and returns the view query map. */
   @Override
   public ImmutableMap<String, String> getViewQueryMap(YearMonth yearMonth) {
-    LocalDate firstDayOfMonth = yearMonth.toLocalDate(1);
+    LocalDate firstDayOfMonth = yearMonth.atDay(1);
     // The pattern-matching is inclusive, so we subtract 1 day to only report that month's data.
-    LocalDate lastDayOfMonth = yearMonth.toLocalDate(1).plusMonths(1).minusDays(1);
+    LocalDate lastDayOfMonth = yearMonth.atDay(1).plusMonths(1).minusDays(1);
 
     ImmutableMap.Builder<String, String> queriesBuilder = ImmutableMap.builder();
     String operationalRegistrarsQuery;
@@ -81,20 +80,20 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     queriesBuilder.put(getTableName(DNS_COUNTS, yearMonth), dnsCountsQuery);
 
     // Convert reportingMonth into YYYYMMDD format for Bigquery table partition pattern-matching.
-    DateTimeFormatter logTableFormatter = DateTimeFormat.forPattern("yyyyMMdd");
+    DateTimeFormatter logTableFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
     String monthlyLogsQuery =
         SqlTemplate.create(getQueryFromFile(MONTHLY_LOGS + ".sql"))
             .put("PROJECT_ID", projectId)
-            .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(firstDayOfMonth))
-            .put("LAST_DAY_OF_MONTH", logTableFormatter.print(lastDayOfMonth))
+            .put("FIRST_DAY_OF_MONTH", logTableFormatter.format(firstDayOfMonth))
+            .put("LAST_DAY_OF_MONTH", logTableFormatter.format(lastDayOfMonth))
             .build();
     queriesBuilder.put(getTableName(MONTHLY_LOGS, yearMonth), monthlyLogsQuery);
 
     String eppQuery =
         SqlTemplate.create(getQueryFromFile(EPP_METRICS + ".sql"))
             .put("PROJECT_ID", projectId)
-            .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(firstDayOfMonth))
-            .put("LAST_DAY_OF_MONTH", logTableFormatter.print(lastDayOfMonth))
+            .put("FIRST_DAY_OF_MONTH", logTableFormatter.format(firstDayOfMonth))
+            .put("LAST_DAY_OF_MONTH", logTableFormatter.format(lastDayOfMonth))
             .build();
     queriesBuilder.put(getTableName(EPP_METRICS, yearMonth), eppQuery);
 

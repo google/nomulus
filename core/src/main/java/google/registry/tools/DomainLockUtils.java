@@ -19,6 +19,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.toJavaDuration;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -201,7 +202,7 @@ public final class DomainLockUtils {
                 String.valueOf(lockRevisionId),
                 RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM,
                 String.valueOf(previousAttempts)),
-            countdown));
+            toJavaDuration(countdown)));
   }
 
   private RegistryLock verifyAndApplyLock(RegistryLock lock, boolean isAdmin) {

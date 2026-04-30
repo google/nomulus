@@ -18,13 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ActivityReportingQueryBuilder}. */
 class ActivityReportingQueryBuilderTest {
 
-  private final YearMonth yearMonth = new YearMonth(2017, 9);
+  private final YearMonth yearMonth = YearMonth.of(2017, 9);
 
   @SuppressWarnings("NonCanonicalType")
   private ActivityReportingQueryBuilder createQueryBuilder(String datasetName) {

@@ -1299,8 +1299,7 @@ public final class DatabaseHelper {
     assertNoDnsRequestsExcept();
   }
 
-  public static void assertDomainDnsRequestWithRequestTime(
-      String domainName, DateTime requestTime) {
+  public static void assertDomainDnsRequestWithRequestTime(String domainName, Instant requestTime) {
     assertThat(
             tm().transact(
                     () ->
@@ -1312,7 +1311,7 @@ public final class DatabaseHelper {
         .isEqualTo(1);
   }
 
-  public static void assertDnsRequestsWithRequestTime(DateTime requestTime, int numOfDomains) {
+  public static void assertDnsRequestsWithRequestTime(Instant requestTime, int numOfDomains) {
     assertThat(
             tm().transact(
                     () ->

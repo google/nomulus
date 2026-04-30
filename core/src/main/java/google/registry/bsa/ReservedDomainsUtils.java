@@ -20,7 +20,6 @@ import static google.registry.bsa.BsaStringUtils.DOMAIN_JOINER;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.label.ReservedList.loadReservedLists;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
@@ -35,7 +34,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
 
 /**
  * Utility for looking up reserved domain names.
@@ -46,15 +44,6 @@ import org.joda.time.DateTime;
 public final class ReservedDomainsUtils {
 
   private ReservedDomainsUtils() {}
-
-  /**
-   * @deprecated Use {@link #getAllReservedNames(Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static Stream<String> getAllReservedNames(DateTime now) {
-    return getAllReservedNames(toInstant(now));
-  }
 
   public static Stream<String> getAllReservedNames(Instant now) {
     return Tlds.getTldEntitiesOfType(TldType.REAL).stream()
@@ -75,15 +64,6 @@ public final class ReservedDomainsUtils {
   }
 
   /**
-   * @deprecated Use {@link #getAllReservedDomainsInTld(Tld, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  static ImmutableSet<String> getAllReservedDomainsInTld(Tld tld, DateTime now) {
-    return getAllReservedDomainsInTld(tld, toInstant(now));
-  }
-
-  /**
    * Returns true if {@code domain} is a reserved name that can be registered right now (e.g.,
    * during sunrise or with allocation token), therefore unblockable.
    */
@@ -94,14 +74,5 @@ public final class ReservedDomainsUtils {
     return isReserved(
         InternetDomainName.from(domain),
         Objects.equals(tld.getTldState(now), TldState.START_DATE_SUNRISE));
-  }
-
-  /**
-   * @deprecated Use {@link #isReservedDomain(String, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static boolean isReservedDomain(String domain, DateTime now) {
-    return isReservedDomain(domain, toInstant(now));
   }
 }

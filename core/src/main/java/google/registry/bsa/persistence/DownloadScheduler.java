@@ -20,7 +20,6 @@ import static google.registry.bsa.DownloadStage.DONE;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.bsa.persistence.RefreshScheduler.fetchMostRecentRefresh;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.Duration.standardSeconds;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -28,9 +27,9 @@ import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
-import org.joda.time.Duration;
 
 /**
  * Assigns work for each cron invocation of the BSA Download job.
@@ -57,7 +56,7 @@ import org.joda.time.Duration;
 public final class DownloadScheduler {
 
   /** Allows a new download to proceed if the cron job fires a little early due to NTP drift. */
-  private static final Duration CRON_JITTER = standardSeconds(5);
+  private static final Duration CRON_JITTER = Duration.ofSeconds(5);
 
   private final Duration downloadInterval;
   private final Duration maxNopInterval;
@@ -117,8 +116,8 @@ public final class DownloadScheduler {
   private boolean isTimeAgain(BsaDownload mostRecent, Duration interval) {
     return mostRecent
         .getCreationTime()
-        .plusMillis(interval.getMillis())
-        .minusMillis(CRON_JITTER.getMillis())
+        .plusMillis(interval.toMillis())
+        .minusMillis(CRON_JITTER.toMillis())
         .isBefore(clock.now());
   }
 

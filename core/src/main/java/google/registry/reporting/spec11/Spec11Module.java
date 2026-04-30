@@ -14,6 +14,7 @@
 
 package google.registry.reporting.spec11;
 
+import static google.registry.util.DateTimeUtils.toJodaLocalDate;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import dagger.Module;
@@ -22,7 +23,7 @@ import google.registry.beam.spec11.Spec11Pipeline;
 import jakarta.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
-import org.joda.time.LocalDate;
+import java.time.LocalDate;
 
 /** Module for dependencies required by Spec11 reporting. */
 @Module
@@ -31,7 +32,7 @@ public class Spec11Module {
   @Provides
   @Spec11ReportFilePath
   static String provideSpec11ReportFilePath(LocalDate localDate) {
-    return Spec11Pipeline.getSpec11ReportFilePath(localDate);
+    return Spec11Pipeline.getSpec11ReportFilePath(toJodaLocalDate(localDate));
   }
 
   /** Dagger qualifier for the subdirectory we stage to/upload from for Spec11 reports. */

@@ -88,14 +88,14 @@ public class BsaValidateAction implements Runnable {
       IdnChecker idnChecker,
       BsaEmailSender emailSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
-      @Config("bsaValidationMaxStaleness") org.joda.time.Duration maxStaleness,
+      @Config("bsaValidationMaxStaleness") Duration maxStaleness,
       Clock clock,
       Response response) {
     this.gcsClient = gcsClient;
     this.idnChecker = idnChecker;
     this.emailSender = emailSender;
     this.transactionBatchSize = transactionBatchSize;
-    this.maxStaleness = Duration.ofMillis(maxStaleness.getMillis());
+    this.maxStaleness = maxStaleness;
     this.clock = clock;
     this.response = response;
   }

@@ -16,6 +16,8 @@ package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.io.ByteStreams;
 import google.registry.util.ImprovedInputStream;
@@ -24,9 +26,9 @@ import google.registry.util.PosixTarHeader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.WillNotClose;
-import org.joda.time.DateTime;
 
 /** Single-file POSIX tar archive creator that wraps an {@link OutputStream}. */
 final class RydeTar {
@@ -41,18 +43,19 @@ final class RydeTar {
    */
   @CheckReturnValue
   static ImprovedOutputStream openTarWriter(
-      @WillNotClose OutputStream os, long expectedSize, String filename, DateTime modified) {
+      @WillNotClose OutputStream os, long expectedSize, String filename, Instant modified) {
 
     checkArgument(expectedSize >= 0);
     checkArgument(filename.endsWith(".xml"),
         "Ryde expects tar archive to contain a filename with an '.xml' extension.");
     try {
-      os.write(new PosixTarHeader.Builder()
-          .setName(filename)
-          .setSize(expectedSize)
-          .setMtime(modified)
-          .build()
-          .getBytes());
+      os.write(
+          new PosixTarHeader.Builder()
+              .setName(filename)
+              .setSize(expectedSize)
+              .setMtime(toDateTime(modified))
+              .build()
+              .getBytes());
       return new ImprovedOutputStream("RydeTarWriter", os) {
         /** Writes the end of archive marker. */
         @Override
@@ -92,8 +95,8 @@ final class RydeTar {
     }
 
     /** Returns the creation/modification time of the file archived in this TAR. */
-    DateTime getModified() {
-      return header.getMtime();
+    Instant getModified() {
+      return toInstant(header.getMtime());
     }
   }
 

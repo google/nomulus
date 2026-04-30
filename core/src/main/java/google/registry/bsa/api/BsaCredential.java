@@ -31,12 +31,12 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.net.ssl.HttpsURLConnection;
-import org.joda.time.Duration;
-import org.joda.time.Instant;
 
 /**
  * A credential for accessing the BSA API.
@@ -104,7 +104,7 @@ public class BsaCredential {
   }
 
   private void ensureAuthTokenValid() throws IOException, GeneralSecurityException {
-    Instant now = Instant.ofEpochMilli(clock.nowUtc().getMillis());
+    Instant now = clock.now();
     if (authToken != null && lastRefreshTime.plus(authTokenExpiry).isAfter(now)) {
       logger.atInfo().log("AuthToken still valid, reusing.");
       return;

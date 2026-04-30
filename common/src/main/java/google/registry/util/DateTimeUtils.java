@@ -32,6 +32,7 @@ import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
+import org.joda.time.ReadableDuration;
 
 /** Utilities methods and constants related to Joda {@link DateTime} objects. */
 public abstract class DateTimeUtils {
@@ -75,6 +76,10 @@ public abstract class DateTimeUtils {
           .appendPattern("-MM-dd'T'HH:mm:ss.SSS'Z'")
           .toFormatter()
           .withZone(ZoneOffset.UTC);
+
+  /** A formatter that produces lowercase, filename-safe and job-name-safe timestamps. */
+  public static final DateTimeFormatter LOWERCASE_TIMESTAMP_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd't'HH-mm-ss'z'").withZone(ZoneOffset.UTC);
 
   /** Formats an {@link Instant} to an ISO-8601 string. */
   public static String formatInstant(Instant instant) {
@@ -145,6 +150,18 @@ public abstract class DateTimeUtils {
   /** Returns whether the first {@link DateTime} is equal to or earlier than the second. */
   public static boolean isBeforeOrAt(DateTime timeToCheck, DateTime timeToCompareTo) {
     return !timeToCheck.isAfter(timeToCompareTo);
+  }
+
+  /** Converts a Joda-Time Duration to a java.time.Duration. */
+  @Nullable
+  public static java.time.Duration toJavaDuration(@Nullable ReadableDuration duration) {
+    return duration == null ? null : java.time.Duration.ofMillis(duration.getMillis());
+  }
+
+  /** Converts a java.time.Duration to a Joda-Time Duration. */
+  @Nullable
+  public static org.joda.time.Duration toJodaDuration(@Nullable java.time.Duration duration) {
+    return duration == null ? null : org.joda.time.Duration.millis(duration.toMillis());
   }
 
   /** Returns whether the first {@link Instant} is equal to or earlier than the second. */
@@ -238,6 +255,16 @@ public abstract class DateTimeUtils {
 
   public static LocalDate toLocalDate(Date date) {
     return new LocalDate(date.getTime(), DateTimeZone.UTC);
+  }
+
+  /** Converts a java.time.LocalDate to a Joda-Time LocalDate. */
+  public static LocalDate toJodaLocalDate(java.time.LocalDate localDate) {
+    return new LocalDate(localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth());
+  }
+
+  /** Converts an Instant to a Joda-Time LocalDate in UTC. */
+  public static LocalDate toJodaLocalDate(Instant instant) {
+    return new LocalDate(instant.toEpochMilli(), DateTimeZone.UTC);
   }
 
   /** Convert a joda {@link DateTime} to a java.time {@link Instant}, null-safe. */

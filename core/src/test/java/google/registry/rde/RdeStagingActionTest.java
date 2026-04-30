@@ -35,10 +35,10 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.FakeClock;
 import java.nio.charset.StandardCharsets;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeConstants;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -64,10 +64,10 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     action.jobRegion = "jobRegion";
     action.rdeBucket = "rde-bucket";
     action.pendingDepositChecker = new PendingDepositChecker();
-    action.pendingDepositChecker.brdaDayOfWeek = DateTimeConstants.TUESDAY;
-    action.pendingDepositChecker.brdaInterval = Duration.standardDays(7);
+    action.pendingDepositChecker.brdaDayOfWeek = DayOfWeek.TUESDAY.getValue();
+    action.pendingDepositChecker.brdaInterval = Duration.ofDays(7);
     action.pendingDepositChecker.clock = clock;
-    action.pendingDepositChecker.rdeInterval = Duration.standardDays(1);
+    action.pendingDepositChecker.rdeInterval = Duration.ofDays(1);
     action.gcsUtils = gcsUtils;
     action.response = response;
     action.transactionCooldown = Duration.ZERO;
@@ -84,7 +84,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testRun_modeInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.modeStrings = ImmutableSet.of("full");
     assertThrows(BadRequestException.class, action::run);
     verifyNoMoreInteractions(dataflow);
@@ -93,7 +93,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testRun_tldInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.tlds = ImmutableSet.of("tld");
     assertThrows(BadRequestException.class, action::run);
     verifyNoMoreInteractions(dataflow);
@@ -102,8 +102,8 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testRun_watermarkInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
-    action.watermarks = ImmutableSet.of(clock.nowUtc());
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
+    action.watermarks = ImmutableSet.of(clock.now());
     assertThrows(BadRequestException.class, action::run);
     verifyNoMoreInteractions(dataflow);
   }
@@ -111,7 +111,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testRun_revisionInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.revision = Optional.of(42);
     assertThrows(BadRequestException.class, action::run);
     verifyNoMoreInteractions(dataflow);
@@ -128,7 +128,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   void testRun_tldWithoutEscrowEnabled_returns204() {
     createTld("lol");
     persistResource(Tld.get("lol").asBuilder().setEscrowEnabled(false).build());
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(204);
     verifyNoMoreInteractions(dataflow);
@@ -137,7 +137,7 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testRun_tldWithEscrowEnabled_launchesPipeline() throws Exception {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("Launched RDE pipeline: jobid");
@@ -148,8 +148,8 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testRun_withinTransactionCooldown_getsExcludedAndReturns204() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01T00:04:59Z"));
-    action.transactionCooldown = Duration.standardMinutes(5);
+    clock.setTo(Instant.parse("2000-01-01T00:04:59Z"));
+    action.transactionCooldown = Duration.ofMinutes(5);
     action.run();
     assertThat(response.getStatus()).isEqualTo(204);
     verifyNoMoreInteractions(dataflow);
@@ -158,8 +158,8 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testRun_afterTransactionCooldown_runsPipeline() throws Exception {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01T00:05:00Z"));
-    action.transactionCooldown = Duration.standardMinutes(5);
+    clock.setTo(Instant.parse("2000-01-01T00:05:00Z"));
+    action.transactionCooldown = Duration.ofMinutes(5);
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("Launched RDE pipeline: jobid");
@@ -170,43 +170,43 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testManualRun_emptyMode_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.manual = true;
     action.directory = Optional.of("test/");
     action.modeStrings = ImmutableSet.of();
     action.tlds = ImmutableSet.of("lol");
-    action.watermarks = ImmutableSet.of(clock.nowUtc());
+    action.watermarks = ImmutableSet.of(clock.now());
     assertThrows(BadRequestException.class, action::run);
   }
 
   @Test
   void testManualRun_invalidMode_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.manual = true;
     action.directory = Optional.of("test/");
     action.modeStrings = ImmutableSet.of("full", "thing");
     action.tlds = ImmutableSet.of("lol");
-    action.watermarks = ImmutableSet.of(clock.nowUtc());
+    action.watermarks = ImmutableSet.of(clock.now());
     assertThrows(BadRequestException.class, action::run);
   }
 
   @Test
   void testManualRun_emptyTld_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.manual = true;
     action.directory = Optional.of("test/");
     action.modeStrings = ImmutableSet.of("full");
     action.tlds = ImmutableSet.of();
-    action.watermarks = ImmutableSet.of(clock.nowUtc());
+    action.watermarks = ImmutableSet.of(clock.now());
     assertThrows(BadRequestException.class, action::run);
   }
 
   @Test
   void testManualRun_emptyWatermark_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.manual = true;
     action.directory = Optional.of("test/");
     action.modeStrings = ImmutableSet.of("full");
@@ -218,24 +218,24 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testManualRun_nonDayStartWatermark_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.manual = true;
     action.directory = Optional.of("test/");
     action.modeStrings = ImmutableSet.of("full");
     action.tlds = ImmutableSet.of("lol");
-    action.watermarks = ImmutableSet.of(DateTime.parse("2001-01-01T01:36:45Z"));
+    action.watermarks = ImmutableSet.of(Instant.parse("2001-01-01T01:36:45Z"));
     assertThrows(BadRequestException.class, action::run);
   }
 
   @Test
   void testManualRun_invalidRevision_throwsException() {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.manual = true;
     action.directory = Optional.of("test/");
     action.modeStrings = ImmutableSet.of("full");
     action.tlds = ImmutableSet.of("lol");
-    action.watermarks = ImmutableSet.of(DateTime.parse("2001-01-01T00:00:00Z"));
+    action.watermarks = ImmutableSet.of(Instant.parse("2001-01-01T00:00:00Z"));
     action.revision = Optional.of(-1);
     assertThrows(BadRequestException.class, action::run);
   }
@@ -243,13 +243,14 @@ public class RdeStagingActionTest extends BeamActionTestBase {
   @Test
   void testManualRun_validParameters_runsPipeline() throws Exception {
     createTldWithEscrowEnabled("lol");
-    clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.manual = true;
     action.directory = Optional.of("test/");
     action.modeStrings = ImmutableSet.of("full");
     action.tlds = ImmutableSet.of("lol");
     action.watermarks =
-        ImmutableSet.of(DateTime.parse("1999-12-31TZ"), DateTime.parse("2001-01-01TZ"));
+        ImmutableSet.of(
+            Instant.parse("1999-12-31T00:00:00Z"), Instant.parse("2001-01-01T00:00:00Z"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("Launched RDE pipeline: jobid, jobid1");

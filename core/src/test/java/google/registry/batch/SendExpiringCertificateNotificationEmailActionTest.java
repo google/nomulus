@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.JpaTransactionManagerExten
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,6 +45,7 @@ import google.registry.testing.FakeResponse;
 import google.registry.util.SelfSignedCaCertificate;
 import jakarta.mail.internet.InternetAddress;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -122,7 +124,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .build());
     persistSampleContacts(registrar, Type.TECH);
     assertThat(
-            action.sendNotificationEmail(registrar, START_OF_TIME, CertificateType.FAILOVER, cert))
+            action.sendNotificationEmail(registrar, START_INSTANT, CertificateType.FAILOVER, cert))
         .isEqualTo(true);
   }
 
@@ -144,7 +146,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .build());
     persistSampleContacts(registrar, Type.ADMIN);
     assertThat(
-            action.sendNotificationEmail(registrar, START_OF_TIME, CertificateType.FAILOVER, cert))
+            action.sendNotificationEmail(registrar, START_INSTANT, CertificateType.FAILOVER, cert))
         .isEqualTo(true);
   }
 
@@ -166,7 +168,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     assertThat(
             action.sendNotificationEmail(
                 registrar,
-                START_OF_TIME,
+                START_INSTANT,
                 CertificateType.FAILOVER,
                 Optional.of(
                     certificateChecker.serializeCertificate(
@@ -190,7 +192,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
         Optional.of(certificateChecker.serializeCertificate(expiringCertificate));
     assertThat(
             action.sendNotificationEmail(
-                sampleRegistrar, START_OF_TIME, CertificateType.FAILOVER, cert))
+                sampleRegistrar, START_INSTANT, CertificateType.FAILOVER, cert))
         .isEqualTo(false);
   }
 
@@ -231,7 +233,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
             RuntimeException.class,
             () ->
                 action.sendNotificationEmail(
-                    registrar, START_OF_TIME, CertificateType.FAILOVER, cert));
+                    registrar, START_INSTANT, CertificateType.FAILOVER, cert));
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -244,7 +246,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
   void sendNotificationEmail_returnsFalse_noCertificate() {
     assertThat(
             action.sendNotificationEmail(
-                sampleRegistrar, START_OF_TIME, CertificateType.FAILOVER, Optional.empty()))
+                sampleRegistrar, START_INSTANT, CertificateType.FAILOVER, Optional.empty()))
         .isEqualTo(false);
   }
 
@@ -338,7 +340,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     Registrar registrar =
         createRegistrar("testClientId", "registrar", expiringCertificate, null).build();
     persistResource(registrar);
-    action.updateLastNotificationSentDate(registrar, clock.nowUtc(), CertificateType.PRIMARY);
+    action.updateLastNotificationSentDate(registrar, clock.now(), CertificateType.PRIMARY);
     assertThat(loadByEntity(registrar).getLastExpiringCertNotificationSentDate())
         .isEqualTo(clock.now());
   }
@@ -354,7 +356,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     Registrar registrar =
         createRegistrar("testClientId", "registrar", null, expiringCertificate).build();
     persistResource(registrar);
-    action.updateLastNotificationSentDate(registrar, clock.nowUtc(), CertificateType.FAILOVER);
+    action.updateLastNotificationSentDate(registrar, clock.now(), CertificateType.FAILOVER);
     assertThat(loadByEntity(registrar).getLastExpiringFailoverCertNotificationSentDate())
         .isEqualTo(clock.now());
   }
@@ -395,7 +397,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
             IllegalArgumentException.class,
             () ->
                 action.updateLastNotificationSentDate(
-                    registrar, clock.nowUtc(), CertificateType.valueOf("randomType")));
+                    registrar, clock.now(), CertificateType.valueOf("randomType")));
     assertThat(thrown).hasMessageThat().contains("No enum constant");
   }
 
@@ -574,15 +576,15 @@ class SendExpiringCertificateNotificationEmailActionTest {
   @Test
   void getEmailBody_returnsEmailBodyText() {
     String registrarName = "good registrar";
-    String certExpirationDateStr = "2021-06-15";
+    String certExpirationDateStr = "2021-06-15T00:00:00Z";
     CertificateType certificateType = CertificateType.PRIMARY;
     String registrarId = "registrarid";
     String emailBody =
         action.getEmailBody(
-            registrarName, certificateType, DateTime.parse(certExpirationDateStr), registrarId);
+            registrarName, certificateType, Instant.parse(certExpirationDateStr), registrarId);
     assertThat(emailBody).contains(registrarName);
     assertThat(emailBody).contains(certificateType.getDisplayName());
-    assertThat(emailBody).contains(certExpirationDateStr);
+    assertThat(emailBody).contains("2021-06-15");
     assertThat(emailBody).contains(registrarId + "@registry.example");
     assertThat(emailBody).doesNotContain("%1$s");
     assertThat(emailBody).doesNotContain("%2$s");
@@ -608,7 +610,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
             IllegalArgumentException.class,
             () ->
                 action.getEmailBody(
-                    "good registrar", null, DateTime.parse("2021-06-15"), "registrarId"));
+                    "good registrar", null, Instant.parse("2021-06-15T00:00:00Z"), "registrarId"));
     assertThat(thrown).hasMessageThat().contains("Certificate type cannot be null");
   }
 
@@ -621,7 +623,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 action.getEmailBody(
                     "good registrar",
                     CertificateType.FAILOVER,
-                    DateTime.parse("2021-06-15"),
+                    Instant.parse("2021-06-15T00:00:00Z"),
                     null));
     assertThat(thrown).hasMessageThat().contains("Registrar Id cannot be null");
   }
