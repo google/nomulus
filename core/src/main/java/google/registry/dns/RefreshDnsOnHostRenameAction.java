@@ -30,7 +30,7 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 @Action(
     service = Action.Service.BACKEND,
@@ -56,7 +56,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
   public void run() {
     tm().transact(
             () -> {
-              DateTime now = tm().getTransactionTime();
+              Instant now = tm().getTxTime();
               Host host = tm().loadByKeyIfPresent(hostKey).orElse(null);
               boolean hostValid = true;
               String failureMessage = null;

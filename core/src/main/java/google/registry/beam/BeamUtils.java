@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import google.registry.rde.RdeUtils;
 import google.registry.util.Clock;
 import java.util.regex.Pattern;
 import org.apache.avro.generic.GenericRecord;
@@ -61,7 +62,7 @@ public class BeamUtils {
     // with a letter and ending with a letter or number. So we replace the "T" and "Z" in ISO 8601
     // with lowercase letters.
     String jobName =
-        String.format("%s-%s", prefix, clock.nowUtc().toString("yyyy-MM-dd't'HH-mm-ss'z'"));
+        String.format("%s-%s", prefix, RdeUtils.RDE_WATERMARK_FORMATTER.format(clock.now()));
     checkArgument(
         Pattern.compile("^[a-z][-a-z0-9]*[a-z0-9]*").matcher(jobName).matches(),
         "The job name %s is illegal, it consists of only characters [-a-z0-9], "

@@ -39,8 +39,8 @@ import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.io.IOException;
-import org.joda.time.Duration;
-import org.joda.time.YearMonth;
+import java.time.Duration;
+import java.time.YearMonth;
 
 /**
  * Invokes the {@code InvoicingPipeline} beam template via the REST api, and enqueues the {@link
@@ -114,7 +114,7 @@ public class GenerateInvoicesAction implements Runnable {
                   String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
               .setParameters(
                   new ImmutableMap.Builder<String, String>()
-                      .put("yearMonth", yearMonth.toString("yyyy-MM"))
+                      .put("yearMonth", yearMonth.toString())
                       .put("invoiceFilePrefix", invoiceFilePrefix)
                       .put("billingBucketUrl", billingBucketUrl)
                       .put("registryEnvironment", RegistryEnvironment.get().name())
@@ -145,7 +145,7 @@ public class GenerateInvoicesAction implements Runnable {
                     jobId,
                     ReportingModule.PARAM_YEAR_MONTH,
                     yearMonth.toString()),
-                Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
+                Duration.ofMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
       }
       response.setStatus(SC_OK);
       response.setPayload(String.format("Launched invoicing pipeline: %s", jobId));

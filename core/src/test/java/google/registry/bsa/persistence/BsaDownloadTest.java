@@ -19,21 +19,20 @@ import static google.registry.bsa.BlockListType.BLOCK;
 import static google.registry.bsa.BlockListType.BLOCK_PLUS;
 import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.bsa.BlockListType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit test for {@link BsaDownload}. */
 public class BsaDownloadTest {
 
-  FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  FakeClock fakeClock = new FakeClock(Instant.parse("2024-01-01T00:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =

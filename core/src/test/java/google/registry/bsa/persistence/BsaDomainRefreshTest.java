@@ -17,19 +17,18 @@ package google.registry.bsa.persistence;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.RefreshStage.CHECK_FOR_CHANGES;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit test for {@link BsaDomainRefresh}. */
 public class BsaDomainRefreshTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  protected FakeClock fakeClock = new FakeClock(Instant.parse("2024-01-01T00:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =

@@ -29,7 +29,7 @@ import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * Checks labels' validity wrt Idns in TLDs enrolled with BSA.
@@ -45,7 +45,7 @@ public class IdnChecker {
 
   @Inject
   IdnChecker(Clock clock) {
-    this.idnToTlds = getIdnToTldMap(clock.nowUtc());
+    this.idnToTlds = getIdnToTldMap(clock.now());
     allTlds = idnToTlds.values().stream().flatMap(ImmutableSet::stream).collect(toImmutableSet());
   }
 
@@ -79,7 +79,7 @@ public class IdnChecker {
     return Sets.difference(allTlds, getSupportingTlds(idnTables)).immutableCopy();
   }
 
-  private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap(DateTime now) {
+  private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap(Instant now) {
     var idnToTldMap = new ImmutableMultimap.Builder<IdnTableEnum, Tld>();
     Tlds.getTldEntitiesOfType(TldType.REAL).stream()
         .filter(tld -> isEnrolledWithBsa(tld, now))

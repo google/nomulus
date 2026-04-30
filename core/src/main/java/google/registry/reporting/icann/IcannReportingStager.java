@@ -38,6 +38,8 @@ import google.registry.gcs.GcsUtils;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,8 +49,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import org.joda.time.YearMonth;
-import org.joda.time.format.DateTimeFormat;
 
 /**
  * Class containing methods for staging ICANN monthly reports on GCS.
@@ -258,7 +258,7 @@ public class IcannReportingStager {
             "%s-%s-%s.csv",
             tld,
             Ascii.toLowerCase(reportType.toString()),
-            DateTimeFormat.forPattern("yyyyMM").print(yearMonth));
+            DateTimeFormatter.ofPattern("yyyyMM").format(yearMonth));
     final BlobId gcsFilename =
         BlobId.of(reportingBucket, String.format("%s/%s", subdir, reportFilename));
     gcsUtils.createFromBytes(gcsFilename, reportBytes);

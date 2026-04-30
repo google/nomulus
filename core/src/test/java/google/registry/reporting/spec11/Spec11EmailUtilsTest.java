@@ -27,7 +27,6 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,11 +45,11 @@ import google.registry.util.EmailMessage;
 import google.registry.util.Sleeper;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import org.joda.time.Duration;
-import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -106,10 +105,10 @@ class Spec11EmailUtilsTest {
 
   @Mock private GmailClient gmailClient;
   @Mock private Sleeper sleeper;
-  private Duration emailThrottleDuration = Duration.millis(1);
+  private Duration emailThrottleDuration = Duration.ofMillis(1);
   private Spec11EmailUtils emailUtils;
   private ArgumentCaptor<EmailMessage> contentCaptor;
-  private final LocalDate date = new LocalDate(2018, 7, 15);
+  private final LocalDate date = LocalDate.of(2018, 7, 15);
 
   private Domain aDomain;
   private Domain bDomain;
@@ -146,7 +145,7 @@ class Spec11EmailUtilsTest {
     // We inspect individual parameters because Message doesn't implement equals().
     verify(gmailClient, times(3)).sendEmail(any(EmailMessage.class));
     // Sleep once between two reports sent in a tight loop. No sleep before the final alert message.
-    verify(sleeper, times(1)).sleep(same(emailThrottleDuration));
+    verify(sleeper, times(1)).sleepInterruptibly(emailThrottleDuration);
   }
 
   @Test

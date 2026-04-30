@@ -20,9 +20,8 @@ import static google.registry.bsa.persistence.BsaTestingUtils.createDownloadSche
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.Duration.standardDays;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -43,11 +42,11 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import java.security.MessageDigest;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,7 +58,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class BsaDownloadFunctionalTest {
 
-  static final DateTime TEST_START_TIME = DateTime.parse("2024-01-01T00:00:00Z");
+  static final Instant TEST_START_TIME = Instant.parse("2024-01-01T00:00:00Z");
   static final String BSA_CSV_HEADER = "domainLabel,orderIDs";
   @Mock BlockListFetcher blockListFetcher;
   @Mock BsaReportSender bsaReportSender;
@@ -83,7 +82,9 @@ class BsaDownloadFunctionalTest {
         .forEach(
             tld ->
                 persistResource(
-                    tld.asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build()));
+                    tld.asBuilder()
+                        .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+                        .build()));
     gcsClient =
         new GcsClient(new GcsUtils(LocalStorageHelper.getOptions()), "my-bucket", "SHA-256");
     response = new FakeResponse();
@@ -96,8 +97,7 @@ class BsaDownloadFunctionalTest {
             gcsClient,
             () -> new IdnChecker(fakeClock),
             bsaEmailSender,
-            new BsaLock(
-                new FakeLockHandler(/* lockSucceeds= */ true), Duration.standardSeconds(30)),
+            new BsaLock(new FakeLockHandler(/* lockSucceeds= */ true), Duration.ofSeconds(30)),
             fakeClock,
             /* transactionBatchSize= */ 5,
             response);
@@ -133,7 +133,7 @@ class BsaDownloadFunctionalTest {
     mockBlockListFetcher(blockList, blockPlusList, blockList2, blockPlusList2);
     action.run();
     assertThat(getPersistedLabels()).containsExactly("abc", "def");
-    fakeClock.advanceBy(standardDays(1));
+    fakeClock.advanceBy(Duration.ofDays(1));
     action.run();
     assertThat(getPersistedLabels()).containsExactly("abc");
   }

@@ -21,9 +21,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.setJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setReplicaJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.DateTimeZone.UTC;
-import static org.joda.time.Duration.millis;
-import static org.joda.time.Duration.standardMinutes;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -35,14 +32,15 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link BsaLabelUtils}. */
 public class BsaLabelUtilsTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  protected FakeClock fakeClock = new FakeClock(Instant.parse("2024-01-01T00:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -90,7 +88,7 @@ public class BsaLabelUtilsTest {
       assertThat(isLabelBlocked("abc")).isTrue();
       // If test fails, check and fix cache expiry in the config file. Do not increase the duration
       // on the line below without proper discussion.
-      fakeClock.advanceBy(standardMinutes(1).plus(millis(1)));
+      fakeClock.advanceBy(Duration.ofMinutes(1).plus(Duration.ofMillis(1)));
       assertThat(isLabelBlocked("abc")).isTrue();
       verify(replicaTm, times(2)).loadByKey(any());
     } catch (Throwable e) {

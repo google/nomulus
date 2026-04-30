@@ -30,7 +30,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateRevokedException;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -51,13 +51,13 @@ class TmchCertificateAuthorityTest {
   public final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2022-11-20T00:00:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2022-11-20T00:00:00Z"));
 
   @Test
   void testFailure_prodRootExpired() {
     TmchCertificateAuthority tmchCertificateAuthority =
         new TmchCertificateAuthority(PRODUCTION, clock);
-    clock.setTo(DateTime.parse("2500-01-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2500-01-01T00:00:00Z"));
     CertificateExpiredException e =
         assertThrows(
             CertificateExpiredException.class, tmchCertificateAuthority::getAndValidateRoot);
@@ -68,7 +68,7 @@ class TmchCertificateAuthorityTest {
   void testFailure_prodRootNotYetValid() {
     TmchCertificateAuthority tmchCertificateAuthority =
         new TmchCertificateAuthority(PRODUCTION, clock);
-    clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     CertificateNotYetValidException e =
         assertThrows(
             CertificateNotYetValidException.class, tmchCertificateAuthority::getAndValidateRoot);

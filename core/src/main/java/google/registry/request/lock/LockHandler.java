@@ -15,9 +15,9 @@
 package google.registry.request.lock;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
-import org.joda.time.Duration;
 
 /**
  * Code execution locked on some shared resource.

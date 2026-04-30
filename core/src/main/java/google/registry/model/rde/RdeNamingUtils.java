@@ -17,37 +17,38 @@ package google.registry.model.rde;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 /** Utility class for generating RDE filenames and string IDs. */
 public final class RdeNamingUtils {
 
-  private static final DateTimeFormatter DATE_FORMATTER = ISODateTimeFormat.date();
+  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
   /**
    * Returns extensionless RDE filename in format {@code <gTLD>_<YYYY-MM-DD>_<type>_S<#>_R<rev>}.
    *
    * <p>This naming scheme is defined in the {@code gTLD_Applicant_Guidebook_full.pdf}.
    */
-  public static
-      String makeRydeFilename(String tld, DateTime date, RdeMode mode, int series, int revision) {
+  public static String makeRydeFilename(
+      String tld, Instant date, RdeMode mode, int series, int revision) {
     checkArgument(series >= 1, "series >= 1");
     checkArgument(revision >= 0, "revision >= 0");
     return String.format("%s_S%d_R%d", makePartialName(tld, date, mode), series, revision);
   }
 
   /** Returns same thing as {@link #makeRydeFilename} except without the series and revision. */
-  public static String makePartialName(String tld, DateTime date, RdeMode mode) {
+  public static String makePartialName(String tld, Instant date, RdeMode mode) {
     return String.format("%s_%s_%s",
         checkNotNull(tld), formatDate(date), mode.getFilenameComponent());
   }
 
   /** Returns date as a hyphened string with ISO-8601 ordering, e.g. {@code 1984-12-18}. */
-  private static String formatDate(DateTime date) {
-    checkArgument(date.withTimeAtStartOfDay().equals(date), "Not midnight: %s", date);
-    return DATE_FORMATTER.print(date);
+  private static String formatDate(Instant date) {
+    checkArgument(date.truncatedTo(ChronoUnit.DAYS).equals(date), "Not midnight: %s", date);
+    return DATE_FORMATTER.withZone(ZoneOffset.UTC).format(date);
   }
 
   private RdeNamingUtils() {}

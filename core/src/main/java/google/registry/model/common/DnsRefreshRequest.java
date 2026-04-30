@@ -16,7 +16,7 @@ package google.registry.model.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import google.registry.dns.DnsUtils.TargetType;
 import google.registry.dns.PublishDnsUpdatesAction;
@@ -31,8 +31,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 @Entity
 @Table(indexes = {@Index(columnList = "requestTime"), @Index(columnList = "lastProcessTime")})
@@ -54,10 +54,10 @@ public class DnsRefreshRequest extends ImmutableObject {
   private String tld;
 
   @Column(nullable = false)
-  private DateTime requestTime;
+  private Instant requestTime;
 
   @Column(nullable = false)
-  private DateTime lastProcessTime;
+  private Instant lastProcessTime;
 
   public TargetType getType() {
     return type;
@@ -71,7 +71,7 @@ public class DnsRefreshRequest extends ImmutableObject {
     return tld;
   }
 
-  public DateTime getRequestTime() {
+  public Instant getRequestTime() {
     return requestTime;
   }
 
@@ -86,7 +86,7 @@ public class DnsRefreshRequest extends ImmutableObject {
    * there are concurrent reads that all attempt to read the rows with oldest {@link #requestTime},
    * or another read that comes too early after the previous read.
    */
-  public DateTime getLastProcessTime() {
+  public Instant getLastProcessTime() {
     return lastProcessTime;
   }
 
@@ -102,8 +102,8 @@ public class DnsRefreshRequest extends ImmutableObject {
       TargetType type,
       String name,
       String tld,
-      DateTime requestTime,
-      DateTime lastProcessTime) {
+      Instant requestTime,
+      Instant lastProcessTime) {
     checkNotNull(type, "Target type cannot be null");
     checkNotNull(name, "Domain/host name cannot be null");
     checkNotNull(tld, "TLD cannot be null");
@@ -119,11 +119,11 @@ public class DnsRefreshRequest extends ImmutableObject {
     this.lastProcessTime = lastProcessTime;
   }
 
-  public DnsRefreshRequest(TargetType type, String name, String tld, DateTime requestTime) {
-    this(null, type, name, tld, requestTime, START_OF_TIME);
+  public DnsRefreshRequest(TargetType type, String name, String tld, Instant requestTime) {
+    this(null, type, name, tld, requestTime, START_INSTANT);
   }
 
-  public DnsRefreshRequest updateProcessTime(DateTime processTime) {
+  public DnsRefreshRequest updateProcessTime(Instant processTime) {
     checkArgument(
         processTime.isAfter(getRequestTime()),
         "Process time %s must be later than request time %s",

@@ -19,7 +19,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyCollection;
@@ -43,11 +43,10 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -56,7 +55,7 @@ import org.mockito.ArgumentCaptor;
 /** Unit tests for {@link DnsRefreshRequestTest}. */
 public class ReadDnsRefreshRequestsActionTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T01:23:45Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2020-02-02T01:23:45Z"));
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
   private final Optional<Integer> jitterSeconds = Optional.of(5);
 
@@ -68,7 +67,7 @@ public class ReadDnsRefreshRequestsActionTest {
       spy(
           new ReadDnsRefreshRequestsAction(
               2,
-              Duration.standardSeconds(10),
+              Duration.ofSeconds(10),
               jitterSeconds,
               "tld",
               clock,
@@ -87,15 +86,21 @@ public class ReadDnsRefreshRequestsActionTest {
             .build());
     requests =
         new ImmutableList.Builder<DnsRefreshRequest>()
-            .add(new DnsRefreshRequest(TargetType.DOMAIN, "domain.tld", "tld", clock.nowUtc()))
+            .add(new DnsRefreshRequest(TargetType.DOMAIN, "domain.tld", "tld", clock.now()))
             .add(
                 new DnsRefreshRequest(
-                    TargetType.HOST, "ns1.domain.tld", "tld", clock.nowUtc().minusMinutes(1)))
+                    TargetType.HOST,
+                    "ns1.domain.tld",
+                    "tld",
+                    clock.now().minus(Duration.ofMinutes(1))))
             .add(
                 new DnsRefreshRequest(
-                    TargetType.DOMAIN, "future.tld", "tld", clock.nowUtc().plusMinutes(1)))
+                    TargetType.DOMAIN,
+                    "future.tld",
+                    "tld",
+                    clock.now().plus(Duration.ofMinutes(1))))
             .build();
-    clock.advanceBy(Duration.standardMinutes(5));
+    clock.advanceBy(Duration.ofMinutes(5));
     persistResources(requests);
     requests = loadAllOf(DnsRefreshRequest.class);
   }
@@ -110,7 +115,7 @@ public class ReadDnsRefreshRequestsActionTest {
 
   @Test
   void testSuccess_runAction_requestTimeInTheFuture() {
-    clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     action.run();
     verify(action, never()).enqueueUpdates(anyInt(), anyInt(), anyCollection());
     verify(action, never()).processRequests(anyCollection());
@@ -176,7 +181,7 @@ public class ReadDnsRefreshRequestsActionTest {
                   (ImmutableList<DnsRefreshRequest>) invocation.callRealMethod();
               // After this function is called once, the loop in run() should top when it checks
               // if the current time is before the request end time.
-              clock.advanceBy(Duration.standardHours(1));
+              clock.advanceBy(Duration.ofHours(1));
               return ans;
             })
         .when(action)
@@ -187,7 +192,7 @@ public class ReadDnsRefreshRequestsActionTest {
     // The third request is left untouched because it is not read;
     ImmutableList<DnsRefreshRequest> remainingRequests = loadAllOf(DnsRefreshRequest.class);
     assertThat(remainingRequests.size()).isEqualTo(1);
-    assertThat(remainingRequests.get(0).getLastProcessTime()).isEqualTo(START_OF_TIME);
+    assertThat(remainingRequests.get(0).getLastProcessTime()).isEqualTo(START_INSTANT);
   }
 
   @Test
@@ -231,8 +236,8 @@ public class ReadDnsRefreshRequestsActionTest {
             .param("dnsWriter", "FooWriter")
             .param("lockIndex", "2")
             .param("numPublishLocks", "3")
-            .param("enqueued", clock.nowUtc().toString())
-            .param("requestTime", clock.nowUtc().minusMinutes(6).toString())
+            .param("enqueued", clock.now().toString())
+            .param("requestTime", clock.now().minus(Duration.ofMinutes(6)).toString())
             .param("domains", "domain.tld,future.tld")
             .param("hosts", "ns1.domain.tld"),
         new TaskMatcher()
@@ -242,18 +247,17 @@ public class ReadDnsRefreshRequestsActionTest {
             .param("dnsWriter", "BarWriter")
             .param("lockIndex", "2")
             .param("numPublishLocks", "3")
-            .param("enqueued", clock.nowUtc().toString())
-            .param("requestTime", clock.nowUtc().minusMinutes(6).toString())
+            .param("enqueued", clock.now().toString())
+            .param("requestTime", clock.now().minus(Duration.ofMinutes(6)).toString())
             .param("domains", "domain.tld,future.tld")
             .param("hosts", "ns1.domain.tld"));
     cloudTasksHelper
         .getTestTasksFor("dns-publish")
         .forEach(
             task -> {
-              DateTime scheduledTime =
-                  new DateTime(task.getScheduleTime().getSeconds() * 1000, DateTimeZone.UTC);
-              assertThat(new Duration(clock.nowUtc(), scheduledTime))
-                  .isAtMost(Duration.standardSeconds(jitterSeconds.get()));
+              Instant scheduledTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
+              assertThat(Duration.between(clock.now(), scheduledTime))
+                  .isAtMost(Duration.ofSeconds(jitterSeconds.get()));
             });
   }
 }
