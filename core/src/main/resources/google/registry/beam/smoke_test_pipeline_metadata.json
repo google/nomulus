@@ -1,0 +1,24 @@
+{
+  "name": "Beam pipeline smoke test",
+  "description": "An Apache Beam pipeline that performs a simple database query.",
+  "parameters": [
+    {
+      "name": "registryEnvironment",
+      "label": "The Registry environment.",
+      "helpText": "The Registry environment.",
+      "is_optional": false,
+      "regexes": [
+        "^SANDBOX|CRASH$"
+      ]
+    },
+    {
+      "name": "isolationOverride",
+      "label": "The desired SQL transaction isolation level.",
+      "helpText": "The desired SQL transaction isolation level.",
+      "is_optional": true,
+      "regexes": [
+        "^[0-9A-Z_]+$"
+      ]
+    }
+  ]
+}

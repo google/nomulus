@@ -1,6 +1,7 @@
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config cloudbuild-release.yaml --substitutions \
-#   TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL] ..
+#   TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL],_TEST_PROJECT=[_TEST_PROJECT] \
+#   ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
@@ -288,6 +289,19 @@ steps:
       echo "Tag format '$TAG_NAME' does not match a known release type. Exiting."
       exit 1
     fi
-timeout: 3600s
+# Run the BEAM smoke test, using the builder and pipeline image just created
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+    - -c
+    - |
+      set -e
+      if [[ "${TAG_NAME}" =~ ^nomulus-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
+        gcloud secrets versions access latest \
+          --secret nomulus-tool-cloudbuild-credential > tool-credential.json
+        gcloud auth activate-service-account --key-file=tool-credential.json
+        ./release/run_beam_smoketest.sh "${TAG_NAME}" "${PROJECT_ID}" "${_TEST_PROJECT}"
+      fi
+timeout: 5400s
 options:
   machineType: 'E2_HIGHCPU_32'
