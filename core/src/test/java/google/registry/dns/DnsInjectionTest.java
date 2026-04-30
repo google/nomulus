@@ -36,7 +36,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -47,7 +47,7 @@ public final class DnsInjectionTest {
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);
   private final StringWriter httpOutput = new StringWriter();
-  private final FakeClock clock = new FakeClock(DateTime.parse("2014-01-01TZ"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2014-01-01T00:00:00Z"));
   private DnsTestComponent component;
 
   @RegisterExtension

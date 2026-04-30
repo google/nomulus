@@ -445,7 +445,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                                               Cursor.createGlobalVKey(RECURRING_BILLING))
                                           .orElse(
                                               Cursor.createGlobal(RECURRING_BILLING, START_INSTANT))
-                                          .getCursorTimeInstant();
+                                          .getCursorTime();
                                   if (!currentCursorTime.equals(startTime)) {
                                     throw new IllegalStateException(
                                         String.format(

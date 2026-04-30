@@ -16,7 +16,7 @@ package google.registry.reporting.icann;
 
 import google.registry.util.ResourceUtils;
 import google.registry.util.SqlTemplate;
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
 
 /** DNS Count query where returned values are all -1. */
 public class DummyDnsCountQueryCoordinator extends DnsCountQueryCoordinator {

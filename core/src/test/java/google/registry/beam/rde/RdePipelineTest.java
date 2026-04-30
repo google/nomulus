@@ -83,6 +83,7 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -96,7 +97,6 @@ import org.apache.beam.sdk.values.PCollection;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -120,12 +120,9 @@ public class RdePipelineTest {
 
   private final ImmutableSet<PendingDeposit> pendings =
       ImmutableSet.of(
-          PendingDeposit.create(
-              "soy", toDateTime(now), FULL, RDE_STAGING, Duration.standardDays(1)),
-          PendingDeposit.create(
-              "soy", toDateTime(now), THIN, RDE_STAGING, Duration.standardDays(1)),
-          PendingDeposit.create(
-              "fun", toDateTime(now), FULL, RDE_STAGING, Duration.standardDays(1)));
+          PendingDeposit.create("soy", now, FULL, RDE_STAGING, Duration.ofDays(1)),
+          PendingDeposit.create("soy", now, THIN, RDE_STAGING, Duration.ofDays(1)),
+          PendingDeposit.create("fun", now, FULL, RDE_STAGING, Duration.ofDays(1)));
 
   private final ImmutableList<DepositFragment> brdaFragments =
       ImmutableList.of(
@@ -229,10 +226,10 @@ public class RdePipelineTest {
 
     tm().transact(
             () -> {
-              tm().put(Cursor.createScoped(CursorType.BRDA, toDateTime(now), Tld.get("soy")));
-              tm().put(Cursor.createScoped(RDE_STAGING, toDateTime(now), Tld.get("soy")));
-              RdeRevision.saveRevision("soy", toDateTime(now), THIN, 0);
-              RdeRevision.saveRevision("soy", toDateTime(now), FULL, 0);
+              tm().put(Cursor.createScoped(CursorType.BRDA, now, Tld.get("soy")));
+              tm().put(Cursor.createScoped(RDE_STAGING, now, Tld.get("soy")));
+              RdeRevision.saveRevision("soy", now, THIN, 0);
+              RdeRevision.saveRevision("soy", now, FULL, 0);
             });
 
     // This host is never referenced.
@@ -281,7 +278,7 @@ public class RdePipelineTest {
 
     // Set the clock to 2000-01-02, any change after hereafter should not show up in the
     // resulting deposit fragments.
-    clock.advanceBy(Duration.standardDays(2));
+    clock.advanceBy(Duration.ofDays(2));
     persistDomainHistory(kittyDomain.asBuilder().setDeletionTime(clock.now()).build());
     Host futureHost = persistActiveHost("ns1.future.tld");
     persistHostHistory(futureHost);
@@ -313,14 +310,9 @@ public class RdePipelineTest {
     options.setPendings(
         encodePendingDeposits(
             ImmutableSet.of(
+                PendingDeposit.create("soy", now, FULL, RDE_STAGING, Duration.ofDays(1)),
                 PendingDeposit.create(
-                    "soy", toDateTime(now), FULL, RDE_STAGING, Duration.standardDays(1)),
-                PendingDeposit.create(
-                    "soy",
-                    toDateTime(now.plusSeconds(1)),
-                    THIN,
-                    RDE_STAGING,
-                    Duration.standardDays(1)))));
+                    "soy", now.plusSeconds(1), THIN, RDE_STAGING, Duration.ofDays(1)))));
     assertThrows(
         IllegalArgumentException.class,
         () -> new RdePipeline(options, gcsUtils, cloudTasksHelper.getTestCloudTasksUtils()));
@@ -438,10 +430,9 @@ public class RdePipelineTest {
   @RetryingTest(4)
   void testSuccess_persistData() throws Exception {
     PendingDeposit brdaKey =
-        PendingDeposit.create(
-            "soy", toDateTime(now), THIN, CursorType.BRDA, Duration.standardDays(1));
+        PendingDeposit.create("soy", now, THIN, CursorType.BRDA, Duration.ofDays(1));
     PendingDeposit rdeKey =
-        PendingDeposit.create("soy", toDateTime(now), FULL, RDE_STAGING, Duration.standardDays(1));
+        PendingDeposit.create("soy", now, FULL, RDE_STAGING, Duration.ofDays(1));
 
     verifyFiles(ImmutableMap.of(brdaKey, brdaFragments, rdeKey, rdeFragments), false);
 
@@ -464,7 +455,7 @@ public class RdePipelineTest {
             .path("/_dr/task/brdaCopy")
             .service("backend")
             .param("tld", "soy")
-            .param("watermark", toDateTime(now).toString())
+            .param("watermark", now.toString())
             .param("prefix", "rde-job/"));
     cloudTasksHelper.assertTasksEnqueued(
         "rde-upload",
@@ -478,10 +469,8 @@ public class RdePipelineTest {
   // The GCS folder listing can be a bit flaky, so retry if necessary
   @RetryingTest(4)
   void testSuccess_persistData_manual() throws Exception {
-    PendingDeposit brdaKey =
-        PendingDeposit.createInManualOperation("soy", toDateTime(now), THIN, "test/", 0);
-    PendingDeposit rdeKey =
-        PendingDeposit.createInManualOperation("soy", toDateTime(now), FULL, "test/", 0);
+    PendingDeposit brdaKey = PendingDeposit.createInManualOperation("soy", now, THIN, "test/", 0);
+    PendingDeposit rdeKey = PendingDeposit.createInManualOperation("soy", now, FULL, "test/", 0);
 
     verifyFiles(ImmutableMap.of(brdaKey, brdaFragments, rdeKey, rdeFragments), true);
 
@@ -561,9 +550,7 @@ public class RdePipelineTest {
 
   private static Instant loadCursorTime(CursorType type) {
     return tm().transact(
-            () ->
-                tm().loadByKey(Cursor.createScopedVKey(type, Tld.get("soy")))
-                    .getCursorTimeInstant());
+            () -> tm().loadByKey(Cursor.createScopedVKey(type, Tld.get("soy"))).getCursorTime());
   }
 
   private static Function<DepositFragment, String> getXmlElement(String pattern) {

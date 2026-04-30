@@ -17,6 +17,7 @@ package google.registry.reporting;
 import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
+import static java.time.ZoneOffset.UTC;
 
 import com.google.api.services.dataflow.Dataflow;
 import dagger.Module;
@@ -28,11 +29,11 @@ import google.registry.request.Parameter;
 import google.registry.util.Clock;
 import google.registry.util.GoogleCredentialsBundle;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
-import org.joda.time.DateTimeZone;
-import org.joda.time.LocalDate;
-import org.joda.time.YearMonth;
-import org.joda.time.format.ISODateTimeFormat;
 
 /** Dagger module for injecting common settings for all reporting tasks. */
 @Module
@@ -84,8 +85,9 @@ public class ReportingModule {
   static Optional<YearMonth> provideYearMonthOptional(HttpServletRequest req) {
     Optional<String> optionalYearMonthStr = extractOptionalParameter(req, PARAM_YEAR_MONTH);
     try {
-      return optionalYearMonthStr.map(s -> YearMonth.parse(s, ISODateTimeFormat.yearMonth()));
-    } catch (IllegalArgumentException e) {
+      return optionalYearMonthStr.map(
+          s -> YearMonth.parse(s, DateTimeFormatter.ofPattern("yyyy-MM")));
+    } catch (IllegalArgumentException | DateTimeParseException e) {
       throw new BadRequestException(
           String.format(
               "yearMonth must be in yyyy-MM format, got %s instead",
@@ -101,7 +103,7 @@ public class ReportingModule {
   static YearMonth provideYearMonth(
       @Parameter(PARAM_YEAR_MONTH) Optional<YearMonth> yearMonthOptional,
       @Parameter(PARAM_DATE) LocalDate date) {
-    return yearMonthOptional.orElseGet(() -> new YearMonth(date.minusMonths(1)));
+    return yearMonthOptional.orElseGet(() -> YearMonth.from(date.minusMonths(1)));
   }
 
   /** Extracts an optional date in yyyy-MM-dd format from the request. */
@@ -110,8 +112,8 @@ public class ReportingModule {
   static Optional<LocalDate> provideDateOptional(HttpServletRequest req) {
     Optional<String> optionalDateString = extractOptionalParameter(req, PARAM_DATE);
     try {
-      return optionalDateString.map(s -> LocalDate.parse(s, ISODateTimeFormat.yearMonthDay()));
-    } catch (IllegalArgumentException e) {
+      return optionalDateString.map(s -> LocalDate.parse(s, DateTimeFormatter.ISO_LOCAL_DATE));
+    } catch (IllegalArgumentException | DateTimeParseException e) {
       throw new BadRequestException(
           String.format(
               "date must be in yyyy-MM-dd format, got %s instead",
@@ -127,8 +129,7 @@ public class ReportingModule {
   @Provides
   @Parameter(PARAM_DATE)
   static LocalDate provideDate(HttpServletRequest req, Clock clock) {
-    return provideDateOptional(req)
-        .orElseGet(() -> new LocalDate(clock.nowUtc(), DateTimeZone.UTC));
+    return provideDateOptional(req).orElseGet(() -> LocalDate.ofInstant(clock.now(), UTC));
   }
 
   /** Constructs a {@link Dataflow} API client with default settings. */

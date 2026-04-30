@@ -24,7 +24,7 @@ import com.beust.jcommander.ParameterException;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Tld;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +39,7 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
 
   @BeforeEach
   void beforeEach() {
-    fakeClock.setTo(DateTime.parse("1984-12-21T06:07:08.789Z"));
+    fakeClock.setTo(Instant.parse("1984-12-21T06:07:08.789Z"));
   }
 
   @Test
@@ -58,13 +58,14 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   void testListCursors_twoTldsOneAbsent_printsAbsentAndTimestampSorted() throws Exception {
     createTlds("foo", "bar");
     persistResource(
-        Cursor.createScoped(CursorType.BRDA, DateTime.parse("1984-12-18TZ"), Tld.get("bar")));
+        Cursor.createScoped(
+            CursorType.BRDA, Instant.parse("1984-12-18T00:00:00Z"), Tld.get("bar")));
     runCommand("--type=BRDA");
     assertThat(getStdoutAsLines())
         .containsExactly(
             HEADER_ONE,
             HEADER_TWO,
-            "bar                    1984-12-18T00:00:00.000Z   1984-12-21T06:07:08.789Z",
+            "bar                    1984-12-18T00:00:00Z       1984-12-21T06:07:08.789Z",
             "foo                    (absent)                   (absent)")
         .inOrder();
   }
@@ -73,7 +74,7 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   void testListCursors_badCursor_throwsIae() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> runCommand("--type=love"));
-    assertThat(thrown).hasMessageThat().contains("Invalid value for --type parameter.");
+    assertThat(thrown).hasMessageThat().contains("Invalid value for --type parameter");
   }
 
   @Test

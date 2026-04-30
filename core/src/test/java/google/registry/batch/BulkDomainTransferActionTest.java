@@ -20,6 +20,10 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusMonths;
+import static google.registry.util.DateTimeUtils.plusMonths;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableList;
@@ -37,7 +41,6 @@ import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import google.registry.util.DateTimeUtils;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -45,7 +48,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Tests for {@link BulkDomainTransferAction}. */
 public class BulkDomainTransferActionTest {
 
-  private final FakeClock fakeClock = new FakeClock(DateTime.parse("2024-01-01T00:00:00.000Z"));
+  private final FakeClock fakeClock = new FakeClock(Instant.parse("2024-01-01T00:00:00.000Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -62,26 +65,26 @@ public class BulkDomainTransferActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     createTld("tld");
-    DateTime now = fakeClock.nowUtc();
+    Instant now = fakeClock.now();
     // The default registrar is TheRegistrar, which will be the losing registrar
     activeDomain =
         persistDomainWithDependentResources(
-            "active", "tld", now, now.minusDays(1), DateTimeUtils.END_OF_TIME);
+            "active", "tld", now, minusDays(now, 1), DateTimeUtils.END_INSTANT);
     alreadyTransferredDomain =
         persistResource(
             persistDomainWithDependentResources(
-                    "alreadytransferred", "tld", now, now.minusDays(1), DateTimeUtils.END_OF_TIME)
+                    "alreadytransferred", "tld", now, minusDays(now, 1), DateTimeUtils.END_INSTANT)
                 .asBuilder()
                 .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build());
     pendingDeleteDomain =
         persistResource(
             persistDomainWithDependentResources(
-                    "pendingdelete", "tld", now, now.minusDays(1), now.plusMonths(1))
+                    "pendingdelete", "tld", now, minusDays(now, 1), plusMonths(now, 1))
                 .asBuilder()
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
                 .build());
-    deletedDomain = persistDeletedDomain("deleted.tld", now.minusMonths(1));
+    deletedDomain = persistDeletedDomain("deleted.tld", toDateTime(minusMonths(now, 1)));
   }
 
   @Test

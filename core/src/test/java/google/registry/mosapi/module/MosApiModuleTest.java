@@ -16,6 +16,7 @@ package google.registry.mosapi.module;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.DateTimeUtils.plusYears;
+import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -34,7 +35,6 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
@@ -154,8 +154,7 @@ public class MosApiModuleTest {
     keyGen.initialize(2048);
     KeyPair keyPair = keyGen.generateKeyPair();
     this.generatedPrivateKey = keyPair.getPrivate();
-    DateTimeFormatter formatter =
-        DateTimeFormatter.ofPattern("yyyyMMddHHmmss'Z'").withZone(ZoneOffset.UTC);
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss'Z'").withZone(UTC);
     Instant now = Instant.parse("2021-01-01T00:00:00Z");
     Instant end = plusYears(now, 1);
     // Convert string to Bouncy Castle Time objects

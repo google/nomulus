@@ -27,7 +27,7 @@ import google.registry.gcs.GcsUtils;
 import google.registry.testing.TestDataHelper;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import org.joda.time.LocalDate;
+import java.time.LocalDate;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

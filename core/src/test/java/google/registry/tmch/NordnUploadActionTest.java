@@ -59,9 +59,9 @@ import java.io.ByteArrayOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -87,7 +87,7 @@ class NordnUploadActionTest {
 
   private static final String LOCATION_URL = "http://trololol";
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12.000Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2010-05-01T10:11:12.000Z"));
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
   private final CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
 
@@ -118,7 +118,7 @@ class NordnUploadActionTest {
     createTld("tld");
     persistResource(Tld.get("tld").asBuilder().setLordnUsername("lolcat").build());
     persistSunriseModeDomain();
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
     persistClaimsModeDomain();
     action.clock = clock;
     action.cloudTasksUtils = cloudTasksUtils;
@@ -141,13 +141,13 @@ class NordnUploadActionTest {
   @Test
   void testSuccess_nothingScheduled() {
     persistResource(
-        ForeignKeyUtils.loadResource(Domain.class, "claims-landrush1.tld", clock.nowUtc())
+        ForeignKeyUtils.loadResource(Domain.class, "claims-landrush1.tld", clock.now())
             .get()
             .asBuilder()
             .setLordnPhase(LordnPhase.NONE)
             .build());
     persistResource(
-        ForeignKeyUtils.loadResource(Domain.class, "claims-landrush2.tld", clock.nowUtc())
+        ForeignKeyUtils.loadResource(Domain.class, "claims-landrush2.tld", clock.now())
             .get()
             .asBuilder()
             .setLordnPhase(LordnPhase.NONE)
@@ -203,7 +203,7 @@ class NordnUploadActionTest {
                 LaunchNotice.create("landrush2tcn", null, null, minusHours(clock.now(), 2)))
             .setLordnPhase(LordnPhase.CLAIMS)
             .build());
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
     persistResource(
         newDomain("claims-landrush1.tld")
             .asBuilder()
@@ -223,7 +223,7 @@ class NordnUploadActionTest {
             .setSmdId("new-smdid")
             .setLordnPhase(LordnPhase.SUNRISE)
             .build());
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
     persistResource(
         newDomain("sunrise1.tld")
             .asBuilder()
@@ -234,7 +234,7 @@ class NordnUploadActionTest {
   }
 
   private void verifyColumnCleared(String domainName) {
-    Domain domain = ForeignKeyUtils.loadResource(Domain.class, domainName, clock.nowUtc()).get();
+    Domain domain = ForeignKeyUtils.loadResource(Domain.class, domainName, clock.now()).get();
     assertThat(domain.getLordnPhase()).isEqualTo(LordnPhase.NONE);
   }
 

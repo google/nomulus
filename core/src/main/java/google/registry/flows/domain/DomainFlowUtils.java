@@ -44,6 +44,7 @@ import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
+import static java.time.ZoneOffset.UTC;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.CharMatcher;
@@ -124,7 +125,6 @@ import google.registry.tools.DigestType;
 import google.registry.util.Idn;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -848,10 +848,7 @@ public class DomainFlowUtils {
    */
   public static void validateRegistrationPeriod(Instant now, Instant newExpirationTime)
       throws EppException {
-    if (now.atZone(ZoneOffset.UTC)
-        .plusYears(MAX_REGISTRATION_YEARS)
-        .toInstant()
-        .isBefore(newExpirationTime)) {
+    if (now.atZone(UTC).plusYears(MAX_REGISTRATION_YEARS).toInstant().isBefore(newExpirationTime)) {
       throw new ExceedsMaxRegistrationYearsException();
     }
   }

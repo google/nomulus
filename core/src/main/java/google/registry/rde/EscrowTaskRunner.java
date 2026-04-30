@@ -15,6 +15,7 @@
 package google.registry.rde;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static java.time.temporal.ChronoUnit.DAYS;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
@@ -25,9 +26,9 @@ import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.Callable;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Runner applying guaranteed reliability to an {@link EscrowTask}.
@@ -61,7 +62,7 @@ class EscrowTaskRunner {
      *
      * @param watermark the logical time for a point-in-time view of the database.
      */
-    void runWithLock(DateTime watermark) throws Exception;
+    void runWithLock(Instant watermark) throws Exception;
   }
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -88,8 +89,8 @@ class EscrowTaskRunner {
     Callable<Void> lockRunner =
         () -> {
           logger.atInfo().log("Performing escrow for TLD '%s'.", tld.getTld());
-          DateTime startOfToday = clock.nowUtc().withTimeAtStartOfDay();
-          DateTime nextRequiredRun =
+          Instant startOfToday = clock.now().truncatedTo(DAYS);
+          Instant nextRequiredRun =
               tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createScopedVKey(cursorType, tld)))
                   .map(Cursor::getCursorTime)
                   .orElse(startOfToday);
@@ -98,7 +99,7 @@ class EscrowTaskRunner {
           }
           logger.atInfo().log("Current cursor is: %s.", nextRequiredRun);
           task.runWithLock(nextRequiredRun);
-          DateTime nextRun = nextRequiredRun.plus(interval);
+          Instant nextRun = nextRequiredRun.plus(interval);
           logger.atInfo().log("Rolling cursor forward to %s.", nextRun);
           tm().transact(() -> tm().put(Cursor.createScoped(cursorType, nextRun, tld)));
           return null;

@@ -17,6 +17,7 @@ package google.registry.proxy.handler;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.proxy.Protocol.PROTOCOL_KEY;
 import static google.registry.proxy.handler.EppServiceHandler.CLIENT_CERTIFICATE_HASH_KEY;
+import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -36,7 +37,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ class EppQuotaHandlerTest {
   private final EppQuotaHandler handler = new EppQuotaHandler(quotaManager, metrics);
   private final EmbeddedChannel channel = new EmbeddedChannel(handler);
   private final String clientCertHash = "blah/123!";
-  private final DateTime now = DateTime.now(DateTimeZone.UTC);
+  private final DateTime now = DateTime.now(UTC);
   private final Object message = new Object();
 
   private void setProtocol(Channel channel) {

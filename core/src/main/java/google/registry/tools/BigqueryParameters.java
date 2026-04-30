@@ -17,8 +17,8 @@ package google.registry.tools;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.bigquery.BigqueryConnection;
+import java.time.Duration;
 import java.util.concurrent.Executors;
-import org.joda.time.Duration;
 
 /** Parameter delegate class to handle flag settings for a command's BigqueryConnection object. */
 @Parameters(separators = " =")
@@ -44,7 +44,7 @@ public final class BigqueryParameters {
   @Parameter(
       names = "--bigquery_poll_interval",
       description = "Interval in milliseconds to wait between polls for job status.")
-  private Duration bigqueryPollInterval = Duration.standardSeconds(1);
+  private Duration bigqueryPollInterval = Duration.ofSeconds(1);
 
   @Parameter(
       names = "--bigquery_num_threads",

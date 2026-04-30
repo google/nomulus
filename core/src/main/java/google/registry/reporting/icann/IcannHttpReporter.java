@@ -40,9 +40,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import org.joda.time.YearMonth;
-import org.joda.time.format.DateTimeFormat;
 
 /**
  * Class that uploads a CSV file to ICANN's endpoint via an HTTP PUT call.
@@ -148,7 +148,7 @@ public class IcannHttpReporter {
     ReportType reportType = ReportType.valueOf(Ascii.toUpperCase(elements.get(0)));
     // Re-add hyphen between year and month, because ICANN is inconsistent between filename and URL
     String yearMonth =
-        YearMonth.parse(elements.get(1), DateTimeFormat.forPattern("yyyyMM")).toString("yyyy-MM");
+        YearMonth.parse(elements.get(1), DateTimeFormatter.ofPattern("yyyyMM")).toString();
     return new URL(String.format("%s/%s/%s", getUrlPrefix(reportType), tld, yearMonth));
   }
 
