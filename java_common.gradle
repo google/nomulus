@@ -103,7 +103,7 @@ tasks.withType(Test).configureEach {
 
 tasks.withType(JavaCompile).configureEach {
   options.fork = true
-  options.forkOptions.jvmArgs += ['--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED']
+  options.compilerArgs += ['-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED']
   // The -Werror flag causes Intellij to fail on deprecated api use.
   // Allow IDE user to turn off this flag by specifying a Gradle VM
   // option from inside the IDE.
