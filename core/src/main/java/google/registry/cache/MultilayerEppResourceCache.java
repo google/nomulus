@@ -45,6 +45,10 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
 
   protected abstract String getJedisPrefix();
 
+  protected boolean shouldPersistToRemoteCache(V value) {
+    return true;
+  }
+
   protected Optional<V> loadFromCaches(String key) {
     // hopefully the resource is in the local cache
     Optional<V> possibleValue = Optional.ofNullable(localCache.getIfPresent(key));
@@ -65,7 +69,9 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
         .map(
             v -> {
               // Optional has no direct "peek" functionality to fill the caches
-              jedisClient.set(jedisKey, v);
+              if (shouldPersistToRemoteCache(v)) {
+                jedisClient.set(new SimplifiedJedisClient.JedisResource<>(jedisKey, v));
+              }
               localCache.put(key, v);
               return v;
             });

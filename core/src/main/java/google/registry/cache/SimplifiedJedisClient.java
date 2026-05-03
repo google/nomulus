@@ -16,6 +16,9 @@ package google.registry.cache;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import google.registry.model.EppResource;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -23,7 +26,9 @@ import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import redis.clients.jedis.AbstractPipeline;
 import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.params.SetParams;
 
 /**
  * A {@link UnifiedJedis} client that handles serialization/deserialization.
@@ -34,6 +39,10 @@ import redis.clients.jedis.UnifiedJedis;
  * array as well.
  */
 public class SimplifiedJedisClient<V extends EppResource> {
+
+  public record JedisResource<V extends EppResource>(String key, V value) {}
+
+  private static final int BATCH_SIZE = 500;
 
   private final Schema<V> valueSchema;
   private final UnifiedJedis jedis;
@@ -57,10 +66,50 @@ public class SimplifiedJedisClient<V extends EppResource> {
   }
 
   /** Sets the value in the remote cache. */
-  public void set(String key, V value) {
-    checkNotNull(key, "Key cannot be null");
-    checkNotNull(value, "Value cannot be null");
-    jedis.set(key.getBytes(StandardCharsets.UTF_8), serialize(value));
+  public void set(JedisResource<V> resource) {
+    checkNotNull(resource.key, "Key cannot be null");
+    checkNotNull(resource.value, "Value cannot be null");
+    jedis.set(
+        resource.key.getBytes(StandardCharsets.UTF_8),
+        serialize(resource.value),
+        new SetParams().pxAt(resource.value.getDeletionTime().toEpochMilli()));
+  }
+
+  /** Sets multiple values in the remote cache using a Jedis {@link AbstractPipeline}. */
+  public void setAll(ImmutableCollection<JedisResource<V>> resources) {
+    for (Iterable<JedisResource<V>> batch : Iterables.partition(resources, BATCH_SIZE)) {
+      AbstractPipeline pipeline = jedis.pipelined();
+      batch.forEach(
+          resource ->
+              pipeline.set(
+                  resource.key.getBytes(StandardCharsets.UTF_8),
+                  serialize(resource.value),
+                  new SetParams().pxAt(resource.value.getDeletionTime().toEpochMilli())));
+      pipeline.sync();
+    }
+  }
+
+  /**
+   * Deletes all values associated with the given keys in Valkey.
+   *
+   * <p>If any given key does not exist, it does nothing.
+   *
+   * <p>Note: we use {@code unlink} here instead of {@code del} so that the actual deletion can
+   * happen in the background whenever the server wants. The keys are removed from the namespace
+   * immediately, and we don't need the memory to be reclaimed this instant.
+   *
+   * <p>This could also be accomplished by using {@link #setAll(ImmutableCollection)} with
+   * expiration times that are in the past, but this is clearer.
+   */
+  public void deleteAll(ImmutableCollection<String> keys) {
+    // we use a reasonably small batch size to avoid overwhelming the network
+    for (Iterable<String> batch : Iterables.partition(keys, BATCH_SIZE)) {
+      byte[][] keysToUnlink =
+          Streams.stream(batch)
+              .map(key -> key.getBytes(StandardCharsets.UTF_8))
+              .toArray(byte[][]::new);
+      jedis.unlink(keysToUnlink);
+    }
   }
 
   private byte[] serialize(V value) {
@@ -73,6 +122,7 @@ public class SimplifiedJedisClient<V extends EppResource> {
   }
 
   private V deserialize(byte[] data) {
+    // We use protobufs because other deserializers don't play nicely with immutable collections
     V value = valueSchema.newMessage();
     ProtostuffIOUtil.mergeFrom(data, value, valueSchema);
     return value;
