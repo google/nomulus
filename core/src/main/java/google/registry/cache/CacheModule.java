@@ -92,22 +92,23 @@ public final class CacheModule {
   @Provides
   @Singleton
   public static DomainCache provideDomainCache(
-      Optional<SimplifiedJedisClient> domainJedisClient, Clock clock) {
-    if (domainJedisClient.isEmpty()) {
+      Optional<SimplifiedJedisClient> jedisClient, Clock clock, CacheMetrics cacheMetrics) {
+    if (jedisClient.isEmpty()) {
       return domainName ->
           ForeignKeyUtils.loadResourceByCache(Domain.class, domainName, clock.now());
     }
-    return new MultilayerDomainCache(domainJedisClient.get(), clock);
+    return new MultilayerDomainCache(jedisClient.get(), clock, cacheMetrics);
   }
 
   @Provides
   @Singleton
-  public static HostCache provideHostCache(Optional<SimplifiedJedisClient> hostJedisClient) {
-    if (hostJedisClient.isEmpty()) {
+  public static HostCache provideHostCache(
+      Optional<SimplifiedJedisClient> jedisClient, CacheMetrics cacheMetrics) {
+    if (jedisClient.isEmpty()) {
       return repoId ->
           Optional.ofNullable(EppResource.loadByCache(VKey.create(Host.class, repoId)));
     }
-    return new MultilayerHostCache(hostJedisClient.get());
+    return new MultilayerHostCache(jedisClient.get(), cacheMetrics);
   }
 
   @Provides

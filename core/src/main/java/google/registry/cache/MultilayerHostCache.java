@@ -27,8 +27,8 @@ import java.util.Optional;
  */
 public class MultilayerHostCache extends MultilayerEppResourceCache<Host> implements HostCache {
 
-  public MultilayerHostCache(SimplifiedJedisClient jedisClient) {
-    super(jedisClient);
+  public MultilayerHostCache(SimplifiedJedisClient jedisClient, CacheMetrics cacheMetrics) {
+    super(jedisClient, cacheMetrics);
   }
 
   @Override

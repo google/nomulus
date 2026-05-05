@@ -32,8 +32,9 @@ public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
 
   private final Clock clock;
 
-  public MultilayerDomainCache(SimplifiedJedisClient jedisClient, Clock clock) {
-    super(jedisClient);
+  public MultilayerDomainCache(
+      SimplifiedJedisClient jedisClient, Clock clock, CacheMetrics cacheMetrics) {
+    super(jedisClient, cacheMetrics);
     this.clock = clock;
   }
 
