@@ -38,11 +38,12 @@ public class MultilayerHostCacheTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final SimplifiedJedisClient jedisClient = mock(SimplifiedJedisClient.class);
+  private final CacheMetrics cacheMetrics = mock(CacheMetrics.class);
   private MultilayerHostCache cache;
 
   @BeforeEach
   void beforeEach() {
-    cache = new MultilayerHostCache(jedisClient);
+    cache = new MultilayerHostCache(jedisClient, cacheMetrics);
   }
 
   @Test
@@ -53,10 +54,13 @@ public class MultilayerHostCacheTest {
     // We should have filled the caches after one attempt to load from Valkey
     verify(jedisClient).get(Host.class, host.getRepoId());
     verify(jedisClient).set(new SimplifiedJedisClient.JedisResource<>(host.getRepoId(), host));
+    verify(cacheMetrics).recordLookup("Host", CacheMetrics.CacheHitType.MISS);
 
     // Further loads hit the local cache
     assertThat(cache.loadByRepoId(host.getRepoId())).hasValue(host);
+    verify(cacheMetrics).recordLookup("Host", CacheMetrics.CacheHitType.LOCAL);
     verifyNoMoreInteractions(jedisClient);
+    verifyNoMoreInteractions(cacheMetrics);
   }
 
   @Test
@@ -66,10 +70,14 @@ public class MultilayerHostCacheTest {
     // We hit the Valkey cache first
     when(jedisClient.get(Host.class, host.getRepoId())).thenReturn(Optional.of(host));
     assertThat(cache.loadByRepoId(host.getRepoId())).hasValue(host);
+    verify(cacheMetrics).recordLookup("Host", CacheMetrics.CacheHitType.REMOTE);
+    verifyNoMoreInteractions(cacheMetrics);
   }
 
   @Test
   void testLoad_missing() {
     assertThat(cache.loadByRepoId("nonexistent")).isEmpty();
+    verify(cacheMetrics).recordLookup("Host", CacheMetrics.CacheHitType.MISS_NONEXISTENT);
+    verifyNoMoreInteractions(cacheMetrics);
   }
 }

@@ -43,11 +43,12 @@ public class MultilayerDomainCacheTest {
 
   private final SimplifiedJedisClient jedisClient = mock(SimplifiedJedisClient.class);
   private final FakeClock clock = new FakeClock();
+  private final CacheMetrics cacheMetrics = mock(CacheMetrics.class);
   private MultilayerDomainCache cache;
 
   @BeforeEach
   void beforeEach() {
-    cache = new MultilayerDomainCache(jedisClient, clock);
+    cache = new MultilayerDomainCache(jedisClient, clock, cacheMetrics);
     createTld("tld");
   }
 
@@ -59,10 +60,13 @@ public class MultilayerDomainCacheTest {
     // We should have filled the caches after one attempt to load from Valkey
     verify(jedisClient).get(Domain.class, "example.tld");
     verify(jedisClient).set(new SimplifiedJedisClient.JedisResource<>("example.tld", domain));
+    verify(cacheMetrics).recordLookup("Domain", CacheMetrics.CacheHitType.MISS);
 
     // Further loads hit the local cache
     assertThat(cache.loadByDomainName("example.tld")).hasValue(domain);
+    verify(cacheMetrics).recordLookup("Domain", CacheMetrics.CacheHitType.LOCAL);
     verifyNoMoreInteractions(jedisClient);
+    verifyNoMoreInteractions(cacheMetrics);
   }
 
   @Test
@@ -72,6 +76,8 @@ public class MultilayerDomainCacheTest {
     // We hit the Valkey cache first
     when(jedisClient.get(Domain.class, "example.tld")).thenReturn(Optional.of(domain));
     assertThat(cache.loadByDomainName("example.tld")).hasValue(domain);
+    verify(cacheMetrics).recordLookup("Domain", CacheMetrics.CacheHitType.REMOTE);
+    verifyNoMoreInteractions(cacheMetrics);
   }
 
   @Test
@@ -83,11 +89,15 @@ public class MultilayerDomainCacheTest {
 
     // This time, we don't populate the remote cache because it's prober data
     verify(jedisClient).get(Domain.class, "example.tld");
+    verify(cacheMetrics).recordLookup("Domain", CacheMetrics.CacheHitType.MISS);
     verifyNoMoreInteractions(jedisClient);
+    verifyNoMoreInteractions(cacheMetrics);
   }
 
   @Test
   void testLoad_missing() {
     assertThat(cache.loadByDomainName("nonexistent.tld")).isEmpty();
+    verify(cacheMetrics).recordLookup("Domain", CacheMetrics.CacheHitType.MISS_NONEXISTENT);
+    verifyNoMoreInteractions(cacheMetrics);
   }
 }

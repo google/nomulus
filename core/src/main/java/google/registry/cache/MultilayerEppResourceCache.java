@@ -36,9 +36,12 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
           .build();
 
   private final SimplifiedJedisClient jedisClient;
+  private final CacheMetrics cacheMetrics;
 
-  protected MultilayerEppResourceCache(SimplifiedJedisClient jedisClient) {
+  protected MultilayerEppResourceCache(
+      SimplifiedJedisClient jedisClient, CacheMetrics cacheMetrics) {
     this.jedisClient = jedisClient;
+    this.cacheMetrics = cacheMetrics;
   }
 
   protected abstract Optional<V> loadFromDatabase(String key);
@@ -51,6 +54,7 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
     // hopefully the resource is in the local cache
     Optional<V> possibleValue = Optional.ofNullable(localCache.getIfPresent(key));
     if (possibleValue.isPresent()) {
+      cacheMetrics.recordLookup(clazz.getSimpleName(), CacheMetrics.CacheHitType.LOCAL);
       return possibleValue;
     }
 
@@ -58,19 +62,22 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
     possibleValue = jedisClient.get(clazz, key);
     if (possibleValue.isPresent()) {
       localCache.put(key, possibleValue.get());
+      cacheMetrics.recordLookup(clazz.getSimpleName(), CacheMetrics.CacheHitType.REMOTE);
       return possibleValue;
     }
 
     // lastly, try the DB
-    return loadFromDatabase(key)
-        .map(
-            v -> {
-              // Optional has no direct "peek" functionality to fill the caches
-              if (shouldPersistToRemoteCache(v)) {
-                jedisClient.set(new SimplifiedJedisClient.JedisResource<>(key, v));
-              }
-              localCache.put(key, v);
-              return v;
-            });
+    possibleValue = loadFromDatabase(key);
+    if (possibleValue.isEmpty()) {
+      cacheMetrics.recordLookup(clazz.getSimpleName(), CacheMetrics.CacheHitType.MISS_NONEXISTENT);
+      return possibleValue;
+    }
+    V value = possibleValue.get();
+    if (shouldPersistToRemoteCache(value)) {
+      jedisClient.set(new SimplifiedJedisClient.JedisResource<>(key, value));
+    }
+    localCache.put(key, value);
+    cacheMetrics.recordLookup(clazz.getSimpleName(), CacheMetrics.CacheHitType.MISS);
+    return possibleValue;
   }
 }
