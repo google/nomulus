@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.TestDataHelper.loadFile;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -44,7 +44,7 @@ class UpdateReservedListCommandTest
         new ReservedList.Builder()
             .setName("xn--q9jyb4c_common-reserved")
             .setReservedListMapFromLines(ImmutableList.of("helicopter,FULLY_BLOCKED"))
-            .setCreationTimestamp(START_OF_TIME)
+            .setCreationTimestamp(START_INSTANT)
             .build());
   }
 

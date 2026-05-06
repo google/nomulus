@@ -24,7 +24,6 @@ import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadBytes;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static org.joda.money.CurrencyUnit.USD;
 
 import google.registry.model.domain.Domain;
@@ -33,22 +32,22 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
 import java.io.IOException;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 public final class OteStatsTestHelper {
 
   public static void setupCompleteOte(String baseClientId) throws IOException {
     setupIncompleteOte(baseClientId);
     String oteAccount1 = String.format("%s-1", baseClientId);
-    DateTime now = DateTime.now(DateTimeZone.UTC);
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     persistResource(
         new DomainHistory.Builder()
             .setDomain(persistActiveDomain("xn--abc-873b2e7eb1k8a4lpjvv.tld"))
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_idn.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new DomainHistory.Builder()
@@ -56,7 +55,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_RESTORE)
             .setXmlBytes(getBytes("domain_restore.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new HostHistory.Builder()
@@ -64,7 +63,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.HOST_DELETE)
             .setXmlBytes(getBytes("host_delete.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
   }
 
@@ -84,14 +83,14 @@ public final class OteStatsTestHelper {
     persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
     OteAccountBuilder.forRegistrarId(baseClientId).buildAndPersist();
     String oteAccount1 = String.format("%s-1", baseClientId);
-    DateTime now = DateTime.now(DateTimeZone.UTC);
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     persistResource(
         new DomainHistory.Builder()
             .setDomain(loadOrCreateDomain("exampleone.tld"))
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_sunrise.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new DomainHistory.Builder()
@@ -99,7 +98,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_claim_notice.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     Domain exampleDomain = loadOrCreateDomain("example.tld");
     persistResource(
@@ -108,7 +107,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_anchor_tenant_fee_standard.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new DomainHistory.Builder()
@@ -116,7 +115,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_dsdata.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new DomainHistory.Builder()
@@ -124,7 +123,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_DELETE)
             .setXmlBytes(getBytes("domain_delete.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new DomainHistory.Builder()
@@ -132,7 +131,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_APPROVE)
             .setXmlBytes(getBytes("domain_transfer_approve.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new DomainHistory.Builder()
@@ -140,7 +139,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_CANCEL)
             .setXmlBytes(getBytes("domain_transfer_cancel.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new DomainHistory.Builder()
@@ -148,7 +147,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_REJECT)
             .setXmlBytes(getBytes("domain_transfer_reject.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new DomainHistory.Builder()
@@ -156,7 +155,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_REQUEST)
             .setXmlBytes(getBytes("domain_transfer_request.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new DomainHistory.Builder()
@@ -164,7 +163,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_UPDATE)
             .setXmlBytes(getBytes("domain_update_with_secdns.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     persistResource(
         new HostHistory.Builder()
@@ -172,7 +171,7 @@ public final class OteStatsTestHelper {
             .setRegistrarId(oteAccount1)
             .setType(Type.HOST_CREATE)
             .setXmlBytes(getBytes("host_create_complete.xml"))
-            .setModificationTime(toInstant(now))
+            .setModificationTime(now)
             .build());
     // Persist 10 host updates for a total of 25 history entries. Since these also sort last by
     // modification time, when these cause all tests to pass, only the first will be recorded and
@@ -196,7 +195,7 @@ public final class OteStatsTestHelper {
 
   private static Domain loadOrCreateDomain(String domainName) {
     return tm().transact(
-            () -> ForeignKeyUtils.loadResource(Domain.class, domainName, tm().getTransactionTime()))
+            () -> ForeignKeyUtils.loadResource(Domain.class, domainName, tm().getTxTime()))
         .orElseGet(() -> persistActiveDomain(domainName));
   }
 }

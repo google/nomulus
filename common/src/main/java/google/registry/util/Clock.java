@@ -19,7 +19,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import javax.annotation.concurrent.ThreadSafe;
-import org.joda.time.DateTime;
 
 /**
  * A clock that tells the current time in milliseconds or nanoseconds.
@@ -31,10 +30,6 @@ import org.joda.time.DateTime;
  */
 @ThreadSafe
 public interface Clock extends Serializable {
-
-  /** Returns current time in UTC timezone. */
-  @Deprecated
-  DateTime nowUtc();
 
   /** Returns current Instant (which is always in UTC). */
   Instant now();

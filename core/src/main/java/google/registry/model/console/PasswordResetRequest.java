@@ -14,7 +14,6 @@
 
 package google.registry.model.console;
 
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.Buildable;
@@ -31,7 +30,6 @@ import jakarta.persistence.Id;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import org.joda.time.DateTime;
 
 /**
  * Represents a password reset request of some type.
@@ -64,7 +62,7 @@ public class PasswordResetRequest extends ImmutableObject implements Buildable {
   @Column(nullable = false)
   String requester;
 
-  @Column DateTime fulfillmentTime;
+  @Column Instant fulfillmentTime;
 
   @Column(nullable = false)
   String destinationEmail;
@@ -84,20 +82,11 @@ public class PasswordResetRequest extends ImmutableObject implements Buildable {
     return requestTime.getTimestamp();
   }
 
-  /**
-   * @deprecated Use {@link #getRequestTime()}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public DateTime getRequestDateTime() {
-    return toDateTime(requestTime.getTimestamp());
-  }
-
   public String getRequester() {
     return requester;
   }
 
-  public Optional<DateTime> getFulfillmentTime() {
+  public Optional<Instant> getFulfillmentTime() {
     return Optional.ofNullable(fulfillmentTime);
   }
 
@@ -153,7 +142,7 @@ public class PasswordResetRequest extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setFulfillmentTime(DateTime fulfillmentTime) {
+    public Builder setFulfillmentTime(Instant fulfillmentTime) {
       getInstance().fulfillmentTime = fulfillmentTime;
       return this;
     }

@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -50,11 +51,7 @@ public class CreateCancellationsForBillingEventsCommandTest
     createTld("tld");
     domain =
         persistDomainWithDependentResources(
-            "example",
-            "tld",
-            fakeClock.nowUtc(),
-            fakeClock.nowUtc(),
-            fakeClock.nowUtc().plusYears(2));
+            "example", "tld", fakeClock.now(), fakeClock.now(), plusYears(fakeClock.now(), 2));
     billingEventToCancel = createBillingEvent();
     command.printStream = System.out;
   }

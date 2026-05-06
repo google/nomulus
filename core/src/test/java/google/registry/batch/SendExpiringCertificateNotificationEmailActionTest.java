@@ -20,7 +20,6 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,7 +47,6 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -73,7 +71,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2021-05-24T20:21:22Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2021-05-24T20:21:22Z"));
   private final GmailClient sendEmailService = mock(GmailClient.class);
   private CertificateChecker certificateChecker;
   private SendExpiringCertificateNotificationEmailAction action;
@@ -86,7 +84,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
     certificateChecker =
         new CertificateChecker(
-            ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+            ImmutableSortedMap.of(START_INSTANT, 825, Instant.parse("2020-09-01T00:00:00Z"), 398),
             30,
             15,
             2048,
@@ -111,8 +109,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
     Optional<String> cert =
         Optional.of(certificateChecker.serializeCertificate(expiringCertificate));
@@ -133,8 +131,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
     Optional<String> cert =
         Optional.of(certificateChecker.serializeCertificate(expiringCertificate));
@@ -159,8 +157,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
                     "testName",
                     SelfSignedCaCertificate.create(
                             "www.example.tld",
-                            DateTime.parse("2020-09-02T00:00:00Z"),
-                            DateTime.parse("2021-06-01T00:00:00Z"))
+                            Instant.parse("2020-09-02T00:00:00Z"),
+                            Instant.parse("2021-06-01T00:00:00Z"))
                         .cert(),
                     null)
                 .build());
@@ -174,8 +172,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
                     certificateChecker.serializeCertificate(
                         SelfSignedCaCertificate.create(
                                 "www.example.tld",
-                                DateTime.parse("2020-09-02T00:00:00Z"),
-                                DateTime.parse("2021-06-01T00:00:00Z"))
+                                Instant.parse("2020-09-02T00:00:00Z"),
+                                Instant.parse("2021-06-01T00:00:00Z"))
                             .cert()))))
         .isEqualTo(false);
   }
@@ -185,8 +183,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-02T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-02T00:00:00Z"))
             .cert();
     Optional<String> cert =
         Optional.of(certificateChecker.serializeCertificate(expiringCertificate));
@@ -204,8 +202,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
     Optional<String> cert =
         Optional.of(certificateChecker.serializeCertificate(expiringCertificate));
@@ -260,8 +258,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
                       "name" + i,
                       SelfSignedCaCertificate.create(
                               "www.example.tld",
-                              DateTime.parse("2020-09-02T00:00:00Z"),
-                              DateTime.parse("2021-06-01T00:00:00Z"))
+                              Instant.parse("2020-09-02T00:00:00Z"),
+                              Instant.parse("2021-06-01T00:00:00Z"))
                           .cert(),
                       null)
                   .build());
@@ -281,8 +279,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
                       null,
                       SelfSignedCaCertificate.create(
                               "www.example.tld",
-                              DateTime.parse("2020-09-02T00:00:00Z"),
-                              DateTime.parse("2021-06-01T00:00:00Z"))
+                              Instant.parse("2020-09-02T00:00:00Z"),
+                              Instant.parse("2021-06-01T00:00:00Z"))
                           .cert())
                   .build());
       persistSampleContacts(registrar, Type.TECH);
@@ -295,8 +293,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
 
     for (int i = 1; i <= 3; i++) {
@@ -334,8 +332,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-02T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-02T00:00:00Z"))
             .cert();
     Registrar registrar =
         createRegistrar("testClientId", "registrar", expiringCertificate, null).build();
@@ -350,8 +348,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
     Registrar registrar =
         createRegistrar("testClientId", "registrar", null, expiringCertificate).build();
@@ -366,8 +364,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
     Registrar registrar =
         createRegistrar("testClientId", "registrar", null, expiringCertificate).build();
@@ -386,8 +384,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
     Registrar registrar =
         createRegistrar("testClientId", "registrar", null, expiringCertificate).build();
@@ -406,14 +404,14 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     int numOfRegistrars = 10;
     int numOfRegistrarsWithExpiringCertificates = 2;
@@ -435,14 +433,14 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     int numOfRegistrars = 10;
     int numOfRegistrarsWithExpiringCertificates = 2;
@@ -463,8 +461,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-06-01T00:00:00Z"))
             .cert();
 
     int numOfRegistrarsWithExpiringCertificates = 5;
@@ -481,8 +479,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     int numOfRegistrars = 10;
     for (int i = 1; i <= numOfRegistrars; i++) {
@@ -646,8 +644,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
                       "name" + i,
                       SelfSignedCaCertificate.create(
                               "www.example.tld",
-                              DateTime.parse("2020-09-02T00:00:00Z"),
-                              DateTime.parse("2021-06-01T00:00:00Z"))
+                              Instant.parse("2020-09-02T00:00:00Z"),
+                              Instant.parse("2021-06-01T00:00:00Z"))
                           .cert(),
                       null)
                   .build());

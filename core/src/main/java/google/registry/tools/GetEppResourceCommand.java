@@ -19,10 +19,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.EppResource;
+import google.registry.tools.params.InstantParameter;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Abstract command to print one or more resources to stdout. */
 @Parameters(separators = " =")
@@ -30,8 +31,9 @@ abstract class GetEppResourceCommand implements Command {
 
   @Parameter(
       names = "--read_timestamp",
-      description = "Timestamp to use when reading. May not be in the past.")
-  protected DateTime readTimestamp;
+      description = "Timestamp to use when reading. May not be in the past.",
+      converter = InstantParameter.class)
+  protected Instant readTimestamp;
 
   @Parameter(
       names = "--expand",
@@ -60,7 +62,7 @@ abstract class GetEppResourceCommand implements Command {
 
   @Override
   public void run() {
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     if (readTimestamp == null) {
       readTimestamp = now;
     }

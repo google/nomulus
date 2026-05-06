@@ -15,13 +15,14 @@
 package google.registry.flows.session;
 
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.joda.time.format.ISODateTimeFormat.dateTimeNoMillis;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowTestCase;
 import google.registry.flows.FlowUtils.GenericXmlSyntaxErrorException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HelloFlow}. */
@@ -31,9 +32,11 @@ class HelloFlowTest extends FlowTestCase<HelloFlow> {
   void testHello() throws Exception {
     setEppInput("hello.xml");
     assertMutatingFlow(false);
+    Instant now = clock.now();
     runFlowAssertResponse(
         loadFile(
-            "greeting.xml", ImmutableMap.of("DATE", clock.nowUtc().toString(dateTimeNoMillis()))));
+            "greeting.xml",
+            ImmutableMap.of("DATE", now.truncatedTo(ChronoUnit.SECONDS).toString())));
   }
 
   @Test

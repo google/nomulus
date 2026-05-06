@@ -48,10 +48,7 @@ public class ConfigureFeatureFlagCommand extends MutatingCommand {
     for (FeatureName name : mainParameters) {
       Optional<FeatureFlag> oldFlag = FeatureFlag.getUncached(name);
       FeatureFlag.Builder newFlagBuilder =
-          new FeatureFlag()
-              .asBuilder()
-              .setFeatureName(name)
-              .setStatusMapInstant(featureStatusTransitions);
+          new FeatureFlag().asBuilder().setFeatureName(name).setStatusMap(featureStatusTransitions);
       stageEntityChange(oldFlag.orElse(null), newFlagBuilder.build());
     }
   }

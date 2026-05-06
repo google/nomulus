@@ -1,8 +1,8 @@
-addGracePeriodLength: "PT432000S"
+addGracePeriodLength: "PT120H"
 allowedFullyQualifiedHostNames: []
-anchorTenantAddGracePeriodLength: "PT2592000S"
-autoRenewGracePeriodLength: "PT3888000S"
-automaticTransferLength: "PT432000S"
+anchorTenantAddGracePeriodLength: "PT720H"
+autoRenewGracePeriodLength: "PT1080H"
+automaticTransferLength: "PT120H"
 claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
 createBillingCostTransitions:
   "1970-01-01T00:00:00.000Z":
@@ -11,7 +11,7 @@ createBillingCostTransitions:
 creationTime: "2022-09-01T00:00:00.000Z"
 currency: "JPY"
 defaultPromoTokens: []
-dnsAPlusAaaaTtl: "PT900S"
+dnsAPlusAaaaTtl: "PT15M"
 dnsDsTtl: null
 dnsNsTtl: null
 dnsPaused: false
@@ -27,10 +27,10 @@ idnTables: []
 invoicingEnabled: false
 lordnUsername: null
 numDnsPublishLocks: 1
-pendingDeleteLength: "PT432000S"
+pendingDeleteLength: "PT120H"
 premiumListName: null
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
-redemptionGracePeriodLength: "PT2592000S"
+redemptionGracePeriodLength: "PT720H"
 registryLockOrUnlockBillingCost:
   currency: "JPY"
   amount: 0
@@ -38,7 +38,7 @@ renewBillingCostTransitions:
   "1970-01-01T00:00:00.000Z":
     currency: "JPY"
     amount: 100
-renewGracePeriodLength: "PT432000S"
+renewGracePeriodLength: "PT120H"
 reservedListNames: []
 restoreBillingCost:
   currency: "JPY"
@@ -52,4 +52,4 @@ tldStateTransitions:
 tldStr: "jpy"
 tldType: "REAL"
 tldUnicode: "jpy"
-transferGracePeriodLength: "PT432000S"
+transferGracePeriodLength: "PT120H"

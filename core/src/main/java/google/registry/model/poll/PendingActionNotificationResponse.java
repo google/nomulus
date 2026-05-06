@@ -14,8 +14,6 @@
 
 package google.registry.model.poll;
 
-import static google.registry.util.DateTimeUtils.toInstant;
-
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -31,7 +29,6 @@ import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.XmlValue;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.time.Instant;
-import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned when completing a pending action on a domain. */
 @XmlTransient
@@ -105,16 +102,6 @@ public class PendingActionNotificationResponse extends ImmutableObject
           trid,
           processedDate);
     }
-
-    /**
-     * @deprecated Use {@link #create(String, boolean, Trid, Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public static DomainPendingActionNotificationResponse create(
-        String domainName, boolean actionResult, Trid trid, DateTime processedDate) {
-      return create(domainName, actionResult, trid, toInstant(processedDate));
-    }
   }
 
   /** An adapter to output the XML in response to resolving a pending command on a contact. */
@@ -139,16 +126,6 @@ public class PendingActionNotificationResponse extends ImmutableObject
           trid,
           processedDate);
     }
-
-    /**
-     * @deprecated Use {@link #create(String, boolean, Trid, Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public static ContactPendingActionNotificationResponse create(
-        String contactId, boolean actionResult, Trid trid, DateTime processedDate) {
-      return create(contactId, actionResult, trid, toInstant(processedDate));
-    }
   }
 
   /** An adapter to output the XML in response to resolving a pending command on a host. */
@@ -169,16 +146,6 @@ public class PendingActionNotificationResponse extends ImmutableObject
         String hostName, boolean actionResult, Trid trid, Instant processedDate) {
       return init(
           new HostPendingActionNotificationResponse(), hostName, actionResult, trid, processedDate);
-    }
-
-    /**
-     * @deprecated Use {@link #create(String, boolean, Trid, Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public static HostPendingActionNotificationResponse create(
-        String hostName, boolean actionResult, Trid trid, DateTime processedDate) {
-      return create(hostName, actionResult, trid, toInstant(processedDate));
     }
   }
 }

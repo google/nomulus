@@ -22,7 +22,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import google.registry.model.console.ConsoleUpdateHistory;
@@ -71,31 +70,30 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
                 .build());
 
     DatabaseHelper.persistResources(
-        ImmutableList.of(
-            new ConsoleUpdateHistory.Builder()
-                .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
-                .setActingUser(fteUser)
-                .setDescription("TheRegistrar|Some change")
-                .setModificationTime(clock.nowUtc())
-                .setUrl("/test")
-                .setMethod("POST")
-                .build(),
-            new ConsoleUpdateHistory.Builder()
-                .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
-                .setActingUser(noPermissionUser)
-                .setDescription("TheRegistrar|Another change")
-                .setModificationTime(clock.nowUtc())
-                .setUrl("/test")
-                .setMethod("POST")
-                .build(),
-            new ConsoleUpdateHistory.Builder()
-                .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
-                .setActingUser(fteUser)
-                .setDescription("OtherRegistrar|Some change")
-                .setModificationTime(clock.nowUtc())
-                .setUrl("/test")
-                .setMethod("POST")
-                .build()));
+        new ConsoleUpdateHistory.Builder()
+            .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
+            .setActingUser(fteUser)
+            .setDescription("TheRegistrar|Some change")
+            .setModificationTime(clock.now())
+            .setUrl("/test")
+            .setMethod("POST")
+            .build(),
+        new ConsoleUpdateHistory.Builder()
+            .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
+            .setActingUser(noPermissionUser)
+            .setDescription("TheRegistrar|Another change")
+            .setModificationTime(clock.now())
+            .setUrl("/test")
+            .setMethod("POST")
+            .build(),
+        new ConsoleUpdateHistory.Builder()
+            .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
+            .setActingUser(fteUser)
+            .setDescription("OtherRegistrar|Some change")
+            .setModificationTime(clock.now())
+            .setUrl("/test")
+            .setMethod("POST")
+            .build());
   }
 
   @Test

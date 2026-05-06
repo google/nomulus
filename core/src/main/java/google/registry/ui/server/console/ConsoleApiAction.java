@@ -211,7 +211,8 @@ public abstract class ConsoleApiAction implements Runnable {
                 The following changes were made in registry %s environment to the registrar %s by\
                  %s:
 
-                %s""",
+                %s\
+                """,
                 environment,
                 registrar.getRegistrarId(),
                 consoleApiParams.authResult().userIdForLogging(),
@@ -265,7 +266,7 @@ public abstract class ConsoleApiAction implements Runnable {
     builder.setActingUser(consoleApiParams.authResult().user().get());
     builder.setUrl(consoleApiParams.request().getRequestURI());
     builder.setMethod(consoleApiParams.request().getMethod());
-    builder.setModificationTime(tm().getTransactionTime());
+    builder.setModificationTime(tm().getTxTime());
     tm().put(builder.build());
   }
 

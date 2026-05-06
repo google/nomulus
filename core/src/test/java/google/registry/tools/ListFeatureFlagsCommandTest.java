@@ -20,13 +20,14 @@ import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.plusWeeks;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityYamlUtils;
 import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +36,7 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
   @BeforeEach
   void beforeEach() {
     command.mapper = EntityYamlUtils.createObjectMapper();
-    fakeClock.setTo(DateTime.parse("1984-12-21T06:07:08.789Z"));
+    fakeClock.setTo(Instant.parse("1984-12-21T06:07:08.789Z"));
   }
 
   @Test
@@ -44,9 +45,9 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
         new FeatureFlag.Builder()
             .setFeatureName(TEST_FEATURE)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
-                    .put(fakeClock.nowUtc().plusWeeks(8), ACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
+                    .put(plusWeeks(fakeClock.now(), 8), ACTIVE)
                     .build())
             .build());
     runCommand();
@@ -59,28 +60,28 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
         new FeatureFlag.Builder()
             .setFeatureName(TEST_FEATURE)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
-                    .put(fakeClock.nowUtc().plusWeeks(8), ACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
+                    .put(plusWeeks(fakeClock.now(), 8), ACTIVE)
                     .build())
             .build());
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
-                    .put(fakeClock.nowUtc().plusWeeks(1), ACTIVE)
-                    .put(fakeClock.nowUtc().plusWeeks(8), INACTIVE)
-                    .put(fakeClock.nowUtc().plusWeeks(10), ACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
+                    .put(plusWeeks(fakeClock.now(), 1), ACTIVE)
+                    .put(plusWeeks(fakeClock.now(), 8), INACTIVE)
+                    .put(plusWeeks(fakeClock.now(), 10), ACTIVE)
                     .build())
             .build());
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, ACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, ACTIVE)
                     .build())
             .build());
     runCommand();

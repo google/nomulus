@@ -25,11 +25,11 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.Queue;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Handler that records metrics for a fronend channel.
@@ -63,7 +63,7 @@ public class FrontendMetricsHandler extends ChannelDuplexHandler {
    * @see <a href="https://tools.ietf.org/html/rfc5734#section-3">RFC 5734 Extensible Provisioning
    *     Protocol (EPP) Transport over TCP</a>
    */
-  private final Queue<DateTime> requestReceivedTimeQueue = new ArrayDeque<>();
+  private final Queue<Instant> requestReceivedTimeQueue = new ArrayDeque<>();
 
   @Inject
   FrontendMetricsHandler(Clock clock, FrontendMetrics metrics) {
@@ -79,7 +79,7 @@ public class FrontendMetricsHandler extends ChannelDuplexHandler {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-    requestReceivedTimeQueue.add(clock.nowUtc());
+    requestReceivedTimeQueue.add(clock.now());
     super.channelRead(ctx, msg);
   }
 
@@ -108,7 +108,7 @@ public class FrontendMetricsHandler extends ChannelDuplexHandler {
                     metrics.responseSent(
                         protocolName,
                         clientCertHash,
-                        new Duration(requestReceivedTimeQueue.remove(), clock.nowUtc()));
+                        Duration.between(requestReceivedTimeQueue.remove(), clock.now()));
                   }
                 });
   }

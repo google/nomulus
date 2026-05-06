@@ -20,7 +20,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -32,7 +31,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyFeatureStatusDeserializer;
@@ -49,7 +47,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.hibernate.annotations.Type;
-import org.joda.time.DateTime;
 
 @Entity
 public class FeatureFlag extends ImmutableObject implements Buildable {
@@ -182,10 +179,6 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     return status;
   }
 
-  public FeatureStatus getStatus(DateTime time) {
-    return getStatus(toInstant(time));
-  }
-
   public FeatureStatus getStatus(Instant time) {
     return status.getValueAtTime(time);
   }
@@ -194,7 +187,6 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
    * Returns whether the flag is active now, or else the flag's default value if it doesn't exist.
    */
   public static boolean isActiveNow(FeatureName featureName) {
-    tm().assertInTransaction();
     return isActiveAt(featureName, tm().getTxTime());
   }
 
@@ -202,16 +194,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
    * Returns whether the flag is active at the given time, or else the flag's default value if it
    * doesn't exist.
    */
-  public static boolean isActiveAt(FeatureName featureName, DateTime dateTime) {
-    return isActiveAt(featureName, toInstant(dateTime));
-  }
-
-  /**
-   * Returns whether the flag is active at the given time, or else the flag's default value if it
-   * doesn't exist.
-   */
   public static boolean isActiveAt(FeatureName featureName, Instant instant) {
-    tm().assertInTransaction();
     return CACHE
         .get(featureName)
         .map(flag -> flag.getStatus(instant).equals(ACTIVE))
@@ -244,16 +227,8 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setStatusMap(ImmutableSortedMap<DateTime, FeatureStatus> statusMap) {
-      return setStatusMapInstant(
-          statusMap.entrySet().stream()
-              .collect(
-                  ImmutableSortedMap.toImmutableSortedMap(
-                      Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue)));
-    }
-
-    public Builder setStatusMapInstant(ImmutableSortedMap<Instant, FeatureStatus> statusMap) {
-      getInstance().status = TimedTransitionProperty.fromValueMapInstant(statusMap);
+    public Builder setStatusMap(ImmutableSortedMap<Instant, FeatureStatus> statusMap) {
+      getInstance().status = TimedTransitionProperty.fromValueMap(statusMap);
       return this;
     }
   }

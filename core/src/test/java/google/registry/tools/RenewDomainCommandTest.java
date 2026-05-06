@@ -30,7 +30,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.testing.DatabaseHelper;
 import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +38,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
 
   @BeforeEach
   void beforeEach() {
-    fakeClock.setTo(DateTime.parse("2015-04-05T05:05:05Z"));
+    fakeClock.setTo(Instant.parse("2015-04-05T05:05:05Z"));
     command.clock = fakeClock;
   }
 
@@ -48,8 +47,8 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
     persistResource(
         persistActiveDomain(
                 "domain.tld",
-                DateTime.parse("2014-09-05T05:05:05Z"),
-                DateTime.parse("2015-09-05T05:05:05Z"))
+                Instant.parse("2014-09-05T05:05:05Z"),
+                Instant.parse("2015-09-05T05:05:05Z"))
             .asBuilder()
             .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());
@@ -67,13 +66,13 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
     domains.add(
         persistActiveDomain(
             "domain1.tld",
-            DateTime.parse("2014-09-05T05:05:05Z"),
-            DateTime.parse("2015-09-05T05:05:05Z")));
+            Instant.parse("2014-09-05T05:05:05Z"),
+            Instant.parse("2015-09-05T05:05:05Z")));
     domains.add(
         persistActiveDomain(
             "domain2.tld",
-            DateTime.parse("2014-11-05T05:05:05Z"),
-            DateTime.parse("2015-11-05T05:05:05Z")));
+            Instant.parse("2014-11-05T05:05:05Z"),
+            Instant.parse("2015-11-05T05:05:05Z")));
     // The third domain is owned by a different registrar.
     domains.add(
         persistResource(
@@ -128,9 +127,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   @Test
   void testSuccess_withReasonAndRegistrarRequest() throws Exception {
     persistActiveDomain(
-        "domain.tld",
-        DateTime.parse("2014-09-05T05:05:05Z"),
-        DateTime.parse("2015-09-05T05:05:05Z"));
+        "domain.tld", Instant.parse("2014-09-05T05:05:05Z"), Instant.parse("2015-09-05T05:05:05Z"));
     runCommandForced(
         "domain.tld", "--period=1", "--reason=Renewing test domain", "--registrar_request=true");
 
@@ -154,9 +151,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   @Test
   void testSuccess_withReqistrarRequestOnly() throws Exception {
     persistActiveDomain(
-        "domain.tld",
-        DateTime.parse("2014-09-05T05:05:05Z"),
-        DateTime.parse("2015-09-05T05:05:05Z"));
+        "domain.tld", Instant.parse("2014-09-05T05:05:05Z"), Instant.parse("2015-09-05T05:05:05Z"));
     runCommandForced("domain.tld", "--period=1", "--registrar_request=true");
 
     eppVerifier
@@ -186,7 +181,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
 
   @Test
   void testFailure_domainIsDeleted() {
-    persistDeletedDomain("deleted.tld", DateTime.parse("2012-10-05T05:05:05Z"));
+    persistDeletedDomain("deleted.tld", Instant.parse("2012-10-05T05:05:05Z"));
     assertThat(
             assertThrows(
                 ResourceFlowUtils.ResourceDoesNotExistException.class,
@@ -206,9 +201,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   @Test
   void testFailure_cantRenewForTenYears() {
     persistActiveDomain(
-        "domain.tld",
-        DateTime.parse("2014-09-05T05:05:05Z"),
-        DateTime.parse("2015-09-05T05:05:05Z"));
+        "domain.tld", Instant.parse("2014-09-05T05:05:05Z"), Instant.parse("2015-09-05T05:05:05Z"));
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class, () -> runCommandForced("domain.tld", "--period 10"));
@@ -223,9 +216,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   @Test
   void testFailure_registrarRequestIsRequiredWhenReasonIsPresent() {
     persistActiveDomain(
-        "domain.tld",
-        DateTime.parse("2014-09-05T05:05:05Z"),
-        DateTime.parse("2015-09-05T05:05:05Z"));
+        "domain.tld", Instant.parse("2014-09-05T05:05:05Z"), Instant.parse("2015-09-05T05:05:05Z"));
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,

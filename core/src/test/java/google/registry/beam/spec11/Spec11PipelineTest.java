@@ -53,6 +53,7 @@ import google.registry.util.Retrier;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -64,7 +65,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -149,35 +149,35 @@ class Spec11PipelineTest {
                 .setDomainName("111.com")
                 .setDomainRepoId("123456789-COM")
                 .setRegistrarId("hello-registrar")
-                .setCheckDate(new LocalDate(2020, 1, 27))
+                .setCheckDate(LocalDate.of(2020, 1, 27))
                 .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
                 .build(),
             new Spec11ThreatMatch.Builder()
                 .setDomainName("party-night.net")
                 .setDomainRepoId("2244AABBC-NET")
                 .setRegistrarId("kitty-registrar")
-                .setCheckDate(new LocalDate(2020, 1, 27))
+                .setCheckDate(LocalDate.of(2020, 1, 27))
                 .setThreatTypes(ImmutableSet.of(ThreatType.SOCIAL_ENGINEERING))
                 .build(),
             new Spec11ThreatMatch.Builder()
                 .setDomainName("bitcoin.bank")
                 .setDomainRepoId("1C3D5E7F9-BANK")
                 .setRegistrarId("hello-registrar")
-                .setCheckDate(new LocalDate(2020, 1, 27))
+                .setCheckDate(LocalDate.of(2020, 1, 27))
                 .setThreatTypes(ImmutableSet.of(ThreatType.POTENTIALLY_HARMFUL_APPLICATION))
                 .build(),
             new Spec11ThreatMatch.Builder()
                 .setDomainName("no-email.com")
                 .setDomainRepoId("2A4BA9BBC-COM")
                 .setRegistrarId("kitty-registrar")
-                .setCheckDate(new LocalDate(2020, 1, 27))
+                .setCheckDate(LocalDate.of(2020, 1, 27))
                 .setThreatTypes(ImmutableSet.of(ThreatType.THREAT_TYPE_UNSPECIFIED))
                 .build(),
             new Spec11ThreatMatch.Builder()
                 .setDomainName("anti-anti-anti-virus.dev")
                 .setDomainRepoId("555666888-DEV")
                 .setRegistrarId("cool-registrar")
-                .setCheckDate(new LocalDate(2020, 1, 27))
+                .setCheckDate(LocalDate.of(2020, 1, 27))
                 .setThreatTypes(ImmutableSet.of(ThreatType.UNWANTED_SOFTWARE))
                 .build());
   }
@@ -276,7 +276,7 @@ class Spec11PipelineTest {
     tm().transact(
             () -> {
               ImmutableList<Spec11ThreatMatch> spec11ThreatMatches =
-                  Spec11ThreatMatchDao.loadEntriesByDate(tm(), new LocalDate(2020, 1, 27));
+                  Spec11ThreatMatchDao.loadEntriesByDate(tm(), LocalDate.of(2020, 1, 27));
               assertThat(spec11ThreatMatches)
                   .comparingElementsUsing(immutableObjectCorrespondence("id"))
                   .containsExactlyElementsIn(sqlThreatMatches);

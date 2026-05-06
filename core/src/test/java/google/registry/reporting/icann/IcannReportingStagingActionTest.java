@@ -37,6 +37,7 @@ import google.registry.testing.FakeSleeper;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.util.Optional;
@@ -81,7 +82,7 @@ class IcannReportingStagingActionTest {
         new TaskMatcher()
             .path("/_dr/task/icannReportingUpload")
             .method(HttpMethod.POST)
-            .scheduleTime(clock.nowUtc().plusMinutes(2)));
+            .scheduleTime(clock.now().plus(Duration.ofMinutes(2))));
   }
 
   @Test

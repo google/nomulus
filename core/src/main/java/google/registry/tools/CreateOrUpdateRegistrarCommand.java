@@ -19,7 +19,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -41,6 +40,7 @@ import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -50,7 +50,6 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
-import org.joda.time.DateTime;
 
 /** Shared base class for commands to create or update a {@link Registrar}. */
 abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
@@ -275,7 +274,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
   @Override
   protected final void init() throws Exception {
     initRegistrarCommand();
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     for (String clientId : mainParameters) {
       Registrar oldRegistrar = getOldRegistrar(clientId);
       Registrar.Builder builder =
@@ -339,10 +338,9 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
           verify(
               oldRegistrar.getClientCertificate().isPresent(),
               "Primary cert is absent. Rotation may remove a failover certificate still in use.");
-          builder.setFailoverClientCertificate(
-              oldRegistrar.getClientCertificate().get(), toInstant(now));
+          builder.setFailoverClientCertificate(oldRegistrar.getClientCertificate().get(), now);
         }
-        builder.setClientCertificate(asciiCert, toInstant(now));
+        builder.setClientCertificate(asciiCert, now);
       }
       if (rotatePrimaryCert && clientCertificateFilename == null) {
         throw new IllegalArgumentException("--rotate_primary_cert must be used with --cert_file.");
@@ -353,7 +351,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         if (!asciiCert.equals("")) {
           certificateChecker.validateCertificate(asciiCert);
         }
-        builder.setFailoverClientCertificate(asciiCert, toInstant(now));
+        builder.setFailoverClientCertificate(asciiCert, now);
       }
       Optional.ofNullable(ianaId).ifPresent(i -> builder.setIanaIdentifier(i.orElse(null)));
       Optional.ofNullable(poNumber).ifPresent(builder::setPoNumber);

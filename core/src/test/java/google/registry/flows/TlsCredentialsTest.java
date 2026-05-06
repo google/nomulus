@@ -19,7 +19,7 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,8 +38,8 @@ import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.ProxyHttpHeaders;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -54,7 +54,7 @@ final class TlsCredentialsTest {
 
   private final CertificateChecker certificateChecker =
       new CertificateChecker(
-          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          ImmutableSortedMap.of(START_INSTANT, 825, Instant.parse("2020-09-01T00:00:00Z"), 398),
           30,
           15,
           2048,

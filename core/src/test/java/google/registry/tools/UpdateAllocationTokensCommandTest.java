@@ -30,9 +30,8 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static google.registry.util.DateTimeUtils.toInstant;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -46,7 +45,6 @@ import google.registry.testing.DatabaseHelper;
 import java.time.Instant;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -380,22 +378,22 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
 
   @Test
   void testUpdateStatusTransitions() throws Exception {
-    DateTime now = fakeClock.nowUtc();
+    Instant now = fakeClock.now();
     AllocationToken token = persistResource(builderWithPromo().build());
     runCommandForced(
         "--prefix",
         "token",
         "--token_status_transitions",
         String.format(
-            "%s=NOT_STARTED,%s=VALID,%s=CANCELLED", START_OF_TIME, now.minusDays(1), now));
+            "%s=NOT_STARTED,%s=VALID,%s=CANCELLED", START_INSTANT, minusDays(now, 1), now));
     token = reloadResource(token);
     assertThat(token.getTokenStatusTransitions().toValueMap())
-        .containsExactly(START_OF_TIME, NOT_STARTED, now.minusDays(1), VALID, now, CANCELLED);
+        .containsExactly(START_INSTANT, NOT_STARTED, minusDays(now, 1), VALID, now, CANCELLED);
   }
 
   @Test
   void testUpdateStatusTransitions_badTransitions() {
-    DateTime now = fakeClock.nowUtc();
+    Instant now = fakeClock.now();
     persistResource(builderWithPromo().build());
     IllegalArgumentException thrown =
         assertThrows(
@@ -406,7 +404,8 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                     "token",
                     "--token_status_transitions",
                     String.format(
-                        "%s=NOT_STARTED,%s=ENDED,%s=VALID", START_OF_TIME, now.minusDays(1), now)));
+                        "%s=NOT_STARTED,%s=ENDED,%s=VALID",
+                        START_INSTANT, minusDays(now, 1), now)));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("tokenStatusTransitions map cannot transition from NOT_STARTED to ENDED.");
@@ -414,7 +413,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
 
   @Test
   void testUpdateStatusTransitions_endBulkTokenNoDomains() throws Exception {
-    DateTime now = fakeClock.nowUtc();
+    Instant now = fakeClock.now();
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -428,22 +427,22 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                 .setTokenStatusTransitions(
                     ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                         .put(START_INSTANT, NOT_STARTED)
-                        .put(toInstant(now.minusDays(1)), VALID)
+                        .put(minusDays(now, 1), VALID)
                         .build())
                 .build());
     runCommandForced(
         "--prefix",
         "token",
         "--token_status_transitions",
-        String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_OF_TIME, now.minusDays(1), now));
+        String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_INSTANT, minusDays(now, 1), now));
     token = reloadResource(token);
     assertThat(token.getTokenStatusTransitions().toValueMap())
-        .containsExactly(START_OF_TIME, NOT_STARTED, now.minusDays(1), VALID, now, ENDED);
+        .containsExactly(START_INSTANT, NOT_STARTED, minusDays(now, 1), VALID, now, ENDED);
   }
 
   @Test
   void testUpdateStatusTransitions_endBulkTokenWithActiveDomainsFails() throws Exception {
-    DateTime now = fakeClock.nowUtc();
+    Instant now = fakeClock.now();
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -457,7 +456,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                 .setTokenStatusTransitions(
                     ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                         .put(START_INSTANT, NOT_STARTED)
-                        .put(toInstant(now.minusDays(1)), VALID)
+                        .put(minusDays(now, 1), VALID)
                         .build())
                 .build());
     createTld("tld");
@@ -475,7 +474,8 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                     "token",
                     "--token_status_transitions",
                     String.format(
-                        "%s=NOT_STARTED,%s=VALID,%s=ENDED", START_OF_TIME, now.minusDays(1), now)));
+                        "%s=NOT_STARTED,%s=VALID,%s=ENDED",
+                        START_INSTANT, minusDays(now, 1), now)));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
@@ -566,15 +566,15 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   }
 
   private static AllocationToken.Builder builderWithPromo() {
-    DateTime now = DateTime.now(UTC);
+    Instant now = Instant.parse("2024-03-27T10:15:30.105Z");
     return new AllocationToken.Builder()
         .setToken("token")
         .setTokenType(UNLIMITED_USE)
         .setTokenStatusTransitions(
             ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                 .put(START_INSTANT, NOT_STARTED)
-                .put(toInstant(now.minusDays(1)), VALID)
-                .put(toInstant(now.plusDays(1)), ENDED)
+                .put(minusDays(now, 1), VALID)
+                .put(plusDays(now, 1), ENDED)
                 .build());
   }
 }

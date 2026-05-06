@@ -15,7 +15,8 @@
 package google.registry.tools;
 
 import static google.registry.model.tld.Tlds.assertTldsExist;
-import static org.joda.time.Duration.standardMinutes;
+import static google.registry.util.DateTimeUtils.toLocalDate;
+import static java.time.ZoneOffset.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -25,9 +26,10 @@ import google.registry.tools.server.GenerateZoneFilesAction;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.DateTime;
 
 /** Command to generate zone files. */
 @Parameters(separators = " =", commandDescription = "Generate zone files")
@@ -45,7 +47,7 @@ final class GenerateZoneFilesCommand implements CommandWithConnection {
           "The date to generate the file for (defaults to today, or yesterday if run "
               + "before 00:02).",
       validateWith = DateParameter.class)
-  private DateTime exportDate;
+  private Instant exportDate;
 
   @Inject Clock clock;
 
@@ -59,7 +61,8 @@ final class GenerateZoneFilesCommand implements CommandWithConnection {
   @Override
   public void run() throws IOException {
     if (exportDate == null) {
-      exportDate = clock.nowUtc().minus(standardMinutes(2)).withTimeAtStartOfDay();
+      exportDate =
+          toLocalDate(clock.now().minus(Duration.ofMinutes(2))).atStartOfDay(UTC).toInstant();
     }
     assertTldsExist(mainParameters);
     ImmutableMap<String, Object> params = ImmutableMap.of(

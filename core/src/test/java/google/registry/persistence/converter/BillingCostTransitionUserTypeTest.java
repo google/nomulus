@@ -17,7 +17,7 @@ package google.registry.persistence.converter;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.collect.ImmutableSortedMap;
@@ -28,9 +28,9 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExte
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import java.time.Instant;
 import org.hibernate.annotations.Type;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -41,11 +41,11 @@ public class BillingCostTransitionUserTypeTest {
   public final JpaUnitTestExtension jpa =
       new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
-  private static final ImmutableSortedMap<DateTime, Money> values =
+  private static final ImmutableSortedMap<Instant, Money> values =
       ImmutableSortedMap.of(
-          START_OF_TIME,
+          START_INSTANT,
           Money.of(USD, 8),
-          DateTime.parse("2001-01-01T00:00:00.0Z"),
+          Instant.parse("2001-01-01T00:00:00.0Z"),
           Money.of(USD, 0));
 
   @Test

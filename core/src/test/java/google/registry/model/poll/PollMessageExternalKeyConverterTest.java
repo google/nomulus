@@ -34,7 +34,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -47,7 +47,7 @@ public class PollMessageExternalKeyConverterTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private HistoryEntry historyEntry;
-  private final FakeClock clock = new FakeClock(DateTime.parse("2007-07-07T01:01:01Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2007-07-07T01:01:01Z"));
 
   @BeforeEach
   void beforeEach() {
@@ -74,7 +74,7 @@ public class PollMessageExternalKeyConverterTest {
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(clock.nowUtc())
+                .setEventTime(clock.now())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .build());
@@ -91,7 +91,7 @@ public class PollMessageExternalKeyConverterTest {
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(clock.nowUtc())
+                .setEventTime(clock.now())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .build());

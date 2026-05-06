@@ -15,29 +15,29 @@
 package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TimedTransitionProperty}. */
 class TimedTransitionPropertyTest {
-  private static final DateTime A_LONG_TIME_AGO = new DateTime(Long.MIN_VALUE, UTC);
+  private static final Instant A_LONG_TIME_AGO = Instant.MIN;
 
-  private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.0Z");
-  private static final DateTime DATE_2 = DateTime.parse("2002-01-01T00:00:00.0Z");
-  private static final DateTime DATE_3 = DateTime.parse("2003-01-01T00:00:00.0Z");
+  private static final Instant DATE_1 = Instant.parse("2001-01-01T00:00:00.0Z");
+  private static final Instant DATE_2 = Instant.parse("2002-01-01T00:00:00.0Z");
+  private static final Instant DATE_3 = Instant.parse("2003-01-01T00:00:00.0Z");
 
-  private static final ImmutableSortedMap<DateTime, String> values = ImmutableSortedMap.of(
-      START_OF_TIME, "0",
-      DATE_1, "1",
-      DATE_2, "2",
-      DATE_3, "3");
+  private static final ImmutableSortedMap<Instant, String> values =
+      ImmutableSortedMap.of(
+          START_INSTANT, "0",
+          DATE_1, "1",
+          DATE_2, "2",
+          DATE_3, "3");
 
   private TimedTransitionProperty<String> timedString;
 
@@ -53,8 +53,8 @@ class TimedTransitionPropertyTest {
 
   private static void testGetValueAtTime(TimedTransitionProperty<String> timedString) {
     assertThat(timedString.getValueAtTime(A_LONG_TIME_AGO)).isEqualTo("0");
-    assertThat(timedString.getValueAtTime(START_OF_TIME.minusMillis(1))).isEqualTo("0");
-    assertThat(timedString.getValueAtTime(START_OF_TIME)).isEqualTo("0");
+    assertThat(timedString.getValueAtTime(START_INSTANT.minusMillis(1))).isEqualTo("0");
+    assertThat(timedString.getValueAtTime(START_INSTANT)).isEqualTo("0");
     assertThat(timedString.getValueAtTime(DATE_1.minusMillis(1))).isEqualTo("0");
     assertThat(timedString.getValueAtTime(DATE_1)).isEqualTo("1");
     assertThat(timedString.getValueAtTime(DATE_1.plusMillis(1))).isEqualTo("1");
@@ -64,7 +64,7 @@ class TimedTransitionPropertyTest {
     assertThat(timedString.getValueAtTime(DATE_3.minusMillis(1))).isEqualTo("2");
     assertThat(timedString.getValueAtTime(DATE_3)).isEqualTo("3");
     assertThat(timedString.getValueAtTime(DATE_3.plusMillis(1))).isEqualTo("3");
-    assertThat(timedString.getValueAtTime(END_OF_TIME)).isEqualTo("3");
+    assertThat(timedString.getValueAtTime(END_INSTANT)).isEqualTo("3");
   }
 
   @Test
@@ -75,7 +75,7 @@ class TimedTransitionPropertyTest {
   @Test
   void testSuccess_getNextTransitionAfter() {
     assertThat(timedString.getNextTransitionAfter(A_LONG_TIME_AGO)).isEqualTo(DATE_1);
-    assertThat(timedString.getNextTransitionAfter(START_OF_TIME.plusMillis(1))).isEqualTo(DATE_1);
+    assertThat(timedString.getNextTransitionAfter(START_INSTANT.plusMillis(1))).isEqualTo(DATE_1);
     assertThat(timedString.getNextTransitionAfter(DATE_1.minusMillis(1))).isEqualTo(DATE_1);
     assertThat(timedString.getNextTransitionAfter(DATE_1)).isEqualTo(DATE_2);
     assertThat(timedString.getNextTransitionAfter(DATE_2.minusMillis(1))).isEqualTo(DATE_2);
@@ -89,8 +89,8 @@ class TimedTransitionPropertyTest {
         IllegalArgumentException.class,
         () ->
             TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.<DateTime, String>reverseOrder()
-                    .put(START_OF_TIME, "0")
+                ImmutableSortedMap.<Instant, String>reverseOrder()
+                    .put(START_INSTANT, "0")
                     .build()));
   }
 

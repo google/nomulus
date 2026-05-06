@@ -40,6 +40,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -48,7 +49,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.yaml.snakeyaml.Yaml;
 
 /** Command to create or update a {@link Tld} using a YAML file. */
@@ -152,7 +152,7 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkCurrency(newTld);
     // bsaEnrollStartTime only exists in DB. Need to carry it over to the updated copy. See Tld.java
     // for more information.
-    Optional<DateTime> bsaEnrollTime =
+    Optional<Instant> bsaEnrollTime =
         Optional.ofNullable(oldTld).flatMap(Tld::getBsaEnrollStartTime);
     if (bsaEnrollTime.isPresent()) {
       newTld = newTld.asBuilder().setBsaEnrollStartTime(bsaEnrollTime).build();

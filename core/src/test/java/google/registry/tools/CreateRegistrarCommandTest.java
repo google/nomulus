@@ -23,7 +23,6 @@ import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -47,7 +46,6 @@ import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -64,7 +62,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     command.setConnection(connection);
     command.certificateChecker =
         new CertificateChecker(
-            ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+            ImmutableSortedMap.of(START_INSTANT, 825, Instant.parse("2020-09-01T00:00:00Z"), 398),
             30,
             15,
             2048,
@@ -326,7 +324,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Test
   void testSuccess_clientCertFileFlag() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     runCommandForced(
         "--name=blobio",
         "--password=some_password",
@@ -349,7 +347,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Test
   void testFail_clientCertFileFlagWithViolation() {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     InsecureCertificateException thrown =
         assertThrows(
             InsecureCertificateException.class,
@@ -379,7 +377,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Test
   void testFail_clientCertFileFlagWithMultipleViolations() {
-    fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2055-10-01T00:00:00Z"));
     InsecureCertificateException thrown =
         assertThrows(
             InsecureCertificateException.class,
@@ -409,7 +407,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Test
   void testSuccess_failoverClientCertFileFlag() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     runCommandForced(
         "--name=blobio",
         "--password=some_password",
@@ -436,7 +434,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Test
   void testFail_failoverClientCertFileFlagWithViolations() {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     InsecureCertificateException thrown =
         assertThrows(
             InsecureCertificateException.class,
@@ -466,7 +464,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Test
   void testFail_failoverClientCertFileFlagWithMultipleViolations() {
-    fakeClock.setTo(DateTime.parse("2055-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2055-11-01T00:00:00Z"));
     InsecureCertificateException thrown =
         assertThrows(
             InsecureCertificateException.class,
@@ -1771,7 +1769,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Test
   void testRotatePrimaryCertFlag_throwException() {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     VerifyException thrown =
         assertThrows(
             VerifyException.class,

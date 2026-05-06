@@ -41,7 +41,6 @@ final class UpdateCursorsCommand extends ConfirmingCommand implements Command {
       names = "--timestamp",
       description = "The new timestamp to set.",
       converter = InstantParameter.class,
-      validateWith = InstantParameter.class,
       required = true)
   private Instant newTimestamp;
 

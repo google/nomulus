@@ -18,16 +18,16 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.joda.money.CurrencyUnit;
-import org.joda.time.DateTime;
 
 /** Static utility methods for {@link PremiumList}. */
 public class PremiumListUtils {
 
   public static PremiumList parseToPremiumList(
-      String name, CurrencyUnit currencyUnit, List<String> inputData, DateTime creationTime) {
+      String name, CurrencyUnit currencyUnit, List<String> inputData, Instant creationTime) {
     PremiumList partialPremiumList =
         new PremiumList.Builder()
             .setName(name)

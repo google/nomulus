@@ -38,7 +38,6 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
-import google.registry.util.DateTimeUtils;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -239,7 +238,6 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
               NS_FORMAT,
               domainLabel,
               tld.getDnsNsTtl()
-                  .map(DateTimeUtils::toJavaDuration)
                   .orElse(dnsDefaultNsTtl)
                   .toSeconds(),
               // Load the nameservers at the export time in case they've been renamed or deleted.
@@ -251,7 +249,6 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
               DS_FORMAT,
               domainLabel,
               tld.getDnsDsTtl()
-                  .map(DateTimeUtils::toJavaDuration)
                   .orElse(dnsDefaultDsTtl)
                   .toSeconds(),
               dsData.getKeyTag(),
@@ -285,7 +282,6 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
               A_FORMAT,
               stripTld(host.getHostName(), tldStr),
               tld.getDnsAPlusAaaaTtl()
-                  .map(DateTimeUtils::toJavaDuration)
                   .orElse(dnsDefaultATtl)
                   .toSeconds(),
               rrSetClass,

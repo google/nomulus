@@ -59,8 +59,8 @@ import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import java.time.Duration;
 import java.time.Instant;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -86,8 +86,8 @@ class DomainTransferRejectFlowTest
         getGainingClientAutorenewEvent(),
         getLosingClientAutorenewEvent());
     // Look in the future and make sure the poll messages for implicit ack are there.
-    assertThat(getPollMessages("NewRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
+    assertThat(getPollMessages("NewRegistrar", clock.now().plus(Duration.ofDays(31)))).hasSize(1);
+    assertThat(getPollMessages("TheRegistrar", clock.now().plus(Duration.ofDays(31)))).hasSize(1);
     // Setup done; run the test.
     assertMutatingFlow(true);
     Instant originalExpirationTime = domain.getRegistrationExpirationTime();
@@ -119,7 +119,7 @@ class DomainTransferRejectFlowTest
     assertBillingEvents(
         getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_INSTANT).build());
     // The poll message (in the future) to the losing registrar for implicit ack should be gone.
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();
+    assertThat(getPollMessages("TheRegistrar", clock.now().plus(Duration.ofDays(31)))).isEmpty();
     // The poll message in the future to the gaining registrar should be gone too, but there
     // should be one at the current time to the gaining registrar.
     PollMessage gainingPollMessage = getOnlyPollMessage("NewRegistrar");
@@ -308,7 +308,7 @@ class DomainTransferRejectFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    persistDomainAsDeleted(domain, clock.nowUtc());
+    persistDomainAsDeleted(domain, clock.now());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_reject.xml"));
@@ -329,8 +329,8 @@ class DomainTransferRejectFlowTest
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setAutomaticTransferLength(Duration.standardDays(2))
-            .setTransferGracePeriodLength(Duration.standardDays(3))
+            .setAutomaticTransferLength(Duration.ofDays(2))
+            .setTransferGracePeriodLength(Duration.ofDays(3))
             .build());
   }
 

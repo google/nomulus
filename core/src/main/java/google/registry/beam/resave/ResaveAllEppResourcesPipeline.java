@@ -17,7 +17,6 @@ package google.registry.beam.resave;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static org.apache.beam.sdk.values.TypeDescriptors.integers;
 
 import com.google.common.collect.ImmutableList;
@@ -33,6 +32,7 @@ import google.registry.model.host.Host;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
+import java.time.Instant;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
@@ -43,13 +43,12 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.WithKeys;
 import org.apache.beam.sdk.util.ShardedKey;
 import org.apache.beam.sdk.values.KV;
-import org.joda.time.DateTime;
 
 /**
  * A Dataflow Flex pipeline that resaves changed EPP resources in SQL.
  *
  * <p>Due to the way that Hibernate works, if an entity is unchanged by {@link
- * EppResource#cloneProjectedAtTime(DateTime)} it will not actually be re-persisted to the database.
+ * EppResource#cloneProjectedAtTime(Instant)} it will not actually be re-persisted to the database.
  * Thus, the only actual changes occur when objects are changed by projecting them to now, such as
  * when a pending transfer is resolved.
  */
@@ -158,14 +157,14 @@ public class ResaveAllEppResourcesPipeline implements Serializable {
     public void processElement(@Element KV<ShardedKey<Integer>, Iterable<String>> element) {
       tm().transact(
               () -> {
-                DateTime now = tm().getTransactionTime();
+                Instant now = tm().getTxTime();
                 ImmutableList<VKey<? extends EppResource>> keys =
                     Streams.stream(element.getValue())
                         .map(repoId -> VKey.create(clazz, repoId))
                         .collect(toImmutableList());
                 ImmutableList<EppResource> mappedResources =
                     tm().loadByKeys(keys).values().stream()
-                        .map(r -> r.cloneProjectedAtTime(toInstant(now)))
+                        .map(r -> r.cloneProjectedAtTime(now))
                         .collect(toImmutableList());
                 tm().putAll(mappedResources);
               });

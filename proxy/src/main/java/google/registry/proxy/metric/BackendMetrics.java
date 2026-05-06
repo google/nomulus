@@ -24,8 +24,8 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
+import java.time.Duration;
 import java.util.Random;
-import org.joda.time.Duration;
 
 /** Backend metrics instrumentation. */
 @Singleton
@@ -112,7 +112,7 @@ public class BackendMetrics extends BaseMetrics {
     if (random.nextDouble() > backendMetricsRatio) {
       return;
     }
-    latencyMs.record(latency.getMillis(), protocol, certHash);
+    latencyMs.record(latency.toMillis(), protocol, certHash);
     responseBytes.record(response.content().readableBytes(), protocol, certHash);
     responsesCounter.incrementBy(
         roundRatioReciprocal(), protocol, certHash, response.status().toString());

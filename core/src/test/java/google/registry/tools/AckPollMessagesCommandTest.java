@@ -20,7 +20,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.loadByKeysIfPresent;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
@@ -32,7 +31,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +42,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   @BeforeEach
   final void beforeEach() {
     command.clock = fakeClock;
-    fakeClock.setTo(DateTime.parse("2015-02-04T08:16:32.064Z"));
+    fakeClock.setTo(Instant.parse("2015-02-04T08:16:32.064Z"));
     createTld("tld");
     Domain domain =
         DatabaseHelper.newDomain("example.tld").asBuilder().setRepoId("FSDGS-TLD").build();
@@ -63,13 +61,13 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   @Test
   void testSuccess_doesntDeletePollMessagesInFuture() throws Exception {
     VKey<OneTime> pm1 =
-        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
+        persistPollMessage(316L, Instant.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
     VKey<OneTime> pm2 =
-        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives").createVKey();
+        persistPollMessage(624L, Instant.parse("2013-05-01T22:33:44Z"), "ninelives").createVKey();
     VKey<OneTime> pm3 =
-        persistPollMessage(791L, DateTime.parse("2015-01-08T22:33:44Z"), "ginger").createVKey();
+        persistPollMessage(791L, Instant.parse("2015-01-08T22:33:44Z"), "ginger").createVKey();
     OneTime futurePollMessage =
-        persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "notme");
+        persistPollMessage(123L, Instant.parse("2015-09-01T22:33:44Z"), "notme");
     VKey<OneTime> pm4 = futurePollMessage.createVKey();
     runCommand("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
@@ -84,9 +82,9 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   @Test
   void testSuccess_resavesAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
-        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
+        persistPollMessage(316L, Instant.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
     VKey<OneTime> pm2 =
-        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives").createVKey();
+        persistPollMessage(624L, Instant.parse("2013-05-01T22:33:44Z"), "ninelives").createVKey();
     Autorenew autorenew =
         persistResource(
             new PollMessage.Autorenew.Builder()
@@ -111,16 +109,16 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   @Test
   void testSuccess_deletesExpiredAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
-        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
+        persistPollMessage(316L, Instant.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
     VKey<OneTime> pm2 =
-        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives").createVKey();
+        persistPollMessage(624L, Instant.parse("2013-05-01T22:33:44Z"), "ninelives").createVKey();
     Autorenew autorenew =
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setId(625L)
                 .setHistoryEntry(domainHistory)
                 .setEventTime(Instant.parse("2011-04-15T22:33:44Z"))
-                .setAutorenewEndTime(DateTime.parse("2012-01-01T22:33:44Z"))
+                .setAutorenewEndTime(Instant.parse("2012-01-01T22:33:44Z"))
                 .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
                 .build());
@@ -136,15 +134,15 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   @Test
   void testSuccess_onlyDeletesPollMessagesMatchingMessage() throws Exception {
     VKey<OneTime> pm1 =
-        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
+        persistPollMessage(316L, Instant.parse("2014-01-01T22:33:44Z"), "food is good")
             .createVKey();
     OneTime notMatched1 =
-        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "theft is bad");
+        persistPollMessage(624L, Instant.parse("2013-05-01T22:33:44Z"), "theft is bad");
     VKey<OneTime> pm2 = notMatched1.createVKey();
     VKey<OneTime> pm3 =
-        persistPollMessage(791L, DateTime.parse("2015-01-08T22:33:44Z"), "mmmmmfood").createVKey();
+        persistPollMessage(791L, Instant.parse("2015-01-08T22:33:44Z"), "mmmmmfood").createVKey();
     OneTime notMatched2 =
-        persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "time flies");
+        persistPollMessage(123L, Instant.parse("2015-09-01T22:33:44Z"), "time flies");
     VKey<OneTime> pm4 = notMatched2.createVKey();
     runCommand("-c", "TheRegistrar", "-m", "food");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
@@ -154,10 +152,10 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   @Test
   void testSuccess_onlyDeletesPollMessagesMatchingClientId() throws Exception {
     VKey<OneTime> pm1 =
-        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
+        persistPollMessage(316L, Instant.parse("2014-01-01T22:33:44Z"), "food is good")
             .createVKey();
     VKey<OneTime> pm2 =
-        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "theft is bad")
+        persistPollMessage(624L, Instant.parse("2013-05-01T22:33:44Z"), "theft is bad")
             .createVKey();
     OneTime notMatched =
         persistResource(
@@ -176,10 +174,10 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
 
   @Test
   void testSuccess_dryRunDoesntDeleteAnything() throws Exception {
-    OneTime pm1 = persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar");
-    OneTime pm2 = persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives");
-    OneTime pm3 = persistPollMessage(791L, DateTime.parse("2015-01-08T22:33:44Z"), "ginger");
-    OneTime pm4 = persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "notme");
+    OneTime pm1 = persistPollMessage(316L, Instant.parse("2014-01-01T22:33:44Z"), "foobar");
+    OneTime pm2 = persistPollMessage(624L, Instant.parse("2013-05-01T22:33:44Z"), "ninelives");
+    OneTime pm3 = persistPollMessage(791L, Instant.parse("2015-01-08T22:33:44Z"), "ginger");
+    OneTime pm4 = persistPollMessage(123L, Instant.parse("2015-09-01T22:33:44Z"), "notme");
     runCommand("-c", "TheRegistrar", "-d");
     assertThat(
             loadByKeys(
@@ -189,13 +187,13 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         .containsExactly(pm1, pm2, pm3, pm4);
   }
 
-  private OneTime persistPollMessage(long id, DateTime eventTime, String message) {
+  private OneTime persistPollMessage(long id, Instant eventTime, String message) {
     return persistResource(
         new PollMessage.OneTime.Builder()
             .setId(id)
             .setHistoryEntry(domainHistory)
             .setRegistrarId("TheRegistrar")
-            .setEventTime(toInstant(eventTime))
+            .setEventTime(eventTime)
             .setMsg(message)
             .build());
   }

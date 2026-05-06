@@ -17,7 +17,6 @@ package google.registry.testing;
 import static google.registry.testing.DatabaseHelper.generateNewDomainRoid;
 import static google.registry.testing.DatabaseHelper.generateNewHostRoid;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -41,7 +40,6 @@ import google.registry.util.Idn;
 import java.net.InetAddress;
 import java.time.Instant;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** Test helper methods for the RDAP package. */
 public final class FullFieldsTestEntityHelper {
@@ -155,12 +153,12 @@ public final class FullFieldsTestEntityHelper {
   }
 
   public static Host makeAndPersistHost(
-      String fqhn, @Nullable String ip, @Nullable DateTime creationTime) {
+      String fqhn, @Nullable String ip, @Nullable Instant creationTime) {
     return makeAndPersistHost(fqhn, ip, null, creationTime);
   }
 
   public static Host makeAndPersistHost(
-      String fqhn, @Nullable String ip1, @Nullable String ip2, @Nullable DateTime creationTime) {
+      String fqhn, @Nullable String ip1, @Nullable String ip2, @Nullable Instant creationTime) {
     return makeAndPersistHost(fqhn, ip1, ip2, creationTime, "TheRegistrar");
   }
 
@@ -168,7 +166,7 @@ public final class FullFieldsTestEntityHelper {
       String fqhn,
       @Nullable String ip1,
       @Nullable String ip2,
-      @Nullable DateTime creationTime,
+      @Nullable Instant creationTime,
       String registrarClientId) {
     Host host = persistResource(makeHost(fqhn, ip1, ip2, registrarClientId));
     if (creationTime != null) {
@@ -217,12 +215,12 @@ public final class FullFieldsTestEntityHelper {
       HistoryEntry.Type type,
       Period period,
       String reason,
-      DateTime modificationTime) {
+      Instant modificationTime) {
     HistoryEntry.Builder<?, ?> builder =
         HistoryEntry.createBuilderForResource(resource)
             .setType(type)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(toInstant(modificationTime))
+            .setModificationTime(modificationTime)
             .setRegistrarId(resource.getPersistedCurrentSponsorRegistrarId())
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)

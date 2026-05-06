@@ -60,7 +60,8 @@ public class CheckApiMetrics {
   }
 
   public void recordProcessingTime(CheckApiMetric metric) {
-    long elapsedTime = metric.endTimestamp().getMillis() - metric.startTimestamp().getMillis();
+    long elapsedTime =
+        metric.endTimestamp().toEpochMilli() - metric.startTimestamp().toEpochMilli();
     processingTime.record(
         elapsedTime,
         metric.tier().map(Tier::getDisplayLabel).orElse(""),

@@ -316,8 +316,7 @@ public final class DomainTransferUtils {
         .setCost(transferCost)
         .setPeriodYears(1)
         .setEventTime(automaticTransferTime)
-        .setBillingTime(
-            automaticTransferTime.plusMillis(registry.getTransferGracePeriodLength().getMillis()))
+        .setBillingTime(automaticTransferTime.plus(registry.getTransferGracePeriodLength()))
         .setDomainHistoryId(domainHistoryId)
         .build();
   }

@@ -27,8 +27,8 @@ import google.registry.proxy.quota.QuotaManager.QuotaRequest;
 import google.registry.proxy.quota.QuotaManager.QuotaResponse;
 import google.registry.proxy.quota.TokenStore.TimestampedInteger;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import java.util.concurrent.Future;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link QuotaManager}. */
@@ -46,29 +46,29 @@ class QuotaManagerTest {
 
   @Test
   void testSuccess_requestApproved() {
-    when(tokenStore.take(anyString())).thenReturn(TimestampedInteger.create(1, clock.nowUtc()));
+    when(tokenStore.take(anyString())).thenReturn(TimestampedInteger.create(1, clock.now()));
 
     request = new QuotaRequest(USER_ID);
     response = quotaManager.acquireQuota(request);
     assertThat(response.success()).isTrue();
     assertThat(response.userId()).isEqualTo(USER_ID);
-    assertThat(response.grantedTokenRefillTime()).isEqualTo(clock.nowUtc());
+    assertThat(response.grantedTokenRefillTime()).isEqualTo(clock.now());
   }
 
   @Test
   void testSuccess_requestDenied() {
-    when(tokenStore.take(anyString())).thenReturn(TimestampedInteger.create(0, clock.nowUtc()));
+    when(tokenStore.take(anyString())).thenReturn(TimestampedInteger.create(0, clock.now()));
 
     request = new QuotaRequest(USER_ID);
     response = quotaManager.acquireQuota(request);
     assertThat(response.success()).isFalse();
     assertThat(response.userId()).isEqualTo(USER_ID);
-    assertThat(response.grantedTokenRefillTime()).isEqualTo(clock.nowUtc());
+    assertThat(response.grantedTokenRefillTime()).isEqualTo(clock.now());
   }
 
   @Test
   void testSuccess_rebate() {
-    DateTime grantedTokenRefillTime = clock.nowUtc();
+    Instant grantedTokenRefillTime = clock.now();
     response = new QuotaResponse(true, USER_ID, grantedTokenRefillTime);
     QuotaRebate rebate = QuotaRebate.create(response);
     Future<?> unusedFuture = quotaManager.releaseQuota(rebate);

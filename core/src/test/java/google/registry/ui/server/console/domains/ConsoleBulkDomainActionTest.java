@@ -19,7 +19,9 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusMonths;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -73,9 +75,9 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
         persistDomainWithDependentResources(
             "example",
             "tld",
-            clock.nowUtc(),
-            clock.nowUtc().minusMonths(1),
-            clock.nowUtc().plusMonths(11));
+            clock.now(),
+            minusMonths(clock.now(), 1),
+            plusMonths(clock.now(), 11));
   }
 
   @Test

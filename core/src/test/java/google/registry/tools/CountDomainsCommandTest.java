@@ -17,6 +17,7 @@ package google.registry.tools;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.util.DateTimeUtils.minusYears;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand
     }
     for (int j = 0; j < 17; j++) {
       persistActiveDomain(String.format("test-%d.baz", j));
-      persistDeletedDomain(String.format("del-%d.foo", j), fakeClock.nowUtc().minusYears(1));
+      persistDeletedDomain(String.format("del-%d.foo", j), minusYears(fakeClock.now(), 1));
     }
     persistActiveDomain("not-counted.qux");
     runCommand("--tlds=foo,bar,baz");

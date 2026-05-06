@@ -26,8 +26,8 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import google.registry.model.tld.label.ReservedList;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
 
 /** Command to create a {@link ReservedList}. */
 @Parameters(separators = " =", commandDescription = "Create a ReservedList.")
@@ -50,7 +50,7 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
     if (!override) {
       validateListName(name);
     }
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     List<String> allLines = Files.readAllLines(input, UTF_8);
     reservedList =
         new ReservedList.Builder()

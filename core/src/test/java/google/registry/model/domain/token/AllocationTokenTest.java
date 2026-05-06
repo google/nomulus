@@ -428,7 +428,7 @@ public class AllocationTokenTest extends EntityTestCase {
                             .build()));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("tokenStatusTransitions map must start at START_OF_TIME.");
+        .isEqualTo("tokenStatusTransitions map must start at START_INSTANT.");
   }
 
   @Test

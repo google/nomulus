@@ -101,7 +101,7 @@ public class AsyncTaskEnqueuerTest {
             .param(PARAM_RESOURCE_KEY, host.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, now.toString())
             .param(PARAM_RESAVE_TIMES, "2015-05-20T14:34:56Z,2015-05-21T15:34:56Z")
-            .scheduleTime(clock.nowUtc().plusHours(24)));
+            .scheduleTime(plusHours(clock.now(), 24)));
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)

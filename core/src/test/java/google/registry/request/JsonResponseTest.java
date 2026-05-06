@@ -19,6 +19,7 @@ import static google.registry.request.JsonResponse.JSON_SAFETY_PREFIX;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.testing.FakeResponse;
+import java.time.Instant;
 import java.util.Map;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.Test;
@@ -55,5 +56,12 @@ class JsonResponseTest {
     Map<String, Object> headerMap = fakeResponse.getHeaders();
     assertThat(headerMap).hasSize(1);
     assertThat(headerMap.get("header")).isEqualTo("value");
+  }
+
+  @Test
+  void testSetDateHeader() {
+    Instant timestamp = Instant.parse("2024-03-27T10:15:30.105Z");
+    jsonResponse.setDateHeader("header", timestamp);
+    assertThat(fakeResponse.getHeaders()).containsEntry("header", timestamp);
   }
 }

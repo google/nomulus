@@ -37,7 +37,7 @@ import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.util.DateTimeUtils.plusDays;
-import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toLocalDate;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
@@ -445,10 +445,10 @@ public class RdePipelineTest {
             "soy_2000-01-01_full_S1_R1-report.xml.ghostryde");
 
     assertThat(loadCursorTime(CursorType.BRDA)).isEquivalentAccordingToCompareTo(plusDays(now, 1));
-    assertThat(loadRevision(toDateTime(now), THIN)).isEqualTo(1);
+    assertThat(loadRevision(now, THIN)).isEqualTo(1);
 
     assertThat(loadCursorTime(RDE_STAGING)).isEquivalentAccordingToCompareTo(plusDays(now, 1));
-    assertThat(loadRevision(toDateTime(now), FULL)).isEqualTo(1);
+    assertThat(loadRevision(now, FULL)).isEqualTo(1);
     cloudTasksHelper.assertTasksEnqueued(
         "brda",
         new TaskMatcher()
@@ -483,10 +483,10 @@ public class RdePipelineTest {
             "soy_2000-01-01_full_S1_R0-report.xml.ghostryde");
 
     assertThat(loadCursorTime(CursorType.BRDA)).isEquivalentAccordingToCompareTo(now);
-    assertThat(loadRevision(toDateTime(now), THIN)).isEqualTo(0);
+    assertThat(loadRevision(now, THIN)).isEqualTo(0);
 
     assertThat(loadCursorTime(RDE_STAGING)).isEquivalentAccordingToCompareTo(now);
-    assertThat(loadRevision(toDateTime(now), FULL)).isEqualTo(0);
+    assertThat(loadRevision(now, FULL)).isEqualTo(0);
     cloudTasksHelper.assertNoTasksEnqueued("brda", "rde-upload");
   }
 
@@ -538,13 +538,12 @@ public class RdePipelineTest {
             new String(gcsUtils.readBytesFrom(BlobId.of("gcs-bucket", lengthFilename)), UTF_8));
   }
 
-  private static int loadRevision(DateTime now, RdeMode mode) {
+  private static int loadRevision(Instant now, RdeMode mode) {
     return tm().transact(
             () ->
                 tm().loadByKey(
                         VKey.create(
-                            RdeRevision.class,
-                            RdeRevisionId.create("soy", now.toLocalDate(), mode)))
+                            RdeRevision.class, RdeRevisionId.create("soy", toLocalDate(now), mode)))
                     .getRevision());
   }
 

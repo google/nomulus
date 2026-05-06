@@ -22,6 +22,7 @@ import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.NetworkUtils.pickUnusedPort;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
@@ -112,7 +113,7 @@ public class UploadBsaUnavailableDomainsActionTest {
         Tld.get("tld")
             .asBuilder()
             .setReservedLists(reservedList)
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
             .setTldType(TldType.REAL)
             .build());
     action =
@@ -124,7 +125,7 @@ public class UploadBsaUnavailableDomainsActionTest {
   void calculatesEntriesCorrectly() throws Exception {
     persistActiveDomain("foobar.tld");
     persistActiveDomain("ace.tld");
-    persistDeletedDomain("not-blocked.tld", clock.nowUtc().minusDays(1));
+    persistDeletedDomain("not-blocked.tld", minusDays(clock.now(), 1));
     action.run();
     BlobId existingFile =
         BlobId.of(BUCKET, String.format("unavailable_domains_%s.txt", clock.now()));
@@ -146,7 +147,7 @@ public class UploadBsaUnavailableDomainsActionTest {
 
     persistActiveDomain("foobar.tld");
     persistActiveDomain("ace.tld");
-    persistDeletedDomain("not-blocked.tld", clock.nowUtc().minusDays(1));
+    persistDeletedDomain("not-blocked.tld", minusDays(clock.now(), 1));
 
     var testServer = startTestServer();
     action.apiUrl = testServer.getUrl("/upload").toURI().toString();

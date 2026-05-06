@@ -19,7 +19,7 @@ import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeRevision.getNextRevision;
 import static google.registry.model.rde.RdeRevision.saveRevision;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toJodaLocalDate;
+import static google.registry.util.DateTimeUtils.toLocalDate;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -120,7 +120,7 @@ public class RdeRevisionTest extends EntityTestCase {
   }
 
   public static void save(String tld, Instant date, RdeMode mode, int revision) {
-    RdeRevision object = RdeRevision.create(tld, toJodaLocalDate(date), mode, revision);
+    RdeRevision object = RdeRevision.create(tld, toLocalDate(date), mode, revision);
     tm().transact(() -> tm().put(object));
   }
 }

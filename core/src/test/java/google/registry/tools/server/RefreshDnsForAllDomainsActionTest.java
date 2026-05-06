@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.util.DateTimeUtils.minusYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -33,9 +34,9 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Random;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -43,7 +44,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link RefreshDnsForAllDomainsAction}. */
 public class RefreshDnsForAllDomainsActionTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2020-02-02T02:02:02Z"));
   private RefreshDnsForAllDomainsAction action;
   private final FakeResponse response = new FakeResponse();
 
@@ -102,7 +103,7 @@ public class RefreshDnsForAllDomainsActionTest {
   @Test
   void test_runAction_doesntRefreshDeletedDomain() throws Exception {
     persistActiveDomain("foo.bar");
-    persistDeletedDomain("deleted.bar", clock.nowUtc().minusYears(1));
+    persistDeletedDomain("deleted.bar", minusYears(clock.now(), 1));
     action.run();
     assertDomainDnsRequestWithRequestTime("foo.bar", clock.now());
     assertNoDnsRequestsExcept("foo.bar");
@@ -116,12 +117,12 @@ public class RefreshDnsForAllDomainsActionTest {
             ImmutableSet.of("bar"),
             Optional.of(1),
             Optional.of(7),
-            Optional.of(clock.nowUtc().minusYears(3)),
+            Optional.of(minusYears(clock.now(), 3)),
             new Random());
     persistActiveDomain("foo.bar");
-    persistDeletedDomain("deleted1.bar", clock.nowUtc().minusYears(1));
-    persistDeletedDomain("deleted3.bar", clock.nowUtc().minusYears(3));
-    persistDeletedDomain("deleted5.bar", clock.nowUtc().minusYears(5));
+    persistDeletedDomain("deleted1.bar", minusYears(clock.now(), 1));
+    persistDeletedDomain("deleted3.bar", minusYears(clock.now(), 3));
+    persistDeletedDomain("deleted5.bar", minusYears(clock.now(), 5));
     action.run();
     assertDomainDnsRequestWithRequestTime("foo.bar", clock.now());
     assertDomainDnsRequestWithRequestTime("deleted1.bar", clock.now());

@@ -18,9 +18,8 @@
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlJavaTypeAdapters({
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class),
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class),
-  @XmlJavaTypeAdapter(DateAdapter.class)
+  @XmlJavaTypeAdapter(value = UtcInstantAdapter.class, type = java.time.Instant.class),
+  @XmlJavaTypeAdapter(value = DateAdapter.class, type = java.time.LocalDate.class)
 })
 package google.registry.model.domain;
 

@@ -17,8 +17,6 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.findDuplicates;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.beust.jcommander.Parameter;
@@ -28,10 +26,10 @@ import com.google.template.soy.data.SoyMapData;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.domain.Domain;
 import google.registry.tools.soy.DomainRenewSoyInfo;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 /** A command to renew domain(s) via EPP. */
 @Parameters(separators = " =", commandDescription = "Renew domain(s) via EPP.")
@@ -63,7 +61,8 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
       arity = 1)
   Boolean requestedByRegistrar;
 
-  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormat.forPattern("YYYY-MM-dd");
+  private static final DateTimeFormatter DATE_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
 
   @Override
   protected void initMutatingEppToolCommand()
@@ -71,16 +70,14 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
     String duplicates = Joiner.on(", ").join(findDuplicates(mainParameters));
     checkArgument(duplicates.isEmpty(), "Duplicate domain arguments found: '%s'", duplicates);
     checkArgument(period < 10, "Cannot renew domains for 10 or more years");
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     for (String domainName : mainParameters) {
-      Domain domain =
-          ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, toInstant(now));
+      Domain domain = ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, now);
       setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
       SoyMapData soyMapData =
           new SoyMapData(
               "domainName", domain.getDomainName(),
-              "expirationDate",
-                  DATE_FORMATTER.print(toDateTime(domain.getRegistrationExpirationTime())),
+              "expirationDate", DATE_FORMATTER.format(domain.getRegistrationExpirationTime()),
               "period", String.valueOf(period));
 
       if (requestedByRegistrar != null) {

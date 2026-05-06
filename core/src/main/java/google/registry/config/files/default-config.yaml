@@ -476,7 +476,7 @@ sslCertificateValidation:
   # The entry key is the date closest before the date the certificate was issued
   # and the entry value is the applicable maximum validity days for that certificate.
   maxValidityDaysSchedule:
-    "START_OF_TIME": 825
+    "START_INSTANT": 825
     "2020-09-01T00:00:00Z": 398
   # The number of days before a certificate expires that indicates the
   # certificate is nearing expiration and warnings should be sent.

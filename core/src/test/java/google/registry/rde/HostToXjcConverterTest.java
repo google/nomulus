@@ -34,7 +34,6 @@ import google.registry.xjc.rdehost.XjcRdeHost;
 import google.registry.xjc.rdehost.XjcRdeHostElement;
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -86,7 +85,7 @@ public class HostToXjcConverterTest {
     assertThat(bean.getAddrs().get(0).getIp().value()).isEqualTo("v4");
     assertThat(bean.getAddrs().get(0).getValue()).isEqualTo("127.0.0.1");
 
-    assertThat(bean.getCrDate()).isEqualTo(DateTime.parse("1900-01-01T00:00:00Z"));
+    assertThat(bean.getCrDate()).isEqualTo(Instant.parse("1900-01-01T00:00:00Z"));
 
     // o  A <crRr> element that contains the identifier of the registrar
     //    that created the domain name object.  An OPTIONAL client attribute
@@ -105,14 +104,14 @@ public class HostToXjcConverterTest {
     assertThat(status0.getValue()).isNull();
     assertThat(status0.getLang()).isEqualTo("en");
 
-    assertThat(bean.getUpDate()).isEqualTo(DateTime.parse("1920-01-01T00:00:00Z"));
+    assertThat(bean.getUpDate()).isEqualTo(Instant.parse("1920-01-01T00:00:00Z"));
 
     assertThat(bean.getUpRr().getValue()).isEqualTo("CeilingCat");
     assertThat(bean.getUpRr().getClient()).isNull();
 
     // Values that should have been copied from the superordinate domain.
     assertThat(bean.getClID()).isEqualTo("LeisureDog");
-    assertThat(bean.getTrDate()).isEqualTo(DateTime.parse("2010-01-01T00:00:00Z"));
+    assertThat(bean.getTrDate()).isEqualTo(Instant.parse("2010-01-01T00:00:00Z"));
     XjcHostStatusType status1 = bean.getStatuses().get(1);
     assertThat(status1.getS()).isEqualTo(XjcHostStatusValueType.PENDING_TRANSFER);
     assertThat(status1.getValue()).isNull();
@@ -142,7 +141,7 @@ public class HostToXjcConverterTest {
 
     assertThat(bean.getClID()).isEqualTo("BusinessCat");
 
-    assertThat(bean.getCrDate()).isEqualTo(DateTime.parse("1900-01-01T00:00:00Z"));
+    assertThat(bean.getCrDate()).isEqualTo(Instant.parse("1900-01-01T00:00:00Z"));
 
     // o  A <crRr> element that contains the identifier of the registrar
     //    that created the domain name object.  An OPTIONAL client attribute
@@ -160,9 +159,9 @@ public class HostToXjcConverterTest {
     assertThat(bean.getStatuses().get(0).getValue()).isNull();
     assertThat(bean.getStatuses().get(0).getLang()).isEqualTo("en");
 
-    assertThat(bean.getTrDate()).isEqualTo(DateTime.parse("1910-01-01T00:00:00Z"));
+    assertThat(bean.getTrDate()).isEqualTo(Instant.parse("1910-01-01T00:00:00Z"));
 
-    assertThat(bean.getUpDate()).isEqualTo(DateTime.parse("1920-01-01T00:00:00Z"));
+    assertThat(bean.getUpDate()).isEqualTo(Instant.parse("1920-01-01T00:00:00Z"));
 
     assertThat(bean.getUpRr().getValue()).isEqualTo("CeilingCat");
     assertThat(bean.getUpRr().getClient()).isNull();

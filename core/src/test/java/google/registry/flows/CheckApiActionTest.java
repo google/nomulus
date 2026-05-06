@@ -26,7 +26,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.mockito.Mockito.verify;
 
 import google.registry.bsa.persistence.BsaTestingUtils;
@@ -39,9 +39,9 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +56,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CheckApiActionTest {
 
-  private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
+  private static final Instant START_TIME = Instant.parse("2000-01-01T00:00:00.0Z");
   private final FakeClock fakeClock = new FakeClock(START_TIME);
 
   @RegisterExtension
@@ -66,7 +66,7 @@ class CheckApiActionTest {
   @Mock private CheckApiMetrics checkApiMetrics;
   @Captor private ArgumentCaptor<CheckApiMetric> metricCaptor;
 
-  private DateTime endTime;
+  private Instant endTime;
 
   @BeforeEach
   void beforeEach() {
@@ -91,7 +91,7 @@ class CheckApiActionTest {
     action.metricBuilder = CheckApiMetric.builder(fakeClock);
     action.checkApiMetrics = checkApiMetrics;
     fakeClock.advanceOneMilli();
-    endTime = fakeClock.nowUtc();
+    endTime = fakeClock.now();
 
     action.run();
     return (Map<String, Object>) JSONValue.parse(((FakeResponse) action.response).getPayload());
@@ -289,7 +289,7 @@ class CheckApiActionTest {
   void testSuccess_blockedByBsa() {
     BsaTestingUtils.persistBsaLabel("rich");
     persistResource(
-        Tld.get("example").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        Tld.get("example").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     assertThat(getCheckResponse("rich.example"))
         .containsExactly(
             "tier", "premium",

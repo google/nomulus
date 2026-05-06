@@ -17,7 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.FeatureFlag.FeatureName.FEE_EXTENSION_1_DOT_0_IN_PROD;
 import static google.registry.tools.RegistryToolEnvironment.PRODUCTION;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.tools.CommandTestCase;
@@ -86,7 +86,7 @@ public class ProductionSimulatingFeeExtensionsTest
         FEE_EXTENSION_1_DOT_0_IN_PROD.name(),
         "--force",
         "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, fakeClock.now().plusMillis(1)));
+        String.format("%s=INACTIVE,%s=ACTIVE", START_INSTANT, fakeClock.now().plusMillis(1)));
     RegistryEnvironment.PRODUCTION.setup();
     ProtocolDefinition.reloadServiceExtensionUris();
     // prod shouldn't have the fee extension version 1.0
@@ -107,7 +107,7 @@ public class ProductionSimulatingFeeExtensionsTest
         FEE_EXTENSION_1_DOT_0_IN_PROD.name(),
         "--force",
         "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, fakeClock.now().minusMillis(1)));
+        String.format("%s=INACTIVE,%s=ACTIVE", START_INSTANT, fakeClock.now().minusMillis(1)));
     RegistryEnvironment.PRODUCTION.setup();
     ProtocolDefinition.reloadServiceExtensionUris();
     // prod should have the fee extension version 1.0

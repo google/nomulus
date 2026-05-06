@@ -19,7 +19,7 @@ import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.FeatureFlag;
@@ -34,7 +34,7 @@ public class DeleteFeatureFlagCommandTest extends CommandTestCase<DeleteFeatureF
         new FeatureFlag()
             .asBuilder()
             .setFeatureName(TEST_FEATURE)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, ACTIVE))
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, ACTIVE))
             .build());
     assertThat(tm().transact(() -> FeatureFlag.isActiveNow(TEST_FEATURE))).isTrue();
     runCommandForced("TEST_FEATURE");

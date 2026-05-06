@@ -29,7 +29,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -264,7 +263,7 @@ class DeleteProberDataActionTest {
   @Test
   void test_domainWithSubordinateHosts_isSkipped() throws Exception {
     persistActiveHost("ns1.blah.ib-any.test");
-    Domain nakedDomain = persistDeletedDomain("todelete.ib-any.test", clock.nowUtc().minusYears(1));
+    Domain nakedDomain = persistDeletedDomain("todelete.ib-any.test", minusYears(clock.now(), 1));
     Domain domainWithSubord =
         persistDomainAsDeleted(
             DatabaseHelper.newDomain("blah.ib-any.test")
@@ -294,7 +293,7 @@ class DeleteProberDataActionTest {
    * Persists and returns a domain and a descendant history entry, billing event, and poll message.
    */
   private static Set<ImmutableObject> persistDomainAndDescendants(String fqdn) {
-    Domain domain = persistDeletedDomain(fqdn, toDateTime(DELETION_TIME));
+    Domain domain = persistDeletedDomain(fqdn, DELETION_TIME);
     DomainHistory historyEntry =
         persistResource(
             new DomainHistory.Builder()

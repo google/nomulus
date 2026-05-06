@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.ServiceLoader;
 import org.apache.commons.codec.binary.Base64;
@@ -154,7 +155,7 @@ public class DelegatedCredentials extends GoogleCredentials {
   @Override
   public AccessToken refreshAccessToken() throws IOException {
     JsonFactory jsonFactory = JSON_FACTORY;
-    long currentTime = clock.nowUtc().getMillis();
+    long currentTime = clock.now().toEpochMilli();
     String assertion = createAssertion(jsonFactory, currentTime);
 
     GenericData tokenRequest = new GenericData();
@@ -195,7 +196,7 @@ public class DelegatedCredentials extends GoogleCredentials {
     GenericData responseData = response.parseAs(GenericData.class);
     String accessToken = validateString(responseData, "access_token", PARSE_ERROR_PREFIX);
     int expiresInSeconds = validateInt32(responseData, "expires_in", PARSE_ERROR_PREFIX);
-    return new AccessToken(accessToken, clock.nowUtc().plusSeconds(expiresInSeconds).toDate());
+    return new AccessToken(accessToken, Date.from(clock.now().plusSeconds(expiresInSeconds)));
   }
 
   String createAssertion(JsonFactory jsonFactory, long currentTime) throws IOException {

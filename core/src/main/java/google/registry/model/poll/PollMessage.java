@@ -18,8 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
@@ -60,7 +58,6 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * A poll message that is pending for a registrar.
@@ -246,15 +243,6 @@ public abstract class PollMessage extends ImmutableObject
       return thisCastToDerived();
     }
 
-    /**
-     * @deprecated Use {@link #setEventTime(Instant)}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public B setEventTime(DateTime eventTime) {
-      return setEventTime(toInstant(eventTime));
-    }
-
     public B setEventTime(Instant eventTime) {
       getInstance().eventTime = eventTime;
       return thisCastToDerived();
@@ -401,15 +389,6 @@ public abstract class PollMessage extends ImmutableObject
     @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
-    }
-
-    /**
-     * @deprecated Use {@link #getExtendedRegistrationExpirationTime()}
-     */
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public DateTime getExtendedRegistrationExpirationDateTime() {
-      return toDateTime(extendedRegistrationExpirationTime);
     }
 
     public Instant getExtendedRegistrationExpirationTime() {
@@ -582,15 +561,6 @@ public abstract class PollMessage extends ImmutableObject
       public Builder setTargetId(String targetId) {
         getInstance().targetId = targetId;
         return this;
-      }
-
-      /**
-       * @deprecated Use {@link #setAutorenewEndTime(Instant)}
-       */
-      @Deprecated
-      @SuppressWarnings("InlineMeSuggester")
-      public Builder setAutorenewEndTime(DateTime autorenewEndTime) {
-        return setAutorenewEndTime(toInstant(autorenewEndTime));
       }
 
       public Builder setAutorenewEndTime(Instant autorenewEndTime) {

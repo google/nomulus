@@ -19,7 +19,6 @@ import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.model.tld.Tlds.assertTldExists;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.beust.jcommander.Parameter;
@@ -36,9 +35,9 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 
 /** Command to generate a report of all DNS data. */
@@ -66,7 +65,7 @@ final class GenerateDnsReportCommand implements Command {
   }
 
   private class Generator {
-    private final DateTime now = clock.nowUtc();
+    private final Instant now = clock.now();
     private final StringBuilder result = new StringBuilder();
     private boolean first = true;
 
@@ -81,8 +80,7 @@ final class GenerateDnsReportCommand implements Command {
                           .list());
       for (Domain domain : domains) {
         // Skip deleted domains and domains that don't get published to DNS.
-        if (isBeforeOrAt(domain.getDeletionTime(), toInstant(now))
-            || !domain.shouldPublishToDns()) {
+        if (isBeforeOrAt(domain.getDeletionTime(), now) || !domain.shouldPublishToDns()) {
           continue;
         }
         write(domain);
@@ -91,7 +89,7 @@ final class GenerateDnsReportCommand implements Command {
       Iterable<Host> nameservers = tm().transact(() -> tm().loadAllOf(Host.class));
       for (Host nameserver : nameservers) {
         // Skip deleted hosts and external hosts.
-        if (isBeforeOrAt(nameserver.getDeletionTime(), toInstant(now))
+        if (isBeforeOrAt(nameserver.getDeletionTime(), now)
             || nameserver.getInetAddresses().isEmpty()) {
           continue;
         }

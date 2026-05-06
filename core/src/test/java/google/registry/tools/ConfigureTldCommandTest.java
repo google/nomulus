@@ -49,10 +49,10 @@ import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import java.io.File;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Logger;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -123,7 +123,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_updateTld_existingBsaTimeCarriedOver() throws Exception {
     Tld tld = createTld("tld");
-    DateTime bsaStartTime = fakeClock.nowUtc();
+    Instant bsaStartTime = fakeClock.now();
     persistResource(tld.asBuilder().setBsaEnrollStartTime(Optional.of(bsaStartTime)).build());
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));

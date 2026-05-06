@@ -29,8 +29,11 @@ import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusHours;
+import static google.registry.util.DateTimeUtils.plusHours;
+import static google.registry.util.DateTimeUtils.plusMonths;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -44,7 +47,6 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DatabaseHelper;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,28 +65,20 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
   void test_unrenewTwoDomains_worksSuccessfully() throws Exception {
     fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
-        "foo",
-        "tld",
-        fakeClock.nowUtc(),
-        fakeClock.nowUtc(),
-        fakeClock.nowUtc().plusYears(5));
+        "foo", "tld", fakeClock.now(), fakeClock.now(), plusYears(fakeClock.now(), 5));
     fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
-        "bar",
-        "tld",
-        fakeClock.nowUtc(),
-        fakeClock.nowUtc(),
-        fakeClock.nowUtc().plusYears(4));
+        "bar", "tld", fakeClock.now(), fakeClock.now(), plusYears(fakeClock.now(), 4));
     fakeClock.setAutoIncrementByOneMilli();
     runCommandForced("-p", "2", "foo.tld", "bar.tld");
     fakeClock.disableAutoIncrement();
     assertThat(
-            ForeignKeyUtils.loadResource(Domain.class, "foo.tld", fakeClock.nowUtc())
+            ForeignKeyUtils.loadResource(Domain.class, "foo.tld", fakeClock.now())
                 .get()
                 .getRegistrationExpirationTime())
         .isEqualTo(Instant.parse("2019-12-06T13:55:01.001Z"));
     assertThat(
-            ForeignKeyUtils.loadResource(Domain.class, "bar.tld", fakeClock.nowUtc())
+            ForeignKeyUtils.loadResource(Domain.class, "bar.tld", fakeClock.now())
                 .get()
                 .getRegistrationExpirationTime())
         .isEqualTo(Instant.parse("2018-12-06T13:55:01.002Z"));
@@ -95,17 +89,13 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
   void test_unrenewDomain_savesDependentEntitiesCorrectly() throws Exception {
     fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
-        "foo",
-        "tld",
-        fakeClock.nowUtc(),
-        fakeClock.nowUtc(),
-        fakeClock.nowUtc().plusYears(5));
+        "foo", "tld", fakeClock.now(), fakeClock.now(), plusYears(fakeClock.now(), 5));
     Instant newExpirationTime = plusYears(fakeClock.now(), 3);
     fakeClock.advanceOneMilli();
     runCommandForced("-p", "2", "foo.tld");
     Instant unrenewTime = fakeClock.now();
     fakeClock.advanceOneMilli();
-    Domain domain = ForeignKeyUtils.loadResource(Domain.class, "foo.tld", fakeClock.nowUtc()).get();
+    Domain domain = ForeignKeyUtils.loadResource(Domain.class, "foo.tld", fakeClock.now()).get();
 
     assertAboutHistoryEntries()
         .that(getOnlyHistoryEntryOfType(domain, SYNTHETIC))
@@ -176,14 +166,14 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
   @Test
   void test_varietyOfInvalidDomains_displaysErrors() {
     command.errorPrintStream = System.err;
-    DateTime now = fakeClock.nowUtc();
+    Instant now = fakeClock.now();
     persistResource(
         DatabaseHelper.newDomain("deleting.tld")
             .asBuilder()
-            .setDeletionTime(toInstant(now.plusHours(1)))
+            .setDeletionTime(plusHours(now, 1))
             .setStatusValues(ImmutableSet.of(PENDING_DELETE))
             .build());
-    persistDeletedDomain("deleted.tld", now.minusHours(1));
+    persistDeletedDomain("deleted.tld", minusHours(now, 1));
     persistResource(
         DatabaseHelper.newDomain("transferring.tld")
             .asBuilder()
@@ -194,8 +184,8 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
             .asBuilder()
             .setStatusValues(ImmutableSet.of(StatusValue.SERVER_UPDATE_PROHIBITED))
             .build());
-    persistActiveDomain("expiring.tld", now.minusDays(4), now.plusMonths(11));
-    persistActiveDomain("valid.tld", now.minusDays(4), now.plusYears(3));
+    persistActiveDomain("expiring.tld", minusDays(now, 4), plusMonths(now, 11));
+    persistActiveDomain("valid.tld", minusDays(now, 4), plusYears(now, 3));
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

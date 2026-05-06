@@ -16,100 +16,77 @@ package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static google.registry.util.DateTimeUtils.earliestDateTimeOf;
 import static google.registry.util.DateTimeUtils.earliestOf;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DateTimeUtils.latestDateTimeOf;
 import static google.registry.util.DateTimeUtils.latestOf;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusHours;
+import static google.registry.util.DateTimeUtils.minusMinutes;
 import static google.registry.util.DateTimeUtils.minusMonths;
+import static google.registry.util.DateTimeUtils.minusWeeks;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.parseInstant;
+import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusHours;
+import static google.registry.util.DateTimeUtils.plusMinutes;
 import static google.registry.util.DateTimeUtils.plusMonths;
+import static google.registry.util.DateTimeUtils.plusWeeks;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DateTimeUtils.toJodaInstant;
-import static google.registry.util.DateTimeUtils.toLocalDate;
-import static google.registry.util.DateTimeUtils.toSqlDate;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import java.sql.Date;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DateTimeUtils}. */
 class DateTimeUtilsTest {
 
-  private ImmutableList<DateTime> sampleDates =
-      ImmutableList.of(START_OF_TIME, START_OF_TIME.plusDays(1), END_OF_TIME, END_OF_TIME);
-
-  @Test
-  void testSuccess_earliestOf() {
-    assertThat(earliestOf(START_OF_TIME, END_OF_TIME)).isEqualTo(START_OF_TIME);
-    assertThat(earliestDateTimeOf(sampleDates)).isEqualTo(START_OF_TIME);
-  }
+  private ImmutableList<Instant> sampleInstants =
+      ImmutableList.of(
+          START_INSTANT, START_INSTANT.plus(1, ChronoUnit.DAYS), END_INSTANT, END_INSTANT);
 
   @Test
   void testSuccess_earliestOf_instant() {
     assertThat(earliestOf(START_INSTANT, END_INSTANT)).isEqualTo(START_INSTANT);
-    assertThat(earliestOf(ImmutableList.of(START_INSTANT, END_INSTANT))).isEqualTo(START_INSTANT);
-  }
-
-  @Test
-  void testSuccess_latestOf() {
-    assertThat(latestOf(START_OF_TIME, END_OF_TIME)).isEqualTo(END_OF_TIME);
-    assertThat(latestDateTimeOf(sampleDates)).isEqualTo(END_OF_TIME);
+    assertThat(earliestOf(sampleInstants)).isEqualTo(START_INSTANT);
   }
 
   @Test
   void testSuccess_latestOf_instant() {
     assertThat(latestOf(START_INSTANT, END_INSTANT)).isEqualTo(END_INSTANT);
-    assertThat(latestOf(ImmutableList.of(START_INSTANT, END_INSTANT))).isEqualTo(END_INSTANT);
+    assertThat(latestOf(sampleInstants)).isEqualTo(END_INSTANT);
   }
 
   @Test
   void testSuccess_isBeforeOrAt() {
-    assertThat(isBeforeOrAt(START_OF_TIME, START_OF_TIME.plusDays(1))).isTrue();
-    assertThat(isBeforeOrAt(START_OF_TIME, START_OF_TIME)).isTrue();
-    assertThat(isBeforeOrAt(START_OF_TIME.plusDays(1), START_OF_TIME)).isFalse();
+    assertThat(isBeforeOrAt(START_INSTANT, START_INSTANT.plus(1, ChronoUnit.DAYS))).isTrue();
+    assertThat(isBeforeOrAt(START_INSTANT, START_INSTANT)).isTrue();
+    assertThat(isBeforeOrAt(START_INSTANT.plus(1, ChronoUnit.DAYS), START_INSTANT)).isFalse();
   }
 
   @Test
   void testSuccess_isAtOrAfter() {
-    assertThat(isAtOrAfter(START_OF_TIME, START_OF_TIME.plusDays(1))).isFalse();
-    assertThat(isAtOrAfter(START_OF_TIME, START_OF_TIME)).isTrue();
-    assertThat(isAtOrAfter(START_OF_TIME.plusDays(1), START_OF_TIME)).isTrue();
+    assertThat(isAtOrAfter(START_INSTANT, START_INSTANT.plus(1, ChronoUnit.DAYS))).isFalse();
+    assertThat(isAtOrAfter(START_INSTANT, START_INSTANT)).isTrue();
+    assertThat(isAtOrAfter(START_INSTANT.plus(1, ChronoUnit.DAYS), START_INSTANT)).isTrue();
   }
 
   @Test
   void testSuccess_plusYears() {
-    DateTime startDate = DateTime.parse("2012-02-29T00:00:00Z");
-    assertThat(startDate.plusYears(4)).isEqualTo(DateTime.parse("2016-02-29T00:00:00Z"));
-    assertThat(plusYears(startDate, 4)).isEqualTo(DateTime.parse("2016-02-28T00:00:00Z"));
-  }
-
-  @Test
-  void test_plusYears_worksWithInstants() {
     Instant startDate = Instant.parse("2012-02-29T00:00:00Z");
     assertThat(plusYears(startDate, 4)).isEqualTo(Instant.parse("2016-02-28T00:00:00Z"));
   }
 
   @Test
   void testSuccess_minusYears() {
-    DateTime startDate = DateTime.parse("2012-02-29T00:00:00Z");
-    assertThat(startDate.minusYears(4)).isEqualTo(DateTime.parse("2008-02-29T00:00:00Z"));
-    assertThat(minusYears(startDate, 4)).isEqualTo(DateTime.parse("2008-02-28T00:00:00Z"));
-  }
-
-  @Test
-  void test_minusYears_worksWithInstants() {
     Instant startDate = Instant.parse("2012-02-29T00:00:00Z");
     assertThat(minusYears(startDate, 4)).isEqualTo(Instant.parse("2008-02-28T00:00:00Z"));
   }
@@ -140,40 +117,36 @@ class DateTimeUtilsTest {
 
   @Test
   void testFailure_earliestOfEmpty() {
-    assertThrows(IllegalArgumentException.class, () -> earliestDateTimeOf(ImmutableList.of()));
+    assertThrows(IllegalArgumentException.class, () -> earliestOf(ImmutableList.of()));
   }
 
   @Test
   void testFailure_latestOfEmpty() {
-    assertThrows(IllegalArgumentException.class, () -> latestDateTimeOf(ImmutableList.of()));
+    assertThrows(IllegalArgumentException.class, () -> latestOf(ImmutableList.of()));
   }
 
   @Test
-  void testSuccess_toSqlDate() {
-    LocalDate localDate = LocalDate.parse("2020-02-29");
-    assertThat(toSqlDate(localDate)).isEqualTo(Date.valueOf("2020-02-29"));
+  void test_formatInstant() {
+    assertThat(formatInstant(Instant.parse("2024-03-27T10:15:30.105Z")))
+        .isEqualTo("2024-03-27T10:15:30.105Z");
+    assertThat(formatInstant(Instant.parse("2024-03-27T10:15:30Z")))
+        .isEqualTo("2024-03-27T10:15:30.000Z");
   }
 
   @Test
-  void testSuccess_toLocalDate() {
-    Date date = Date.valueOf("2020-02-29");
-    assertThat(toLocalDate(date)).isEqualTo(LocalDate.parse("2020-02-29"));
-  }
+  void test_plusMinusWeeksDaysHoursMinutes() {
+    Instant time = Instant.parse("2024-03-27T10:15:30.000Z");
+    assertThat(plusWeeks(time, 2)).isEqualTo(Instant.parse("2024-04-10T10:15:30.000Z"));
+    assertThat(minusWeeks(time, 2)).isEqualTo(Instant.parse("2024-03-13T10:15:30.000Z"));
 
-  @Test
-  void test_startOfTimeConstants_areTheSame() {
-    assertThat(toInstant(START_OF_TIME)).isEqualTo(START_INSTANT);
-    assertThat(toDateTime(START_INSTANT)).isEqualTo(START_OF_TIME);
-    assertThat(toInstant(toDateTime(START_INSTANT))).isEqualTo(START_INSTANT);
-    assertThat(toDateTime(toInstant(START_OF_TIME))).isEqualTo(START_OF_TIME);
-  }
+    assertThat(plusDays(time, 2)).isEqualTo(Instant.parse("2024-03-29T10:15:30.000Z"));
+    assertThat(minusDays(time, 2)).isEqualTo(Instant.parse("2024-03-25T10:15:30.000Z"));
 
-  @Test
-  void test_endOfTimeConstants_areTheSame() {
-    assertThat(toInstant(END_OF_TIME)).isEqualTo(END_INSTANT);
-    assertThat(toDateTime(END_INSTANT)).isEqualTo(END_OF_TIME);
-    assertThat(toInstant(toDateTime(END_INSTANT))).isEqualTo(END_INSTANT);
-    assertThat(toDateTime(toInstant(END_OF_TIME))).isEqualTo(END_OF_TIME);
+    assertThat(plusHours(time, 2)).isEqualTo(Instant.parse("2024-03-27T12:15:30.000Z"));
+    assertThat(minusHours(time, 2)).isEqualTo(Instant.parse("2024-03-27T08:15:30.000Z"));
+
+    assertThat(plusMinutes(time, 2)).isEqualTo(Instant.parse("2024-03-27T10:17:30.000Z"));
+    assertThat(minusMinutes(time, 2)).isEqualTo(Instant.parse("2024-03-27T10:13:30.000Z"));
   }
 
   @Test

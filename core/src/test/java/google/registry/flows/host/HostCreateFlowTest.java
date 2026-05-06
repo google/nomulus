@@ -27,6 +27,7 @@ import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HostSubject.assertAboutHosts;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -135,7 +136,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     doSuccessfulInternalTest("tld");
     Host host = reloadResourceByForeignKey();
     Domain superordinateDomain =
-        ForeignKeyUtils.loadResource(Domain.class, "example.tld", clock.nowUtc()).get();
+        ForeignKeyUtils.loadResource(Domain.class, "example.tld", clock.now()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
     assertHostDnsRequests("ns1.example.tld");
@@ -174,7 +175,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
 
   @Test
   void testSuccess_externalExistedButWasDeleted() throws Exception {
-    persistDeletedHost(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    persistDeletedHost(getUniqueIdFromCommand(), minusDays(clock.now(), 1));
     doSuccessfulTest();
     assertAboutHosts().that(reloadResourceByForeignKey()).hasSuperordinateDomain(null);
     assertNoDnsRequests();
@@ -182,11 +183,11 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
 
   @Test
   void testSuccess_internalExistedButWasDeleted() throws Exception {
-    persistDeletedHost(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    persistDeletedHost(getUniqueIdFromCommand(), minusDays(clock.now(), 1));
     doSuccessfulInternalTest("tld");
     Host host = reloadResourceByForeignKey();
     Domain superordinateDomain =
-        ForeignKeyUtils.loadResource(Domain.class, "example.tld", clock.nowUtc()).get();
+        ForeignKeyUtils.loadResource(Domain.class, "example.tld", clock.now()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
     assertHostDnsRequests("ns1.example.tld");

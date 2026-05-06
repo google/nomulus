@@ -24,11 +24,11 @@ import com.google.common.flogger.FluentLogger;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
-import org.joda.time.Duration;
 
 /** Wrapper that does retry with exponential backoff. */
 public class Retrier implements Serializable {
@@ -164,7 +164,7 @@ public class Retrier implements Serializable {
         long backoffMillis = pow(2, failures) * 100L;
         long sleepDurationMillis = Math.round(randomForSkew.nextDouble(0.8, 1.2) * backoffMillis);
         try {
-          sleeper.sleep(Duration.millis(sleepDurationMillis));
+          sleeper.sleep(Duration.ofMillis(sleepDurationMillis));
         } catch (InterruptedException e2) {
           // Since we're not rethrowing InterruptedException, set the interrupt state on the thread
           // so the next blocking operation will know to abort the thread.

@@ -20,8 +20,8 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,7 @@ class ListDomainsActionTest extends ListActionTestCase {
   void beforeEach() {
     createTld("foo");
     action = new ListDomainsAction();
-    action.clock = new FakeClock(DateTime.parse("2018-01-01TZ"));
+    action.clock = new FakeClock(Instant.parse("2018-01-01T00:00:00Z"));
     action.limit = Integer.MAX_VALUE;
   }
 
@@ -70,10 +70,10 @@ class ListDomainsActionTest extends ListActionTestCase {
   void testRun_twoLinesWithIdOnly() {
     action.tlds = ImmutableSet.of("foo");
     createTlds("bar", "sim");
-    persistActiveDomain("dontlist.bar", DateTime.parse("2015-02-14T15:15:15Z"));
-    persistActiveDomain("example1.foo", DateTime.parse("2015-02-15T15:15:15Z"));
-    persistActiveDomain("example2.foo", DateTime.parse("2015-02-16T15:15:15Z"));
-    persistActiveDomain("notlistedaswell.sim", DateTime.parse("2015-02-17T15:15:15Z"));
+    persistActiveDomain("dontlist.bar", Instant.parse("2015-02-14T15:15:15Z"));
+    persistActiveDomain("example1.foo", Instant.parse("2015-02-15T15:15:15Z"));
+    persistActiveDomain("example2.foo", Instant.parse("2015-02-16T15:15:15Z"));
+    persistActiveDomain("notlistedaswell.sim", Instant.parse("2015-02-17T15:15:15Z"));
     // Only list the two domains in .foo, not the .bar or .sim ones.
     testRunSuccess(
         action,
@@ -88,10 +88,10 @@ class ListDomainsActionTest extends ListActionTestCase {
   void testRun_multipleTlds() {
     action.tlds = ImmutableSet.of("bar", "foo");
     createTlds("bar", "sim");
-    persistActiveDomain("dolist.bar", DateTime.parse("2015-01-15T15:15:15Z"));
-    persistActiveDomain("example1.foo", DateTime.parse("2015-02-15T15:15:15Z"));
-    persistActiveDomain("example2.foo", DateTime.parse("2015-03-15T15:15:15Z"));
-    persistActiveDomain("notlistedaswell.sim", DateTime.parse("2015-04-15T15:15:15Z"));
+    persistActiveDomain("dolist.bar", Instant.parse("2015-01-15T15:15:15Z"));
+    persistActiveDomain("example1.foo", Instant.parse("2015-02-15T15:15:15Z"));
+    persistActiveDomain("example2.foo", Instant.parse("2015-03-15T15:15:15Z"));
+    persistActiveDomain("notlistedaswell.sim", Instant.parse("2015-04-15T15:15:15Z"));
     testRunSuccess(
         action,
         Optional.empty(),
@@ -105,8 +105,8 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_twoLinesWithIdOnlyNoHeader() {
     action.tlds = ImmutableSet.of("foo");
-    persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
-    persistActiveDomain("example2.foo", DateTime.parse("2011-03-04T16:00:00Z"));
+    persistActiveDomain("example1.foo", Instant.parse("2010-03-04T16:00:00Z"));
+    persistActiveDomain("example2.foo", Instant.parse("2011-03-04T16:00:00Z"));
     testRunSuccess(
         action,
         Optional.empty(),
@@ -119,8 +119,8 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_twoLinesWithIdOnlyExplicitHeader() {
     action.tlds = ImmutableSet.of("foo");
-    persistActiveDomain("test1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
-    persistActiveDomain("test2.foo", DateTime.parse("2011-03-04T16:00:00Z"));
+    persistActiveDomain("test1.foo", Instant.parse("2010-03-04T16:00:00Z"));
+    persistActiveDomain("test2.foo", Instant.parse("2011-03-04T16:00:00Z"));
     testRunSuccess(
         action,
         Optional.empty(),
@@ -135,8 +135,8 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_twoLinesWithRepoId() {
     action.tlds = ImmutableSet.of("foo");
-    persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
-    persistActiveDomain("example3.foo", DateTime.parse("2011-03-04T16:00:00Z"));
+    persistActiveDomain("example1.foo", Instant.parse("2010-03-04T16:00:00Z"));
+    persistActiveDomain("example3.foo", Instant.parse("2011-03-04T16:00:00Z"));
     testRunSuccess(
         action,
         Optional.of("repoId"),
@@ -151,8 +151,8 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_twoLinesWithRepoIdNoHeader() {
     action.tlds = ImmutableSet.of("foo");
-    persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
-    persistActiveDomain("example3.foo", DateTime.parse("2011-03-04T16:00:00Z"));
+    persistActiveDomain("example1.foo", Instant.parse("2010-03-04T16:00:00Z"));
+    persistActiveDomain("example3.foo", Instant.parse("2011-03-04T16:00:00Z"));
     testRunSuccess(
         action,
         Optional.of("repoId"),
@@ -165,8 +165,8 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_twoLinesWithRepoIdExplicitHeader() {
     action.tlds = ImmutableSet.of("foo");
-    persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
-    persistActiveDomain("example3.foo", DateTime.parse("2011-03-04T16:00:00Z"));
+    persistActiveDomain("example1.foo", Instant.parse("2010-03-04T16:00:00Z"));
+    persistActiveDomain("example3.foo", Instant.parse("2011-03-04T16:00:00Z"));
     testRunSuccess(
         action,
         Optional.of("repoId"),
@@ -181,8 +181,8 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_twoLinesWithWildcard() {
     action.tlds = ImmutableSet.of("foo");
-    persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
-    persistActiveDomain("example3.foo", DateTime.parse("2010-03-05T16:00:00Z"));
+    persistActiveDomain("example1.foo", Instant.parse("2010-03-04T16:00:00Z"));
+    persistActiveDomain("example3.foo", Instant.parse("2010-03-05T16:00:00Z"));
     testRunSuccess(
         action,
         Optional.of("*"),
@@ -197,8 +197,8 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_twoLinesWithWildcardAndAnotherField() {
     action.tlds = ImmutableSet.of("foo");
-    persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
-    persistActiveDomain("example3.foo", DateTime.parse("2010-03-04T17:00:00Z"));
+    persistActiveDomain("example1.foo", Instant.parse("2010-03-04T16:00:00Z"));
+    persistActiveDomain("example3.foo", Instant.parse("2010-03-04T17:00:00Z"));
     testRunSuccess(
         action,
         Optional.of("*,repoId"),
@@ -228,11 +228,11 @@ class ListDomainsActionTest extends ListActionTestCase {
     createTlds("bar", "baz");
     action.tlds = ImmutableSet.of("foo", "bar");
     action.limit = 2;
-    persistActiveDomain("example4.foo", DateTime.parse("2017-04-01TZ"));
-    persistActiveDomain("example1.foo", DateTime.parse("2017-01-01TZ"));
-    persistActiveDomain("example2.bar", DateTime.parse("2017-02-01TZ"));
-    persistActiveDomain("example3.bar", DateTime.parse("2017-03-01TZ"));
-    persistActiveDomain("example5.baz", DateTime.parse("2018-01-01TZ"));
+    persistActiveDomain("example4.foo", Instant.parse("2017-04-01T00:00:00Z"));
+    persistActiveDomain("example1.foo", Instant.parse("2017-01-01T00:00:00Z"));
+    persistActiveDomain("example2.bar", Instant.parse("2017-02-01T00:00:00Z"));
+    persistActiveDomain("example3.bar", Instant.parse("2017-03-01T00:00:00Z"));
+    persistActiveDomain("example5.baz", Instant.parse("2018-01-01T00:00:00Z"));
     testRunSuccess(
         action,
         Optional.empty(),

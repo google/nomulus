@@ -18,7 +18,7 @@ import static google.registry.testing.DatabaseHelper.assertBillingEventsForResou
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.plusYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -37,7 +37,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -97,7 +96,7 @@ class EppLifecycleToolsTest extends EppTestCase {
         .hasResponse("poll_response_empty.xml");
 
     // Run the nomulus unrenew_domain command to take 3 years off the registration.
-    clock.setTo(DateTime.parse("2001-06-07T00:00:00.0Z"));
+    clock.setTo(Instant.parse("2001-06-07T00:00:00.0Z"));
     UnrenewDomainCommand unrenewCmd =
         new ForcedUnrenewDomainCommand(ImmutableList.of("example.tld"), 3, clock);
     unrenewCmd.run();
@@ -144,10 +143,10 @@ class EppLifecycleToolsTest extends EppTestCase {
                 "EXDATE", "2004-06-01T00:02:00Z"));
 
     // Assert about billing events.
-    DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
+    Instant createTime = Instant.parse("2000-06-01T00:02:00Z");
     Domain domain =
         ForeignKeyUtils.loadResource(
-                Domain.class, "example.tld", DateTime.parse("2003-06-02T00:02:00Z"))
+                Domain.class, "example.tld", Instant.parse("2003-06-02T00:02:00Z"))
             .get();
     BillingEvent renewBillingEvent =
         new BillingEvent.Builder()
@@ -164,13 +163,13 @@ class EppLifecycleToolsTest extends EppTestCase {
 
     assertBillingEventsForResource(
         domain,
-        makeOneTimeCreateBillingEvent(domain, toInstant(createTime)),
+        makeOneTimeCreateBillingEvent(domain, createTime),
         renewBillingEvent,
         // The initial autorenew billing event, which was closed at the time of the explicit renew.
         makeRecurrence(
             domain,
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class),
-            toInstant(createTime.plusYears(2)),
+            plusYears(createTime, 2),
             Instant.parse("2000-06-07T00:00:00.000Z")),
         // The renew's autorenew billing event, which was closed at the time of the unrenew.
         makeRecurrence(

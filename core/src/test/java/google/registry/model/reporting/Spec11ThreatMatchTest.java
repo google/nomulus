@@ -30,8 +30,7 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
-import org.joda.time.LocalDate;
-import org.joda.time.format.ISODateTimeFormat;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -40,7 +39,7 @@ import org.junit.jupiter.api.Test;
 public final class Spec11ThreatMatchTest extends EntityTestCase {
 
   private static final String REGISTRAR_ID = "registrar";
-  private static final LocalDate DATE = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
+  private static final LocalDate DATE = LocalDate.parse("2020-06-10");
 
   private Spec11ThreatMatch threat;
   private Domain domain;

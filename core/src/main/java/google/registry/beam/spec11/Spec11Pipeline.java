@@ -35,6 +35,8 @@ import google.registry.util.Retrier;
 import google.registry.util.UtilsModule;
 import jakarta.inject.Singleton;
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -50,9 +52,6 @@ import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.beam.sdk.values.TypeDescriptors;
-import org.joda.time.LocalDate;
-import org.joda.time.YearMonth;
-import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -76,7 +75,7 @@ public class Spec11Pipeline implements Serializable {
    * @see google.registry.reporting.spec11.Spec11EmailUtils
    */
   public static String getSpec11ReportFilePath(LocalDate localDate) {
-    YearMonth yearMonth = new YearMonth(localDate);
+    YearMonth yearMonth = YearMonth.from(localDate);
     return String.format("icann/spec11/%s/SPEC11_MONTHLY_REPORT_%s", yearMonth, localDate);
   }
 
@@ -155,7 +154,7 @@ public class Spec11Pipeline implements Serializable {
 
   static void saveToSql(
       PCollection<KV<DomainNameInfo, ThreatMatch>> threatMatches, Spec11PipelineOptions options) {
-    LocalDate date = LocalDate.parse(options.getDate(), ISODateTimeFormat.date());
+    LocalDate date = LocalDate.parse(options.getDate());
     String transformId = "Spec11 Threat Matches";
     threatMatches
         .apply(

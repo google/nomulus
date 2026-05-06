@@ -105,11 +105,11 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -283,8 +283,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setCost(totalRenewCost)
             .setPeriodYears(renewalYears)
             .setEventTime(clock.now())
-            .setBillingTime(
-                clock.now().plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis()))
+            .setBillingTime(clock.now().plus(Tld.get("tld").getRenewGracePeriodLength()))
             .setDomainHistory(historyEntryDomainRenew)
             .build();
     assertBillingEvents(
@@ -330,7 +329,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             GracePeriod.create(
                 GracePeriodStatus.RENEW,
                 domain.getRepoId(),
-                clock.now().plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis()),
+                clock.now().plus(Tld.get("tld").getRenewGracePeriodLength()),
                 renewalClientId,
                 null),
             renewBillingEvent));
@@ -779,7 +778,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   @Test
   void testSuccess_nonDefaultRenewGracePeriod() throws Exception {
     persistResource(
-        Tld.get("tld").asBuilder().setRenewGracePeriodLength(Duration.standardMinutes(9)).build());
+        Tld.get("tld").asBuilder().setRenewGracePeriodLength(Duration.ofMinutes(9)).build());
     persistDomain();
     doSuccessfulTest(
         "domain_renew_response.xml",
@@ -888,7 +887,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
 
   @Test
   void testFailure_existedButWasDeleted() throws Exception {
-    persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    persistDeletedDomain(getUniqueIdFromCommand(), minusDays(clock.now(), 1));
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -1092,7 +1091,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     persistDomain();
     // Test with a nonstandard Renew period to ensure the reporting time is correct regardless
     persistResource(
-        Tld.get("tld").asBuilder().setRenewGracePeriodLength(Duration.standardMinutes(9)).build());
+        Tld.get("tld").asBuilder().setRenewGracePeriodLength(Duration.ofMinutes(9)).build());
     runFlow();
     Domain domain = reloadResourceByForeignKey();
     DomainHistory historyEntry =

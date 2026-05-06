@@ -20,8 +20,6 @@ import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.formatInstant;
 import static google.registry.util.DateTimeUtils.latestOf;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableMultimap;
@@ -34,7 +32,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /**
  * An entity property whose value transitions over time. Each value it takes on becomes active at a
@@ -70,6 +67,9 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
     checkArgument(
         backingMap.containsKey(START_INSTANT),
         "Must provide transition entry for the start of time (Unix Epoch)");
+    checkArgument(
+        Ordering.natural().equals(backingMap.comparator()),
+        "Timed transition value map must have transition time keys in chronological order");
     this.backingMap = ImmutableSortedMap.copyOfSorted(backingMap);
   }
 
@@ -83,7 +83,7 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
    * START_INSTANT}.
    */
   public static <V extends Serializable> TimedTransitionProperty<V> withInitialValue(V value) {
-    return fromValueMapInstant(ImmutableSortedMap.of(START_INSTANT, value));
+    return fromValueMap(ImmutableSortedMap.of(START_INSTANT, value));
   }
 
   /**
@@ -91,51 +91,10 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
    * in the given map.
    *
    * <p>The map must contain a value for {@code START_INSTANT}.
-   *
-   * @deprecated Use {@link #fromValueMapInstant(ImmutableSortedMap)}
    */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
   public static <V extends Serializable> TimedTransitionProperty<V> fromValueMap(
-      ImmutableSortedMap<DateTime, V> valueMap) {
-    return fromValueMapInstant(toInstantMap(valueMap));
-  }
-
-  /**
-   * Returns a {@link TimedTransitionProperty} that contains the transition values and times defined
-   * in the given map.
-   *
-   * <p>The map must contain a value for {@code START_INSTANT}.
-   */
-  public static <V extends Serializable> TimedTransitionProperty<V> fromValueMapInstant(
       ImmutableSortedMap<Instant, V> valueMap) {
     return new TimedTransitionProperty<>(valueMap);
-  }
-
-  /**
-   * Returns a {@link TimedTransitionProperty} that contains the transition values and times defined
-   * in the given map.
-   *
-   * <p>The map must contain a value for {@code START_OF_TIME}. The map is also validated against a
-   * set of allowed transitions.
-   *
-   * @deprecated Use {@link #makeInstant(ImmutableSortedMap, ImmutableMultimap, String,
-   *     Serializable, String)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static <V extends Serializable> TimedTransitionProperty<V> make(
-      ImmutableSortedMap<DateTime, V> valueMap,
-      ImmutableMultimap<V, V> allowedTransitions,
-      String mapName,
-      V initialValue,
-      String initialValueErrorMessage) {
-    return makeInstant(
-        toInstantMap(valueMap),
-        allowedTransitions,
-        mapName,
-        initialValue,
-        initialValueErrorMessage);
   }
 
   /**
@@ -145,44 +104,27 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
    * <p>The map must contain a value for {@code START_INSTANT}. The map is also validated against a
    * set of allowed transitions.
    */
-  public static <V extends Serializable> TimedTransitionProperty<V> makeInstant(
+  public static <V extends Serializable> TimedTransitionProperty<V> make(
       ImmutableSortedMap<Instant, V> valueMap,
       ImmutableMultimap<V, V> allowedTransitions,
       String mapName,
       V initialValue,
       String initialValueErrorMessage) {
-    validateTimedTransitionMapInstant(valueMap, allowedTransitions, mapName);
+    validateTimedTransitionMap(valueMap, allowedTransitions, mapName);
     checkArgument(valueMap.firstEntry().getValue().equals(initialValue), initialValueErrorMessage);
-    return fromValueMapInstant(valueMap);
-  }
-
-  /**
-   * Validates a timed transition map.
-   *
-   * @deprecated Use {@link #validateTimedTransitionMapInstant(ImmutableSortedMap,
-   *     ImmutableMultimap, String)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static <V extends Serializable> void validateTimedTransitionMap(
-      ImmutableSortedMap<DateTime, V> valueMap,
-      ImmutableMultimap<V, V> allowedTransitions,
-      String mapName) {
-    validateTimedTransitionMapInstant(toInstantMap(valueMap), allowedTransitions, mapName);
+    return fromValueMap(valueMap);
   }
 
   /** Validates a timed transition map. */
-  public static <V extends Serializable> void validateTimedTransitionMapInstant(
+  public static <V extends Serializable> void validateTimedTransitionMap(
       ImmutableSortedMap<Instant, V> valueMap,
       ImmutableMultimap<V, V> allowedTransitions,
       String mapName) {
     checkArgument(
         Ordering.natural().equals(valueMap.comparator()),
         "Timed transition value map must have transition time keys in chronological order");
-    checkArgument(!valueMap.isEmpty(), "%s map cannot be null or empty.", mapName);
-
     checkArgument(
-        valueMap.firstKey().equals(START_INSTANT), "%s map must start at START_OF_TIME.", mapName);
+        valueMap.firstKey().equals(START_INSTANT), "%s map must start at START_INSTANT.", mapName);
 
     V lastValue = null;
     for (V value : valueMap.values()) {
@@ -199,17 +141,6 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
     }
   }
 
-  private static <V> ImmutableSortedMap<Instant, V> toInstantMap(
-      ImmutableSortedMap<DateTime, V> valueMap) {
-    checkArgument(
-        Ordering.natural().equals(valueMap.comparator()),
-        "Timed transition value map must have transition time keys in chronological order");
-    return valueMap.entrySet().stream()
-        .collect(
-            toImmutableSortedMap(
-                Ordering.natural(), e -> toInstant(e.getKey()), Map.Entry::getValue));
-  }
-
   /** Checks whether the property is valid. */
   public void checkValidity() {
     checkState(
@@ -218,36 +149,13 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
   }
 
   /** Returns the value of the property that is active at the given time. */
-  public V getValueAtTime(DateTime time) {
-    return getValueAtTime(toInstant(time));
-  }
-
-  /** Returns the value of the property that is active at the given time. */
   public V getValueAtTime(Instant time) {
     return backingMap.floorEntry(latestOf(START_INSTANT, time)).getValue();
   }
 
   /** Returns the map of all the transitions that have been defined for this property. */
-  public ImmutableSortedMap<DateTime, V> toValueMap() {
-    return backingMap.entrySet().stream()
-        .collect(
-            toImmutableSortedMap(
-                Ordering.natural(), e -> toDateTime(e.getKey()), Map.Entry::getValue));
-  }
-
-  /** Returns the map of all the transitions that have been defined for this property. */
-  public ImmutableSortedMap<Instant, V> toValueMapInstant() {
+  public ImmutableSortedMap<Instant, V> toValueMap() {
     return backingMap;
-  }
-
-  /**
-   * Returns the time of the next transition after the given time. Returns null if there is no
-   * subsequent transition.
-   */
-  @Nullable
-  public DateTime getNextTransitionAfter(DateTime time) {
-    Instant nextTransition = getNextTransitionAfter(toInstant(time));
-    return nextTransition == null ? null : toDateTime(nextTransition);
   }
 
   /** Returns the time of the next transition. Returns null if there is no subsequent transition. */
