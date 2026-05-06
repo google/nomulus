@@ -15,7 +15,7 @@
 package google.registry.bsa;
 
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -42,7 +42,7 @@ public final class ReservedDomainsTestingUtils {
     ReservedListDao.save(
         new ReservedList.Builder()
             .setName(listName)
-            .setCreationTimestamp(START_OF_TIME)
+            .setCreationTimestamp(START_INSTANT)
             .setReservedListMap(entries)
             .build());
   }
@@ -74,7 +74,7 @@ public final class ReservedDomainsTestingUtils {
     ReservedListDao.save(
         new ReservedList.Builder()
             .setName(listName)
-            .setCreationTimestamp(START_OF_TIME)
+            .setCreationTimestamp(START_INSTANT)
             .setReservedListMap(
                 new ImmutableMap.Builder<String, ReservedListEntry>()
                     .putAll(existingEntries)
@@ -94,7 +94,7 @@ public final class ReservedDomainsTestingUtils {
     ReservedListDao.save(
         new ReservedList.Builder()
             .setName(listName)
-            .setCreationTimestamp(START_OF_TIME)
+            .setCreationTimestamp(START_INSTANT)
             .setReservedListMap(newEntries)
             .build());
   }

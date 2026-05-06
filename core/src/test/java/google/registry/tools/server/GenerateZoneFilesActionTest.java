@@ -21,9 +21,8 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.plusMinutes;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
@@ -43,8 +42,8 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.net.InetAddress;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -69,16 +68,16 @@ class GenerateZoneFilesActionTest {
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setDnsAPlusAaaaTtl(org.joda.time.Duration.standardSeconds(300))
-            .setDnsNsTtl(org.joda.time.Duration.standardSeconds(400))
-            .setDnsDsTtl(org.joda.time.Duration.standardSeconds(500))
+            .setDnsAPlusAaaaTtl(Duration.ofSeconds(300))
+            .setDnsNsTtl(Duration.ofSeconds(400))
+            .setDnsDsTtl(Duration.ofSeconds(500))
             .build());
     testGenerate("tldCustomTtl.zone");
   }
 
   @SuppressWarnings("AddressSelection")
   void testGenerate(String goldenFileName) throws Exception {
-    DateTime now = DateTime.now(UTC).withTimeAtStartOfDay();
+    Instant now = Instant.parse("2024-03-27T00:00:00Z");
 
     ImmutableSet<InetAddress> ips =
         ImmutableSet.of(InetAddress.getByName("127.0.0.1"), InetAddress.getByName("::1"));
@@ -148,17 +147,15 @@ class GenerateZoneFilesActionTest {
     action.dnsDefaultATtl = Duration.ofSeconds(11);
     action.dnsDefaultNsTtl = Duration.ofSeconds(222);
     action.dnsDefaultDsTtl = Duration.ofSeconds(3333);
-    action.clock = new FakeClock(now.plusMinutes(2));  // Move past the actions' 2 minute check.
+    action.clock = new FakeClock(plusMinutes(now, 2)); // Move past the actions' 2 minute check.
 
     Map<String, Object> response =
         action.handleJsonRequest(
             ImmutableMap.<String, Object>of("tlds", ImmutableList.of("tld"), "exportTime", now));
     assertThat(response)
-        .containsEntry(
-            "filenames", ImmutableList.of("gs://zonefiles-bucket/tld-" + toInstant(now) + ".zone"));
+        .containsEntry("filenames", ImmutableList.of("gs://zonefiles-bucket/tld-" + now + ".zone"));
 
-    BlobId gcsFilename =
-        BlobId.of("zonefiles-bucket", String.format("tld-%s.zone", toInstant(now)));
+    BlobId gcsFilename = BlobId.of("zonefiles-bucket", String.format("tld-%s.zone", now));
     String generatedFile = new String(gcsUtils.readBytesFrom(gcsFilename), UTF_8);
     // The generated file contains spaces and tabs, but the golden file contains only spaces, as
     // files with literal tabs irritate our build tools.

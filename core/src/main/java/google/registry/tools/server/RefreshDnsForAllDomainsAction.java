@@ -23,8 +23,8 @@ import static google.registry.persistence.PersistenceModule.TransactionIsolation
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_BATCH_SIZE;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -36,12 +36,11 @@ import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import jakarta.persistence.TypedQuery;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Random;
 import javax.annotation.Nullable;
 import org.apache.arrow.util.VisibleForTesting;
-import org.apache.http.HttpStatus;
-import org.joda.time.DateTime;
 
 /**
  * A task that enqueues DNS publish tasks on all active domains on the specified TLD(s).
@@ -86,7 +85,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private final Random random;
 
-  private final DateTime activeOrDeletedSince;
+  private final Instant activeOrDeletedSince;
 
   @Inject
   RefreshDnsForAllDomainsAction(
@@ -94,13 +93,13 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
       @Parameter(PARAM_TLDS) ImmutableSet<String> tlds,
       @Parameter(PARAM_BATCH_SIZE) Optional<Integer> batchSize,
       @Parameter("refreshQps") Optional<Integer> refreshQps,
-      @Parameter("activeOrDeletedSince") Optional<DateTime> activeOrDeletedSince,
+      @Parameter("activeOrDeletedSince") Optional<Instant> activeOrDeletedSince,
       Random random) {
     this.response = response;
     this.tlds = tlds;
     this.batchSize = batchSize.orElse(DEFAULT_BATCH_SIZE);
     this.refreshQps = refreshQps.orElse(DEFAULT_REFRESH_QPS);
-    this.activeOrDeletedSince = activeOrDeletedSince.orElse(END_OF_TIME);
+    this.activeOrDeletedSince = activeOrDeletedSince.orElse(END_INSTANT);
     this.random = random;
   }
 
@@ -134,7 +133,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                     + " :activeOrDeletedSince",
                 Long.class)
             .setParameter("tlds", tlds)
-            .setParameter("activeOrDeletedSince", toInstant(activeOrDeletedSince))
+            .setParameter("activeOrDeletedSince", activeOrDeletedSince)
             .getSingleResult();
     Duration smear = Duration.ofSeconds(Math.max(activeDomains / refreshQps, 1));
     logger.atInfo().log("Smearing %d domain DNS refresh tasks across %s.", activeDomains, smear);
@@ -150,7 +149,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     TypedQuery<String> query =
         tm().query(sql, String.class)
             .setParameter("tlds", tlds)
-            .setParameter("activeOrDeletedSince", toInstant(activeOrDeletedSince));
+            .setParameter("activeOrDeletedSince", activeOrDeletedSince);
     lastInPreviousBatch.ifPresent(l -> query.setParameter("lastInPreviousBatch", l));
     return query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
   }
@@ -164,7 +163,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
           domainBatch, Duration.ofSeconds(random.nextInt((int) smear.toSeconds())));
     } catch (Throwable t) {
       logger.atSevere().withCause(t).log("Error while enqueuing DNS refresh batch");
-      response.setStatus(HttpStatus.SC_OK);
+      response.setStatus(SC_OK);
     }
     return domainBatch;
   }

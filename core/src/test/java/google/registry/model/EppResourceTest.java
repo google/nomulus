@@ -43,7 +43,7 @@ public class EppResourceTest extends EntityTestCase {
             originalHost.asBuilder().setLastTransferTime(minusDays(fakeClock.now(), 60)).build());
     assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalHost.createVKey())))
         .containsExactly(originalHost.createVKey(), originalHost);
-    assertThat(ForeignKeyUtils.loadResource(Host.class, "ns1.example.com", fakeClock.nowUtc()))
+    assertThat(ForeignKeyUtils.loadResource(Host.class, "ns1.example.com", fakeClock.now()))
         .hasValue(modifiedHost);
   }
 }

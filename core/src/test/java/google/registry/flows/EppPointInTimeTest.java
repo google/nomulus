@@ -22,8 +22,6 @@ import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
-import static org.joda.time.Duration.standardDays;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -35,7 +33,8 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import org.joda.time.DateTime;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -43,7 +42,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Test that we can reload EPP resources as they were in the past. */
 class EppPointInTimeTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
+  private final FakeClock clock = new FakeClock(Instant.now());
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -81,21 +80,21 @@ class EppPointInTimeTest {
 
   @Test
   void testLoadAtPointInTime() throws Exception {
-    clock.setTo(DateTime.parse("1984-12-18T12:30Z")); // not midnight
+    clock.setTo(Instant.parse("1984-12-18T12:30:00Z")); // not midnight
 
     persistActiveHost("ns1.example.net");
     persistActiveHost("ns2.example.net");
 
-    clock.advanceBy(standardDays(1));
-    DateTime timeAtCreate = clock.nowUtc();
+    clock.advanceBy(Duration.ofDays(1));
+    Instant timeAtCreate = clock.now();
     clock.setTo(timeAtCreate);
     eppLoader = new EppLoader(this, "domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
     Domain domainAfterCreate = Iterables.getOnlyElement(loadAllOf(Domain.class));
     assertThat(domainAfterCreate.getDomainName()).isEqualTo("example.tld");
 
-    clock.advanceBy(standardDays(2));
-    DateTime timeAtFirstUpdate = clock.nowUtc();
+    clock.advanceBy(Duration.ofDays(2));
+    Instant timeAtFirstUpdate = clock.now();
     eppLoader = new EppLoader(this, "domain_update_dsdata_add.xml");
     runFlow();
 
@@ -103,13 +102,13 @@ class EppPointInTimeTest {
     assertThat(domainAfterCreate).isNotEqualTo(domainAfterFirstUpdate);
 
     clock.advanceOneMilli(); // same day as first update
-    DateTime timeAtSecondUpdate = clock.nowUtc();
+    Instant timeAtSecondUpdate = clock.now();
     eppLoader = new EppLoader(this, "domain_update_dsdata_rem.xml");
     runFlow();
     Domain domainAfterSecondUpdate = loadByEntity(domainAfterCreate);
 
-    clock.advanceBy(standardDays(2));
-    DateTime timeAtDelete = clock.nowUtc(); // before 'add' grace period ends
+    clock.advanceBy(Duration.ofDays(2));
+    Instant timeAtDelete = clock.now(); // before 'add' grace period ends
     eppLoader = new EppLoader(this, "domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
 
@@ -124,7 +123,7 @@ class EppPointInTimeTest {
     assertThat(loadAtPointInTime(latest, timeAtCreate.plusMillis(1))).isNotNull();
 
     assertAboutImmutableObjects()
-        .that(loadAtPointInTime(latest, timeAtCreate.plusDays(1)))
+        .that(loadAtPointInTime(latest, timeAtCreate.plus(Duration.ofDays(1))))
         .isEqualExceptFields(domainAfterCreate, "updateTimestamp");
 
     // In SQL, we are not limited by the day granularity, so when we request the object
@@ -139,7 +138,7 @@ class EppPointInTimeTest {
         .isEqualExceptFields(domainAfterSecondUpdate, "updateTimestamp");
 
     assertAboutImmutableObjects()
-        .that(loadAtPointInTime(latest, timeAtSecondUpdate.plusDays(1)))
+        .that(loadAtPointInTime(latest, timeAtSecondUpdate.plus(Duration.ofDays(1))))
         .isEqualExceptFields(domainAfterSecondUpdate, "updateTimestamp");
 
     // Deletion time has millisecond granularity due to isActive() check.

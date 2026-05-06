@@ -98,7 +98,7 @@ public class EppMetrics {
     String eppStatusCode =
         metric.getStatus().isPresent() ? String.valueOf(metric.getStatus().get().code) : "";
     long processingTime =
-        metric.getEndTimestamp().getMillis() - metric.getStartTimestamp().getMillis();
+        metric.getEndTimestamp().toEpochMilli() - metric.getStartTimestamp().toEpochMilli();
     String commandName = metric.getCommandName().orElse("");
     String tld = metric.getTld().orElse("");
     requestTime.record(processingTime, commandName, getTrafficType(tld).toString(), eppStatusCode);

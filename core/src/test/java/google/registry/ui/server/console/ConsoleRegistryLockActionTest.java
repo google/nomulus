@@ -56,8 +56,8 @@ import google.registry.util.PasswordUtils.HashAlgorithm;
 import google.registry.util.StringGenerator;
 import jakarta.mail.internet.InternetAddress;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Optional;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -120,8 +120,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
         .isEqualTo(
 """
 [{"domainName":"example.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
-{"creationTime":"2024-04-15T00:00:00.000Z"},"unlockRequestTime":"null","lockCompletionTime":\
-"2024-04-15T00:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false}]\
+{"creationTime":"2024-04-15T00:00:00.000Z"},"lockCompletionTime":\
+"2024-04-15T00:00:00.000Z","isSuperuser":false}]\
 """);
   }
 
@@ -147,7 +147,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setUnlockRequestTime(clock.now())
             .build();
     saveRegistryLock(expiredUnlock);
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
 
     RegistryLock regularLock =
         new RegistryLock.Builder()
@@ -214,24 +214,22 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
         .isEqualTo(
 """
 [{"domainName":"adminexample.test","lockRequestTime":{"creationTime":"2024-04-16T00:00:00.001Z"},\
-"unlockRequestTime":"null","lockCompletionTime":"2024-04-16T00:00:00.001Z","unlockCompletionTime":\
-"null","isSuperuser":true},\
+"lockCompletionTime":"2024-04-16T00:00:00.001Z","isSuperuser":true},\
 \
 {"domainName":"example.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
-{"creationTime":"2024-04-16T00:00:00.001Z"},"unlockRequestTime":"null","lockCompletionTime":\
-"2024-04-16T00:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false},\
+{"creationTime":"2024-04-16T00:00:00.001Z"},"lockCompletionTime":\
+"2024-04-16T00:00:00.000Z","isSuperuser":false},\
 \
 {"domainName":"expiredunlock.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
 {"creationTime":"2024-04-15T00:00:00.000Z"},"unlockRequestTime":"2024-04-15T00:00:00.000Z",\
-"lockCompletionTime":"2024-04-15T00:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false},\
+"lockCompletionTime":"2024-04-15T00:00:00.000Z","isSuperuser":false},\
 \
 {"domainName":"incompleteunlock.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
 {"creationTime":"2024-04-16T00:00:00.001Z"},"unlockRequestTime":"2024-04-16T00:00:00.001Z",\
-"lockCompletionTime":"2024-04-16T00:00:00.001Z","unlockCompletionTime":"null","isSuperuser":false},\
+"lockCompletionTime":"2024-04-16T00:00:00.001Z","isSuperuser":false},\
 \
 {"domainName":"pending.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
-{"creationTime":"2024-04-16T00:00:00.001Z"},"unlockRequestTime":"null","lockCompletionTime":"null",\
-"unlockCompletionTime":"null","isSuperuser":false}]\
+{"creationTime":"2024-04-16T00:00:00.001Z"},"isSuperuser":false}]\
 """);
   }
 
@@ -335,13 +333,13 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action =
         createPostAction(
-            "example.test", false, "registryLockPassword", Duration.standardDays(1).getMillis());
+            "example.test", false, "registryLockPassword", Duration.ofDays(1).toMillis());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     verifyEmail();
     RegistryLock savedUnlockRequest =
         getMostRecentRegistryLockByRepoId(defaultDomain.getRepoId()).get();
-    assertThat(savedUnlockRequest.getRelockDuration()).hasValue(Duration.standardDays(1));
+    assertThat(savedUnlockRequest.getRelockDuration()).hasValue(Duration.ofDays(1));
   }
 
   @Test

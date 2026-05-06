@@ -28,11 +28,11 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.joda.time.Duration;
 
 /** Frontend metrics instrumentation. */
 @Singleton
@@ -121,6 +121,6 @@ public class FrontendMetrics extends BaseMetrics {
     if (random.nextDouble() > frontendMetricsRatio) {
       return;
     }
-    latencyMs.record(latency.getMillis(), protocol, certHash);
+    latencyMs.record(latency.toMillis(), protocol, certHash);
   }
 }

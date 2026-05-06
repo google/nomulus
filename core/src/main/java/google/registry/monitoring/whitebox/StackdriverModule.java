@@ -30,7 +30,7 @@ import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.MetricParameters;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
-import org.joda.time.Duration;
+import java.time.Duration;
 
 /** Dagger module for monitoring and Google Stackdriver service connection objects. */
 @Module
@@ -45,7 +45,7 @@ public final class StackdriverModule {
   @Provides
   @Named("spoofedGceInstanceId")
   static String providesSpoofedGceInstanceId(Clock clock) {
-    return clock.nowUtc().toString();
+    return clock.now().toString();
   }
 
   @Provides
@@ -84,7 +84,7 @@ public final class StackdriverModule {
 
     return new MetricReporter(
         metricWriter,
-        writeInterval.getStandardSeconds(),
+        writeInterval.toSeconds(),
         new ThreadFactoryBuilder().setDaemon(true).build());
   }
 }

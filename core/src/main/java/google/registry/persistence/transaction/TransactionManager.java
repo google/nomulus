@@ -25,7 +25,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
 
 /**
  * This interface defines the methods to execute database operations with or without a transaction.
@@ -129,11 +128,9 @@ public interface TransactionManager {
    */
   void reTransact(ThrowingRunnable work);
 
-  /** Returns the time associated with the start of this particular transaction attempt. */
-  @Deprecated
-  DateTime getTransactionTime();
-
-  /** Returns the Instant associated with the start of this particular transaction attempt. */
+  /**
+   * Returns the Instant associated with the start of this particular transaction attempt.
+   */
   Instant getTxTime();
 
   /** Persists a new entity in the database, throws exception if the entity already exists. */

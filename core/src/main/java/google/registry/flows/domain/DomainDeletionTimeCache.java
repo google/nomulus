@@ -15,6 +15,7 @@
 package google.registry.flows.domain;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -24,9 +25,8 @@ import com.github.benmanes.caffeine.cache.Ticker;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
-import google.registry.util.DateTimeUtils;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
  * Functionally-static loading cache that keeps track of deletion (AKA drop) times for domains.
@@ -39,7 +39,7 @@ import org.joda.time.DateTime;
  *
  * <p>The cache is fairly short-lived (as we're concerned about many requests at basically the same
  * time), and entries also expire when the drop actually happens. If the domain is re-created after
- * a drop, the next load attempt will populate the cache with a deletion time of END_OF_TIME, which
+ * a drop, the next load attempt will populate the cache with a deletion time of END_INSTANT, which
  * will be read from the cache by subsequent attempts.
  *
  * <p>We take advantage of the fact that Caffeine caches don't store nulls returned from the
@@ -69,15 +69,15 @@ public class DomainDeletionTimeCache {
    *
    * <p>NB: the Expiry class requires the return value in <b>nanoseconds</b>, not milliseconds
    */
-  private static final Expiry<String, DateTime> EXPIRY_POLICY =
+  private static final Expiry<String, Instant> EXPIRY_POLICY =
       new Expiry<>() {
         @Override
-        public long expireAfterCreate(String key, DateTime value, long currentTime) {
+        public long expireAfterCreate(String key, Instant value, long currentTime) {
           // Watch out for Long overflow
           long deletionTimeNanos =
-              value.equals(DateTimeUtils.END_OF_TIME)
+              value.equals(END_INSTANT)
                   ? Long.MAX_VALUE
-                  : value.getMillis() * NANOS_IN_ONE_MILLISECOND;
+                  : value.toEpochMilli() * NANOS_IN_ONE_MILLISECOND;
           long nanosUntilDeletion = deletionTimeNanos - currentTime;
           return Math.max(0L, Math.min(MAX_EXPIRY_NANOS, nanosUntilDeletion));
         }
@@ -85,31 +85,31 @@ public class DomainDeletionTimeCache {
         /** Reset the time entirely on update, as if we were creating the entry anew. */
         @Override
         public long expireAfterUpdate(
-            String key, DateTime value, long currentTime, long currentDuration) {
+            String key, Instant value, long currentTime, long currentDuration) {
           return expireAfterCreate(key, value, currentTime);
         }
 
         /** Reads do not change the expiry duration. */
         @Override
         public long expireAfterRead(
-            String key, DateTime value, long currentTime, long currentDuration) {
+            String key, Instant value, long currentTime, long currentDuration) {
           return currentDuration;
         }
       };
 
   /** Attempt to load the domain's deletion time if the domain exists. */
-  private static final CacheLoader<String, DateTime> CACHE_LOADER =
+  private static final CacheLoader<String, Instant> CACHE_LOADER =
       (domainName) -> {
         ForeignKeyUtils.MostRecentResource mostRecentResource =
             ForeignKeyUtils.loadMostRecentResources(
                     Domain.class, ImmutableSet.of(domainName), false)
                 .get(domainName);
-        return mostRecentResource == null ? null : mostRecentResource.getDeletionTime();
+        return mostRecentResource == null ? null : mostRecentResource.deletionTime();
       };
 
   // Unfortunately, maintenance tasks aren't necessarily already in a transaction
   private static final Ticker TRANSACTION_TIME_TICKER =
-      () -> tm().reTransact(() -> tm().getTransactionTime().getMillis() * NANOS_IN_ONE_MILLISECOND);
+      () -> tm().reTransact(() -> tm().getTxTime().toEpochMilli() * NANOS_IN_ONE_MILLISECOND);
 
   public static DomainDeletionTimeCache create() {
     return new DomainDeletionTimeCache(
@@ -120,14 +120,14 @@ public class DomainDeletionTimeCache {
             .build(CACHE_LOADER));
   }
 
-  private final LoadingCache<String, DateTime> cache;
+  private final LoadingCache<String, Instant> cache;
 
-  private DomainDeletionTimeCache(LoadingCache<String, DateTime> cache) {
+  private DomainDeletionTimeCache(LoadingCache<String, Instant> cache) {
     this.cache = cache;
   }
 
   /** Returns the domain's deletion time, or null if it doesn't currently exist. */
-  public Optional<DateTime> getDeletionTimeForDomain(String domainName) {
+  public Optional<Instant> getDeletionTimeForDomain(String domainName) {
     return Optional.ofNullable(cache.get(domainName));
   }
 }

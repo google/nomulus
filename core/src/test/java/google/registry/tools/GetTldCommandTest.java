@@ -28,9 +28,9 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityYamlUtils;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
+import java.time.Duration;
 import java.time.Instant;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +48,7 @@ class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
     PremiumList premiumList = persistPremiumList("test", USD, "silver,USD 50", "gold,USD 80");
     persistResource(
         tld.asBuilder()
-            .setDnsAPlusAaaaTtl(Duration.standardMinutes(15))
+            .setDnsAPlusAaaaTtl(Duration.ofMinutes(15))
             .setDriveFolderId("driveFolder")
             .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(

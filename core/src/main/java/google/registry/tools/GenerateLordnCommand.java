@@ -29,7 +29,8 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.joda.time.DateTime;
+import java.time.Duration;
+import java.time.Instant;
 
 /** Command to generate a LORDN CSV file for an entire TLD. */
 @Parameters(separators = " =", commandDescription = "Generate LORDN CSV file")
@@ -59,7 +60,7 @@ final class GenerateLordnCommand implements Command {
 
   @Override
   public void run() throws IOException {
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     ImmutableList.Builder<String> claimsCsv = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> sunriseCsv = new ImmutableList.Builder<>();
     tm().transact(
@@ -80,7 +81,7 @@ final class GenerateLordnCommand implements Command {
     ImmutableList<String> sunriseRows = sunriseCsv.build();
     ImmutableList<String> sunriseAll =
         new ImmutableList.Builder<String>()
-            .add(String.format("1,%s,%d", now.plusMillis(1), sunriseRows.size()))
+            .add(String.format("1,%s,%d", now.plus(Duration.ofMillis(1)), sunriseRows.size()))
             .add(LordnTaskUtils.COLUMNS_SUNRISE)
             .addAll(sunriseRows)
             .build();

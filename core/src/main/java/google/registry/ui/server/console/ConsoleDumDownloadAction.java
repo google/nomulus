@@ -16,6 +16,8 @@ package google.registry.ui.server.console;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
+import static google.registry.util.DateTimeUtils.toLocalDate;
+import static java.time.ZoneOffset.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -84,7 +86,8 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
         .setHeader("Cache-Control", "max-age=86400"); // 86400 seconds = 1 day
     consoleApiParams
         .response()
-        .setDateHeader("Expires", clock.nowUtc().withTimeAtStartOfDay().plusDays(1));
+        .setDateHeader(
+            "Expires", toLocalDate(clock.now()).atStartOfDay(UTC).plusDays(1).toInstant());
 
     try (var writer = consoleApiParams.response().getWriter()) {
       CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);
@@ -106,7 +109,7 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
   }
 
   private void writeCsv(CSVPrinter printer) throws IOException {
-    String sql = SQL_TEMPLATE.replaceAll(":now", clock.nowUtc().toString());
+    String sql = SQL_TEMPLATE.replaceAll(":now", clock.now().toString());
 
     printer.printRecord(
         ImmutableList.of("Domain Name", "Creation Time", "Expiration Time", "Domain Statuses"));

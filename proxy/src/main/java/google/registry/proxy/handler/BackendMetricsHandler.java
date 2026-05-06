@@ -32,11 +32,11 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.Queue;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Handler that records metrics for a backend channel.
@@ -71,7 +71,7 @@ public class BackendMetricsHandler extends ChannelDuplexHandler {
    * @see <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html">RFC 2616 8.1.2.2
    *     Pipelining</a>
    */
-  private final Queue<DateTime> requestSentTimeQueue = new ArrayDeque<>();
+  private final Queue<Instant> requestSentTimeQueue = new ArrayDeque<>();
 
   @Inject
   BackendMetricsHandler(Clock clock, BackendMetrics metrics) {
@@ -97,7 +97,7 @@ public class BackendMetricsHandler extends ChannelDuplexHandler {
         relayedProtocolName,
         clientCertHash,
         (FullHttpResponse) msg,
-        new Duration(requestSentTimeQueue.remove().getMillis(), clock.nowUtc().getMillis()));
+        Duration.between(requestSentTimeQueue.remove(), clock.now()));
     super.channelRead(ctx, msg);
   }
 
@@ -125,7 +125,7 @@ public class BackendMetricsHandler extends ChannelDuplexHandler {
                   if (future.isSuccess()) {
                     // Only instrument request metrics when the request is actually sent to Nomulus
                     metrics.requestSent(relayedProtocolName, clientCertHash, bytes);
-                    requestSentTimeQueue.add(clock.nowUtc());
+                    requestSentTimeQueue.add(clock.now());
                   }
                 });
   }

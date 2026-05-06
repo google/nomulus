@@ -36,7 +36,7 @@ public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerial
   @RecursivePreUpdate
   public void setTimestamp() {
     if (creationTime == null) {
-      creationTime = tm().getTxTime();
+      creationTime = tm().reTransact(tm()::getTxTime);
     }
   }
 

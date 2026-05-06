@@ -214,8 +214,8 @@ public class RegistryConfigSettings {
   /** Configuration for the certificate checker. */
   public static class SslCertificateValidation {
     public Map<String, Integer> maxValidityDaysSchedule;
-    public int expirationWarningDays;
-    public int expirationWarningIntervalDays;
+    public long expirationWarningDays;
+    public long expirationWarningIntervalDays;
     public int minimumRsaKeyLength;
     public Set<String> allowedEcdsaCurves;
     public String expirationWarningEmailBodyText;

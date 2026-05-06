@@ -25,9 +25,9 @@ import com.google.monitoring.metrics.EventMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.request.auth.AuthSettings.AuthLevel;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.joda.time.Duration;
 
 class RequestMetrics {
 
@@ -54,14 +54,14 @@ class RequestMetrics {
   public void record(
       Duration duration, String path, Action.Method method, AuthLevel authLevel, boolean success) {
     requestDurationMetric.record(
-        duration.getMillis(),
+        duration.toMillis(),
         truncatePath(path),
         String.valueOf(method),
         String.valueOf(authLevel),
         String.valueOf(success));
     logger.atInfo().log(
         "Action called for path=%s, method=%s, authLevel=%s, success=%s. Took: %.3fs.",
-        path, method, authLevel, success, duration.getMillis() / 1000d);
+        path, method, authLevel, success, duration.toMillis() / 1000d);
   }
 
   private static String truncatePath(String path) {

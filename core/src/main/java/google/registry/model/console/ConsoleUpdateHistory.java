@@ -30,8 +30,8 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 @Entity
 @WithVKey(Long.class)
@@ -47,7 +47,7 @@ public class ConsoleUpdateHistory extends ImmutableObject implements Buildable {
 
   @Column(nullable = false)
   @Expose
-  DateTime modificationTime;
+  Instant modificationTime;
 
   /** The HTTP method (e.g. POST, PUT) used to make this modification. */
   @Column(nullable = false)
@@ -76,7 +76,7 @@ public class ConsoleUpdateHistory extends ImmutableObject implements Buildable {
     return revisionId;
   }
 
-  public DateTime getModificationTime() {
+  public Instant getModificationTime() {
     return modificationTime;
   }
 
@@ -141,7 +141,7 @@ public class ConsoleUpdateHistory extends ImmutableObject implements Buildable {
       return super.build();
     }
 
-    public Builder setModificationTime(DateTime modificationTime) {
+    public Builder setModificationTime(Instant modificationTime) {
       getInstance().modificationTime = modificationTime;
       return this;
     }

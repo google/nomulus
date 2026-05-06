@@ -21,13 +21,13 @@ import static java.lang.StrictMath.min;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
 import google.registry.util.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.concurrent.ThreadSafe;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * A thread-safe token store that supports concurrent {@link #take}, {@link #put}, and {@link
@@ -48,9 +48,9 @@ import org.joda.time.Duration;
 public class TokenStore {
 
   /** Value class representing a timestamped integer. */
-  record TimestampedInteger(int value, DateTime timestamp) {
+  record TimestampedInteger(int value, Instant timestamp) {
 
-    static TimestampedInteger create(int value, DateTime timestamp) {
+    static TimestampedInteger create(int value, Instant timestamp) {
       return new TimestampedInteger(value, timestamp);
     }
   }
@@ -99,9 +99,9 @@ public class TokenStore {
     tokensMap.compute(
         userId,
         (user, availableTokens) -> {
-          DateTime now = clock.nowUtc();
+          Instant now = clock.now();
           int currentTokenCount;
-          DateTime refillTime;
+          Instant refillTime;
           // Checks if the user is provisioned with unlimited tokens.
           if (config.hasUnlimitedTokens(user)) {
             grantedToken.value = TimestampedInteger.create(1, now);
@@ -110,9 +110,10 @@ public class TokenStore {
           // Checks if the entry exists.
           if (availableTokens == null
               // Or if refill is enabled and the entry needs to be refilled.
-              || (!config.getRefillPeriod(user).isEqual(Duration.ZERO)
-                  && !new Duration(availableTokens.timestamp(), now)
-                      .isShorterThan(config.getRefillPeriod(user)))) {
+              || (!config.getRefillPeriod(user).isZero()
+                  && Duration.between(availableTokens.timestamp(), now)
+                          .compareTo(config.getRefillPeriod(user))
+                      >= 0)) {
             currentTokenCount = config.getTokenAmount(user);
             refillTime = now;
           } else {
@@ -138,20 +139,21 @@ public class TokenStore {
    * @param returnedTokenRefillTime The refill time of the pool of tokens from which the returned
    *     one is taken from.
    */
-  void put(String userId, DateTime returnedTokenRefillTime) {
+  void put(String userId, Instant returnedTokenRefillTime) {
     tokensMap.computeIfPresent(
         userId,
         (user, availableTokens) -> {
-          DateTime now = clock.nowUtc();
+          Instant now = clock.now();
           int currentTokenCount = availableTokens.value();
-          DateTime refillTime = availableTokens.timestamp();
+          Instant refillTime = availableTokens.timestamp();
           int newTokenCount;
           // Check if quota is unlimited.
           if (!config.hasUnlimitedTokens(userId)) {
             // Check if refill is enabled and a refill is needed.
-            if (!config.getRefillPeriod(user).isEqual(Duration.ZERO)
-                && !new Duration(availableTokens.timestamp(), now)
-                    .isShorterThan(config.getRefillPeriod(user))) {
+            if (!config.getRefillPeriod(user).isZero()
+                && Duration.between(availableTokens.timestamp(), now)
+                        .compareTo(config.getRefillPeriod(user))
+                    >= 0) {
               currentTokenCount = config.getTokenAmount(user);
               refillTime = now;
             }
@@ -180,8 +182,9 @@ public class TokenStore {
   void refresh() {
     tokensMap.forEach(
         (user, availableTokens) -> {
-          if (!new Duration(availableTokens.timestamp(), clock.nowUtc())
-              .isShorterThan(config.getRefreshPeriod())) {
+          if (Duration.between(availableTokens.timestamp(), clock.now())
+                  .compareTo(config.getRefreshPeriod())
+              >= 0) {
             tokensMap.remove(user);
           }
         });
@@ -190,15 +193,15 @@ public class TokenStore {
   /** Schedules token store refresh if enabled. */
   void scheduleRefresh() {
     // Only schedule refresh if the refresh period is not zero.
-    if (!config.getRefreshPeriod().isEqual(Duration.ZERO)) {
+    if (!config.getRefreshPeriod().isZero()) {
       Future<?> unusedFuture =
           refreshExecutor.scheduleWithFixedDelay(
               () -> {
                 refresh();
                 logger.atInfo().log("Refreshing quota for protocol %s", config.getProtocolName());
               },
-              config.getRefreshPeriod().getStandardSeconds(),
-              config.getRefreshPeriod().getStandardSeconds(),
+              config.getRefreshPeriod().toSeconds(),
+              config.getRefreshPeriod().toSeconds(),
               TimeUnit.SECONDS);
     }
   }

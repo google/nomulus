@@ -18,18 +18,17 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusMinutes;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -57,44 +56,44 @@ public class DomainDeletionTimeCacheTest {
   @Test
   void testDomainNotAvailable_notDeleted() {
     persistActiveDomain("active.tld");
-    assertThat(getDeletionTimeFromCache("active.tld")).hasValue(END_OF_TIME);
+    assertThat(getDeletionTimeFromCache("active.tld")).hasValue(END_INSTANT);
   }
 
   @Test
   void testDomainAvailable_deletedInFuture() {
-    persistDomainAsDeleted(persistActiveDomain("domain.tld"), clock.nowUtc().plusDays(1));
-    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(clock.nowUtc().plusDays(1));
+    persistDomainAsDeleted(persistActiveDomain("domain.tld"), plusDays(clock.now(), 1));
+    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(plusDays(clock.now(), 1));
   }
 
   @Test
   void testCache_returnsOldData() {
     Domain domain = persistActiveDomain("domain.tld");
-    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_OF_TIME);
-    persistDomainAsDeleted(domain, clock.nowUtc().plusDays(1));
+    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_INSTANT);
+    persistDomainAsDeleted(domain, plusDays(clock.now(), 1));
     // Without intervention, the cache should have the old data, even if a few minutes have passed
-    clock.advanceBy(Duration.standardMinutes(5));
-    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_OF_TIME);
+    clock.advanceBy(Duration.ofMinutes(5));
+    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_INSTANT);
   }
 
   @Test
   void testCache_returnsNewDataAfterDomainCreate() {
     // Null deletion dates (meaning an avilable domain) shouldn't be cached
     assertThat(getDeletionTimeFromCache("domain.tld")).isEmpty();
-    persistDomainAsDeleted(persistActiveDomain("domain.tld"), clock.nowUtc().plusDays(1));
-    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(clock.nowUtc().plusDays(1));
+    persistDomainAsDeleted(persistActiveDomain("domain.tld"), plusDays(clock.now(), 1));
+    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(plusDays(clock.now(), 1));
   }
 
   @Test
   void testCache_expires() {
     Domain domain = persistActiveDomain("domain.tld");
-    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_OF_TIME);
+    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_INSTANT);
     Instant elevenMinutesFromNow = plusMinutes(clock.now(), 11);
-    persistDomainAsDeleted(domain, toDateTime(elevenMinutesFromNow));
-    clock.advanceBy(Duration.standardMinutes(30));
-    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(toDateTime(elevenMinutesFromNow));
+    persistDomainAsDeleted(domain, elevenMinutesFromNow);
+    clock.advanceBy(Duration.ofMinutes(30));
+    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(elevenMinutesFromNow);
   }
 
-  private Optional<DateTime> getDeletionTimeFromCache(String domainName) {
+  private Optional<Instant> getDeletionTimeFromCache(String domainName) {
     return tm().transact(() -> cache.getDeletionTimeForDomain(domainName));
   }
 }

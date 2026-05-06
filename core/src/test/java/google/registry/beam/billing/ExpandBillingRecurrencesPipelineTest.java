@@ -34,8 +34,6 @@ import static google.registry.util.DateTimeUtils.minusHours;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -61,6 +59,7 @@ import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -70,8 +69,6 @@ import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.hibernate.cfg.AvailableSettings;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -360,7 +357,7 @@ public class ExpandBillingRecurrencesPipelineTest {
 
   @Test
   void testSuccess_expandMultipleEvents_multipleEventTime() {
-    clock.advanceBy(Duration.standardDays(365));
+    clock.advanceBy(Duration.ofDays(365));
     endTime = plusYears(endTime, 1);
     options.setEndTime(endTime.toString());
 
@@ -376,7 +373,7 @@ public class ExpandBillingRecurrencesPipelineTest {
                         domain.getTld(),
                         // We report this when the autorenew grace period ends.
                         plusYears(domain.getCreationTime(), 2)
-                            .plusMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis()),
+                            .plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD),
                         TransactionReportField.netRenewsFieldFromYears(1),
                         1)))
             .build());
@@ -400,8 +397,7 @@ public class ExpandBillingRecurrencesPipelineTest {
             .asBuilder()
             .setEventTime(plusYears(domain.getCreationTime(), 2))
             .setBillingTime(
-                plusYears(domain.getCreationTime(), 2)
-                    .plusMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis()))
+                plusYears(domain.getCreationTime(), 2).plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD))
             .build(),
         billingRecurrence
             .asBuilder()
@@ -460,7 +456,7 @@ public class ExpandBillingRecurrencesPipelineTest {
                     domain.getTld(),
                     // We report this when the autorenew grace period ends.
                     plusYears(domain.getCreationTime(), 1)
-                        .plusMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis()),
+                        .plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD),
                     TransactionReportField.netRenewsFieldFromYears(1),
                     1)))
         .build();
@@ -474,8 +470,7 @@ public class ExpandBillingRecurrencesPipelineTest {
       Domain domain, DomainHistory history, BillingRecurrence billingRecurrence, int cost) {
     return new BillingEvent.Builder()
         .setBillingTime(
-            plusYears(domain.getCreationTime(), 1)
-                .plusMillis(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD.getMillis()))
+            plusYears(domain.getCreationTime(), 1).plus(Tld.DEFAULT_AUTO_RENEW_GRACE_PERIOD))
         .setRegistrarId("TheRegistrar")
         .setCost(Money.of(USD, cost))
         .setEventTime(plusYears(domain.getCreationTime(), 1))
@@ -526,12 +521,8 @@ public class ExpandBillingRecurrencesPipelineTest {
     assertThat(cursor.getCursorTime()).isEqualTo(expectedCursorTime);
   }
 
-  private static void assertCursorAt(DateTime expectedCursorTime) {
-    assertCursorAt(toInstant(expectedCursorTime));
-  }
-
   private static BillingRecurrence createDomainAtTime(String domainName, Instant createTime) {
-    Domain domain = persistActiveDomain(domainName, toDateTime(createTime));
+    Domain domain = persistActiveDomain(domainName, createTime);
     DomainHistory domainHistory =
         persistResource(
             new DomainHistory.Builder()

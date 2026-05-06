@@ -162,7 +162,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
             .build());
     persistBsaLabel("example1");
     doCheckTest(
@@ -176,7 +176,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
             .build());
     persistBsaLabel("example1");
     persistActiveDomain("example1.tld");
@@ -191,7 +191,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
             .build());
     persistBsaLabel("reserved");
     persistBsaLabel("allowedinsunrise");
@@ -208,7 +208,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
             .build());
     persistBsaLabel("example1");
     setEppInput("domain_check_allocationtoken.xml");
@@ -230,7 +230,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
             .build());
     persistBsaLabel("example1");
     setEppInput("domain_check_allocationtoken.xml");
@@ -254,7 +254,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("com")
             .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
             .build());
     persistBsaLabel("example");
     doCheckTest(
@@ -738,7 +738,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_oneExistsButWasDeleted() throws Exception {
-    persistDeletedDomain("example1.tld", clock.nowUtc().minusDays(1));
+    persistDeletedDomain("example1.tld", minusDays(clock.now(), 1));
     doCheckTest(
         create(true, "example1.tld", null),
         create(true, "example2.tld", null),

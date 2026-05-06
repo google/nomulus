@@ -15,7 +15,6 @@
 package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.net.InetAddresses;
 import google.registry.model.domain.Domain;
@@ -70,13 +69,13 @@ final class HostToXjcConverter {
     XjcRdeHost bean = new XjcRdeHost();
     bean.setName(model.getHostName());
     bean.setRoid(model.getRepoId());
-    bean.setCrDate(toDateTime(model.getCreationTime()));
-    bean.setUpDate(toDateTime(model.getLastEppUpdateTime()));
+    bean.setCrDate(model.getCreationTime());
+    bean.setUpDate(model.getLastEppUpdateTime());
     bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));
     bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateRegistrarId(), null));
     bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));
     bean.setClID(registrarId);
-    bean.setTrDate(toDateTime(lastTransferTime));
+    bean.setTrDate(lastTransferTime);
     for (StatusValue status : model.getStatusValues()) {
       // TODO(b/34844887): Remove when PENDING_TRANSFER is not persisted on host resources.
       if (status.equals(StatusValue.PENDING_TRANSFER)) {

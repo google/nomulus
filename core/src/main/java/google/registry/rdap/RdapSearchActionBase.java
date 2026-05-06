@@ -282,7 +282,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
    * there are no pending deletes.
    *
    * <p>In such cases, it is sufficient to check whether {@code deletionTime} is equal to {@code
-   * END_OF_TIME}, because any other value means it has already been deleted. This allows us to use
+   * END_INSTANT}, because any other value means it has already been deleted. This allows us to use
    * an equality query for the deletion time.
    *
    * @param clazz the type of resource to be queried

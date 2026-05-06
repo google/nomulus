@@ -20,13 +20,12 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -34,7 +33,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Tests for {@link EppResourceUtils}. */
 class EppResourceUtilsTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
+  private final FakeClock clock = new FakeClock(Instant.now());
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -52,7 +51,7 @@ class EppResourceUtilsTest {
     Host host =
         persistResource(
             newHost("ns1.cat.tld").asBuilder().setCreationTimeForTest(clock.now()).build());
-    assertThat(loadAtPointInTime(host, clock.nowUtc().minusMillis(1))).isNull();
+    assertThat(loadAtPointInTime(host, clock.now().minusMillis(1))).isNull();
   }
 
   @Test
@@ -62,6 +61,6 @@ class EppResourceUtilsTest {
     Host host =
         persistResource(
             newHost("ns1.cat.tld").asBuilder().setCreationTimeForTest(START_INSTANT).build());
-    assertThat(loadAtPointInTime(host, clock.nowUtc())).isEqualTo(host);
+    assertThat(loadAtPointInTime(host, clock.now())).isEqualTo(host);
   }
 }

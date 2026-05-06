@@ -38,6 +38,8 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.toLocalDate;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
@@ -544,7 +546,7 @@ public class RdePipelineTest {
                 tm().loadByKey(
                         VKey.create(
                             RdeRevision.class,
-                            RdeRevisionId.create("soy", now.toLocalDate(), mode)))
+                            RdeRevisionId.create("soy", toLocalDate(toInstant(now)), mode)))
                     .getRevision());
   }
 

@@ -105,7 +105,7 @@ final class SetupOteCommand extends ConfirmingCommand {
       String asciiCert = MoreFiles.asCharSource(certFile, US_ASCII).read();
       // Don't wait for create_registrar to fail if it's a bad certificate file.
       loadCertificate(asciiCert);
-      oteAccountBuilder.setCertificate(asciiCert, clock.nowUtc());
+    oteAccountBuilder.setCertificate(asciiCert, clock.now());
   }
 
   @Override
@@ -124,11 +124,12 @@ final class SetupOteCommand extends ConfirmingCommand {
         && RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
       builder.append(
           String.format(
-              """
+"""
 
 
 WARNING: Running against %s environment. Are \
-you sure you didn't mean to run this against sandbox (e.g. "-e SANDBOX")?""",
+you sure you didn't mean to run this against sandbox (e.g. "-e SANDBOX")?\
+""",
               RegistryEnvironment.get()));
     }
 

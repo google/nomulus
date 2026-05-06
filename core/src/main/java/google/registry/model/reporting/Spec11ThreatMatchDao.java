@@ -16,7 +16,7 @@ package google.registry.model.reporting;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.persistence.transaction.JpaTransactionManager;
-import org.joda.time.LocalDate;
+import java.time.LocalDate;
 
 /**
  * Data access object for {@link Spec11ThreatMatch}.

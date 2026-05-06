@@ -14,7 +14,6 @@
 
 package google.registry.reporting.spec11;
 
-import static google.registry.util.DateTimeUtils.toJodaLocalDate;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import dagger.Module;
@@ -32,7 +31,7 @@ public class Spec11Module {
   @Provides
   @Spec11ReportFilePath
   static String provideSpec11ReportFilePath(LocalDate localDate) {
-    return Spec11Pipeline.getSpec11ReportFilePath(toJodaLocalDate(localDate));
+    return Spec11Pipeline.getSpec11ReportFilePath(localDate);
   }
 
   /** Dagger qualifier for the subdirectory we stage to/upload from for Spec11 reports. */

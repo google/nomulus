@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.formatInstant;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -75,7 +76,7 @@ final class ListCursorsCommand implements Command {
     return String.format(
         OUTPUT_FMT,
         name,
-        cursor.map(c -> c.getCursorTime().toString()).orElse("(absent)"),
-        cursor.map(c -> c.getLastUpdateTime().toString()).orElse("(absent)"));
+        cursor.map(c -> formatInstant(c.getCursorTime())).orElse("(absent)"),
+        cursor.map(c -> formatInstant(c.getLastUpdateTime())).orElse("(absent)"));
   }
 }

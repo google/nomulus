@@ -51,7 +51,7 @@ public class ConfigureFeatureFlagCommand extends MutatingCommand {
           new FeatureFlag()
               .asBuilder()
               .setFeatureName(name)
-              .setStatusMapInstant(featureStatusTransitions);
+              .setStatusMap(featureStatusTransitions);
       stageEntityChange(oldFlag.orElse(null), newFlagBuilder.build());
     }
   }

@@ -14,10 +14,11 @@
 
 package google.registry.flows;
 
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.time.format.ISODateTimeFormat.dateTimeNoMillis;
 
 import com.google.common.collect.ImmutableMap;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Test flows without login. */
@@ -25,10 +26,12 @@ class EppLoggedOutTest extends EppTestCase {
 
   @Test
   void testHello() throws Exception {
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     assertThatCommand("hello.xml", null)
         .atTime(now)
-        .hasResponse("greeting.xml", ImmutableMap.of("DATE", now.toString(dateTimeNoMillis())));
+        .hasResponse(
+            "greeting.xml",
+            ImmutableMap.of("DATE", toDateTime(now).toString(dateTimeNoMillis())));
   }
 
   @Test

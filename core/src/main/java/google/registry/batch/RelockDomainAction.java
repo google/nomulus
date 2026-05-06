@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.Action.Method.POST;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
-import static google.registry.util.DateTimeUtils.toJodaDuration;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
@@ -238,8 +237,7 @@ public class RelockDomainAction implements Runnable {
       }
     }
     Duration timeBeforeRetry = previousAttempts < ATTEMPTS_BEFORE_SLOWDOWN ? TEN_MINUTES : ONE_HOUR;
-    domainLockUtils.enqueueDomainRelock(
-        toJodaDuration(timeBeforeRetry), oldUnlockRevisionId, previousAttempts + 1);
+    domainLockUtils.enqueueDomainRelock(timeBeforeRetry, oldUnlockRevisionId, previousAttempts + 1);
   }
 
   private void sendSuccessEmail(RegistryLock oldLock) {

@@ -19,7 +19,7 @@ import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.proxy.ProxyConfig.Quota;
-import org.joda.time.Duration;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -39,14 +39,14 @@ class QuotaConfigTest {
     assertThat(quotaConfig.hasUnlimitedTokens(userId)).isFalse();
     assertThat(quotaConfig.getTokenAmount(userId)).isEqualTo(tokenAmount);
     assertThat(quotaConfig.getRefillPeriod(userId))
-        .isEqualTo(Duration.standardSeconds(refillSeconds));
+        .isEqualTo(Duration.ofSeconds(refillSeconds));
     assertThat(quotaConfig.getProtocolName()).isEqualTo("theProtocol");
   }
 
   @Test
   void testSuccess_regularConfig() {
     quotaConfig = loadQuotaConfig("quota_config_regular.yaml");
-    assertThat(quotaConfig.getRefreshPeriod()).isEqualTo(Duration.standardHours(1));
+    assertThat(quotaConfig.getRefreshPeriod()).isEqualTo(Duration.ofHours(1));
     validateQuota("abc", 10, 60);
     validateQuota("987lol", 500, 10);
     validateQuota("no_match", 100, 60);
@@ -55,7 +55,7 @@ class QuotaConfigTest {
   @Test
   void testSuccess_onlyDefault() {
     quotaConfig = loadQuotaConfig("quota_config_default.yaml");
-    assertThat(quotaConfig.getRefreshPeriod()).isEqualTo(Duration.standardHours(1));
+    assertThat(quotaConfig.getRefreshPeriod()).isEqualTo(Duration.ofHours(1));
     validateQuota("abc", 100, 60);
     validateQuota("987lol", 100, 60);
     validateQuota("no_match", 100, 60);

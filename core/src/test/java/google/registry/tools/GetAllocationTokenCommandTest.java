@@ -21,6 +21,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -30,9 +31,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem;
 import google.registry.model.domain.token.AllocationToken;
-import google.registry.util.DateTimeUtils;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetAllocationTokenCommand}. */
@@ -54,7 +53,7 @@ class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCo
                 .setDiscountYears(2)
                 .setTokenStatusTransitions(
                     ImmutableSortedMap.of(
-                        DateTimeUtils.START_INSTANT,
+                        START_INSTANT,
                         AllocationToken.TokenStatus.NOT_STARTED,
                         fakeClock.now(),
                         AllocationToken.TokenStatus.VALID))
@@ -118,7 +117,7 @@ Token foo was not redeemed.
   @Test
   void testSuccess_redeemedToken() throws Exception {
     createTld("tld");
-    Domain domain = persistActiveDomain("fqqdn.tld", DateTime.parse("2016-04-07T22:19:17.044Z"));
+    Domain domain = persistActiveDomain("fqqdn.tld", Instant.parse("2016-04-07T22:19:17.044Z"));
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()

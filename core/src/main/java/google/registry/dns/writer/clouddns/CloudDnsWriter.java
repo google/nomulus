@@ -44,7 +44,6 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
 import google.registry.util.Concurrent;
-import google.registry.util.DateTimeUtils;
 import google.registry.util.Retrier;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -151,7 +150,6 @@ public class CloudDnsWriter extends BaseDnsWriter {
               .setTtl(
                   (int)
                       tld.getDnsDsTtl()
-                          .map(DateTimeUtils::toJavaDuration)
                           .orElse(defaultDsTtl)
                           .toSeconds())
               .setType("DS")
@@ -179,7 +177,6 @@ public class CloudDnsWriter extends BaseDnsWriter {
               .setTtl(
                   (int)
                       tld.getDnsNsTtl()
-                          .map(DateTimeUtils::toJavaDuration)
                           .orElse(defaultNsTtl)
                           .toSeconds())
               .setType("NS")

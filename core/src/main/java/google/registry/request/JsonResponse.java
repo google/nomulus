@@ -21,8 +21,8 @@ import static com.google.common.net.MediaType.JSON_UTF_8;
 import static org.json.simple.JSONValue.toJSONString;
 
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Map;
-import org.joda.time.DateTime;
 
 /** JSON response object. */
 public class JsonResponse {
@@ -72,7 +72,7 @@ public class JsonResponse {
    *
    * <p>see Response#setDateHeader
    */
-  public void setDateHeader(String header, DateTime timestamp) {
+  public void setDateHeader(String header, Instant timestamp) {
     response.setDateHeader(header, timestamp);
   }
 }

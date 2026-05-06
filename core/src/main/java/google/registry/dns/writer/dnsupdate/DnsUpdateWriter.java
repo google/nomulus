@@ -34,7 +34,6 @@ import google.registry.model.host.Host;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
-import google.registry.util.DateTimeUtils;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -196,7 +195,6 @@ public class DnsUpdateWriter extends BaseDnsWriter {
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
               tld.getDnsDsTtl()
-                  .map(DateTimeUtils::toJavaDuration)
                   .orElse(dnsDefaultDsTtl)
                   .toSeconds(),
               signerData.getKeyTag(),
@@ -239,7 +237,6 @@ public class DnsUpdateWriter extends BaseDnsWriter {
               toAbsoluteName(domain.getDomainName()),
               DClass.IN,
               tld.getDnsNsTtl()
-                  .map(DateTimeUtils::toJavaDuration)
                   .orElse(dnsDefaultNsTtl)
                   .toSeconds(),
               toAbsoluteName(hostName));

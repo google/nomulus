@@ -65,7 +65,7 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
         .containsExactly(
             HEADER_ONE,
             HEADER_TWO,
-            "bar                    1984-12-18T00:00:00Z       1984-12-21T06:07:08.789Z",
+            "bar                    1984-12-18T00:00:00.000Z   1984-12-21T06:07:08.789Z",
             "foo                    (absent)                   (absent)")
         .inOrder();
   }

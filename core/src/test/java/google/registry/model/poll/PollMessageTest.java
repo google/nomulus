@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -80,7 +81,7 @@ public class PollMessageTest extends EntityTestCase {
             .setEventTime(fakeClock.now())
             .setMsg("Test poll message")
             .setHistoryEntry(historyEntry)
-            .setAutorenewEndTime(plusYears(fakeClock.nowUtc(), 1))
+            .setAutorenewEndTime(plusYears(fakeClock.now(), 1))
             .setTargetId("foobar.foo")
             .build();
   }
@@ -118,7 +119,7 @@ public class PollMessageTest extends EntityTestCase {
             "test.example",
             true,
             Trid.create("ABC-123", "server-trid"),
-            fakeClock.nowUtc().minusDays(5));
+            minusDays(fakeClock.now(), 5));
 
     PollMessage.OneTime pollMessage =
         new PollMessage.OneTime.Builder()
@@ -159,7 +160,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setEventTime(fakeClock.now())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
-                .setAutorenewEndTime(plusYears(fakeClock.nowUtc(), 1))
+                .setAutorenewEndTime(plusYears(fakeClock.now(), 1))
                 .setTargetId("foobar.foo")
                 .build());
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
@@ -174,7 +175,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setEventTime(fakeClock.now())
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
-                .setAutorenewEndTime(plusYears(fakeClock.nowUtc(), 1))
+                .setAutorenewEndTime(plusYears(fakeClock.now(), 1))
                 .setTargetId("foobar.foo")
                 .build());
     PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));

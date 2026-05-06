@@ -24,8 +24,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.money.CurrencyUnit.USD;
 
@@ -75,9 +74,9 @@ import google.registry.persistence.EntityCallbacksListener.RecursivePostPersist;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.AllocationTokenVkeyListUserType;
 import google.registry.persistence.converter.BillingCostTransitionUserType;
+import google.registry.persistence.converter.DurationUserType;
 import google.registry.persistence.converter.TldStateTransitionUserType;
 import google.registry.tldconfig.idn.IdnTableEnum;
-import google.registry.util.DateTimeUtils;
 import google.registry.util.Idn;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -86,6 +85,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -98,8 +98,6 @@ import javax.annotation.Nullable;
 import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /** Persisted per-TLD configuration data. */
 @Entity
@@ -121,14 +119,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   public static final boolean DEFAULT_ESCROW_ENABLED = false;
   public static final boolean DEFAULT_DNS_PAUSED = false;
-  public static final Duration DEFAULT_ADD_GRACE_PERIOD = Duration.standardDays(5);
-  public static final Duration DEFAULT_AUTO_RENEW_GRACE_PERIOD = Duration.standardDays(45);
-  public static final Duration DEFAULT_REDEMPTION_GRACE_PERIOD = Duration.standardDays(30);
-  public static final Duration DEFAULT_RENEW_GRACE_PERIOD = Duration.standardDays(5);
-  public static final Duration DEFAULT_TRANSFER_GRACE_PERIOD = Duration.standardDays(5);
-  public static final Duration DEFAULT_AUTOMATIC_TRANSFER_LENGTH = Duration.standardDays(5);
-  public static final Duration DEFAULT_PENDING_DELETE_LENGTH = Duration.standardDays(5);
-  public static final Duration DEFAULT_ANCHOR_TENANT_ADD_GRACE_PERIOD = Duration.standardDays(30);
+  public static final Duration DEFAULT_ADD_GRACE_PERIOD = Duration.ofDays(5);
+  public static final Duration DEFAULT_AUTO_RENEW_GRACE_PERIOD = Duration.ofDays(45);
+  public static final Duration DEFAULT_REDEMPTION_GRACE_PERIOD = Duration.ofDays(30);
+  public static final Duration DEFAULT_RENEW_GRACE_PERIOD = Duration.ofDays(5);
+  public static final Duration DEFAULT_TRANSFER_GRACE_PERIOD = Duration.ofDays(5);
+  public static final Duration DEFAULT_AUTOMATIC_TRANSFER_LENGTH = Duration.ofDays(5);
+  public static final Duration DEFAULT_PENDING_DELETE_LENGTH = Duration.ofDays(5);
+  public static final Duration DEFAULT_ANCHOR_TENANT_ADD_GRACE_PERIOD = Duration.ofDays(30);
   public static final CurrencyUnit DEFAULT_CURRENCY = USD;
   public static final Money DEFAULT_CREATE_BILLING_COST = Money.of(USD, 8);
   public static final Money DEFAULT_EAP_BILLING_COST = Money.of(USD, 0);
@@ -261,13 +259,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   /** Checks if {@code tld} is enrolled with BSA. */
-  public static boolean isEnrolledWithBsa(Tld tld, DateTime now) {
-    return isEnrolledWithBsa(tld, toInstant(now));
-  }
-
-  /** Checks if {@code tld} is enrolled with BSA. */
   public static boolean isEnrolledWithBsa(Tld tld, Instant now) {
-    return tld.getBsaEnrollStartTimeInstant().orElse(END_INSTANT).isBefore(now);
+    return tld.getBsaEnrollStartTime().orElse(END_INSTANT).isBefore(now);
   }
 
   /**
@@ -436,34 +429,42 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * amount of time following creation.
    */
   @Column(nullable = false, columnDefinition = "interval")
+  @Type(DurationUserType.class)
   Duration addGracePeriodLength = DEFAULT_ADD_GRACE_PERIOD;
 
   /** The length of the anchor tenant add grace period for this TLD. */
   @Column(nullable = false, columnDefinition = "interval")
+  @Type(DurationUserType.class)
   Duration anchorTenantAddGracePeriodLength = DEFAULT_ANCHOR_TENANT_ADD_GRACE_PERIOD;
 
   /** The length of the autorenew grace period for this TLD. */
   @Column(nullable = false, columnDefinition = "interval")
+  @Type(DurationUserType.class)
   Duration autoRenewGracePeriodLength = DEFAULT_AUTO_RENEW_GRACE_PERIOD;
 
   /** The length of the redemption grace period for this TLD. */
   @Column(nullable = false, columnDefinition = "interval")
+  @Type(DurationUserType.class)
   Duration redemptionGracePeriodLength = DEFAULT_REDEMPTION_GRACE_PERIOD;
 
   /** The length of the renew grace period for this TLD. */
   @Column(nullable = false, columnDefinition = "interval")
+  @Type(DurationUserType.class)
   Duration renewGracePeriodLength = DEFAULT_RENEW_GRACE_PERIOD;
 
   /** The length of the transfer grace period for this TLD. */
   @Column(nullable = false, columnDefinition = "interval")
+  @Type(DurationUserType.class)
   Duration transferGracePeriodLength = DEFAULT_TRANSFER_GRACE_PERIOD;
 
   /** The length of time before a transfer is automatically approved for this TLD. */
   @Column(nullable = false, columnDefinition = "interval")
+  @Type(DurationUserType.class)
   Duration automaticTransferLength = DEFAULT_AUTOMATIC_TRANSFER_LENGTH;
 
   /** The length of time a domain spends in the non-redeemable pending delete phase for this TLD. */
   @Column(nullable = false, columnDefinition = "interval")
+  @Type(DurationUserType.class)
   Duration pendingDeleteLength = DEFAULT_PENDING_DELETE_LENGTH;
 
   /** The currency unit for all costs associated with this TLD. */
@@ -601,13 +602,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** Returns the time when this TLD was enrolled in the Brand Safety Alliance (BSA) program. */
   @JsonIgnore
-  public Optional<DateTime> getBsaEnrollStartTime() {
-    return Optional.ofNullable(toDateTime(this.bsaEnrollStartTime));
-  }
-
-  /** Returns the time when this TLD was enrolled in the Brand Safety Alliance (BSA) program. */
-  @JsonIgnore
-  public Optional<Instant> getBsaEnrollStartTimeInstant() {
+  public Optional<Instant> getBsaEnrollStartTime() {
     return Optional.ofNullable(this.bsaEnrollStartTime);
   }
 
@@ -697,7 +692,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   public ImmutableSortedMap<Instant, Money> getCreateBillingCostTransitions() {
-    return createBillingCostTransitions.toValueMapInstant();
+    return createBillingCostTransitions.toValueMap();
   }
 
   /**
@@ -728,11 +723,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   public ImmutableSortedMap<Instant, TldState> getTldStateTransitions() {
-    return tldStateTransitions.toValueMapInstant();
+    return tldStateTransitions.toValueMap();
   }
 
   public ImmutableSortedMap<Instant, Money> getRenewBillingCostTransitions() {
-    return renewBillingCostTransitions.toValueMapInstant();
+    return renewBillingCostTransitions.toValueMap();
   }
 
   /** Returns the EAP fee for the tld at the given time. */
@@ -752,13 +747,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
         // which the domain is separately considered standard vs premium depending on renewal price.
         false,
         validPeriod,
-        toDateTime(validPeriod.upperEndpoint()));
+        formatInstant(validPeriod.upperEndpoint()));
   }
 
   @VisibleForTesting
   @JsonProperty("eapFeeSchedule")
   public ImmutableSortedMap<Instant, Money> getEapFeeScheduleAsMap() {
-    return eapFeeSchedule.toValueMapInstant();
+    return eapFeeSchedule.toValueMap();
   }
 
   public String getLordnUsername() {
@@ -853,7 +848,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
                       .filter(state -> !TldState.QUIET_PERIOD.equals(state))
                       .collect(Collectors.toList())),
           "The TLD states are chronologically out of order");
-      getInstance().tldStateTransitions = TimedTransitionProperty.fromValueMapInstant(tldStatesMap);
+      getInstance().tldStateTransitions = TimedTransitionProperty.fromValueMap(tldStatesMap);
       return this;
     }
 
@@ -913,7 +908,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setAddGracePeriodLength(Duration addGracePeriodLength) {
       checkArgument(
-          addGracePeriodLength.isLongerThan(Duration.ZERO),
+          addGracePeriodLength.compareTo(Duration.ZERO) > 0,
           "addGracePeriodLength must be non-zero");
       getInstance().addGracePeriodLength = addGracePeriodLength;
       return this;
@@ -922,7 +917,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     /** Warning! Changing this will affect the billing time of autorenew events in the past. */
     public Builder setAutoRenewGracePeriodLength(Duration autoRenewGracePeriodLength) {
       checkArgument(
-          autoRenewGracePeriodLength.isLongerThan(Duration.ZERO),
+          autoRenewGracePeriodLength.compareTo(Duration.ZERO) > 0,
           "autoRenewGracePeriodLength must be non-zero");
       getInstance().autoRenewGracePeriodLength = autoRenewGracePeriodLength;
       return this;
@@ -930,7 +925,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setRedemptionGracePeriodLength(Duration redemptionGracePeriodLength) {
       checkArgument(
-          redemptionGracePeriodLength.isLongerThan(Duration.ZERO),
+          redemptionGracePeriodLength.compareTo(Duration.ZERO) > 0,
           "redemptionGracePeriodLength must be non-zero");
       getInstance().redemptionGracePeriodLength = redemptionGracePeriodLength;
       return this;
@@ -938,7 +933,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setRenewGracePeriodLength(Duration renewGracePeriodLength) {
       checkArgument(
-          renewGracePeriodLength.isLongerThan(Duration.ZERO),
+          renewGracePeriodLength.compareTo(Duration.ZERO) > 0,
           "renewGracePeriodLength must be non-zero");
       getInstance().renewGracePeriodLength = renewGracePeriodLength;
       return this;
@@ -946,7 +941,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setTransferGracePeriodLength(Duration transferGracePeriodLength) {
       checkArgument(
-          transferGracePeriodLength.isLongerThan(Duration.ZERO),
+          transferGracePeriodLength.compareTo(Duration.ZERO) > 0,
           "transferGracePeriodLength must be non-zero");
       getInstance().transferGracePeriodLength = transferGracePeriodLength;
       return this;
@@ -954,7 +949,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setAutomaticTransferLength(Duration automaticTransferLength) {
       checkArgument(
-          automaticTransferLength.isLongerThan(Duration.ZERO),
+          automaticTransferLength.compareTo(Duration.ZERO) > 0,
           "automaticTransferLength must be non-zero");
       getInstance().automaticTransferLength = automaticTransferLength;
       return this;
@@ -962,7 +957,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setPendingDeleteLength(Duration pendingDeleteLength) {
       checkArgument(
-          pendingDeleteLength.isLongerThan(Duration.ZERO), "pendingDeleteLength must be non-zero");
+          pendingDeleteLength.compareTo(Duration.ZERO) > 0, "pendingDeleteLength must be non-zero");
       getInstance().pendingDeleteLength = pendingDeleteLength;
       return this;
     }
@@ -980,7 +975,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
           createCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
           "Create billing cost cannot be negative");
       getInstance().createBillingCostTransitions =
-          TimedTransitionProperty.fromValueMapInstant(createCostsMap);
+          TimedTransitionProperty.fromValueMap(createCostsMap);
       return this;
     }
 
@@ -1033,7 +1028,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
           renewCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
           "Renew billing cost cannot be negative");
       getInstance().renewBillingCostTransitions =
-          TimedTransitionProperty.fromValueMapInstant(renewCostsMap);
+          TimedTransitionProperty.fromValueMap(renewCostsMap);
       return this;
     }
 
@@ -1043,7 +1038,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       checkArgument(
           eapFeeSchedule.values().stream().allMatch(Money::isPositiveOrZero),
           "EAP fee cannot be negative");
-      getInstance().eapFeeSchedule = TimedTransitionProperty.fromValueMapInstant(eapFeeSchedule);
+      getInstance().eapFeeSchedule = TimedTransitionProperty.fromValueMap(eapFeeSchedule);
       return this;
     }
 
@@ -1121,13 +1116,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-    public Builder setBsaEnrollStartTime(Optional<DateTime> enrollTime) {
-      // TODO(b/309175133): forbid if enrolled with BSA
-      getInstance().bsaEnrollStartTime = enrollTime.map(DateTimeUtils::toInstant).orElse(null);
-      return this;
-    }
-
-    public Builder setBsaEnrollStartTimeInstant(Optional<Instant> enrollTime) {
+    public Builder setBsaEnrollStartTime(Optional<Instant> enrollTime) {
       // TODO(b/309175133): forbid if enrolled with BSA
       getInstance().bsaEnrollStartTime = enrollTime.orElse(null);
       return this;
@@ -1145,7 +1134,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
               && tldName.equals(InternetDomainName.from(tldName).toString()),
           "Cannot create registry for TLD that is not a valid, canonical domain name");
       // Check the validity of all TimedTransitionProperties to ensure that they have values for
-      // START_OF_TIME.  The setters above have already checked this for new values, but also check
+      // START_INSTANT.  The setters above have already checked this for new values, but also check
       // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
       // and cloned it into a new builder, to block re-building a Tld in an invalid state.
       instance.tldStateTransitions.checkValidity();
@@ -1172,7 +1161,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
           instance.getCreateBillingCostTransitions().values().stream().allMatch(currencyCheck),
           "Create cost must be in the TLD's currency");
       checkArgument(
-          instance.eapFeeSchedule.toValueMapInstant().values().stream().allMatch(currencyCheck),
+          instance.eapFeeSchedule.toValueMap().values().stream().allMatch(currencyCheck),
           "All EAP fees must be in the TLD's currency");
       checkArgumentNotNull(
           instance.pricingEngineClassName, "All registries must have a configured pricing engine");

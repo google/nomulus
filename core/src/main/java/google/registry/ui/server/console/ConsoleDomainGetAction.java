@@ -54,7 +54,7 @@ public class ConsoleDomainGetAction extends ConsoleApiAction {
         tm().transact(
                 () ->
                     ForeignKeyUtils.loadResourceByCacheIfEnabled(
-                        Domain.class, paramDomain, tm().getTransactionTime()));
+                        Domain.class, paramDomain, tm().getTxTime()));
     if (possibleDomain.isEmpty()) {
       consoleApiParams.response().setStatus(SC_NOT_FOUND);
       return;

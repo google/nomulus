@@ -18,13 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.monitoring.whitebox.CheckApiMetric.Status;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CheckApiMetric}. */
 class CheckApiMetricTest {
-  private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
+  private static final Instant START_TIME = Instant.parse("2000-01-01T00:00:00.0Z");
 
   private final FakeClock clock = new FakeClock(START_TIME);
   private CheckApiMetric.Builder metricBuilder;
@@ -40,6 +40,6 @@ class CheckApiMetricTest {
     CheckApiMetric metric = metricBuilder.status(Status.SUCCESS).build();
 
     assertThat(metric.startTimestamp()).isEqualTo(START_TIME);
-    assertThat(metric.endTimestamp()).isEqualTo(clock.nowUtc());
+    assertThat(metric.endTimestamp()).isEqualTo(clock.now());
   }
 }

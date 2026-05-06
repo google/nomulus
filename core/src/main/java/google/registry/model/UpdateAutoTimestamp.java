@@ -38,7 +38,7 @@ public class UpdateAutoTimestamp extends ImmutableObject implements UnsafeSerial
   @RecursivePrePersist
   @RecursivePreUpdate
   public void setTimestamp() {
-    lastUpdateTime = tm().getTxTime();
+    lastUpdateTime = tm().reTransact(tm()::getTxTime);
   }
 
   /** Returns the timestamp, or {@code START_INSTANT} if it's null. */

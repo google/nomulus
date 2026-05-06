@@ -343,8 +343,8 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   }
 
   @JsonIgnore
-  public ImmutableSortedMap<Instant, TokenStatus> getTokenStatusTransitionsMapInstant() {
-    return tokenStatusTransitions.toValueMapInstant();
+  public ImmutableSortedMap<Instant, TokenStatus> getTokenStatusTransitionsMap() {
+    return tokenStatusTransitions.toValueMap();
   }
 
   public ImmutableSet<CommandName> getAllowedEppActions() {
@@ -568,7 +568,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
     public Builder setTokenStatusTransitions(ImmutableSortedMap<Instant, TokenStatus> transitions) {
       getInstance().tokenStatusTransitions =
-          TimedTransitionProperty.makeInstant(
+          TimedTransitionProperty.make(
               transitions,
               VALID_TOKEN_STATUS_TRANSITIONS,
               "tokenStatusTransitions",

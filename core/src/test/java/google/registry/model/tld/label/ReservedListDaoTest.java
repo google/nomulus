@@ -53,7 +53,7 @@ public class ReservedListDaoTest {
     testReservedList =
         new ReservedList.Builder()
             .setName("testlist")
-            .setCreationTimestamp(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.now())
             .setReservedListMap(testReservations)
             .build();
   }
@@ -69,7 +69,7 @@ public class ReservedListDaoTest {
                       .getSingleResult();
               assertThat(persistedList.getReservedListEntries())
                   .containsExactlyEntriesIn(testReservations);
-              assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+              assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.now());
             });
   }
 
@@ -92,7 +92,7 @@ public class ReservedListDaoTest {
                       .getSingleResult();
               assertThat(persistedList.getReservedListEntries())
                   .containsExactlyEntriesIn(testReservations);
-              assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+              assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.now());
             });
   }
 
@@ -124,7 +124,7 @@ public class ReservedListDaoTest {
     ReservedListDao.save(testReservedList);
     ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isAtLeast(1L);
-    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.now());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
   }
@@ -134,7 +134,7 @@ public class ReservedListDaoTest {
     ReservedListDao.save(
         new ReservedList.Builder()
             .setName("testlist")
-            .setCreationTimestamp(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.now())
             .setReservedListMap(
                 ImmutableMap.of(
                     "old",
@@ -144,7 +144,7 @@ public class ReservedListDaoTest {
     ReservedListDao.save(testReservedList);
     ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isAtLeast(1L);
-    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.now());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
   }

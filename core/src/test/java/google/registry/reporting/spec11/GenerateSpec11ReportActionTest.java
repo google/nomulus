@@ -29,6 +29,7 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
@@ -90,7 +91,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             .method(HttpMethod.POST)
             .param("jobId", "jobid")
             .param("date", "2018-06-11")
-            .scheduleTime(clock.nowUtc().plusMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
+            .scheduleTime(clock.now().plus(Duration.ofMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES))));
   }
 
   @Test

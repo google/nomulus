@@ -27,6 +27,7 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPo
 import static google.registry.testing.GsonSubject.assertAboutJson;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
+import static google.registry.util.DateTimeUtils.minusYears;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -108,28 +109,28 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     persistResources(makeRegistrarPocs(registrar));
     hostNs1CatLol =
         FullFieldsTestEntityHelper.makeAndPersistHost(
-            "ns1.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1));
+            "ns1.cat.lol", "1.2.3.4", minusYears(clock.now(), 1));
     hostNs2CatLol =
         FullFieldsTestEntityHelper.makeAndPersistHost(
-            "ns2.cat.lol", "bad:f00d:cafe::15:beef", clock.nowUtc().minusYears(1));
+            "ns2.cat.lol", "bad:f00d:cafe::15:beef", minusYears(clock.now(), 1));
     FullFieldsTestEntityHelper.makeAndPersistHost(
-        "ns1.cat2.lol", "1.2.3.3", "bad:f00d:cafe::15:beef", clock.nowUtc().minusYears(1));
+        "ns1.cat2.lol", "1.2.3.3", "bad:f00d:cafe::15:beef", minusYears(clock.now(), 1));
     FullFieldsTestEntityHelper.makeAndPersistHost(
-        "ns1.cat.external", null, null, clock.nowUtc().minusYears(1));
+        "ns1.cat.external", null, null, minusYears(clock.now(), 1));
 
     // cat.みんな
     createTld("xn--q9jyb4c");
     registrar = persistResource(makeRegistrar("unicoderegistrar", "みんな", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrar));
     FullFieldsTestEntityHelper.makeAndPersistHost(
-        "ns1.cat.みんな", "1.2.3.5", clock.nowUtc().minusYears(1));
+        "ns1.cat.みんな", "1.2.3.5", minusYears(clock.now(), 1));
 
     // cat.1.test
     createTld("1.test");
     registrar = persistResource(makeRegistrar("multiregistrar", "1.test", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrar));
     FullFieldsTestEntityHelper.makeAndPersistHost(
-        "ns1.cat.1.test", "1.2.3.6", clock.nowUtc().minusYears(1));
+        "ns1.cat.1.test", "1.2.3.6", minusYears(clock.now(), 1));
 
     // create a domain so that we can use it as a test nameserver search string suffix
     domainCatLol =
@@ -169,7 +170,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   private void createDeletedHost() {
     persistResource(
         FullFieldsTestEntityHelper.makeAndPersistHost(
-                "nsdeleted.cat.lol", "4.3.2.1", clock.nowUtc().minusYears(1))
+                "nsdeleted.cat.lol", "4.3.2.1", minusYears(clock.now(), 1))
             .asBuilder()
             .setDeletionTime(minusMonths(clock.now(), 1))
             .build());

@@ -25,7 +25,6 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
@@ -46,6 +45,7 @@ import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.DeterministicStringGenerator.Rule;
 import google.registry.util.StringGenerator.Alphabets;
 import java.io.File;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import javax.annotation.Nullable;
@@ -149,7 +149,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         "--discount_premiums", "true",
         "--discount_years", "6",
         "--token_status_transitions",
-            String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_OF_TIME, promoStart, promoEnd));
+            String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_INSTANT, promoStart, promoEnd));
     assertAllocationTokens(
         new AllocationToken.Builder()
             .setToken("promo123456789ABCDEFG")
@@ -191,7 +191,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         "--discount_years",
         "6",
         "--token_status_transitions",
-        String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_OF_TIME, promoStart, promoEnd));
+        String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_INSTANT, promoStart, promoEnd));
     assertAllocationTokens(
         new AllocationToken.Builder()
             .setToken("promo123456789ABCDEFG")
@@ -479,7 +479,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
                         "--number",
                         "999",
                         String.format(
-                            "--token_status_transitions=\"%s=INVALID_STATUS\"", START_OF_TIME))))
+                            "--token_status_transitions=\"%s=INVALID_STATUS\"", START_INSTANT))))
         .hasCauseThat()
         .isInstanceOf(IllegalArgumentException.class);
   }
@@ -497,7 +497,9 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
                         "BULK_PRICING",
                         String.format(
                             "--token_status_transitions=%s=NOT_STARTED,%s=VALID,%s=ENDED",
-                            START_OF_TIME, fakeClock.nowUtc(), fakeClock.nowUtc().plusDays(1)))))
+                            START_INSTANT,
+                            fakeClock.now(),
+                            fakeClock.now().plus(Duration.ofDays(1))))))
         .hasMessageThat()
         .isEqualTo(
             "BULK_PRICING tokens should not be generated with ENDED or CANCELLED in their"

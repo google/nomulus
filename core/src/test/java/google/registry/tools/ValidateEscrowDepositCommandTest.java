@@ -34,7 +34,7 @@ class ValidateEscrowDepositCommandTest extends CommandTestCase<ValidateEscrowDep
             ID: 20101017001
             Previous ID: 20101010001
             Type: FULL
-            Watermark: 2010-10-17T00:00:00.000Z
+            Watermark: 2010-10-17T00:00:00Z
             RDE Version: 1.0
 
             RDE Object URIs:
@@ -70,7 +70,7 @@ class ValidateEscrowDepositCommandTest extends CommandTestCase<ValidateEscrowDep
             ID: 20101017001
             Previous ID: 20101010001
             Type: FULL
-            Watermark: 2010-10-17T00:00:00.000Z
+            Watermark: 2010-10-17T00:00:00Z
             RDE Version: 1.0
 
             RDE Object URIs:

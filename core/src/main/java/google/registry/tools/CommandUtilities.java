@@ -20,7 +20,7 @@ import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /** Container class for static utility methods. */
 class CommandUtilities {
@@ -36,7 +36,7 @@ class CommandUtilities {
       this.clazz = clazz;
     }
 
-    public VKey<? extends EppResource> getKey(String uniqueId, DateTime now) {
+    public VKey<? extends EppResource> getKey(String uniqueId, Instant now) {
       return ForeignKeyUtils.loadKey(clazz, uniqueId, now)
           .orElseThrow(
               () ->

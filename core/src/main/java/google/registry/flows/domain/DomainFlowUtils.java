@@ -124,6 +124,7 @@ import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.tools.DigestType;
 import google.registry.util.Idn;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -133,7 +134,6 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 import org.xbill.DNS.DNSSEC.Algorithm;
 
 /** Static utility functions for domain flows. */
@@ -1114,7 +1114,7 @@ public class DomainFlowUtils {
             "FROM DomainHistory WHERE modificationTime >= :beginning AND repoId = "
                 + ":repoId ORDER BY modificationTime ASC",
             DomainHistory.class)
-        .setParameter("beginning", now.minusMillis(maxSearchPeriod.getMillis()))
+        .setParameter("beginning", now.minus(maxSearchPeriod))
         .setParameter("repoId", domain.getRepoId())
         .getResultList();
   }

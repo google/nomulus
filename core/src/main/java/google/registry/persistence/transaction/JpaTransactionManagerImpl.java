@@ -21,7 +21,6 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getHibernateAllowNestedTransactions;
 import static google.registry.persistence.transaction.DatabaseException.throwIfSqlException;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.AbstractMap.SimpleEntry;
 import static java.util.stream.Collectors.joining;
@@ -83,7 +82,6 @@ import javax.annotation.Nullable;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Environment;
-import org.joda.time.DateTime;
 
 /** Implementation of {@link JpaTransactionManager} for JPA compatible database. */
 public class JpaTransactionManagerImpl implements JpaTransactionManager {
@@ -338,11 +336,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
                 .createNativeQuery("SHOW TRANSACTION ISOLATION LEVEL")
                 .getSingleResult();
     return TransactionIsolationLevel.fromMode(mode);
-  }
-
-  @Override
-  public DateTime getTransactionTime() {
-    return toDateTime(getTxTime());
   }
 
   @Override

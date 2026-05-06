@@ -17,7 +17,8 @@ package google.registry.persistence.converter;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
@@ -29,8 +30,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NoResultException;
+import java.time.Instant;
 import org.hibernate.annotations.Type;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -41,12 +42,12 @@ class TimedTransitionBaseUserTypeTest {
   public final JpaUnitTestExtension jpa =
       new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
-  private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.000Z");
-  private static final DateTime DATE_2 = DateTime.parse("2002-01-01T00:00:00.000Z");
+  private static final Instant DATE_1 = Instant.parse("2001-01-01T00:00:00.000Z");
+  private static final Instant DATE_2 = Instant.parse("2002-01-01T00:00:00.000Z");
 
-  private static final ImmutableSortedMap<DateTime, String> VALUES =
+  private static final ImmutableSortedMap<Instant, String> VALUES =
       ImmutableSortedMap.of(
-          START_OF_TIME, "val1",
+          START_INSTANT, "val1",
           DATE_1, "val2",
           DATE_2, "val3");
 
@@ -71,7 +72,7 @@ class TimedTransitionBaseUserTypeTest {
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property.toValueMap())
         .containsExactlyEntriesIn(TIMED_TRANSITION_PROPERTY.toValueMap());
-    ImmutableSortedMap<DateTime, String> newValues = ImmutableSortedMap.of(START_OF_TIME, "val4");
+    ImmutableSortedMap<Instant, String> newValues = ImmutableSortedMap.of(START_INSTANT, "val4");
     persisted.property = TimedTransitionProperty.fromValueMap(newValues);
     tm().transact(() -> tm().getEntityManager().merge(persisted));
     TestEntity updated = tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
@@ -96,11 +97,11 @@ class TimedTransitionBaseUserTypeTest {
     assertThat(
             getSingleResultFromNativeQuery(
                 "SELECT property -> 'val1' FROM \"TestEntity\" WHERE name = 'id'"))
-        .isEqualTo(START_OF_TIME.toString());
+        .isEqualTo(formatInstant(START_INSTANT));
     assertThat(
             getSingleResultFromNativeQuery(
                 "SELECT property -> 'val2' FROM \"TestEntity\" WHERE name = 'id'"))
-        .isEqualTo(DATE_1.toString());
+        .isEqualTo(formatInstant(DATE_1));
 
     executeNativeQuery(
         "UPDATE \"TestEntity\" SET property = 'val3=>2002-01-01T00:00:00.000Z' WHERE name = 'id'");
@@ -108,7 +109,7 @@ class TimedTransitionBaseUserTypeTest {
     assertThat(
             getSingleResultFromNativeQuery(
                 "SELECT property -> 'val3' FROM \"TestEntity\" WHERE name = 'id'"))
-        .isEqualTo(DATE_2.toString());
+        .isEqualTo(formatInstant(DATE_2));
 
     executeNativeQuery("DELETE FROM \"TestEntity\" WHERE name = 'id'");
 

@@ -14,6 +14,8 @@
 
 package google.registry.util;
 
+import static google.registry.util.DateTimeUtils.toJavaDuration;
+
 import java.time.Duration;
 import javax.annotation.concurrent.ThreadSafe;
 import org.joda.time.ReadableDuration;
@@ -30,16 +32,34 @@ public interface Sleeper {
    * Puts the current thread to sleep.
    *
    * @throws InterruptedException if this thread was interrupted
+   * @deprecated Use {@link #sleep(Duration)}
    */
-  void sleep(ReadableDuration duration) throws InterruptedException;
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  default void sleep(ReadableDuration duration) throws InterruptedException {
+    sleep(toJavaDuration(duration));
+  }
 
   /**
    * Puts the current thread to sleep.
    *
    * @throws InterruptedException if this thread was interrupted
    */
-  default void sleep(Duration duration) throws InterruptedException {
-    sleep(DateTimeUtils.toJodaDuration(duration));
+  void sleep(Duration duration) throws InterruptedException;
+
+  /**
+   * Puts the current thread to sleep, ignoring interrupts.
+   *
+   * <p>If {@link InterruptedException} was caught, then {@code Thread.currentThread().interrupt()}
+   * will be called at the end of the {@code duration}.
+   *
+   * @see com.google.common.util.concurrent.Uninterruptibles#sleepUninterruptibly
+   * @deprecated Use {@link #sleepUninterruptibly(Duration)}
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  default void sleepUninterruptibly(ReadableDuration duration) {
+    sleepUninterruptibly(toJavaDuration(duration));
   }
 
   /**
@@ -50,34 +70,20 @@ public interface Sleeper {
    *
    * @see com.google.common.util.concurrent.Uninterruptibles#sleepUninterruptibly
    */
-  void sleepUninterruptibly(ReadableDuration duration);
-
-  /**
-   * Puts the current thread to sleep, ignoring interrupts.
-   *
-   * <p>If {@link InterruptedException} was caught, then {@code Thread.currentThread().interrupt()}
-   * will be called at the end of the {@code duration}.
-   *
-   * @see com.google.common.util.concurrent.Uninterruptibles#sleepUninterruptibly
-   */
-  default void sleepUninterruptibly(Duration duration) {
-    sleepUninterruptibly(DateTimeUtils.toJodaDuration(duration));
-  }
+  void sleepUninterruptibly(Duration duration);
 
   /**
    * Puts the current thread to interruptible sleep.
    *
    * <p>This is a convenience method for {@link #sleep} that properly converts an {@link
    * InterruptedException} to a {@link RuntimeException}.
+   *
+   * @deprecated Use {@link #sleepInterruptibly(Duration)}
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   default void sleepInterruptibly(ReadableDuration duration) {
-    try {
-      sleep(duration);
-    } catch (InterruptedException e) {
-      // Restore current thread's interrupted state.
-      Thread.currentThread().interrupt();
-      throw new RuntimeException("Interrupted.", e);
-    }
+    sleepInterruptibly(toJavaDuration(duration));
   }
 
   /**

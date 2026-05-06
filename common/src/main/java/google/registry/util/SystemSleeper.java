@@ -15,13 +15,12 @@
 package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.util.DateTimeUtils.toJavaDuration;
 
 import com.google.common.util.concurrent.Uninterruptibles;
 import jakarta.inject.Inject;
 import java.io.Serializable;
+import java.time.Duration;
 import javax.annotation.concurrent.ThreadSafe;
-import org.joda.time.ReadableDuration;
 
 /** Implementation of {@link Sleeper} for production use. */
 @ThreadSafe
@@ -33,14 +32,14 @@ public final class SystemSleeper implements Sleeper, Serializable {
   public SystemSleeper() {}
 
   @Override
-  public void sleep(ReadableDuration duration) throws InterruptedException {
-    checkArgument(duration.getMillis() >= 0);
-    Thread.sleep(duration.getMillis());
+  public void sleep(Duration duration) throws InterruptedException {
+    checkArgument(!duration.isNegative(), "Duration must be non-negative");
+    Thread.sleep(duration.toMillis());
   }
 
   @Override
-  public void sleepUninterruptibly(ReadableDuration duration) {
-    checkArgument(duration.getMillis() >= 0);
-    Uninterruptibles.sleepUninterruptibly(toJavaDuration(duration));
+  public void sleepUninterruptibly(Duration duration) {
+    checkArgument(!duration.isNegative(), "Duration must be non-negative");
+    Uninterruptibles.sleepUninterruptibly(duration);
   }
 }
