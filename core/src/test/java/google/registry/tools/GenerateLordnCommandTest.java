@@ -53,22 +53,20 @@ class GenerateLordnCommandTest extends CommandTestCase<GenerateLordnCommand> {
     Path claimsCsv = outputDir.resolve("claims.csv");
     Path sunriseCsv = outputDir.resolve("sunrise.csv");
     runCommand("-t tld", "-c " + claimsCsv, "-s " + sunriseCsv);
-    assertThat(Files.readAllBytes(claimsCsv))
+    assertThat(new String(Files.readAllBytes(claimsCsv), UTF_8))
         .isEqualTo(
             """
-            1,2021-04-16T10:04:00.000Z,1
+            1,2021-04-16T10:04:00Z,1
             roid,domain-name,notice-id,registrar-id,registration-datetime,ack-datetime,application-datetime
             4-TLD,fleecey.tld,smd3,1,1970-01-01T00:00:00.000Z,1970-01-01T00:00:00.000Z
-            """
-                .getBytes(UTF_8));
-    assertThat(Files.readAllBytes(sunriseCsv))
+            """);
+    assertThat(new String(Files.readAllBytes(sunriseCsv), UTF_8))
         .isEqualTo(
             """
             1,2021-04-16T10:04:00.001Z,2
             roid,domain-name,SMD-id,registrar-id,registration-datetime,application-datetime
             2-TLD,sneezy.tld,smd1,1,1970-01-01T00:00:00.000Z
             3-TLD,wheezy.tld,smd2,1,1970-01-01T00:00:00.000Z
-            """
-                .getBytes(UTF_8));
+            """);
   }
 }

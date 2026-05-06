@@ -20,8 +20,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
@@ -74,21 +74,20 @@ class HistoryEntryDaoTest extends EntityTestCase {
 
   @Test
   void testSimpleLoadAll() {
-    assertThat(HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, END_OF_TIME))
+    assertThat(HistoryEntryDao.loadAllHistoryObjects(START_INSTANT, END_INSTANT))
         .comparingElementsUsing(immutableObjectCorrespondence("nsHosts", "resource"))
         .containsExactly(domainHistory);
   }
 
   @Test
   void testSkips_tooEarly() {
-    assertThat(HistoryEntryDao.loadAllHistoryObjects(fakeClock.nowUtc().plusMillis(1), END_OF_TIME))
+    assertThat(HistoryEntryDao.loadAllHistoryObjects(fakeClock.now().plusMillis(1), END_INSTANT))
         .isEmpty();
   }
 
   @Test
   void testSkips_tooLate() {
-    assertThat(
-            HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, fakeClock.nowUtc().minusMillis(1)))
+    assertThat(HistoryEntryDao.loadAllHistoryObjects(START_INSTANT, fakeClock.now().minusMillis(1)))
         .isEmpty();
   }
 
@@ -105,7 +104,7 @@ class HistoryEntryDaoTest extends EntityTestCase {
   void testLoadByResource_skips_tooEarly() {
     assertThat(
             HistoryEntryDao.loadHistoryObjectsForResource(
-                domain.createVKey(), fakeClock.nowUtc().plusMillis(1), END_OF_TIME))
+                domain.createVKey(), fakeClock.now().plusMillis(1), END_INSTANT))
         .isEmpty();
   }
 
@@ -113,7 +112,7 @@ class HistoryEntryDaoTest extends EntityTestCase {
   void testLoadByResource_skips_tooLate() {
     assertThat(
             HistoryEntryDao.loadHistoryObjectsForResource(
-                domain.createVKey(), START_OF_TIME, fakeClock.nowUtc().minusMillis(1)))
+                domain.createVKey(), START_INSTANT, fakeClock.now().minusMillis(1)))
         .isEmpty();
   }
 

@@ -18,7 +18,6 @@
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlJavaTypeAdapters({
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class),
   @XmlJavaTypeAdapter(UtcInstantAdapter.class)
 })
 package google.registry.model.poll;

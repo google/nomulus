@@ -34,7 +34,6 @@ import google.registry.xjc.rderegistrar.XjcRdeRegistrarPostalInfoType;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarStatusType;
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -131,9 +130,9 @@ public class RegistrarToXjcConverterTest {
 
     assertThat(bean.getStatus()).isEqualTo(XjcRdeRegistrarStatusType.OK);
 
-    assertThat(bean.getCrDate()).isEqualTo(DateTime.parse("2013-01-01T00:00:00Z"));
+    assertThat(bean.getCrDate()).isEqualTo(Instant.parse("2013-01-01T00:00:00Z"));
 
-    assertThat(bean.getUpDate()).isEqualTo(DateTime.parse("2014-01-01T00:00:00Z"));
+    assertThat(bean.getUpDate()).isEqualTo(Instant.parse("2014-01-01T00:00:00Z"));
 
     assertThat(bean.getWhoisInfo().getName()).isEqualTo("whois.goblinmen.example");
   }

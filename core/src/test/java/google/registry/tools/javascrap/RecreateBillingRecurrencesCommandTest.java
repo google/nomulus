@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistDomainWithDependentR
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.model.ImmutableObjectSubject;
@@ -30,7 +31,6 @@ import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.tools.CommandTestCase;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -47,16 +47,12 @@ public class RecreateBillingRecurrencesCommandTest
     createTld("tld");
     domain =
         persistDomainWithDependentResources(
-            "example",
-            "tld",
-            fakeClock.nowUtc(),
-            fakeClock.nowUtc(),
-            fakeClock.nowUtc().plusYears(1));
+            "example", "tld", fakeClock.now(), fakeClock.now(), plusYears(fakeClock.now(), 1));
     oldRecurrence = loadByKey(domain.getAutorenewBillingEvent());
     oldRecurrence =
         persistResource(
             oldRecurrence.asBuilder().setRecurrenceEndTime(plusDays(fakeClock.now(), 1)).build());
-    fakeClock.setTo(DateTime.parse("2023-07-11TZ"));
+    fakeClock.setTo(Instant.parse("2023-07-11T00:00:00Z"));
   }
 
   @Test
@@ -79,9 +75,9 @@ public class RecreateBillingRecurrencesCommandTest
         persistDomainWithDependentResources(
             "other",
             "tld",
-            DateTime.parse("2022-09-07TZ"),
-            DateTime.parse("2022-09-07TZ"),
-            DateTime.parse("2023-09-07TZ"));
+            Instant.parse("2022-09-07T00:00:00Z"),
+            Instant.parse("2022-09-07T00:00:00Z"),
+            Instant.parse("2023-09-07T00:00:00Z"));
     BillingRecurrence otherRecurrence = loadByKey(otherDomain.getAutorenewBillingEvent());
     otherRecurrence =
         persistResource(
@@ -111,6 +107,7 @@ public class RecreateBillingRecurrencesCommandTest
             otherRecurrence,
             otherNewRecurrence);
   }
+
 
   @Test
   void testFailure_badDomain() {

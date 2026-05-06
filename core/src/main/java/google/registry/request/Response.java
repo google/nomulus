@@ -19,7 +19,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * HTTP request response object.
@@ -55,7 +55,7 @@ public interface Response {
    *
    * @see HttpServletResponse#setDateHeader(String, long)
    */
-  void setDateHeader(String header, DateTime timestamp);
+  void setDateHeader(String header, Instant timestamp);
 
   /**
    * Adds a cookie to the response

@@ -18,7 +18,9 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusMonths;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -78,13 +80,13 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
             .asBuilder()
             .setDeletionTime(plusDays(fakeClock.now(), 1))
             .build());
-    runCommand("example.tld", "--read_timestamp=" + fakeClock.nowUtc().plusMonths(1));
+    runCommand("example.tld", "--read_timestamp=" + plusMonths(fakeClock.now(), 1));
     assertInStdout("Domain 'example.tld' does not exist or is deleted");
   }
 
   @Test
   void testSuccess_deletedDomain() throws Exception {
-    persistDeletedDomain("example.tld", fakeClock.nowUtc().minusDays(1));
+    persistDeletedDomain("example.tld", minusDays(fakeClock.now(), 1));
     runCommand("example.tld");
     assertInStdout("Domain 'example.tld' does not exist or is deleted");
   }
@@ -117,7 +119,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
 
   @Test
   void testSuccess_printDeletedDomain() throws Exception {
-    persistDeletedDomain("example.tld", fakeClock.nowUtc().minusDays(1));
+    persistDeletedDomain("example.tld", minusDays(fakeClock.now(), 1));
     runCommand("--show_deleted", "example.tld");
     assertInStdout("domainName=example.tld");
     assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTItVExE");
@@ -126,7 +128,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
   @Test
   void testSuccess_printsEntireDomainHistory() throws Exception {
     persistActiveDomain("example.tld");
-    persistDeletedDomain("example.tld", fakeClock.nowUtc().minusDays(1));
+    persistDeletedDomain("example.tld", minusDays(fakeClock.now(), 1));
     runCommand("--show_deleted", "example.tld");
     assertInStdout("domainName=example.tld");
     // Active

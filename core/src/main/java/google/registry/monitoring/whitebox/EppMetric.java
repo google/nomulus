@@ -22,13 +22,13 @@ import com.google.common.collect.Iterables;
 import google.registry.model.eppoutput.Result.Code;
 import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** A record for recording attributes of an EPP metric. */
 public record EppMetric(
-    DateTime startTimestamp,
-    DateTime endTimestamp,
+    Instant startTimestamp,
+    Instant endTimestamp,
     Optional<String> commandName,
     Optional<String> registrarId,
     Optional<String> tld,
@@ -46,16 +46,14 @@ public record EppMetric(
    * <p>The start timestamp is recorded now, and the end timestamp at {@code build()}.
    */
   public static Builder builderForRequest(Clock clock) {
-      return builder()
-          .setStartTimestamp(clock.nowUtc())
-          .setClock(clock);
+    return builder().setStartTimestamp(clock.now()).setClock(clock);
   }
 
-  public DateTime getStartTimestamp() {
+  public Instant getStartTimestamp() {
     return startTimestamp;
   }
 
-  public DateTime getEndTimestamp() {
+  public Instant getEndTimestamp() {
     return endTimestamp;
   }
 
@@ -82,9 +80,9 @@ public record EppMetric(
     /** Builder-only clock to support automatic recording of endTimestamp on {@link #build()}. */
     private Clock clock = null;
 
-    abstract Builder setStartTimestamp(DateTime startTimestamp);
+    abstract Builder setStartTimestamp(Instant startTimestamp);
 
-    abstract Builder setEndTimestamp(DateTime endTimestamp);
+    abstract Builder setEndTimestamp(Instant endTimestamp);
 
     abstract Builder setCommandName(String commandName);
 
@@ -141,7 +139,7 @@ public record EppMetric(
      */
     public EppMetric build() {
       if (clock != null) {
-        setEndTimestamp(clock.nowUtc());
+        setEndTimestamp(clock.now());
       }
       return autoBuild();
     }

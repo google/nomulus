@@ -83,9 +83,9 @@ public class BillingRecurrence extends BillingBase {
    *
    * <p>Note that this is a recurrence of the event time, not the billing time. The billing time can
    * be calculated by adding the relevant grace period length to this date. The reason for this
-   * requirement is that the event time recurs on a {@link org.joda.time.Period} schedule (same day
-   * of year, which can be 365 or 366 days later) which is what {@link TimeOfYear} can model,
-   * whereas the billing time is a fixed {@link org.joda.time.Duration} later.
+   * requirement is that the event time recurs on a year-based schedule (same day of year, which can
+   * be 365 or 366 days later) which is what {@link TimeOfYear} can model, whereas the billing time
+   * is a fixed {@link java.time.Duration} later.
    */
   @Embedded
   @AttributeOverrides(

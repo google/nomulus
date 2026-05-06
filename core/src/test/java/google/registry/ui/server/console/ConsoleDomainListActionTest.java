@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.mockito.Mockito.when;
 
@@ -30,9 +31,9 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.console.ConsoleDomainListAction.DomainListResult;
+import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,10 +43,10 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
   @BeforeEach
   void beforeEach() {
     for (int i = 0; i < 10; i++) {
-      DatabaseHelper.persistActiveDomain(i + "exists.tld", clock.nowUtc());
+      DatabaseHelper.persistActiveDomain(i + "exists.tld", clock.now());
       clock.advanceOneMilli();
     }
-    DatabaseHelper.persistDeletedDomain("deleted.tld", clock.nowUtc().minusDays(1));
+    DatabaseHelper.persistDeletedDomain("deleted.tld", minusDays(clock.now(), 1));
   }
 
   @Test
@@ -55,7 +56,7 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
     assertThat(result.domains).hasSize(10);
     assertThat(result.totalResults).isEqualTo(10);
-    assertThat(result.checkpointTime).isEqualTo(clock.nowUtc());
+    assertThat(result.checkpointTime).isEqualTo(clock.now());
     assertThat(result.domains.stream().anyMatch(d -> d.getDomainName().equals("deleted.tld")))
         .isFalse();
   }
@@ -67,7 +68,7 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
     assertThat(result.domains).hasSize(0);
     assertThat(result.totalResults).isEqualTo(0);
-    assertThat(result.checkpointTime).isEqualTo(clock.nowUtc());
+    assertThat(result.checkpointTime).isEqualTo(clock.now());
   }
 
   @Test
@@ -107,7 +108,7 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     assertThat(result.totalResults).isEqualTo(10);
 
     clock.advanceOneMilli();
-    persistActiveDomain("newdomain.tld", clock.nowUtc());
+    persistActiveDomain("newdomain.tld", clock.now());
 
     // Even though we persisted a new domain, the old checkpoint should return no more results
     action = createAction("TheRegistrar", result.checkpointTime, 1, 10, null, null);
@@ -124,9 +125,8 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
 
     clock.advanceOneMilli();
-    Domain toDelete =
-        ForeignKeyUtils.loadResource(Domain.class, "0exists.tld", clock.nowUtc()).get();
-    persistDomainAsDeleted(toDelete, clock.nowUtc());
+    Domain toDelete = ForeignKeyUtils.loadResource(Domain.class, "0exists.tld", clock.now()).get();
+    persistDomainAsDeleted(toDelete, clock.now());
 
     // Second page should include the domain that is now deleted due to the checkpoint time
     action = createAction("TheRegistrar", result.checkpointTime, 1, 5, null, null);
@@ -207,7 +207,7 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
 
   private ConsoleDomainListAction createAction(
       String registrarId,
-      @Nullable DateTime checkpointTime,
+      @Nullable Instant checkpointTime,
       @Nullable Integer pageNumber,
       @Nullable Integer resultsPerPage,
       @Nullable Long totalResults,

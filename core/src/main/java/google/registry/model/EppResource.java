@@ -115,7 +115,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * <ul>
    *   <li>For deleted resources, this is in the past.
    *   <li>For pending-delete resources, this is in the near future.
-   *   <li>For active resources, this is {@code END_OF_TIME}.
+   *   <li>For active resources, this is {@code END_INSTANT}.
    * </ul>
    *
    * <p>This scheme allows for setting pending deletes in the future and having them magically drop

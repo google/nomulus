@@ -185,12 +185,12 @@ import google.registry.tmch.TmchTestData;
 import google.registry.xml.ValidationMode;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
@@ -262,7 +262,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(clock.now().minusSeconds(1)))
+            .setBsaEnrollStartTime(Optional.of(clock.now().minusSeconds(1)))
             .build());
   }
 
@@ -327,10 +327,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             Tld.get(domainTld).getEapFeeFor(clock.now()).getCost());
     Instant billingTime =
         isAnchorTenant
-            ? clock
-                .now()
-                .plusMillis(Tld.get(domainTld).getAnchorTenantAddGracePeriodLength().getMillis())
-            : clock.now().plusMillis(Tld.get(domainTld).getAddGracePeriodLength().getMillis());
+            ? clock.now().plus(Tld.get(domainTld).getAnchorTenantAddGracePeriodLength())
+            : clock.now().plus(Tld.get(domainTld).getAddGracePeriodLength());
     assertLastHistoryContainsResource(domain);
     DomainHistory historyEntry = getHistoryEntries(domain, DomainHistory.class).get(0);
     VKey<BillingRecurrence> autorenewVKey = domain.getAutorenewBillingEvent();
@@ -767,7 +765,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_nonDefaultAddGracePeriod() throws Exception {
     persistResource(
-        Tld.get("tld").asBuilder().setAddGracePeriodLength(Duration.standardMinutes(6)).build());
+        Tld.get("tld").asBuilder().setAddGracePeriodLength(Duration.ofMinutes(6)).build());
     persistHosts();
     doSuccessfulTest();
   }
@@ -2052,7 +2050,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(clock.now().plusSeconds(1)))
+            .setBsaEnrollStartTime(Optional.of(clock.now().plusSeconds(1)))
             .build());
     persistBsaLabel("example");
     persistHosts();
@@ -2704,7 +2702,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testIcannTransactionRecord_getsStored() throws Exception {
     persistHosts();
     persistResource(
-        Tld.get("tld").asBuilder().setAddGracePeriodLength(Duration.standardMinutes(9)).build());
+        Tld.get("tld").asBuilder().setAddGracePeriodLength(Duration.ofMinutes(9)).build());
     runFlow();
     Domain domain = reloadResourceByForeignKey();
     DomainHistory historyEntry = (DomainHistory) getHistoryEntries(domain).get(0);

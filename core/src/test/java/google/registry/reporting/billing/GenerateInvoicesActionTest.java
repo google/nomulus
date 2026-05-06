@@ -32,6 +32,7 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.YearMonth;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -77,7 +78,8 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
             .method(HttpMethod.POST)
             .param("jobId", "jobid")
             .param("yearMonth", "2017-10")
-            .scheduleTime(clock.nowUtc().plusMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
+            .scheduleTime(
+                clock.now().plus(Duration.ofMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES))));
   }
 
   @Test

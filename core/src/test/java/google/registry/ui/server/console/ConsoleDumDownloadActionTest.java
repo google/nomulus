@@ -15,6 +15,8 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.when;
@@ -37,11 +39,10 @@ class ConsoleDumDownloadActionTest extends ConsoleActionBaseTestCase {
   @BeforeEach
   void beforeEach() {
     for (int i = 0; i < 3; i++) {
-      DatabaseHelper.persistActiveDomain(
-          i + "exists.tld", clock.nowUtc(), clock.nowUtc().plusDays(300));
+      DatabaseHelper.persistActiveDomain(i + "exists.tld", clock.now(), plusDays(clock.now(), 300));
       clock.advanceOneMilli();
     }
-    DatabaseHelper.persistDeletedDomain("deleted.tld", clock.nowUtc().minusDays(1));
+    DatabaseHelper.persistDeletedDomain("deleted.tld", minusDays(clock.now(), 1));
   }
 
   @Test

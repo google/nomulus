@@ -78,7 +78,7 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
                     .setParameter("tlds", tlds)
                     .setMaxResults(limit)
                     .getResultStream()
-                    .map(EppResourceUtils.transformAtTime(tm().getTransactionTime()))
+                    .map(EppResourceUtils.transformAtTime(tm().getTxTime()))
                     .collect(toImmutableList()));
   }
 }

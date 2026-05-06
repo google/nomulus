@@ -18,11 +18,13 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
+import static google.registry.util.DateTimeUtils.minusMinutes;
+import static google.registry.util.DateTimeUtils.plusMinutes;
 
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.HistoryEntry;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +35,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
 
   @BeforeEach
   void beforeEach() {
-    fakeClock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     command.clock = fakeClock;
     createTld("tld");
     domain = persistActiveDomain("example.tld");
@@ -47,7 +49,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            fakeClock.nowUtc()));
+            fakeClock.now()));
     runCommand("--id=example.tld", "--type=DOMAIN");
     assertStdoutIs(
         """
@@ -69,8 +71,8 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            fakeClock.nowUtc()));
-    runCommand("--before", fakeClock.nowUtc().minusMinutes(1).toString());
+            fakeClock.now()));
+    runCommand("--before", minusMinutes(fakeClock.now(), 1).toString());
     assertStdoutIs("");
   }
 
@@ -82,8 +84,8 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            fakeClock.nowUtc()));
-    runCommand("--after", fakeClock.nowUtc().plusMinutes(1).toString());
+            fakeClock.now()));
+    runCommand("--after", plusMinutes(fakeClock.now(), 1).toString());
     assertStdoutIs("");
   }
 
@@ -95,12 +97,12 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            fakeClock.nowUtc()));
+            fakeClock.now()));
     runCommand(
         "--after",
-        fakeClock.nowUtc().minusMinutes(1).toString(),
+        minusMinutes(fakeClock.now(), 1).toString(),
         "--before",
-        fakeClock.nowUtc().plusMinutes(1).toString());
+        plusMinutes(fakeClock.now(), 1).toString());
     assertStdoutIs(
         """
         Client: TheRegistrar
@@ -121,7 +123,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
                 HistoryEntry.Type.DOMAIN_CREATE,
                 Period.create(1, Period.Unit.YEARS),
                 "created",
-                fakeClock.nowUtc())
+                fakeClock.now())
             .asBuilder()
             .setTrid(null)
             .build());

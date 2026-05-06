@@ -14,8 +14,6 @@
 
 package google.registry.rde;
 
-import static google.registry.util.DateTimeUtils.toDateTime;
-
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import google.registry.model.rde.RdeMode;
@@ -67,8 +65,8 @@ public final class RdeCounter {
     XjcRdeReport report = new XjcRdeReport();
     report.setId(id);
     report.setKind(XjcRdeDepositTypeType.FULL);
-    report.setCrDate(toDateTime(watermark));
-    report.setWatermark(toDateTime(watermark));
+    report.setCrDate(watermark);
+    report.setWatermark(watermark);
     report.setVersion(ICANN_REPORT_SPEC_VERSION);
     report.setRydeSpecEscrow(URI_ESCROW);
     report.setRydeSpecMapping(URI_MAPPING);

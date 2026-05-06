@@ -17,7 +17,8 @@ package google.registry.xml;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.joda.time.LocalDate;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DateAdapter}. */
@@ -25,7 +26,7 @@ class DateAdapterTest {
 
   @Test
   void testMarshal() {
-    assertThat(new DateAdapter().marshal(new LocalDate(2010, 10, 17))).isEqualTo("2010-10-17");
+    assertThat(new DateAdapter().marshal(LocalDate.of(2010, 10, 17))).isEqualTo("2010-10-17");
   }
 
   @Test
@@ -36,13 +37,13 @@ class DateAdapterTest {
   @Test
   void testUnmarshal() {
     assertThat(new DateAdapter().unmarshal("2010-10-17T04:20:00Z"))
-        .isEqualTo(new LocalDate(2010, 10, 17));
+        .isEqualTo(LocalDate.of(2010, 10, 17));
   }
 
   @Test
   void testUnmarshalConvertsToZuluTime() {
     assertThat(new DateAdapter().unmarshal("2010-10-17T23:23:23-04:00"))
-        .isEqualTo(new LocalDate(2010, 10, 18));
+        .isEqualTo(LocalDate.of(2010, 10, 18));
   }
 
   @Test
@@ -54,7 +55,7 @@ class DateAdapterTest {
   @Test
   void testUnmarshalInvalid() {
     assertThrows(
-        IllegalArgumentException.class,
+        DateTimeParseException.class,
         () -> assertThat(new DateAdapter().unmarshal("oh my goth")).isNull());
   }
 }

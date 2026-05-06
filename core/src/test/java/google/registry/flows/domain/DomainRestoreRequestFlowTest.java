@@ -30,7 +30,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
@@ -175,7 +174,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     persistPendingDeleteDomain(expirationTime);
     assertMutatingFlow(true);
     // Double check that we see a poll message in the future for when the delete happens.
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
+    assertThat(getPollMessages("TheRegistrar", plusMonths(clock.now(), 1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     Domain domain = reloadResourceByForeignKey();
     DomainHistory historyEntryDomainRestore =
@@ -208,7 +207,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(END_INSTANT)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
             .build());
@@ -243,7 +242,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     persistPendingDeleteDomain(expirationTime);
     assertMutatingFlow(true);
     // Double check that we see a poll message in the future for when the delete happens.
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
+    assertThat(getPollMessages("TheRegistrar", plusMonths(clock.now(), 1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     Domain domain = reloadResourceByForeignKey();
     DomainHistory historyEntryDomainRestore =
@@ -276,7 +275,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
             .setTargetId("example.tld")
             .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(END_INSTANT)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRestore)
             .build());
@@ -527,7 +526,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
 
   @Test
   void testFailure_fullyDeleted() throws Exception {
-    persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
+    persistDeletedDomain(getUniqueIdFromCommand(), minusDays(clock.now(), 1));
     EppException thrown = assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }

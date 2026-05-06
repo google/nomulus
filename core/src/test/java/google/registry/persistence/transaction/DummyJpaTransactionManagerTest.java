@@ -25,6 +25,6 @@ class DummyJpaTransactionManagerTest {
   @Test
   void throwsExceptionWhenAnyMethodIsInvoked() {
     assertThrows(UnsupportedOperationException.class, () -> tm().transact(() -> null));
-    assertThrows(UnsupportedOperationException.class, () -> tm().getTransactionTime());
+    assertThrows(UnsupportedOperationException.class, () -> tm().getTxTime());
   }
 }

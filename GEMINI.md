@@ -49,7 +49,9 @@ This document outlines foundational mandates, architectural patterns, and projec
     - **Utility/Cache Methods:** Use `tm().reTransact(...)` for utility methods or Caffeine cache loaders that might be invoked from both transactional and non-transactional paths.
         - `reTransact` will join an existing transaction if one is present (acting as a no-op) or start a new one if not.
         - This is particularly useful for in-memory caches where the loader must be able to fetch data regardless of whether the caller is currently in a transaction.
-    - **Transactional Time:** Ensure code that relies on `tm().getTransactionTime()` is executed within a transaction context.
+        - **Test Helpers & Timestamps:** If a static test helper method (like in `DatabaseHelper`) needs the database transaction time but might be called from outside a transaction, using `tm().reTransact(tm()::getTxTime)` is acceptable. However, NEVER wrap it redundantly like `tm().transact(() -> tm().reTransact(tm()::getTxTime))`. If you are just setting an arbitrary timestamp in a test where the exact DB transaction time isn't strictly required, prefer `Instant.now()` or `clock.now()` to avoid creating unnecessary database transactions.
+        - **Production Code:** In production code, if a flow fails because it is calling `getTxTime()` outside of a transaction, you must wrap the *caller* in a transaction instead of adding an unnecessary `reTransact()` around `getTxTime()`.
+    - **Transactional Time:** Ensure code that relies on `tm().getTransactionTime()` (or `tm().getTxTime()`) is executed within a transaction context.
 
 ### 5. Testing Best Practices
 - **FakeClock and Sleeper:** Use `FakeClock` and `Sleeper` for any logic involving timeouts, delays, or expiration.
@@ -94,7 +96,7 @@ This document captures high-level architectural patterns, lessons learned from l
 - **Dependency Injection:** Dagger 2 is used extensively. If you see "cannot find symbol" errors for classes starting with `Dagger...`, the project is in a state where annotation processing failed. Fix compilation in core models first to restore generated code.
 - **Value Types:** AutoValue and "ImmutableObject" patterns are dominant. Most models follow a `Buildable` pattern with a nested `Builder`.
 - **Temporal Logic:** The project is migrating from Joda-Time to `java.time`.
-  - Core boundaries: `DateTimeUtils.START_OF_TIME_INSTANT` (Unix Epoch) and `END_OF_TIME_INSTANT` (Long.MAX_VALUE / 1000).
+  - Core boundaries: `DateTimeUtils.START_INSTANT` (Unix Epoch) and `DateTimeUtils.END_INSTANT` (Long.MAX_VALUE / 1000).
   - Year Arithmetic: Use `DateTimeUtils.plusYears()` and `DateTimeUtils.minusYears()` to handle February 29th logic correctly.
 
 ## Source Control
@@ -150,7 +152,7 @@ This project treats Error Prone warnings as errors.
 - **Static Imports:** Methods like `toDateTime`, `toInstant`, `plusYears`, `plusMonths`, and `minusDays` from `DateTimeUtils` MUST be statically imported. Do NOT use them fully qualified (e.g., `DateTimeUtils.plusMonths(...)`).
 
 - **Redundant Parses:** Never write `toDateTime(Instant.parse(...))` or `toInstant(DateTime.parse(...))`. If you need a `DateTime`, use `DateTime.parse(...)` directly. If you need an `Instant`, use `Instant.parse(...)` directly.
-- **cloneProjectedAtTime vs cloneProjectedAtInstant:** When converting tests and logic that use `clock.now()` to project resource state into the future or past, do not wrap the Java `Instant` in `toDateTime()` just to call `cloneProjectedAtTime()`. Instead, switch the method call to use the native `cloneProjectedAtInstant()` method which is available on all `EppResource` models.
+- **cloneProjectedAtTime vs cloneProjectedAtTime:** When converting tests and logic that use `clock.now()` to project resource state into the future or past, do not wrap the Java `Instant` in `toDateTime()` just to call `cloneProjectedAtTime()`. Instead, switch the method call to use the native `cloneProjectedAtTime()` method which is available on all `EppResource` models.
 - **Do not go in circles with the build:** If you see an `InlineMeSuggester` error, apply the suppression to **ALL** similar methods in that file and related files in one turn. Do not fix them one by one. Furthermore, do not run a global `./gradlew build` when a scoped `./gradlew :core:build` or `./gradlew :core:test` is faster and more appropriate. Run global builds only when doing final verification.
 - **Exception Conversion in Tests:** When migrating time types (e.g., from Joda `DateTime` to Java `Instant`), be extremely careful with tests that verify parsing failures (e.g., `assertThrows(IllegalArgumentException.class, ...)`). Joda's `DateTime.parse()` throws an `IllegalArgumentException` on failure, but `Instant.parse()` throws a `java.time.format.DateTimeParseException`. You must update the expected exception type in these tests to ensure they actually test the correct behavior, and verify the tests are not failing prematurely on the first line if it contains invalid data meant to be ignored.
 - Dagger/AutoValue corruption: If you modify a builder or a component incorrectly, Dagger will fail to generate code, leading to hundreds of "cannot find symbol" errors. If this happens, `git checkout` the last working state of the specific file and re-apply changes more surgically.

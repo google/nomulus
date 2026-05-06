@@ -54,6 +54,7 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -119,18 +120,18 @@ public class CloudDnsWriterTest {
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setDnsAPlusAaaaTtl(org.joda.time.Duration.standardSeconds(11))
-            .setDnsNsTtl(org.joda.time.Duration.standardSeconds(222))
-            .setDnsDsTtl(org.joda.time.Duration.standardSeconds(3333))
+            .setDnsAPlusAaaaTtl(Duration.ofSeconds(11))
+            .setDnsNsTtl(Duration.ofSeconds(222))
+            .setDnsDsTtl(Duration.ofSeconds(3333))
             .build());
     writer =
         new CloudDnsWriter(
             dnsConnection,
             "projectId",
             "triple.secret.tld", // used by testInvalidZoneNames()
-            java.time.Duration.ZERO,
-            java.time.Duration.ZERO,
-            java.time.Duration.ZERO,
+            Duration.ZERO,
+            Duration.ZERO,
+            Duration.ZERO,
             RateLimiter.create(20),
             10, // max num threads
             new SystemClock(),
@@ -401,9 +402,9 @@ public class CloudDnsWriterTest {
             dnsConnection,
             "projectId",
             "triple.secret.tld",
-            java.time.Duration.ofSeconds(11),
-            java.time.Duration.ofSeconds(222),
-            java.time.Duration.ofSeconds(3333),
+            Duration.ofSeconds(11),
+            Duration.ofSeconds(222),
+            Duration.ofSeconds(3333),
             RateLimiter.create(20),
             10,
             new SystemClock(),

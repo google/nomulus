@@ -21,7 +21,6 @@ import static com.google.common.truth.OptionalSubject.optionals;
 import static google.registry.model.EppResourceUtils.isActive;
 import static google.registry.testing.DatabaseHelper.getHistoryEntriesOfType;
 import static google.registry.testing.HistoryEntrySubject.historyEntries;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 
 import com.google.common.collect.ImmutableSet;
@@ -37,7 +36,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** Base Truth subject for asserting things about epp resources. */
 abstract class AbstractEppResourceSubject<
@@ -151,27 +149,12 @@ abstract class AbstractEppResourceSubject<
     return andChainer();
   }
 
-  public And<S> hasDeletionTime(DateTime deletionTime) {
-    return hasValue(toInstant(deletionTime), actual.getDeletionTime(), "getDeletionTime()");
-  }
-
   public And<S> hasDeletionTime(Instant deletionTime) {
     return hasValue(deletionTime, actual.getDeletionTime(), "getDeletionTime()");
   }
 
-  public And<S> hasLastEppUpdateTime(DateTime lastUpdateTime) {
-    return hasValue(
-        toInstant(lastUpdateTime), actual.getLastEppUpdateTime(), "has lastEppUpdateTime");
-  }
-
   public And<S> hasLastEppUpdateTime(Instant lastUpdateTime) {
     return hasValue(lastUpdateTime, actual.getLastEppUpdateTime(), "has lastEppUpdateTime");
-  }
-
-  public And<S> hasLastEppUpdateTimeAtLeast(DateTime before) {
-    Instant lastEppUpdateTime = actual.getLastEppUpdateTime();
-    check("getLastEppUpdateTime()").that(lastEppUpdateTime).isAtLeast(toInstant(before));
-    return andChainer();
   }
 
   public And<S> hasLastEppUpdateTimeAtLeast(Instant before) {
@@ -192,29 +175,15 @@ abstract class AbstractEppResourceSubject<
         "getPersistedCurrentSponsorRegistrarId()");
   }
 
-  public And<S> isActiveAt(DateTime time) {
+  public And<S> isActiveAt(Instant time) {
     if (!isActive(actual, time)) {
       failWithActual("expected to be active at", time);
     }
     return andChainer();
   }
 
-  public And<S> isActiveAt(Instant time) {
-    if (!isActive(actual, DateTime.parse(time.toString()))) {
-      failWithActual("expected to be active at", time);
-    }
-    return andChainer();
-  }
-
-  public And<S> isNotActiveAt(DateTime time) {
-    if (isActive(actual, time)) {
-      failWithActual("expected to not be active at", time);
-    }
-    return andChainer();
-  }
-
   public And<S> isNotActiveAt(Instant time) {
-    if (isActive(actual, DateTime.parse(time.toString()))) {
+    if (isActive(actual, time)) {
       failWithActual("expected to not be active at", time);
     }
     return andChainer();

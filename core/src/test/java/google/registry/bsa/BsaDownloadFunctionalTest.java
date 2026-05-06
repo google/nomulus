@@ -82,9 +82,7 @@ class BsaDownloadFunctionalTest {
         .forEach(
             tld ->
                 persistResource(
-                    tld.asBuilder()
-                        .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
-                        .build()));
+                    tld.asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build()));
     gcsClient =
         new GcsClient(new GcsUtils(LocalStorageHelper.getOptions()), "my-bucket", "SHA-256");
     response = new FakeResponse();

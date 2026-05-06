@@ -38,6 +38,8 @@ import java.io.PrintStream;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
@@ -55,8 +57,6 @@ import org.jline.reader.impl.LineReaderImpl;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.jline.terminal.impl.DumbTerminal;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Implements a tiny shell interpreter for the nomulus tool.
@@ -71,7 +71,7 @@ public class ShellCommand implements Command {
   private static final String RESET = "\u001b[0m";
   private static final String NON_ALERT_COLOR = "\u001b[32m"; // green foreground
   private static final String ALERT_COLOR = "\u001b[1;41;97m"; // red background
-  private static final Duration IDLE_THRESHOLD = Duration.standardHours(1);
+  private static final Duration IDLE_THRESHOLD = Duration.ofHours(1);
   private static final String SUCCESS = "SUCCESS";
   private static final String FAILURE = "FAILURE";
   private static final String RUNNING = "RUNNING";
@@ -101,19 +101,21 @@ public class ShellCommand implements Command {
       names = {"--dont_exit_on_idle"},
       description =
           """
-              Prevents the shell from exiting on PROD after the 1 hour idle delay.
-              Will instead warn you and require re-running the command.""")
+          Prevents the shell from exiting on PROD after the 1 hour idle delay.
+          Will instead warn you and require re-running the command.\
+          """)
   boolean dontExitOnIdle = false;
 
   @Parameter(
       names = {"--encapsulate_output"},
       description =
           """
-              Encapsulate command standard output and error by combining the two streams to
-              standard output and inserting a prefix ('out:' or 'err:') at the beginning of every
-              line of normal output and adding a line consisting of either 'SUCCESS' or
-              'FAILURE <exception-name> <error-message>' at the end of the output for a
-              command, allowing the output to be easily parsed by wrapper scripts.""")
+          Encapsulate command standard output and error by combining the two streams to
+          standard output and inserting a prefix ('out:' or 'err:') at the beginning of every
+          line of normal output and adding a line consisting of either 'SUCCESS' or
+          'FAILURE <exception-name> <error-message>' at the end of the output for a
+          command, allowing the output to be easily parsed by wrapper scripts.\
+          """)
   boolean encapsulateOutput = false;
 
   ShellCommand(CommandRunner runner) throws IOException {
@@ -215,7 +217,7 @@ public class ShellCommand implements Command {
     boolean beExtraCareful = (RegistryToolEnvironment.get() == RegistryToolEnvironment.PRODUCTION);
     setPrompt(RegistryToolEnvironment.get(), beExtraCareful);
     String line;
-    DateTime lastTime = clock.nowUtc();
+    Instant lastTime = clock.now();
     while (true) {
       try {
         line = lineReader.readLine(prompt);
@@ -225,13 +227,14 @@ public class ShellCommand implements Command {
       // Make sure we're not idle for too long. Only relevant when we're "extra careful"
       if (!dontExitOnIdle
           && beExtraCareful
-          && lastTime.plus(IDLE_THRESHOLD).isBefore(clock.nowUtc())) {
+          && lastTime.plus(IDLE_THRESHOLD).isBefore(clock.now())) {
         throw new RuntimeException(
             """
-                Been idle for too long, while in 'extra careful' mode.
-                The last command was saved in history. Please rerun the shell and try again.""");
+            Been idle for too long, while in 'extra careful' mode.
+            The last command was saved in history. Please rerun the shell and try again.\
+            """);
       }
-      lastTime = clock.nowUtc();
+      lastTime = clock.now();
       String[] lineArgs = parseCommand(line);
       if (lineArgs.length == 0) {
         continue;

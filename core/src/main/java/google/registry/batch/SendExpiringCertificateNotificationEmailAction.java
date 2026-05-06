@@ -16,7 +16,6 @@ package google.registry.batch;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.time.ZoneOffset.UTC;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
@@ -131,11 +130,11 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                     registrar,
                     registrar.getClientCertificate().isPresent()
                         && certificateChecker.shouldReceiveExpiringNotification(
-                            toDateTime(registrar.getLastExpiringCertNotificationSentDate()),
+                            registrar.getLastExpiringCertNotificationSentDate(),
                             registrar.getClientCertificate().get()),
                     registrar.getFailoverClientCertificate().isPresent()
                         && certificateChecker.shouldReceiveExpiringNotification(
-                            toDateTime(registrar.getLastExpiringFailoverCertNotificationSentDate()),
+                            registrar.getLastExpiringFailoverCertNotificationSentDate(),
                             registrar.getFailoverClientCertificate().get())))
         .filter(
             registrarInfo ->
@@ -155,7 +154,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       Optional<String> certificate) {
     if (certificate.isEmpty()
         || !certificateChecker.shouldReceiveExpiringNotification(
-            toDateTime(lastExpiringCertNotificationSentDate), certificate.get())) {
+            lastExpiringCertNotificationSentDate, certificate.get())) {
       return false;
     }
     try {

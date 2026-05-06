@@ -19,8 +19,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import google.registry.util.Sleeper;
 import java.io.Serializable;
+import java.time.Duration;
 import javax.annotation.concurrent.ThreadSafe;
-import org.joda.time.ReadableDuration;
 
 /** Sleeper implementation for unit tests that advances {@link FakeClock} rather than sleep. */
 @ThreadSafe
@@ -35,8 +35,8 @@ public final class FakeSleeper implements Sleeper, Serializable {
   }
 
   @Override
-  public void sleep(ReadableDuration duration) throws InterruptedException {
-    checkArgument(duration.getMillis() >= 0);
+  public void sleep(Duration duration) throws InterruptedException {
+    checkArgument(!duration.isNegative(), "Duration must be non-negative");
     if (Thread.interrupted()) {
       throw new InterruptedException();
     }
@@ -44,8 +44,8 @@ public final class FakeSleeper implements Sleeper, Serializable {
   }
 
   @Override
-  public void sleepUninterruptibly(ReadableDuration duration) {
-    checkArgument(duration.getMillis() >= 0);
+  public void sleepUninterruptibly(Duration duration) {
+    checkArgument(!duration.isNegative(), "Duration must be non-negative");
     clock.advanceBy(duration);
   }
 }

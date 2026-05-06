@@ -32,7 +32,6 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -108,8 +107,7 @@ public final class DomainTransferRejectFlow implements MutatingFlow {
       checkAllowedAccessToTld(registrarId, existingDomain.getTld());
     }
     Domain newDomain =
-        denyPendingTransfer(
-            existingDomain, TransferStatus.CLIENT_REJECTED, toDateTime(now), registrarId);
+        denyPendingTransfer(existingDomain, TransferStatus.CLIENT_REJECTED, now, registrarId);
     DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now);
     tm().update(newDomain);
     tm().insertAll(

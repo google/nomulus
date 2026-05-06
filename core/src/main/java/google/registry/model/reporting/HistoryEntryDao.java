@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -37,7 +36,6 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
 
 /** Retrieves {@link HistoryEntry} descendants (e.g. {@link DomainHistory}). */
 public class HistoryEntryDao {
@@ -49,18 +47,6 @@ public class HistoryEntryDao {
               DomainHistory.class,
               Host.class,
               HostHistory.class);
-
-  /**
-   * Loads all history objects in the times specified, including all types.
-   *
-   * @deprecated Use {@link #loadAllHistoryObjects(Instant, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static ImmutableList<HistoryEntry> loadAllHistoryObjects(
-      DateTime afterTime, DateTime beforeTime) {
-    return loadAllHistoryObjects(toInstant(afterTime), toInstant(beforeTime));
-  }
 
   /** Loads all history objects in the times specified, including all types. */
   public static ImmutableList<HistoryEntry> loadAllHistoryObjects(
@@ -88,35 +74,11 @@ public class HistoryEntryDao {
     return loadHistoryObjectsForResource(resourceKey, START_INSTANT, END_INSTANT, subclazz);
   }
 
-  /**
-   * @deprecated Use {@link #loadHistoryObjectsForResource(VKey, Instant, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
-      VKey<? extends EppResource> resourceKey, DateTime afterTime, DateTime beforeTime) {
-    return loadHistoryObjectsForResource(resourceKey, toInstant(afterTime), toInstant(beforeTime));
-  }
-
   /** Loads all history objects in the time period specified for the given {@link EppResource}. */
   public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
       VKey<? extends EppResource> resourceKey, Instant afterTime, Instant beforeTime) {
     return tm().transact(
             () -> loadHistoryObjectsForResourceInternal(resourceKey, afterTime, beforeTime));
-  }
-
-  /**
-   * @deprecated Use {@link #loadHistoryObjectsForResource(VKey, Instant, Instant, Class)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
-      VKey<? extends EppResource> resourceKey,
-      DateTime afterTime,
-      DateTime beforeTime,
-      Class<T> subclazz) {
-    return loadHistoryObjectsForResource(
-        resourceKey, toInstant(afterTime), toInstant(beforeTime), subclazz);
   }
 
   /**

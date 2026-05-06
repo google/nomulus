@@ -14,8 +14,6 @@
 
 package google.registry.rde;
 
-import static google.registry.util.DateTimeUtils.toDateTime;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.Domain;
@@ -89,19 +87,19 @@ final class DomainToXjcConverter {
     // o  An OPTIONAL <crDate> element that contains the date and time of
     //    the domain name object creation.  This element MUST be present if
     //    the domain name has been allocated.
-    bean.setCrDate(toDateTime(model.getCreationTime()));
+    bean.setCrDate(model.getCreationTime());
 
     // o  An OPTIONAL <exDate> element that contains the date and time
     //    identifying the end (expiration) of the domain name object's
     //    registration period.  This element MUST be present if the domain
     //    name has been allocated.
-    bean.setExDate(toDateTime(model.getRegistrationExpirationTime()));
+    bean.setExDate(model.getRegistrationExpirationTime());
 
     // o  An OPTIONAL <upDate> element that contains the date and time of
     //    the most recent domain-name-object modification.  This element
     //    MUST NOT be present if the domain name object has never been
     //    modified.
-    bean.setUpDate(toDateTime(model.getLastEppUpdateTime()));
+    bean.setUpDate(model.getLastEppUpdateTime());
 
     // o  An OPTIONAL <upRr> element that contains the identifier of the
     //    registrar that last updated the domain name object.  This element
@@ -114,7 +112,7 @@ final class DomainToXjcConverter {
     //    the most recent domain object successful transfer.  This element
     //    MUST NOT be present if the domain name object has never been
     //    transferred.
-    bean.setTrDate(toDateTime(model.getLastTransferTime()));
+    bean.setTrDate(model.getLastTransferTime());
 
     // o  One or more <status> elements that contain the current status
     //    descriptors associated with the domain name.
@@ -226,9 +224,9 @@ final class DomainToXjcConverter {
         XjcEppcomTrStatusType.fromValue(model.getTransferStatus().getXmlName()));
     bean.setReRr(RdeUtils.makeXjcRdeRrType(model.getGainingRegistrarId()));
     bean.setAcRr(RdeUtils.makeXjcRdeRrType(model.getLosingRegistrarId()));
-    bean.setReDate(toDateTime(model.getTransferRequestTime()));
-    bean.setAcDate(toDateTime(model.getPendingTransferExpirationTime()));
-    bean.setExDate(toDateTime(model.getTransferredRegistrationExpirationTime()));
+    bean.setReDate(model.getTransferRequestTime());
+    bean.setAcDate(model.getPendingTransferExpirationTime());
+    bean.setExDate(model.getTransferredRegistrationExpirationTime());
     return bean;
   }
 

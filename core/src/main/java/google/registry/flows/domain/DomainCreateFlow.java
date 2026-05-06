@@ -53,7 +53,6 @@ import static google.registry.model.tld.label.ReservationType.NAME_COLLISION;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -121,10 +120,9 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * An EPP flow that creates a new domain resource.
@@ -565,7 +563,7 @@ public final class DomainCreateFlow implements MutatingFlow {
           ImmutableSet.of(
               DomainTransactionRecord.create(
                   tld.getTldStr(),
-                  now.plusMillis(addGracePeriod.getMillis()),
+                  now.plus(addGracePeriod),
                   TransactionReportField.netAddsFieldFromYears(period.getValue()),
                   1)));
     }
@@ -603,11 +601,10 @@ public final class DomainCreateFlow implements MutatingFlow {
         .setEventTime(now)
         .setAllocationToken(allocationToken.map(AllocationToken::createVKey).orElse(null))
         .setBillingTime(
-            now.plusMillis(
-                (isAnchorTenant
-                        ? tld.getAnchorTenantAddGracePeriodLength()
-                        : tld.getAddGracePeriodLength())
-                    .getMillis()))
+            now.plus(
+                isAnchorTenant
+                    ? tld.getAnchorTenantAddGracePeriodLength()
+                    : tld.getAddGracePeriodLength()))
         .setFlags(flagsBuilder.build())
         .setDomainHistoryId(domainHistoryId)
         .build();
@@ -652,10 +649,9 @@ public final class DomainCreateFlow implements MutatingFlow {
   }
 
   private void verifyDomainDoesNotExist() throws ResourceCreateContentionException {
-    Optional<DateTime> previousDeletionTime =
+    Optional<Instant> previousDeletionTime =
         domainDeletionTimeCache.getDeletionTimeForDomain(targetId);
-    if (previousDeletionTime.isPresent()
-        && !tm().getTxTime().isAfter(toInstant(previousDeletionTime.get()))) {
+    if (previousDeletionTime.isPresent() && !tm().getTxTime().isAfter(previousDeletionTime.get())) {
       throw new ResourceCreateContentionException(targetId);
     }
   }

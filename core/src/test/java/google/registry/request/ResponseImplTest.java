@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResponseImpl}. */
@@ -51,5 +52,13 @@ class ResponseImplTest {
     when(rsp.getWriter()).thenReturn(new PrintWriter(httpOutput));
     new ResponseImpl(rsp).setPayload("hello world");
     assertThat(httpOutput.toString()).isEqualTo("hello world");
+  }
+
+  @Test
+  void testSetDateHeader() {
+    Instant timestamp = Instant.parse("2024-03-27T10:15:30.105Z");
+    new ResponseImpl(rsp).setDateHeader("header", timestamp);
+    verify(rsp).setDateHeader("header", timestamp.toEpochMilli());
+    verifyNoMoreInteractions(rsp);
   }
 }

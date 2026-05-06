@@ -20,7 +20,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /** HTTP response object. */
 public final class ResponseImpl implements Response {
@@ -62,8 +62,8 @@ public final class ResponseImpl implements Response {
   }
 
   @Override
-  public void setDateHeader(String header, DateTime timestamp) {
-    rsp.setDateHeader(header, timestamp.getMillis());
+  public void setDateHeader(String header, Instant timestamp) {
+    rsp.setDateHeader(header, timestamp.toEpochMilli());
   }
 
   @Override

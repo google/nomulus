@@ -33,11 +33,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /**
  * Base class for {@link ReservedList} and {@link PremiumList} objects.
@@ -58,7 +58,7 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
   String name;
 
   @Column(name = "creation_timestamp")
-  DateTime creationTimestamp;
+  Instant creationTimestamp;
 
   /** Returns the ID of this revision, or throws if null. */
   public long getRevisionId() {
@@ -74,7 +74,7 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
   }
 
   /** Returns the creation time of this revision of the reserved list. */
-  public DateTime getCreationTimestamp() {
+  public Instant getCreationTimestamp() {
     return creationTimestamp;
   }
 
@@ -159,7 +159,7 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
       return thisCastToDerived();
     }
 
-    public B setCreationTimestamp(DateTime creationTime) {
+    public B setCreationTimestamp(Instant creationTime) {
       getInstance().creationTimestamp = creationTime;
       return thisCastToDerived();
     }

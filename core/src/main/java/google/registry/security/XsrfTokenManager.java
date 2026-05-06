@@ -17,7 +17,6 @@ package google.registry.security;
 import static com.google.common.io.BaseEncoding.base64Url;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -26,9 +25,9 @@ import com.google.common.hash.Hashing;
 import google.registry.model.server.ServerSecret;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /** Helper class for generating and validate XSRF tokens. */
 public final class XsrfTokenManager {
@@ -40,7 +39,7 @@ public final class XsrfTokenManager {
   public static final String P_CSRF_TOKEN = "xsrfToken";
 
   /** Maximum age of an acceptable XSRF token. */
-  private static final Duration XSRF_VALIDITY = Duration.standardDays(1);
+  private static final Duration XSRF_VALIDITY = Duration.ofDays(1);
 
   /** Token version identifier for version 1. */
   private static final String VERSION_1 = "1";
@@ -57,7 +56,7 @@ public final class XsrfTokenManager {
   /** Generates an XSRF token for a given user based on email address. */
   public String generateToken(String email) {
     checkArgumentNotNull(email);
-    long timestampMillis = clock.nowUtc().getMillis();
+    long timestampMillis = clock.now().toEpochMilli();
     return encodeToken(ServerSecret.get().asBytes(), email, timestampMillis);
   }
 
@@ -97,7 +96,7 @@ public final class XsrfTokenManager {
       logger.atWarning().log("Bad timestamp in XSRF token: %s", token);
       return false;
     }
-    if (new DateTime(timestampMillis, UTC).plus(XSRF_VALIDITY).isBefore(clock.nowUtc())) {
+    if (Instant.ofEpochMilli(timestampMillis).plus(XSRF_VALIDITY).isBefore(clock.now())) {
       logger.atInfo().log("Expired timestamp in XSRF token: %s", token);
       return false;
     }

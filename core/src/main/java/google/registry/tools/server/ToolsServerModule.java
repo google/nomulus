@@ -16,7 +16,7 @@ package google.registry.tools.server;
 
 import static com.google.common.base.Strings.emptyToNull;
 import static google.registry.request.RequestParameters.extractIntParameter;
-import static google.registry.request.RequestParameters.extractOptionalDatetimeParameter;
+import static google.registry.request.RequestParameters.extractOptionalInstantParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
@@ -26,8 +26,8 @@ import dagger.Provides;
 import google.registry.request.Parameter;
 import google.registry.tools.server.UpdateUserGroupAction.Mode;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Dagger module for the tools package. */
 @Module
@@ -79,8 +79,8 @@ public class ToolsServerModule {
 
   @Provides
   @Parameter("activeOrDeletedSince")
-  static Optional<DateTime> provideDeletionTime(HttpServletRequest req) {
-    return extractOptionalDatetimeParameter(req, "activeOrDeletedSince");
+  static Optional<Instant> provideDeletionTime(HttpServletRequest req) {
+    return extractOptionalInstantParameter(req, "activeOrDeletedSince");
   }
 
   @Provides

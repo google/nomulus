@@ -20,7 +20,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
@@ -29,7 +28,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import io.github.ss_bhatt.testcontainers.valkey.ValkeyContainer;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -44,7 +43,7 @@ public class SimplifiedJedisClientTest {
 
   @Container private static final ValkeyContainer valkey = new ValkeyContainer();
 
-  private final FakeClock fakeClock = new FakeClock(DateTime.parse("2025-01-01T00:00:00.000Z"));
+  private final FakeClock fakeClock = new FakeClock(Instant.parse("2025-01-01T00:00:00.000Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -77,7 +76,7 @@ public class SimplifiedJedisClientTest {
   @Test
   void testSet_withExpiration() throws Exception {
     SimplifiedJedisClient client = createJedisClient();
-    Domain pendingDelete = persistDeletedDomain("example.tld", DateTime.now(UTC).plusMillis(100));
+    Domain pendingDelete = persistDeletedDomain("example.tld", fakeClock.now().plusMillis(100));
     client.set(new SimplifiedJedisClient.JedisResource<>("example1.tld", pendingDelete));
     Thread.sleep(101);
     assertThat(client.get(Domain.class, "example1.tld")).isEmpty();

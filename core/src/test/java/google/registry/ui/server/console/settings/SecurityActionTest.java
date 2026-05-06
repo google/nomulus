@@ -19,7 +19,7 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.SqlHelper.saveRegistrar;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.doReturn;
@@ -40,8 +40,8 @@ import google.registry.ui.server.console.ConsoleModule;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -93,15 +93,14 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
   void testSuccess_postRegistrarInfo() throws IOException {
     CertificateChecker lenientChecker =
         new CertificateChecker(
-            ImmutableSortedMap.of(
-                START_OF_TIME, 20825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+            ImmutableSortedMap.of(START_INSTANT, 20825, Instant.parse("2020-09-01T00:00:00Z"), 398),
             30,
             15,
             2048,
             ImmutableSet.of("secp256r1", "secp384r1"),
             clock);
 
-    clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     SecurityAction action = createAction(testRegistrar.getRegistrarId(), lenientChecker);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
@@ -119,14 +118,14 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
   void testFailure_validityPeriodTooLong_returnsSpecificError() throws IOException {
     CertificateChecker strictChecker =
         new CertificateChecker(
-            ImmutableSortedMap.of(START_OF_TIME, 398),
+            ImmutableSortedMap.of(START_INSTANT, 398),
             30,
             15,
             2048,
             ImmutableSet.of("secp256r1", "secp384r1"),
             clock);
 
-    clock.setTo(DateTime.parse("2025-01-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2025-01-01T00:00:00Z"));
     String escapedCert = VALIDITY_TOO_LONG_CERT_PEM.replace("\n", "\\n");
     String jsonWithBadCert =
         String.format(

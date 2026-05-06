@@ -19,7 +19,6 @@
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlJavaTypeAdapters({
   @XmlJavaTypeAdapter(UtcInstantAdapter.class),
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class),
   @XmlJavaTypeAdapter(InetAddressAdapter.class)
 })
 package google.registry.model.host;

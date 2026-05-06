@@ -25,8 +25,8 @@ import com.google.common.collect.ImmutableSet;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.time.Duration;
 import java.util.Random;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -91,7 +91,7 @@ class BackendMetricsTest {
   void testSuccess_oneResponse() {
     String content = "some response";
     FullHttpResponse response = makeHttpResponse(content, HttpResponseStatus.OK);
-    metrics.responseReceived(protocol, certHash, response, Duration.millis(5));
+    metrics.responseReceived(protocol, certHash, response, Duration.ofMillis(5));
 
     assertThat(BackendMetrics.requestsCounter).hasNoOtherValues();
     assertThat(BackendMetrics.requestBytes).hasNoOtherValues();
@@ -131,10 +131,10 @@ class BackendMetricsTest {
     FullHttpResponse response2 = makeHttpResponse(content2, HttpResponseStatus.OK);
     FullHttpResponse response3 = makeHttpResponse(content2, HttpResponseStatus.OK);
     FullHttpResponse response4 = makeHttpResponse(content3, HttpResponseStatus.BAD_REQUEST);
-    metrics.responseReceived(protocol, certHash, response1, Duration.millis(5));
-    metrics.responseReceived(protocol, certHash, response2, Duration.millis(8));
-    metrics.responseReceived(protocol, certHash, response3, Duration.millis(15));
-    metrics.responseReceived(protocol, certHash, response4, Duration.millis(2));
+    metrics.responseReceived(protocol, certHash, response1, Duration.ofMillis(5));
+    metrics.responseReceived(protocol, certHash, response2, Duration.ofMillis(8));
+    metrics.responseReceived(protocol, certHash, response3, Duration.ofMillis(15));
+    metrics.responseReceived(protocol, certHash, response4, Duration.ofMillis(2));
 
     assertThat(BackendMetrics.requestsCounter).hasNoOtherValues();
     assertThat(BackendMetrics.requestBytes).hasNoOtherValues();
@@ -164,7 +164,7 @@ class BackendMetricsTest {
     FullHttpRequest request = makeHttpPostRequest(requestContent, host, "/");
     FullHttpResponse response = makeHttpResponse(responseContent, HttpResponseStatus.OK);
     metrics.requestSent(protocol, certHash, request.content().readableBytes());
-    metrics.responseReceived(protocol, certHash, response, Duration.millis(10));
+    metrics.responseReceived(protocol, certHash, response, Duration.ofMillis(10));
 
     assertThat(BackendMetrics.requestsCounter)
         .hasValueForLabels(1, protocol, certHash)

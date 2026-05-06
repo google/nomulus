@@ -27,11 +27,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.DateTime;
 
 /** Fake implementation of {@link Response} for testing. */
 public final class FakeResponse implements Response {
@@ -101,7 +101,7 @@ public final class FakeResponse implements Response {
   }
 
   @Override
-  public void setDateHeader(String header, DateTime timestamp) {
+  public void setDateHeader(String header, Instant timestamp) {
     headers.put(checkNotNull(header), checkNotNull(timestamp));
   }
 

@@ -37,17 +37,13 @@ import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.difference;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX_REGEX;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.util.Arrays.asList;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
@@ -105,6 +101,7 @@ import google.registry.model.tld.label.ReservedListDao;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -117,8 +114,6 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /** Static utils for setting up test resources. */
 public final class DatabaseHelper {
@@ -238,32 +233,31 @@ public final class DatabaseHelper {
   }
 
   /** Persists a host resource with the given hostname deleted at the specified time. */
-  public static Host persistDeletedHost(String hostName, DateTime deletionTime) {
-    return persistResource(
-        newHost(hostName).asBuilder().setDeletionTime(toInstant(deletionTime)).build());
+  public static Host persistDeletedHost(String hostName, Instant deletionTime) {
+    return persistResource(newHost(hostName).asBuilder().setDeletionTime(deletionTime).build());
   }
 
   public static Domain persistActiveDomain(String domainName) {
     return persistResource(newDomain(domainName));
   }
 
-  public static Domain persistActiveDomain(String domainName, DateTime creationTime) {
+  public static Domain persistActiveDomain(String domainName, Instant creationTime) {
     return persistResource(
-        newDomain(domainName).asBuilder().setCreationTimeForTest(toInstant(creationTime)).build());
+        newDomain(domainName).asBuilder().setCreationTimeForTest(creationTime).build());
   }
 
   public static Domain persistActiveDomain(
-      String domainName, DateTime creationTime, DateTime expirationTime) {
+      String domainName, Instant creationTime, Instant expirationTime) {
     return persistResource(
         newDomain(domainName)
             .asBuilder()
-            .setCreationTimeForTest(toInstant(creationTime))
-            .setRegistrationExpirationTime(toInstant(expirationTime))
+            .setCreationTimeForTest(creationTime)
+            .setRegistrationExpirationTime(expirationTime)
             .build());
   }
 
   /** Persists a domain resource with the given domain name deleted at the specified time. */
-  public static Domain persistDeletedDomain(String domainName, DateTime deletionTime) {
+  public static Domain persistDeletedDomain(String domainName, Instant deletionTime) {
     return persistDomainAsDeleted(newDomain(domainName), deletionTime);
   }
 
@@ -273,10 +267,6 @@ public final class DatabaseHelper {
    */
   public static Domain persistDomainAsDeleted(Domain domain, Instant deletionTime) {
     return persistResource(domain.asBuilder().setDeletionTime(deletionTime).build());
-  }
-
-  public static Domain persistDomainAsDeleted(Domain domain, DateTime deletionTime) {
-    return persistResource(domain.asBuilder().setDeletionTime(toInstant(deletionTime)).build());
   }
 
   /**
@@ -321,7 +311,7 @@ public final class DatabaseHelper {
         new ReservedList.Builder()
             .setName(listName)
             .setReservedListMapFromLines(ImmutableList.copyOf(lines))
-            .setCreationTimestamp(DateTime.now(UTC))
+            .setCreationTimestamp(Instant.now())
             .build();
     return persistReservedList(reservedList);
   }
@@ -342,7 +332,7 @@ public final class DatabaseHelper {
     PremiumList premiumList =
         partialPremiumList
             .asBuilder()
-            .setCreationTimestamp(DateTime.now(UTC))
+            .setCreationTimestamp(Instant.now())
             .setCurrency(currencyUnit)
             .setLabelsToPrices(
                 entries.entrySet().stream()
@@ -404,7 +394,7 @@ public final class DatabaseHelper {
   /**
    * Deletes "domain" and all history records, billing events, poll messages and subordinate hosts.
    */
-  public static void deleteTestDomain(Domain domain, DateTime now) {
+  public static void deleteTestDomain(Domain domain, Instant now) {
     Iterable<BillingBase> billingEvents = getBillingEvents(domain);
     Iterable<? extends HistoryEntry> historyEntries =
         HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey());
@@ -445,13 +435,13 @@ public final class DatabaseHelper {
   }
 
   private static DomainTransferData.Builder createDomainTransferDataBuilder(
-      DateTime requestTime, DateTime expirationTime) {
+      Instant requestTime, Instant expirationTime) {
     return new DomainTransferData.Builder()
         .setTransferStatus(TransferStatus.PENDING)
         .setGainingRegistrarId("NewRegistrar")
-        .setTransferRequestTime(toInstant(requestTime))
+        .setTransferRequestTime(requestTime)
         .setLosingRegistrarId("TheRegistrar")
-        .setPendingTransferExpirationTime(toInstant(expirationTime));
+        .setPendingTransferExpirationTime(expirationTime);
   }
 
   public static PollMessage.OneTime createPollMessageForImplicitTransfer(
@@ -461,31 +451,13 @@ public final class DatabaseHelper {
       Instant requestTime,
       Instant expirationTime,
       @Nullable Instant extendedRegistrationExpirationTime) {
-    return createPollMessageForImplicitTransfer(
-        domain,
-        historyEntry,
-        registrarId,
-        toDateTime(requestTime),
-        toDateTime(expirationTime),
-        extendedRegistrationExpirationTime != null
-            ? toDateTime(extendedRegistrationExpirationTime)
-            : null);
-  }
-
-  public static PollMessage.OneTime createPollMessageForImplicitTransfer(
-      Domain domain,
-      HistoryEntry historyEntry,
-      String registrarId,
-      DateTime requestTime,
-      DateTime expirationTime,
-      @Nullable DateTime extendedRegistrationExpirationTime) {
     DomainTransferData transferData =
         createDomainTransferDataBuilder(requestTime, expirationTime)
-            .setTransferredRegistrationExpirationTime(toInstant(extendedRegistrationExpirationTime))
+            .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
             .build();
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(registrarId)
-        .setEventTime(toInstant(expirationTime))
+        .setEventTime(expirationTime)
         .setMsg("Transfer server approved.")
         .setResponseData(ImmutableList.of(createTransferResponse(domain, transferData)))
         .setHistoryEntry(historyEntry)
@@ -494,37 +466,20 @@ public final class DatabaseHelper {
 
   public static BillingEvent createBillingEventForTransfer(
       Domain domain, DomainHistory historyEntry, Instant costLookupTime, Instant eventTime) {
-    return createBillingEventForTransfer(
-        domain, historyEntry, toDateTime(costLookupTime), toDateTime(eventTime));
-  }
-
-  public static BillingEvent createBillingEventForTransfer(
-      Domain domain, DomainHistory historyEntry, DateTime costLookupTime, DateTime eventTime) {
     return new BillingEvent.Builder()
         .setReason(Reason.TRANSFER)
         .setTargetId(domain.getDomainName())
-        .setEventTime(toInstant(eventTime))
-        .setBillingTime(
-            toInstant(eventTime.plus(Tld.get(domain.getTld()).getTransferGracePeriodLength())))
+        .setEventTime(eventTime)
+        .setBillingTime(eventTime.plus(Tld.get(domain.getTld()).getTransferGracePeriodLength()))
         .setRegistrarId("NewRegistrar")
         .setPeriodYears(1)
-        .setCost(getDomainRenewCost(domain.getDomainName(), toInstant(costLookupTime), 1))
+        .setCost(getDomainRenewCost(domain.getDomainName(), costLookupTime, 1))
         .setDomainHistory(historyEntry)
         .build();
   }
 
   public static Domain persistDomainWithDependentResources(
       String label, String tld, Instant now, Instant creationTime, Instant expirationTime) {
-    return persistDomainWithDependentResources(
-        label, tld, toDateTime(now), toDateTime(creationTime), toDateTime(expirationTime));
-  }
-
-  public static Domain persistDomainWithDependentResources(
-      String label,
-      String tld,
-      DateTime now,
-      DateTime creationTime,
-      DateTime expirationTime) {
     String domainName = String.format("%s.%s", label, tld);
     String repoId = generateNewDomainRoid(tld);
     Domain.Builder domainBuilder =
@@ -533,8 +488,8 @@ public final class DatabaseHelper {
             .setDomainName(domainName)
             .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .setCreationRegistrarId("TheRegistrar")
-            .setCreationTimeForTest(toInstant(creationTime))
-            .setRegistrationExpirationTime(toInstant(expirationTime))
+            .setCreationTimeForTest(creationTime)
+            .setRegistrationExpirationTime(expirationTime)
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")));
     Duration addGracePeriodLength = Tld.get(tld).getAddGracePeriodLength();
     if (creationTime.plus(addGracePeriodLength).isAfter(now)) {
@@ -542,7 +497,7 @@ public final class DatabaseHelper {
           GracePeriod.create(
               GracePeriodStatus.ADD,
               repoId,
-              toInstant(creationTime.plus(addGracePeriodLength)),
+              creationTime.plus(addGracePeriodLength),
               "TheRegistrar",
               null));
     }
@@ -551,7 +506,7 @@ public final class DatabaseHelper {
         persistResource(
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setModificationTime(toInstant(creationTime))
+                .setModificationTime(creationTime)
                 .setDomain(domain)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
@@ -562,7 +517,7 @@ public final class DatabaseHelper {
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(domainName)
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(toInstant(expirationTime))
+                .setEventTime(expirationTime)
                 .setRecurrenceEndTime(END_INSTANT)
                 .setDomainHistory(historyEntryDomainCreate)
                 .build());
@@ -571,8 +526,8 @@ public final class DatabaseHelper {
             new PollMessage.Autorenew.Builder()
                 .setTargetId(domainName)
                 .setRegistrarId("TheRegistrar")
-                .setEventTime(toInstant(expirationTime))
-                .setAutorenewEndTime(END_OF_TIME)
+                .setEventTime(expirationTime)
+                .setAutorenewEndTime(END_INSTANT)
                 .setMsg("Domain was auto-renewed.")
                 .setHistoryEntry(historyEntryDomainCreate)
                 .build());
@@ -589,23 +544,11 @@ public final class DatabaseHelper {
       Instant requestTime,
       Instant expirationTime,
       Instant extendedRegistrationExpirationTime) {
-    return persistDomainWithPendingTransfer(
-        domain,
-        toDateTime(requestTime),
-        toDateTime(expirationTime),
-        toDateTime(extendedRegistrationExpirationTime));
-  }
-
-  public static Domain persistDomainWithPendingTransfer(
-      Domain domain,
-      DateTime requestTime,
-      DateTime expirationTime,
-      DateTime extendedRegistrationExpirationTime) {
     DomainHistory historyEntryDomainTransfer =
         persistResource(
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
-                .setModificationTime(tm().transact(() -> tm().getTxTime()))
+                .setModificationTime(tm().reTransact(tm()::getTxTime))
                 .setDomain(domain)
                 .setRegistrarId("TheRegistrar")
                 .build());
@@ -620,7 +563,7 @@ public final class DatabaseHelper {
                 .setReason(Reason.RENEW)
                 .setTargetId(domain.getDomainName())
                 .setRegistrarId("NewRegistrar")
-                .setEventTime(toInstant(extendedRegistrationExpirationTime))
+                .setEventTime(extendedRegistrationExpirationTime)
                 .setRecurrenceEndTime(END_INSTANT)
                 .setDomainHistory(historyEntryDomainTransfer)
                 .build());
@@ -629,8 +572,8 @@ public final class DatabaseHelper {
             new PollMessage.Autorenew.Builder()
                 .setTargetId(domain.getDomainName())
                 .setRegistrarId("NewRegistrar")
-                .setEventTime(toInstant(extendedRegistrationExpirationTime))
-                .setAutorenewEndTime(END_OF_TIME)
+                .setEventTime(extendedRegistrationExpirationTime)
+                .setAutorenewEndTime(END_INSTANT)
                 .setMsg("Domain was auto-renewed.")
                 .setHistoryEntry(historyEntryDomainTransfer)
                 .build());
@@ -640,19 +583,24 @@ public final class DatabaseHelper {
                 () ->
                     tm().loadByKey(domain.getAutorenewBillingEvent())
                         .asBuilder()
-                        .setRecurrenceEndTime(toInstant(expirationTime))
+                        .setRecurrenceEndTime(expirationTime)
                         .build()));
     // Update the end time of the existing autorenew poll message. We must delete it if it has no
     // events left in it.
     PollMessage.Autorenew autorenewPollMessage =
         tm().transact(() -> tm().loadByKey(domain.getAutorenewPollMessage()));
-    if (autorenewPollMessage.getEventTime().isBefore(toInstant(expirationTime))) {
+    if (autorenewPollMessage.getEventTime().isBefore(expirationTime)) {
       persistResource(autorenewPollMessage.asBuilder().setAutorenewEndTime(expirationTime).build());
     } else {
       deleteResource(autorenewPollMessage);
     }
     DomainTransferData.Builder transferDataBuilder =
-        createDomainTransferDataBuilder(requestTime, expirationTime);
+        new DomainTransferData.Builder()
+            .setTransferStatus(TransferStatus.PENDING)
+            .setGainingRegistrarId("NewRegistrar")
+            .setTransferRequestTime(requestTime)
+            .setLosingRegistrarId("TheRegistrar")
+            .setPendingTransferExpirationTime(expirationTime);
     return persistResource(
         domain
             .asBuilder()
@@ -660,9 +608,8 @@ public final class DatabaseHelper {
             .addStatusValue(StatusValue.PENDING_TRANSFER)
             .setTransferData(
                 transferDataBuilder
-                    .setPendingTransferExpirationTime(toInstant(expirationTime))
-                    .setTransferredRegistrationExpirationTime(
-                        toInstant(extendedRegistrationExpirationTime))
+                    .setPendingTransferExpirationTime(expirationTime)
+                    .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
                     .setServerApproveBillingEvent(transferBillingEvent.createVKey())
                     .setServerApproveAutorenewEvent(gainingClientAutorenewEvent.createVKey())
                     .setServerApproveAutorenewPollMessage(
@@ -851,11 +798,6 @@ public final class DatabaseHelper {
                     .collect(toImmutableList()));
   }
 
-  public static ImmutableList<PollMessage> getPollMessages(
-      String registrarId, DateTime beforeOrAt) {
-    return getPollMessages(registrarId, toInstant(beforeOrAt));
-  }
-
   public static ImmutableList<PollMessage> getPollMessages(String registrarId, Instant beforeOrAt) {
     return tm().transact(
             () ->
@@ -866,11 +808,6 @@ public final class DatabaseHelper {
   }
 
   /** Gets all PollMessages associated with the given EppResource. */
-  public static ImmutableList<PollMessage> getPollMessages(
-      EppResource resource, String registrarId, DateTime now) {
-    return getPollMessages(resource, registrarId, toInstant(now));
-  }
-
   public static ImmutableList<PollMessage> getPollMessages(
       EppResource resource, String registrarId, Instant now) {
     return tm().transact(
@@ -887,17 +824,8 @@ public final class DatabaseHelper {
     return Iterables.getOnlyElement(getPollMessages(registrarId));
   }
 
-  public static PollMessage getOnlyPollMessage(String registrarId, DateTime now) {
-    return getOnlyPollMessage(registrarId, toInstant(now));
-  }
-
   public static PollMessage getOnlyPollMessage(String registrarId, Instant now) {
     return Iterables.getOnlyElement(getPollMessages(registrarId, now));
-  }
-
-  public static PollMessage getOnlyPollMessage(
-      String registrarId, DateTime now, Class<? extends PollMessage> subType) {
-    return getOnlyPollMessage(registrarId, toInstant(now), subType);
   }
 
   public static PollMessage getOnlyPollMessage(
@@ -906,11 +834,6 @@ public final class DatabaseHelper {
         .filter(subType::isInstance)
         .map(subType::cast)
         .collect(onlyElement());
-  }
-
-  public static PollMessage getOnlyPollMessage(
-      DomainBase domain, String registrarId, DateTime now, Class<? extends PollMessage> subType) {
-    return getOnlyPollMessage(domain, registrarId, toInstant(now), subType);
   }
 
   public static PollMessage getOnlyPollMessage(

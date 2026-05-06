@@ -20,7 +20,6 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.minusDays;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -31,7 +30,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
 import java.time.Duration;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -39,7 +38,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link ForeignKeyUtils}. */
 class ForeignKeyUtilsTest {
 
-  private final FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  private final FakeClock fakeClock = new FakeClock(Instant.parse("2024-03-27T10:15:30.105Z"));
 
   @RegisterExtension
   public final JpaIntegrationTestExtension jpaIntegrationTestExtension =
@@ -60,14 +59,14 @@ class ForeignKeyUtilsTest {
   @Test
   void testSuccess_loadHostKey() {
     Host host = persistActiveHost("ns1.example.com");
-    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.now()))
         .hasValue(host.createVKey());
   }
 
   @Test
   void testSuccess_loadDomainKey() {
     Domain domain = persistActiveDomain("example.com");
-    assertThat(ForeignKeyUtils.loadKey(Domain.class, "example.com", fakeClock.nowUtc()))
+    assertThat(ForeignKeyUtils.loadKey(Domain.class, "example.com", fakeClock.now()))
         .hasValue(domain.createVKey());
   }
 
@@ -77,22 +76,20 @@ class ForeignKeyUtilsTest {
     persistResource(host.asBuilder().setDeletionTime(minusDays(fakeClock.now(), 1)).build());
     fakeClock.advanceOneMilli();
     Host newHost = persistActiveHost("ns1.example.com");
-    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.now()))
         .hasValue(newHost.createVKey());
   }
 
   @Test
   void testSuccess_loadKeyNonexistentForeignKey_returnsNull() {
-    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
-        .isEmpty();
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.now())).isEmpty();
   }
 
   @Test
   void testSuccess_loadKeyDeletedForeignKey_returnsNull() {
     Host host = persistActiveHost("ns1.example.com");
     persistResource(host.asBuilder().setDeletionTime(minusDays(fakeClock.now(), 1)).build());
-    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
-        .isEmpty();
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.now())).isEmpty();
   }
 
   @Test
@@ -100,8 +97,7 @@ class ForeignKeyUtilsTest {
     Host host1 = persistActiveHost("ns1.example.com");
     fakeClock.advanceOneMilli();
     persistResource(host1.asBuilder().setDeletionTime(fakeClock.now()).build());
-    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
-        .isEmpty();
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.now())).isEmpty();
   }
 
   @Test
@@ -113,7 +109,7 @@ class ForeignKeyUtilsTest {
             ForeignKeyUtils.loadKeys(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
-                fakeClock.nowUtc()))
+                fakeClock.now()))
         .containsExactlyEntriesIn(ImmutableMap.of("ns1.example.com", host1.createVKey()));
     persistResource(host1.asBuilder().setDeletionTime(fakeClock.now()).build());
     fakeClock.advanceOneMilli();
@@ -122,7 +118,7 @@ class ForeignKeyUtilsTest {
             ForeignKeyUtils.loadKeysByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
-                fakeClock.nowUtc()))
+                fakeClock.now()))
         .containsExactlyEntriesIn(ImmutableMap.of("ns1.example.com", newHost1.createVKey()));
   }
 
@@ -135,7 +131,7 @@ class ForeignKeyUtilsTest {
             ForeignKeyUtils.loadKeysByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
-                fakeClock.nowUtc()))
+                fakeClock.now()))
         .containsExactlyEntriesIn(ImmutableMap.of("ns1.example.com", host1.createVKey()));
     persistResource(host1.asBuilder().setDeletionTime(fakeClock.now()).build());
     fakeClock.advanceOneMilli();
@@ -145,7 +141,7 @@ class ForeignKeyUtilsTest {
             ForeignKeyUtils.loadKeysByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
-                fakeClock.nowUtc()))
+                fakeClock.now()))
         .containsExactlyEntriesIn(ImmutableMap.of("ns1.example.com", host1.createVKey()));
   }
 }

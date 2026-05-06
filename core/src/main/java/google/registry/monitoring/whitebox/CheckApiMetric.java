@@ -18,13 +18,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.auto.value.AutoBuilder;
 import google.registry.util.Clock;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** A record for recording attributes of a domain check metric. */
 public record CheckApiMetric(
-    DateTime startTimestamp,
-    DateTime endTimestamp,
+    Instant startTimestamp,
+    Instant endTimestamp,
     Status status,
     Optional<Tier> tier,
     Optional<Availability> availability) {
@@ -83,7 +83,7 @@ public record CheckApiMetric(
 
 
   public static Builder builder(Clock clock) {
-    return new AutoBuilder_CheckApiMetric_Builder().startTimestamp(clock.nowUtc()).setClock(clock);
+    return new AutoBuilder_CheckApiMetric_Builder().startTimestamp(clock.now()).setClock(clock);
   }
 
   /** Builder for {@link CheckApiMetric}. */
@@ -100,12 +100,12 @@ public record CheckApiMetric(
     }
 
     public CheckApiMetric build() {
-      return this.endTimestamp(clock.nowUtc()).autoBuild();
+      return this.endTimestamp(clock.now()).autoBuild();
     }
 
-    abstract Builder startTimestamp(DateTime startTimestamp);
+    abstract Builder startTimestamp(Instant startTimestamp);
 
-    abstract Builder endTimestamp(DateTime endTimestamp);
+    abstract Builder endTimestamp(Instant endTimestamp);
 
     public abstract Builder status(Status status);
 

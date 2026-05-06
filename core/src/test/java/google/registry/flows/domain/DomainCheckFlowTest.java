@@ -160,10 +160,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_bsaBlocked_otherwiseAvailable_blocked() throws Exception {
     persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
-            .build());
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("example1");
     doCheckTest(
         create(false, "example1.tld", "Blocked by a GlobalBlock service"),
@@ -174,10 +171,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_bsaBlocked_alsoRegistered_registered() throws Exception {
     persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
-            .build());
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("example1");
     persistActiveDomain("example1.tld");
     doCheckTest(
@@ -189,10 +183,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_bsaBlocked_alsoReserved_reserved() throws Exception {
     persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
-            .build());
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("reserved");
     persistBsaLabel("allowedinsunrise");
     setEppInput("domain_check_one_tld_reserved.xml");
@@ -206,10 +197,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_bsaBlocked_createAllowedWithToken() throws Exception {
     persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
-            .build());
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("example1");
     setEppInput("domain_check_allocationtoken.xml");
     persistResource(
@@ -228,10 +216,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_bsaBlocked_withIrrelevantTokenType() throws Exception {
     persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
-            .build());
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("example1");
     setEppInput("domain_check_allocationtoken.xml");
     persistResource(
@@ -252,10 +237,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     setEppInput("domain_check.xml");
     createTlds("com", "net", "org");
     persistResource(
-        Tld.get("com")
-            .asBuilder()
-            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
-            .build());
+        Tld.get("com").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("example");
     doCheckTest(
         create(false, "example.com", "Blocked by a GlobalBlock service"),
@@ -738,7 +720,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_oneExistsButWasDeleted() throws Exception {
-    persistDeletedDomain("example1.tld", clock.nowUtc().minusDays(1));
+    persistDeletedDomain("example1.tld", minusDays(clock.now(), 1));
     doCheckTest(
         create(true, "example1.tld", null),
         create(true, "example2.tld", null),

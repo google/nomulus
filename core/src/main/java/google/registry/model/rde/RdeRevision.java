@@ -17,15 +17,13 @@ package google.registry.model.rde;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toJodaLocalDate;
+import static google.registry.util.DateTimeUtils.toLocalDate;
 
 import com.google.common.base.VerifyException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.persistence.VKey;
-import google.registry.persistence.converter.LocalDateConverter;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -33,8 +31,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Optional;
-import org.joda.time.LocalDate;
 
 /**
  * Entity for tracking RDE revisions.
@@ -82,16 +80,16 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
    *
    * @return {@code 0} for first deposit generation and {@code >0} for resends
    */
-  public static int getNextRevision(String tld, Instant date, RdeMode mode) {
-    RdeRevisionId revisionId = RdeRevisionId.create(tld, toJodaLocalDate(date), mode);
+  public static int getNextRevision(String tld, Instant watermark, RdeMode mode) {
+    RdeRevisionId revisionId = RdeRevisionId.create(tld, toLocalDate(watermark), mode);
     Optional<RdeRevision> revisionOptional =
         tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, revisionId)));
     return revisionOptional.map(rdeRevision -> rdeRevision.revision + 1).orElse(0);
   }
 
   /** Returns the latest revision of the report already generated for the given triplet. */
-  public static Optional<Integer> getCurrentRevision(String tld, Instant date, RdeMode mode) {
-    int nextRevision = getNextRevision(tld, date, mode);
+  public static Optional<Integer> getCurrentRevision(String tld, Instant watermark, RdeMode mode) {
+    int nextRevision = getNextRevision(tld, watermark, mode);
     if (nextRevision == 0) {
       return Optional.empty();
     }
@@ -107,10 +105,10 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
    * @throws IllegalStateException if not in a transaction
    * @throws VerifyException if the state doesn't meet the above criteria
    */
-  public static void saveRevision(String tld, Instant date, RdeMode mode, int revision) {
+  public static void saveRevision(String tld, Instant watermark, RdeMode mode, int revision) {
     checkArgument(revision >= 0, "Negative revision: %s", revision);
     tm().assertInTransaction();
-    RdeRevisionId revisionId = RdeRevisionId.create(tld, toJodaLocalDate(date), mode);
+    RdeRevisionId revisionId = RdeRevisionId.create(tld, toLocalDate(watermark), mode);
     Optional<RdeRevision> revisionOptional =
         tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, revisionId));
     if (revision == 0) {
@@ -125,7 +123,7 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
       checkArgument(
           revisionOptional.isPresent(),
           "Couldn't find existing RDE revision %s when trying to save new revision %s",
-          makePartialName(tld, date, mode),
+          makePartialName(tld, watermark, mode),
           revision);
       checkArgument(
           revisionOptional.get().revision == revision - 1,
@@ -133,7 +131,7 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
           revision - 1,
           revisionOptional.get());
     }
-    tm().put(RdeRevision.create(tld, toJodaLocalDate(date), mode, revision));
+    tm().put(RdeRevision.create(tld, toLocalDate(watermark), mode, revision));
   }
 
   /** Class to represent the composite primary key of {@link RdeRevision} entity. */
@@ -141,9 +139,8 @@ public final class RdeRevision extends UpdateAutoTimestampEntity {
 
     String tld;
 
-    // Auto-conversion doesn't work for ID classes, we must specify @Column and @Convert
+    // Auto-conversion doesn't work for ID classes, we must specify @Column
     @Column(columnDefinition = "date")
-    @Convert(converter = LocalDateConverter.class)
     LocalDate date;
 
     @Enumerated(EnumType.STRING)

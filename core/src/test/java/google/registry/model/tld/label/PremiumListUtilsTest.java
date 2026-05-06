@@ -21,13 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PremiumListUtils}. */
 class PremiumListUtilsTest {
 
-  private static final DateTime SAMPLE_TIME = DateTime.parse("2026-01-26T21:06:12.284Z");
+  private static final Instant SAMPLE_TIME = Instant.parse("2026-01-26T21:06:12.284Z");
 
   @Test
   void parseInputToPremiumList_works() {

@@ -15,12 +15,10 @@
 package google.registry.util;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.joda.time.DateTimeZone.UTC;
 
 import jakarta.inject.Inject;
 import java.time.Instant;
 import javax.annotation.concurrent.ThreadSafe;
-import org.joda.time.DateTime;
 
 /** Clock implementation that proxies to the real system clock. */
 @ThreadSafe
@@ -30,12 +28,6 @@ public class SystemClock implements Clock {
 
   @Inject
   public SystemClock() {}
-
-  /** Returns the current time. */
-  @Override
-  public DateTime nowUtc() {
-    return DateTime.now(UTC);
-  }
 
   @Override
   public Instant now() {

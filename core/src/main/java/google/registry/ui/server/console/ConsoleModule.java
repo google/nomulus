@@ -38,8 +38,8 @@ import google.registry.ui.server.console.ConsoleRegistryLockAction.ConsoleRegist
 import google.registry.ui.server.console.ConsoleUsersAction.UserData;
 import google.registry.ui.server.console.PasswordResetRequestAction.PasswordResetRequestData;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Dagger module for the Registrar Console parameters. */
 @Module
@@ -213,8 +213,8 @@ public final class ConsoleModule {
 
   @Provides
   @Parameter("checkpointTime")
-  public static Optional<DateTime> provideCheckpointTime(HttpServletRequest req) {
-    return extractOptionalParameter(req, "checkpointTime").map(DateTime::parse);
+  public static Optional<Instant> provideCheckpointTime(HttpServletRequest req) {
+    return extractOptionalParameter(req, "checkpointTime").map(Instant::parse);
   }
 
   @Provides

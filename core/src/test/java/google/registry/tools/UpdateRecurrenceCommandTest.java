@@ -23,8 +23,8 @@ import static google.registry.testing.DatabaseHelper.persistDomainWithDependentR
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusMonths;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.Iterables;
@@ -206,9 +206,9 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
   void testFailure_pendingTransfer() {
     persistDomainWithPendingTransfer(
         persistDomain(),
-        fakeClock.nowUtc().minusMillis(1),
-        fakeClock.nowUtc().plusMonths(1),
-        END_OF_TIME);
+        fakeClock.now().minusMillis(1),
+        plusMonths(fakeClock.now(), 1),
+        END_INSTANT);
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
@@ -243,11 +243,7 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
   private Domain persistDomain() {
     Domain domain =
         persistDomainWithDependentResources(
-            "domain",
-            "tld",
-            fakeClock.nowUtc(),
-            fakeClock.nowUtc(),
-            END_OF_TIME);
+            "domain", "tld", fakeClock.now(), fakeClock.now(), END_INSTANT);
     fakeClock.advanceOneMilli();
     return domain;
   }

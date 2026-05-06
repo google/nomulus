@@ -32,8 +32,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Set;
-import org.joda.time.LocalDate;
 
 @Entity
 @Table(

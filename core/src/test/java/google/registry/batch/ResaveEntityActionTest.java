@@ -141,7 +141,7 @@ public class ResaveEntityActionTest {
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, resavedDomain.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, requestedTime.toString())
-            .scheduleTime(clock.nowUtc().plusDays(5)));
+            .scheduleTime(plusDays(clock.now(), 5)));
   }
 
   @Test

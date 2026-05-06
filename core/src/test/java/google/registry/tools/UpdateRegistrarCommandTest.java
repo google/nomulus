@@ -23,7 +23,6 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,6 +41,7 @@ import google.registry.model.registrar.Registrar.Type;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.util.CidrAddressBlock;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -56,7 +56,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     command.clock = fakeClock;
     command.certificateChecker =
         new CertificateChecker(
-            ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+            ImmutableSortedMap.of(START_INSTANT, 825, Instant.parse("2020-09-01T00:00:00Z"), 398),
             30,
             15,
             2048,

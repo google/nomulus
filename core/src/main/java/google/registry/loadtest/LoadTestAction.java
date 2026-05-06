@@ -33,13 +33,13 @@ import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
-import org.joda.time.DateTime;
 
 /**
  * Simple load test action that can generate configurable QPSes of various EPP actions.
@@ -160,7 +160,7 @@ public class LoadTestAction implements Runnable {
   @Override
   public void run() {
     validateAndLogRequest();
-    DateTime initialStartSecond = clock.nowUtc().plusSeconds(delaySeconds);
+    Instant initialStartSecond = clock.now().plus(Duration.ofSeconds(delaySeconds));
     ImmutableList.Builder<String> preTaskXmls = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> hostPrefixesBuilder = new ImmutableList.Builder<>();
     for (int i = 0; i < successfulDomainCreatesPerSecond; i++) {
@@ -169,12 +169,12 @@ public class LoadTestAction implements Runnable {
       preTaskXmls.add(
           xmlHostCreateTmpl.replace("%host%", hostPrefix));
     }
-    enqueue(createTasks(preTaskXmls.build(), clock.nowUtc()));
+    enqueue(createTasks(preTaskXmls.build(), clock.now()));
     ImmutableList<String> hostPrefixes = hostPrefixesBuilder.build();
 
     ImmutableList.Builder<Task> tasks = new ImmutableList.Builder<>();
     for (int offsetSeconds = 0; offsetSeconds < runSeconds; offsetSeconds++) {
-      DateTime startSecond = initialStartSecond.plusSeconds(offsetSeconds);
+      Instant startSecond = initialStartSecond.plus(Duration.ofSeconds(offsetSeconds));
       // The first "failed" creates might actually succeed if the object doesn't already exist, but
       // that shouldn't affect the load numbers.
       tasks.addAll(
@@ -265,12 +265,11 @@ public class LoadTestAction implements Runnable {
     return name.toString();
   }
 
-  private ImmutableList<Task> createTasks(ImmutableList<String> xmls, DateTime start) {
+  private ImmutableList<Task> createTasks(ImmutableList<String> xmls, Instant start) {
     ImmutableList.Builder<Task> tasks = new ImmutableList.Builder<>();
     for (int i = 0; i < xmls.size(); i++) {
       // Space tasks evenly within across a second.
-      Instant scheduleTime =
-          Instant.ofEpochMilli(start.plusMillis((int) (1000.0 / xmls.size() * i)).getMillis());
+      Instant scheduleTime = start.plus(Duration.ofMillis((long) (1000.0 / xmls.size() * i)));
       tasks.add(
           cloudTasksUtils
               .createTask(

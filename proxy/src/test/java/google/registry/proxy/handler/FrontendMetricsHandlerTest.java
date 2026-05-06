@@ -30,8 +30,8 @@ import google.registry.proxy.metric.FrontendMetrics;
 import google.registry.testing.FakeClock;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -90,7 +90,7 @@ class FrontendMetricsHandlerTest {
     assertThat(channel.writeOutbound(response)).isTrue();
     assertThat((Object) channel.readOutbound()).isEqualTo(response);
     // Verify that latency is recorded.
-    verify(metrics).responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, Duration.millis(1));
+    verify(metrics).responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, Duration.ofMillis(1));
     verifyNoMoreInteractions(metrics);
   }
 
@@ -114,46 +114,46 @@ class FrontendMetricsHandlerTest {
     // First request, time = 0
     assertThat(channel.writeInbound(request1)).isTrue();
     assertThat((Object) channel.readInbound()).isEqualTo(request1);
-    DateTime requestTime1 = fakeClock.nowUtc();
+    Instant requestTime1 = fakeClock.now();
 
-    fakeClock.advanceBy(Duration.millis(5));
+    fakeClock.advanceBy(Duration.ofMillis(5));
 
     // Second request, time = 5
     assertThat(channel.writeInbound(request2)).isTrue();
     assertThat((Object) channel.readInbound()).isEqualTo(request2);
-    DateTime requestTime2 = fakeClock.nowUtc();
+    Instant requestTime2 = fakeClock.now();
 
-    fakeClock.advanceBy(Duration.millis(7));
+    fakeClock.advanceBy(Duration.ofMillis(7));
 
     // First response, time = 12, latency = 12 - 0 = 12
     assertThat(channel.writeOutbound(response1)).isTrue();
     assertThat((Object) channel.readOutbound()).isEqualTo(response1);
-    DateTime responseTime1 = fakeClock.nowUtc();
+    Instant responseTime1 = fakeClock.now();
 
-    fakeClock.advanceBy(Duration.millis(11));
+    fakeClock.advanceBy(Duration.ofMillis(11));
 
     // Third request, time = 23
     assertThat(channel.writeInbound(request3)).isTrue();
     assertThat((Object) channel.readInbound()).isEqualTo(request3);
-    DateTime requestTime3 = fakeClock.nowUtc();
+    Instant requestTime3 = fakeClock.now();
 
-    fakeClock.advanceBy(Duration.millis(2));
+    fakeClock.advanceBy(Duration.ofMillis(2));
 
     // Second response, time = 25, latency = 25 - 5 = 20
     assertThat(channel.writeOutbound(response2)).isTrue();
     assertThat((Object) channel.readOutbound()).isEqualTo(response2);
-    DateTime responseTime2 = fakeClock.nowUtc();
+    Instant responseTime2 = fakeClock.now();
 
-    fakeClock.advanceBy(Duration.millis(4));
+    fakeClock.advanceBy(Duration.ofMillis(4));
 
     // Third response, time = 29, latency = 29 - 23 = 6
     assertThat(channel.writeOutbound(response3)).isTrue();
     assertThat((Object) channel.readOutbound()).isEqualTo(response3);
-    DateTime responseTime3 = fakeClock.nowUtc();
+    Instant responseTime3 = fakeClock.now();
 
-    Duration latency1 = new Duration(requestTime1, responseTime1);
-    Duration latency2 = new Duration(requestTime2, responseTime2);
-    Duration latency3 = new Duration(requestTime3, responseTime3);
+    Duration latency1 = Duration.between(requestTime1, responseTime1);
+    Duration latency2 = Duration.between(requestTime2, responseTime2);
+    Duration latency3 = Duration.between(requestTime3, responseTime3);
 
     verify(metrics).responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, latency1);
     verify(metrics).responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, latency2);

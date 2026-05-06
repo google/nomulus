@@ -57,9 +57,9 @@ public class ConsoleDomainGetActionTest extends ConsoleActionBaseTestCase {
         .isEqualTo(
 """
 {"domainName":"exists.tld","registrationExpirationTime":"294247-01-10T04:00:54.775Z",\
-"lastTransferTime":"null","repoId":"2-TLD","currentSponsorRegistrarId":"TheRegistrar",\
+"repoId":"2-TLD","currentSponsorRegistrarId":"TheRegistrar",\
 "creationRegistrarId":"TheRegistrar","creationTime":{"creationTime":"1970-01-01T00:00:00.000Z"},\
-"lastEppUpdateTime":"null","statuses":["INACTIVE"]}\
+"statuses":["INACTIVE"]}\
 """);
   }
 

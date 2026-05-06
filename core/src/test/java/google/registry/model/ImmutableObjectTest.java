@@ -19,7 +19,7 @@ import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObject.cloneEmptyToNull;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -32,6 +32,7 @@ import google.registry.util.CidrAddressBlock;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -39,7 +40,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -70,7 +70,8 @@ public class ImmutableObjectTest {
             SimpleObject: {
                 a=foo
                 b=null
-            }""");
+            }\
+            """);
   }
 
   @Test
@@ -86,7 +87,7 @@ public class ImmutableObjectTest {
     Boolean boolObject;
     int integer;
     Integer integerObject;
-    DateTime datetime;
+    Instant instant;
   }
 
   @Test
@@ -96,12 +97,12 @@ public class ImmutableObjectTest {
     object.boolObject = true;
     object.integer = 1;
     object.integerObject = 1;
-    object.datetime = START_OF_TIME;
+    object.instant = START_INSTANT;
     assertThat(object.toDiffableFieldMap()).containsEntry("bool", true);
     assertThat(object.toDiffableFieldMap()).containsEntry("boolObject", true);
     assertThat(object.toDiffableFieldMap()).containsEntry("integer", 1);
     assertThat(object.toDiffableFieldMap()).containsEntry("integerObject", 1);
-    assertThat(object.toDiffableFieldMap()).containsEntry("datetime", "1970-01-01T00:00:00.000Z");
+    assertThat(object.toDiffableFieldMap()).containsEntry("instant", "1970-01-01T00:00:00.000Z");
   }
 
   /** Subclass of ImmutableObject with a nested ImmutableObject. */

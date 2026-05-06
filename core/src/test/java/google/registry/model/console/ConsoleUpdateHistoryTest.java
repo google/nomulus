@@ -19,10 +19,10 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 
 import google.registry.model.EntityTestCase;
 import google.registry.testing.DatabaseHelper;
-import google.registry.util.DateTimeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,11 +35,7 @@ public class ConsoleUpdateHistoryTest extends EntityTestCase {
   void beforeEach() {
     createTld("tld");
     persistDomainWithDependentResources(
-        "example",
-        "tld",
-        fakeClock.nowUtc(),
-        fakeClock.nowUtc(),
-        DateTimeUtils.END_OF_TIME);
+        "example", "tld", fakeClock.now(), fakeClock.now(), END_INSTANT);
   }
 
   @Test
@@ -52,7 +48,7 @@ public class ConsoleUpdateHistoryTest extends EntityTestCase {
             .setMethod("POST")
             .setUrl("/console-api/bulk-domain")
             .setDescription("example.tld")
-            .setModificationTime(fakeClock.nowUtc())
+            .setModificationTime(fakeClock.now())
             .build();
     persistResource(history);
     assertThat(loadByEntity(history)).isEqualTo(history);

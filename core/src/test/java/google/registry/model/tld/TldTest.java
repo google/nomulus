@@ -33,7 +33,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusMonths;
@@ -59,10 +58,10 @@ import google.registry.persistence.VKey;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -106,7 +105,7 @@ public final class TldTest extends EntityTestCase {
 
   @Test
   void testTldToYaml() throws Exception {
-    fakeClock.setTo(START_OF_TIME);
+    fakeClock.setTo(START_INSTANT);
     AllocationToken defaultToken =
         persistResource(
             new AllocationToken.Builder()
@@ -117,7 +116,7 @@ public final class TldTest extends EntityTestCase {
     Tld existingTld =
         createTld("tld")
             .asBuilder()
-            .setDnsAPlusAaaaTtl(Duration.standardHours(1))
+            .setDnsAPlusAaaaTtl(Duration.ofHours(1))
             .setDnsWriters(ImmutableSet.of("baz", "bang"))
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
@@ -139,7 +138,7 @@ public final class TldTest extends EntityTestCase {
 
   @Test
   void testYamlToTld() throws Exception {
-    fakeClock.setTo(START_OF_TIME);
+    fakeClock.setTo(START_INSTANT);
     AllocationToken defaultToken =
         persistResource(
             new AllocationToken.Builder()
@@ -150,7 +149,7 @@ public final class TldTest extends EntityTestCase {
     Tld existingTld =
         createTld("tld")
             .asBuilder()
-            .setDnsAPlusAaaaTtl(Duration.standardHours(1))
+            .setDnsAPlusAaaaTtl(Duration.ofHours(1))
             .setDnsWriters(ImmutableSet.of("baz", "bang"))
             // set create billing cost back to the default (database helper sets it to $13)
             .setEapFeeSchedule(
@@ -289,7 +288,7 @@ public final class TldTest extends EntityTestCase {
                 .setName("tld-reserved15")
                 .setReservedListMapFromLines(
                     ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
-                .setCreationTimestamp(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.now())
                 .build());
     ReservedList rl16 =
         persistReservedList(
@@ -297,7 +296,7 @@ public final class TldTest extends EntityTestCase {
                 .setName("tld-reserved16")
                 .setReservedListMapFromLines(
                     ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
-                .setCreationTimestamp(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.now())
                 .build());
     Tld registry1 =
         newTld("propter", "PROPTER").asBuilder().setReservedLists(ImmutableSet.of(rl15)).build();
@@ -344,7 +343,7 @@ public final class TldTest extends EntityTestCase {
                 .setName("tld-reserved5")
                 .setReservedListMapFromLines(
                     ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
-                .setCreationTimestamp(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.now())
                 .build());
     ReservedList rl6 =
         persistReservedList(
@@ -352,7 +351,7 @@ public final class TldTest extends EntityTestCase {
                 .setName("tld-reserved6")
                 .setReservedListMapFromLines(
                     ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
-                .setCreationTimestamp(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.now())
                 .build());
     Tld r = Tld.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
     assertThat(r.getReservedListNames()).containsExactly("tld-reserved5", "tld-reserved6");
@@ -367,14 +366,14 @@ public final class TldTest extends EntityTestCase {
             .setName("tld-reserved15")
             .setReservedListMapFromLines(
                 ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
-            .setCreationTimestamp(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.now())
             .build());
     persistReservedList(
         new ReservedList.Builder()
             .setName("tld-reserved16")
             .setReservedListMapFromLines(
                 ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
-            .setCreationTimestamp(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.now())
             .build());
     Tld r =
         Tld.get("tld")

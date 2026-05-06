@@ -25,7 +25,7 @@ import static google.registry.bsa.persistence.BsaTestingUtils.persistUnblockable
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -237,7 +237,7 @@ public class BsaValidateActionTest {
   @Test
   void isStalenessAllowed_newDomain_allowed() {
     persistBsaLabel("label");
-    Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
+    Domain domain = persistActiveDomain("label.app", fakeClock.now());
     fakeClock.advanceBy(MAX_STALENESS.minusSeconds(1));
     assertThat(action.isStalenessAllowed(domain)).isTrue();
   }
@@ -245,7 +245,7 @@ public class BsaValidateActionTest {
   @Test
   void isStalenessAllowed_newDomain_notAllowed() {
     persistBsaLabel("label");
-    Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
+    Domain domain = persistActiveDomain("label.app", fakeClock.now());
     fakeClock.advanceBy(MAX_STALENESS);
     assertThat(action.isStalenessAllowed(domain)).isFalse();
   }
@@ -276,9 +276,9 @@ public class BsaValidateActionTest {
   @Test
   void checkForMissingReservedUnblockables_success() {
     persistResource(
-        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistResource(
-        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("registered-reserved");
     persistBsaLabel("reserved-only");
     persistBsaLabel("reserved-missing");
@@ -302,9 +302,9 @@ public class BsaValidateActionTest {
   @Test
   void checkForMissingReservedUnblockablesInOneTld_success() {
     persistResource(
-        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistResource(
-        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("reserved-missing-in-app");
     persistUnblockableDomain(
         UnblockableDomain.of("reserved-missing-in-app", "dev", Reason.REGISTERED));
@@ -324,7 +324,7 @@ public class BsaValidateActionTest {
   @Test
   void checkForMissingReservedUnblockables_unblockedReservedNotReported() {
     persistResource(
-        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
 
     createReservedList(
         "rl",
@@ -339,7 +339,7 @@ public class BsaValidateActionTest {
   @Test
   void checkForMissingRegisteredUnblockables_success() {
     persistResource(
-        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("registered");
     persistBsaLabel("registered-missing");
     persistUnblockableDomain(UnblockableDomain.of("registered", "app", Reason.REGISTERED));

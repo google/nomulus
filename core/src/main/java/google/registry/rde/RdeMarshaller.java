@@ -15,7 +15,6 @@
 package google.registry.rde;
 
 import static com.google.common.base.Verify.verify;
-import static google.registry.util.DateTimeUtils.toDateTime;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.flogger.FluentLogger;
@@ -75,7 +74,7 @@ public final class RdeMarshaller implements Serializable {
     contents.getContents().add(new XjcRdePolicyElement(policy));
     XjcRdeDeposit deposit = new XjcRdeDeposit();
     deposit.setId(depositId);
-    deposit.setWatermark(toDateTime(watermark));
+    deposit.setWatermark(watermark);
     deposit.setType(XjcRdeDepositTypeType.FULL);
     if (revision > 0) {
       deposit.setResend(revision);

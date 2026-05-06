@@ -22,7 +22,7 @@ import static google.registry.testing.DatabaseHelper.deleteResource;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -64,7 +64,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName(PROHIBIT_CONTACT_OBJECTS_ON_LOGIN)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, FeatureStatus.ACTIVE))
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
             .build());
   }
 
@@ -137,7 +137,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
     persistResource(
         FeatureFlag.get(PROHIBIT_CONTACT_OBJECTS_ON_LOGIN)
             .asBuilder()
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, FeatureStatus.INACTIVE))
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.INACTIVE))
             .build());
     doSuccessfulTest("login_with_contact_objuri.xml");
   }
@@ -147,7 +147,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
     persistResource(
         FeatureFlag.get(PROHIBIT_CONTACT_OBJECTS_ON_LOGIN)
             .asBuilder()
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, FeatureStatus.INACTIVE))
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.INACTIVE))
             .build());
     doSuccessfulTest("login_valid.xml");
   }

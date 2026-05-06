@@ -20,7 +20,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
@@ -39,7 +38,6 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.function.Function;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** Utilities for working with {@link EppResource}. */
 public final class EppResourceUtils {
@@ -65,18 +63,12 @@ public final class EppResourceUtils {
     return String.format("%X-%s", repoId, roidSuffix);
   }
 
-  /** Helper to call {@link EppResource#cloneProjectedAtTime} without warnings. */
-  @SuppressWarnings("unchecked")
-  private static <T extends EppResource> T cloneProjectedAtTime(T resource, DateTime now) {
-    return (T) resource.cloneProjectedAtTime(toInstant(now));
-  }
-
   /**
-   * Returns a Function that transforms an EppResource to the given DateTime, suitable for use with
+   * Returns a Function that transforms an EppResource to the given Instant, suitable for use with
    * Iterables.transform() over a collection of EppResources.
    */
-  public static <T extends EppResource> Function<T, T> transformAtTime(final DateTime now) {
-    return (T resource) -> cloneProjectedAtTime(resource, now);
+  public static <T extends EppResource> Function<T, T> transformAtTime(final Instant now) {
+    return (T resource) -> (T) resource.cloneProjectedAtTime(now);
   }
 
   public static boolean isActive(EppResource resource, Instant time) {
@@ -84,26 +76,8 @@ public final class EppResourceUtils {
         && time.isBefore(resource.getDeletionTime());
   }
 
-  /**
-   * @deprecated Use {@link #isActive(EppResource, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static boolean isActive(EppResource resource, DateTime time) {
-    return isActive(resource, toInstant(time));
-  }
-
   public static boolean isDeleted(EppResource resource, Instant time) {
     return !isActive(resource, time);
-  }
-
-  /**
-   * @deprecated Use {@link #isDeleted(EppResource, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static boolean isDeleted(EppResource resource, DateTime time) {
-    return isDeleted(resource, toInstant(time));
   }
 
   /** Process an automatic transfer on a domain. */
@@ -174,16 +148,6 @@ public final class EppResourceUtils {
   }
 
   /**
-   * @deprecated Use {@link #loadAtPointInTime(EppResource, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static <T extends EppResource> T loadAtPointInTime(
-      final T resource, final DateTime timestamp) {
-    return loadAtPointInTime(resource, toInstant(timestamp));
-  }
-
-  /**
    * Returns the most recent revision of a given EppResource before or at the provided timestamp,
    * falling back to using the resource as-is if there are no revisions.
    */
@@ -205,21 +169,6 @@ public final class EppResourceUtils {
       return resource;
     }
     return resourceAtPointInTime;
-  }
-
-  /**
-   * Returns a set of {@link VKey} for domains that reference a specified host.
-   *
-   * @param key the referent key
-   * @param now the logical time of the check /** Returns the domains that are linked to this host
-   *     at the given time.
-   * @deprecated Use {@link #getLinkedDomainKeys(VKey, Instant, Integer)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static ImmutableSet<VKey<Domain>> getLinkedDomainKeys(
-      VKey<Host> key, DateTime now, @Nullable Integer limit) {
-    return getLinkedDomainKeys(key, toInstant(now), limit);
   }
 
   /** Returns the domains that are linked to this host at the given time. */
@@ -244,17 +193,6 @@ public final class EppResourceUtils {
                           .collect(toImmutableSet());
               return domainKeySet;
             });
-  }
-
-  /**
-   * Returns whether this host is linked to any domains at the given time.
-   *
-   * @deprecated Use {@link #isLinked(VKey, Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static boolean isLinked(VKey<Host> key, DateTime now) {
-    return isLinked(key, toInstant(now));
   }
 
   /** Returns whether this resource is linked to any domains at the given time. */

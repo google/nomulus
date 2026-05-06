@@ -18,8 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -27,7 +26,7 @@ import org.mockito.Mockito;
 /** Unit tests for {@link GetEppResourceCommand}. */
 public class GetEppResourceCommandTest {
 
-  private static final DateTime TEST_TIME = DateTime.now(DateTimeZone.UTC);
+  private static final Instant TEST_TIME = Instant.parse("2024-03-27T10:15:30.105Z");
 
   private final FakeClock clock = new FakeClock(TEST_TIME);
   private GetEppResourceCommand commandUnderTest;
@@ -40,19 +39,19 @@ public class GetEppResourceCommandTest {
 
   @Test
   public void readTimestampAfterNow_noException() {
-    commandUnderTest.readTimestamp = clock.nowUtc().plusMillis(1);
+    commandUnderTest.readTimestamp = clock.now().plusMillis(1);
     commandUnderTest.run();
   }
 
   @Test
   public void readTimestampBeforeNow_throwsException() {
-    commandUnderTest.readTimestamp = clock.nowUtc().minusMillis(1);
+    commandUnderTest.readTimestamp = clock.now().minusMillis(1);
     assertThrows(IllegalArgumentException.class, () -> commandUnderTest.run());
   }
 
   @Test
   public void readTimestampNotProvided_setToNow_noException() {
     commandUnderTest.run();
-    assertThat(commandUnderTest.readTimestamp).isEqualTo(clock.nowUtc());
+    assertThat(commandUnderTest.readTimestamp).isEqualTo(clock.now());
   }
 }

@@ -20,7 +20,8 @@ import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.plusWeeks;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -29,53 +30,52 @@ import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ConfigureFeatureFlagCommand}. */
 public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFeatureFlagCommand> {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01T00:00:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2000-01-01T00:00:00Z"));
 
   @Test
   void testCreate() throws Exception {
-    DateTime featureStart = clock.nowUtc().plusWeeks(2);
-
+    Instant featureStart = plusWeeks(clock.now(), 2);
     runCommandForced(
         "TEST_FEATURE",
         "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, featureStart));
+        String.format("%s=INACTIVE,%s=ACTIVE", START_INSTANT, featureStart));
 
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
         .isEqualTo(
             TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, featureStart, ACTIVE)));
+                ImmutableSortedMap.of(START_INSTANT, INACTIVE, featureStart, ACTIVE)));
     assertThat(FeatureFlag.getAllUncached()).hasSize(1);
   }
 
   @Test
   void testCreate_multipleFlags() throws Exception {
-    DateTime featureStart = clock.nowUtc().plusWeeks(2);
+    Instant featureStart = plusWeeks(clock.now(), 2);
 
     runCommandForced(
         "TEST_FEATURE",
         "MINIMUM_DATASET_CONTACTS_OPTIONAL",
         "MINIMUM_DATASET_CONTACTS_PROHIBITED",
         "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, featureStart));
+        String.format("%s=INACTIVE,%s=ACTIVE", START_INSTANT, featureStart));
 
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
         .isEqualTo(
             TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, featureStart, ACTIVE)));
+                ImmutableSortedMap.of(START_INSTANT, INACTIVE, featureStart, ACTIVE)));
     assertThat(FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL).getStatusMap())
         .isEqualTo(
             TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, featureStart, ACTIVE)));
+                ImmutableSortedMap.of(START_INSTANT, INACTIVE, featureStart, ACTIVE)));
     assertThat(FeatureFlag.get(MINIMUM_DATASET_CONTACTS_PROHIBITED).getStatusMap())
         .isEqualTo(
             TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, featureStart, ACTIVE)));
+                ImmutableSortedMap.of(START_INSTANT, INACTIVE, featureStart, ACTIVE)));
     assertThat(FeatureFlag.getAllUncached()).hasSize(3);
   }
 
@@ -85,26 +85,26 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
         new FeatureFlag.Builder()
             .setFeatureName(TEST_FEATURE)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
                     .build())
             .build());
 
-    DateTime featureStart = clock.nowUtc().plusWeeks(6);
+    Instant featureStart = plusWeeks(clock.now(), 6);
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
         .isEqualTo(
-            TimedTransitionProperty.fromValueMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE)));
+            TimedTransitionProperty.fromValueMap(ImmutableSortedMap.of(START_INSTANT, INACTIVE)));
     assertThat(FeatureFlag.getAllUncached()).hasSize(1);
 
     runCommandForced(
         "TEST_FEATURE",
         "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, featureStart));
+        String.format("%s=INACTIVE,%s=ACTIVE", START_INSTANT, featureStart));
 
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
         .isEqualTo(
             TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, featureStart, ACTIVE)));
+                ImmutableSortedMap.of(START_INSTANT, INACTIVE, featureStart, ACTIVE)));
     assertThat(FeatureFlag.getAllUncached()).hasSize(1);
   }
 
@@ -114,15 +114,15 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
         new FeatureFlag.Builder()
             .setFeatureName(TEST_FEATURE)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
                     .build())
             .build());
 
-    DateTime featureStart = clock.nowUtc().plusWeeks(6);
+    Instant featureStart = plusWeeks(clock.now(), 6);
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
         .isEqualTo(
-            TimedTransitionProperty.fromValueMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE)));
+            TimedTransitionProperty.fromValueMap(ImmutableSortedMap.of(START_INSTANT, INACTIVE)));
     assertThat(FeatureFlag.getAllUncached()).hasSize(1);
 
     runCommandForced(
@@ -130,20 +130,20 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
         "MINIMUM_DATASET_CONTACTS_OPTIONAL",
         "MINIMUM_DATASET_CONTACTS_PROHIBITED",
         "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, featureStart));
+        String.format("%s=INACTIVE,%s=ACTIVE", START_INSTANT, featureStart));
 
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
         .isEqualTo(
             TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, featureStart, ACTIVE)));
+                ImmutableSortedMap.of(START_INSTANT, INACTIVE, featureStart, ACTIVE)));
     assertThat(FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL).getStatusMap())
         .isEqualTo(
             TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, featureStart, ACTIVE)));
+                ImmutableSortedMap.of(START_INSTANT, INACTIVE, featureStart, ACTIVE)));
     assertThat(FeatureFlag.get(MINIMUM_DATASET_CONTACTS_PROHIBITED).getStatusMap())
         .isEqualTo(
             TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, featureStart, ACTIVE)));
+                ImmutableSortedMap.of(START_INSTANT, INACTIVE, featureStart, ACTIVE)));
     assertThat(FeatureFlag.getAllUncached()).hasSize(3);
   }
 
@@ -154,7 +154,7 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
             ParameterException.class,
             () ->
                 runCommandForced(
-                    "INVALID_NAME", "--status_map", String.format("%s=ACTIVE", START_OF_TIME)));
+                    "INVALID_NAME", "--status_map", String.format("%s=ACTIVE", START_INSTANT)));
 
     assertThat(thrown)
         .hasMessageThat()
@@ -163,7 +163,7 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
 
   @Test
   void testCreate_invalidStatusMap() throws Exception {
-    DateTime featureStart = clock.nowUtc().plusWeeks(2);
+    Instant featureStart = plusWeeks(clock.now(), 2);
 
     IllegalArgumentException thrown =
         assertThrows(
@@ -183,15 +183,15 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
         new FeatureFlag.Builder()
             .setFeatureName(TEST_FEATURE)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
                     .build())
             .build());
 
-    DateTime featureStart = clock.nowUtc().plusWeeks(6);
+    Instant featureStart = plusWeeks(clock.now(), 6);
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
         .isEqualTo(
-            TimedTransitionProperty.fromValueMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE)));
+            TimedTransitionProperty.fromValueMap(ImmutableSortedMap.of(START_INSTANT, INACTIVE)));
     assertThat(FeatureFlag.getAllUncached()).hasSize(1);
 
     IllegalArgumentException thrown =

@@ -102,7 +102,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
 
   @Test
   void testFailure_existedButWasDeleted() {
-    persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
+    persistDeletedHost("ns1.example.tld", minusDays(clock.now(), 1));
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains("(ns1.example.tld)");
@@ -238,8 +238,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
     createTld("tld");
     // Setup a transfer that should have been server approved a day ago.
     Instant now = clock.now();
-    Instant requestTime =
-        minusDays(now, 1).minusMillis(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH.getMillis());
+    Instant requestTime = minusDays(now, 1).minus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
     Instant transferExpirationTime = minusDays(now, 1);
     Domain domain =
         persistResource(
@@ -273,8 +272,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
     createTld("tld");
     // Setup a transfer that should have been server approved a day ago.
     Instant now = clock.now();
-    Instant requestTime =
-        minusDays(now, 1).minusMillis(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH.getMillis());
+    Instant requestTime = minusDays(now, 1).minus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
     Instant transferExpirationTime = minusDays(now, 1);
     Domain domain =
         persistResource(
@@ -345,7 +343,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
 
   private void assertSqlDeleteSuccess(boolean isSubordinate) throws Exception {
     assertThat(reloadResourceByForeignKey()).isNull();
-    Host deletedHost = reloadResourceByForeignKey(clock.nowUtc().minusMillis(1));
+    Host deletedHost = reloadResourceByForeignKey(clock.now().minusMillis(1));
     assertAboutHosts()
         .that(deletedHost)
         .isNotActiveAt(clock.now())

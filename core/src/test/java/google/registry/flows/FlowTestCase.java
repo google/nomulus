@@ -23,8 +23,8 @@ import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.stripBillingEventId;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
@@ -165,7 +165,7 @@ public abstract class FlowTestCase<F extends Flow> {
   }
 
   protected void assertNoHistory() {
-    assertThat(HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, END_OF_TIME)).isEmpty();
+    assertThat(HistoryEntryDao.loadAllHistoryObjects(START_INSTANT, END_INSTANT)).isEmpty();
   }
 
   /**

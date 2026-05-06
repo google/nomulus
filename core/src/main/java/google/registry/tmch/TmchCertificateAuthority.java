@@ -34,7 +34,7 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
@@ -128,7 +128,7 @@ public final class TmchCertificateAuthority {
    */
   public void verify(X509Certificate cert) throws GeneralSecurityException {
     synchronized (TmchCertificateAuthority.class) {
-      X509Utils.verifyCertificate(getAndValidateRoot(), getCrl(), cert, clock.nowUtc());
+      X509Utils.verifyCertificate(getAndValidateRoot(), getCrl(), cert, clock.now());
     }
   }
 
@@ -152,7 +152,7 @@ public final class TmchCertificateAuthority {
     } catch (Exception e) {
       logger.atWarning().withCause(e).log("Old CRL is invalid, ignored during CRL update.");
     }
-    X509Utils.verifyCrl(getAndValidateRoot(), oldCrl, newCrl, clock.nowUtc());
+    X509Utils.verifyCrl(getAndValidateRoot(), oldCrl, newCrl, clock.now());
     TmchCrl.set(asciiCrl, url);
   }
 
@@ -162,7 +162,7 @@ public final class TmchCertificateAuthority {
       // The current production certificate expires on 2023-07-23. Future code monkey be reminded,
       // if you are looking at this code because the next line throws an exception, ask ICANN for a
       // new root certificate! (preferably before the current one expires...)
-      root.checkValidity(Timestamp.from(clock.now()));
+      root.checkValidity(Date.from(clock.now()));
       return root;
     } catch (Exception e) {
       if (e instanceof GeneralSecurityException generalSecurityException) {

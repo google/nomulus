@@ -20,7 +20,8 @@ import static google.registry.networking.handler.SslInitializerTestUtils.setUpSs
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.verifySslException;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusDays;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -43,6 +44,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -51,7 +53,6 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -201,7 +202,7 @@ class SslServerInitializerTest {
         localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT", DateTime.now(UTC).minusDays(2), DateTime.now(UTC).plusDays(1));
+            "CLIENT", minusDays(Instant.now(), 2), plusDays(Instant.now(), 1));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
@@ -234,7 +235,7 @@ class SslServerInitializerTest {
             Suppliers.ofInstance(ImmutableList.of(serverSsc.cert()))));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT", DateTime.now(UTC).minusDays(2), DateTime.now(UTC).plusDays(1));
+            "CLIENT", minusDays(Instant.now(), 2), plusDays(Instant.now(), 1));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
@@ -266,7 +267,7 @@ class SslServerInitializerTest {
         localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT", DateTime.now(UTC).minusDays(2), DateTime.now(UTC).plusDays(1));
+            "CLIENT", minusDays(Instant.now(), 2), plusDays(Instant.now(), 1));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
@@ -296,7 +297,7 @@ class SslServerInitializerTest {
         localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT", DateTime.now(UTC).minusDays(2), DateTime.now(UTC).minusDays(1));
+            "CLIENT", minusDays(Instant.now(), 2), minusDays(Instant.now(), 1));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
@@ -317,7 +318,7 @@ class SslServerInitializerTest {
         localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT", DateTime.now(UTC).plusDays(1), DateTime.now(UTC).plusDays(2));
+            "CLIENT", plusDays(Instant.now(), 1), plusDays(Instant.now(), 2));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));

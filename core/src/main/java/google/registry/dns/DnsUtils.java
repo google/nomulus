@@ -17,7 +17,6 @@ package google.registry.dns;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toJavaDuration;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -151,7 +150,7 @@ public final class DnsUtils {
     if (tldName.isPresent()) {
       Tld tld = Tld.get(tldName.get().toString());
       if (tld.getDnsAPlusAaaaTtl().isPresent()) {
-        dnsAPlusAaaaTtl = toJavaDuration(tld.getDnsAPlusAaaaTtl().get());
+        dnsAPlusAaaaTtl = tld.getDnsAPlusAaaaTtl().get();
       }
     }
     return dnsAPlusAaaaTtl.toSeconds();

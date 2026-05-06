@@ -16,15 +16,19 @@ package google.registry.util;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
-import java.util.Objects;
 
 /** Abstract class for {@link TypeAdapter}s that can convert directly to/from strings. */
 public abstract class StringBaseTypeAdapter<T> extends TypeAdapter<T> {
 
   @Override
   public T read(JsonReader reader) throws IOException {
+    if (reader.peek() == JsonToken.NULL) {
+      reader.nextNull();
+      return null;
+    }
     String stringValue = reader.nextString();
     if (stringValue.equals("null")) {
       return null;
@@ -34,7 +38,11 @@ public abstract class StringBaseTypeAdapter<T> extends TypeAdapter<T> {
 
   @Override
   public void write(JsonWriter writer, T t) throws IOException {
-    writer.value(Objects.toString(t));
+    if (t == null) {
+      writer.nullValue();
+    } else {
+      writer.value(t.toString());
+    }
   }
 
   protected abstract T fromString(String stringValue) throws IOException;

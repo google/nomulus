@@ -21,7 +21,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.xjc.rgp.XjcRgpStatusValueType.RENEW_PERIOD;
 import static google.registry.xjc.rgp.XjcRgpStatusValueType.TRANSFER_PERIOD;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -68,7 +67,6 @@ import google.registry.xml.XmlException;
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -104,7 +102,7 @@ public class DomainToXjcConverterTest {
                 .map(input -> String.format("%s %s", input.getType().toString(), input.getValue())))
         .isEmpty();
 
-    assertThat(bean.getCrDate()).isEqualTo(DateTime.parse("1900-01-01T00:00:00Z"));
+    assertThat(bean.getCrDate()).isEqualTo(Instant.parse("1900-01-01T00:00:00Z"));
 
     // o  A <crRr> element that contains the identifier of the registrar
     //    that created the domain name object.  An OPTIONAL client attribute
@@ -112,7 +110,7 @@ public class DomainToXjcConverterTest {
     //    This will always be null for us since we track each registrar as a separate client.
     assertThat(bean.getCrRr().getValue()).isEqualTo("TheRegistrar");
     assertThat(bean.getCrRr().getClient()).isNull();
-    assertThat(bean.getExDate()).isEqualTo(DateTime.parse("1930-01-01T00:00:00Z"));
+    assertThat(bean.getExDate()).isEqualTo(Instant.parse("1930-01-01T00:00:00Z"));
 
     // o  An OPTIONAL <idnTableId> element that references the IDN Table
     //    used for the IDN.  This corresponds to the "id" attribute of the
@@ -159,16 +157,16 @@ public class DomainToXjcConverterTest {
             XjcDomainStatusValueType.CLIENT_TRANSFER_PROHIBITED,
             XjcDomainStatusValueType.SERVER_UPDATE_PROHIBITED);
 
-    assertThat(bean.getTrDate()).isEqualTo(DateTime.parse("1910-01-01T00:00:00Z"));
+    assertThat(bean.getTrDate()).isEqualTo(Instant.parse("1910-01-01T00:00:00Z"));
 
     assertThat(bean.getTrnData().getTrStatus().toString()).isEqualTo("PENDING");
     assertThat(bean.getTrnData().getReRr().getValue()).isEqualTo("NewRegistrar");
     assertThat(bean.getTrnData().getAcRr().getValue()).isEqualTo("TheRegistrar");
-    assertThat(bean.getTrnData().getAcDate()).isEqualTo(DateTime.parse("1925-04-20T00:00:00Z"));
-    assertThat(bean.getTrnData().getReDate()).isEqualTo(DateTime.parse("1919-01-01T00:00:00Z"));
-    assertThat(bean.getTrnData().getExDate()).isEqualTo(DateTime.parse("1931-01-01T00:00:00Z"));
+    assertThat(bean.getTrnData().getAcDate()).isEqualTo(Instant.parse("1925-04-20T00:00:00Z"));
+    assertThat(bean.getTrnData().getReDate()).isEqualTo(Instant.parse("1919-01-01T00:00:00Z"));
+    assertThat(bean.getTrnData().getExDate()).isEqualTo(Instant.parse("1931-01-01T00:00:00Z"));
 
-    assertThat(bean.getUpDate()).isEqualTo(DateTime.parse("1920-01-01T00:00:00Z"));
+    assertThat(bean.getUpDate()).isEqualTo(Instant.parse("1920-01-01T00:00:00Z"));
 
     assertThat(bean.getUpRr().getValue()).isEqualTo("TheRegistrar");
     assertThat(bean.getUpRr().getClient()).isNull();
@@ -207,7 +205,7 @@ public class DomainToXjcConverterTest {
     XjcRdeDeposit deposit = new XjcRdeDeposit();
     deposit.setId("984302");
     deposit.setType(XjcRdeDepositTypeType.FULL);
-    deposit.setWatermark(DateTime.parse("2012-01-01T04:20:00Z"));
+    deposit.setWatermark(Instant.parse("2012-01-01T04:20:00Z"));
     XjcRdeMenuType menu = new XjcRdeMenuType();
     menu.setVersion("1.0");
     menu.getObjURIs().add("lol");
@@ -313,7 +311,7 @@ public class DomainToXjcConverterTest {
                             .setTargetId("lol")
                             .setRegistrarId("TheRegistrar")
                             .setEventTime(END_INSTANT)
-                            .setAutorenewEndTime(END_OF_TIME)
+                            .setAutorenewEndTime(END_INSTANT)
                             .setMsg("Domain was auto-renewed.")
                             .setHistoryEntry(domainHistory)
                             .build())
@@ -342,7 +340,7 @@ public class DomainToXjcConverterTest {
                                     .setTargetId("example.xn--q9jyb4c")
                                     .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_INSTANT)
-                                    .setAutorenewEndTime(END_OF_TIME)
+                                    .setAutorenewEndTime(END_INSTANT)
                                     .setMsg("Domain was auto-renewed.")
                                     .setHistoryEntry(domainHistory)
                                     .build())

@@ -42,6 +42,7 @@ import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.VKey;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -51,7 +52,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 
 /** A collection of static utility classes/functions to convert entities to/from YAML files. */
 public class EntityYamlUtils {
@@ -337,7 +337,7 @@ public class EntityYamlUtils {
     public TimedTransitionProperty<TldState> deserialize(
         JsonParser jp, DeserializationContext context) throws IOException {
       SortedMap<String, String> valueMap = jp.readValueAs(SortedMap.class);
-      return TimedTransitionProperty.fromValueMapInstant(
+      return TimedTransitionProperty.fromValueMap(
           valueMap.keySet().stream()
               .collect(
                   toImmutableSortedMap(
@@ -363,7 +363,7 @@ public class EntityYamlUtils {
     public TimedTransitionProperty<Money> deserialize(JsonParser jp, DeserializationContext context)
         throws IOException {
       SortedMap<String, LinkedHashMap<String, Object>> valueMap = jp.readValueAs(SortedMap.class);
-      return TimedTransitionProperty.fromValueMapInstant(
+      return TimedTransitionProperty.fromValueMap(
           valueMap.keySet().stream()
               .collect(
                   toImmutableSortedMap(
@@ -393,7 +393,7 @@ public class EntityYamlUtils {
     public TimedTransitionProperty<FeatureStatus> deserialize(
         JsonParser jp, DeserializationContext context) throws IOException {
       SortedMap<String, String> valueMap = jp.readValueAs(SortedMap.class);
-      return TimedTransitionProperty.fromValueMapInstant(
+      return TimedTransitionProperty.fromValueMap(
           valueMap.keySet().stream()
               .collect(
                   toImmutableSortedMap(

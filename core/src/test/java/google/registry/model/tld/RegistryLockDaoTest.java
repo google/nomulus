@@ -28,8 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.RegistryLock;
+import java.time.Duration;
 import java.util.Optional;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RegistryLockDao}. */
@@ -79,13 +79,13 @@ public final class RegistryLockDaoTest extends EntityTestCase {
                 .setLockCompletionTime(fakeClock.now())
                 .setUnlockRequestTime(fakeClock.now())
                 .setUnlockCompletionTime(fakeClock.now())
-                .setRelockDuration(Duration.standardHours(6))
+                .setRelockDuration(Duration.ofHours(6))
                 .build());
     RegistryLock fromDatabase = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
     assertThat(fromDatabase.getUnlockRequestTime()).hasValue(fakeClock.now());
     assertThat(fromDatabase.getUnlockCompletionTime()).hasValue(fakeClock.now());
     assertThat(fromDatabase.isLocked()).isFalse();
-    assertThat(fromDatabase.getRelockDuration()).hasValue(Duration.standardHours(6));
+    assertThat(fromDatabase.getRelockDuration()).hasValue(Duration.ofHours(6));
   }
 
   @Test

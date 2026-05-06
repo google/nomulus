@@ -24,8 +24,8 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExte
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import java.time.Duration;
 import org.hibernate.annotations.Type;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -60,33 +60,25 @@ public class DurationUserTypeTest {
   @Test
   void testRoundTrip() {
     Duration testDuration =
-        Duration.standardDays(6)
-            .plus(Duration.standardHours(10))
-            .plus(Duration.standardMinutes(30))
-            .plus(Duration.standardSeconds(15))
-            .plus(Duration.millis(7));
+        Duration.ofDays(6).plusHours(10).plusMinutes(30).plusSeconds(15).plusMillis(7);
     assertPersistedEntityHasSameDuration(testDuration);
   }
 
   @Test
   void testRoundTripLargeNumberOfDays() {
-    Duration testDuration =
-        Duration.standardDays(10001).plus(Duration.standardHours(100)).plus(Duration.millis(790));
+    Duration testDuration = Duration.ofDays(10001).plusHours(100).plusMillis(790);
     assertPersistedEntityHasSameDuration(testDuration);
   }
 
   @Test
   void testRoundTripLessThanOneDay() {
-    Duration testDuration =
-        Duration.standardHours(15)
-            .plus(Duration.standardMinutes(40))
-            .plus(Duration.standardSeconds(50));
+    Duration testDuration = Duration.ofHours(15).plusMinutes(40).plusSeconds(50);
     assertPersistedEntityHasSameDuration(testDuration);
   }
 
   @Test
   void testRoundTripExactOneDay() {
-    Duration testDuration = Duration.standardDays(1);
+    Duration testDuration = Duration.ofDays(1);
     assertPersistedEntityHasSameDuration(testDuration);
   }
 
@@ -95,7 +87,7 @@ public class DurationUserTypeTest {
     persistResource(entity);
     DurationTestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(DurationTestEntity.class, "id"));
-    assertThat(persisted.duration.getMillis()).isEqualTo(duration.getMillis());
+    assertThat(persisted.duration).isEqualTo(duration);
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

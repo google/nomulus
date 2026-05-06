@@ -26,15 +26,15 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.domain.Domain;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.testing.DatabaseHelper;
-import org.joda.time.LocalDate;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Spec11ThreatMatchDao}. */
 class Spec11ThreatMatchDaoTest extends EntityTestCase {
 
-  private static final LocalDate TODAY = new LocalDate(2020, 8, 4);
-  private static final LocalDate YESTERDAY = new LocalDate(2020, 8, 3);
+  private static final LocalDate TODAY = LocalDate.of(2020, 8, 4);
+  private static final LocalDate YESTERDAY = LocalDate.of(2020, 8, 3);
 
   private Domain todayComDomain;
   private Domain todayOrgDomain;
