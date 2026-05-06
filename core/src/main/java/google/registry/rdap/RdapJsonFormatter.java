@@ -32,6 +32,7 @@ import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InetAddresses;
 import com.google.gson.JsonArray;
+import google.registry.cache.HostCache;
 import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.CacheUtils;
@@ -122,6 +123,7 @@ public class RdapJsonFormatter {
   @Inject @RequestServerName String serverName;
   @Inject RdapAuthorization rdapAuthorization;
   @Inject Clock clock;
+  @Inject HostCache hostCache;
 
   @Inject
   RdapJsonFormatter() {}
@@ -393,20 +395,11 @@ public class RdapJsonFormatter {
           domain.getDomainName(), domain.getRepoId());
     }
 
-    // We're just trying to load the hosts by cache here, but the generics and casting require
-    // a lot of boilerplate to make the compiler happy
-    Iterable<VKey<? extends EppResource>> nameservers =
-        ImmutableSet.copyOf(domain.getNameservers());
     ImmutableSet<Host> loadedHosts =
-        replicaTm()
-            .transact(
-                () -> {
-                  ImmutableSet.Builder<Host> hostBuilder = new ImmutableSet.Builder<>();
-                  for (EppResource host : EppResource.loadByCacheIfEnabled(nameservers).values()) {
-                    hostBuilder.add((Host) host);
-                  }
-                  return hostBuilder.build();
-                });
+        domain.getNameservers().stream()
+            .map(key -> hostCache.loadByRepoId((String) key.getKey()))
+            .flatMap(Optional::stream)
+            .collect(toImmutableSet());
 
     // Add the nameservers to the data; the load was kicked off above for efficiency.
     // RDAP Response Profile 2.8: we MUST have the nameservers

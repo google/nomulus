@@ -181,11 +181,10 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   /** Searches for domains by domain name without a wildcard or interest in deleted entries. */
   private DomainSearchResponse searchByDomainNameWithoutWildcard(
       final RdapSearchPattern partialStringQuery) {
-    Optional<Domain> domain =
-        ForeignKeyUtils.loadResourceByCache(
-            Domain.class, partialStringQuery.getInitialString(), getRequestTime());
     return makeSearchResults(
-        shouldBeVisible(domain) ? ImmutableList.of(domain.get()) : ImmutableList.of());
+        domainCache.loadByDomainName(partialStringQuery.getInitialString()).stream()
+            .filter(this::shouldBeVisible)
+            .toList());
   }
 
   /** Searches for domains by domain name with an initial string, wildcard and possible suffix. */
@@ -359,8 +358,8 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // through the subordinate hosts. This is more efficient, and lets us permit wildcard searches
     // with no initial string.
     Domain domain =
-        ForeignKeyUtils.loadResourceByCache(
-                Domain.class, partialStringQuery.getSuffix(), timeToQuery)
+        domainCache
+            .loadByDomainName(partialStringQuery.getSuffix())
             .orElseThrow(
                 () ->
                     new UnprocessableEntityException(

@@ -32,6 +32,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import google.registry.cache.DomainCache;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.registrar.Registrar;
@@ -88,6 +89,7 @@ public abstract class RdapActionBase implements Runnable {
   @Inject @Parameter("formatOutput") Optional<Boolean> formatOutputParam;
   @Inject @Config("rdapResultSetMaxSize") int rdapResultSetMaxSize;
   @Inject RdapMetrics rdapMetrics;
+  @Inject DomainCache domainCache;
   @Inject Clock clock;
 
   /** Builder for metric recording. */
@@ -117,14 +119,14 @@ public abstract class RdapActionBase implements Runnable {
   /**
    * Does the actual search and returns an RDAP JSON object.
    *
-   * RFC7480 4.1 - we have to support GET and HEAD.
+   * <p>RFC7480 4.1 - we have to support GET and HEAD.
    *
    * @param pathSearchString the search string in the URL path
    * @param isHeadRequest whether the returned map will actually be used. HTTP HEAD requests don't
-   *        actually return anything. However, we usually still want to go through the process of
-   *        building a map, to make sure that the request would return a 500 status if it were
-   *        invoked using GET. So this field should usually be ignored, unless there's some
-   *        expensive task required to create the map which will never result in a request failure.
+   *     actually return anything. However, we usually still want to go through the process of
+   *     building a map, to make sure that the request would return a 500 status if it were invoked
+   *     using GET. So this field should usually be ignored, unless there's some expensive task
+   *     required to create the map which will never result in a request failure.
    * @return A map (probably containing nested maps and lists) with the final JSON response data.
    */
   abstract ReplyPayloadBase getJsonObjectForResource(

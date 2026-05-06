@@ -175,9 +175,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   /** Searches for nameservers by name using the superordinate domain as a suffix. */
   private NameserverSearchResponse searchByNameUsingSuperordinateDomain(
       RdapSearchPattern partialStringQuery) {
-    Optional<Domain> domain =
-        ForeignKeyUtils.loadResourceByCache(
-            Domain.class, partialStringQuery.getSuffix(), getRequestTime());
+    Optional<Domain> domain = domainCache.loadByDomainName(partialStringQuery.getSuffix());
     if (domain.isEmpty()) {
       // Don't allow wildcards with suffixes which are not domains we manage. That would risk a
       // table scan in many easily foreseeable cases. The user might ask for ns*.zombo.com,

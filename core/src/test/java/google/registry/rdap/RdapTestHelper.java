@@ -27,8 +27,12 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import google.registry.model.EppResource;
+import google.registry.model.host.Host;
+import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import java.util.Map;
+import java.util.Optional;
 
 /** Test helper methods for RDAP tests. */
 class RdapTestHelper {
@@ -68,6 +72,8 @@ class RdapTestHelper {
                 + " suspect that you have failed to comply with these terms.",
             "We reserve the right to modify this agreement at any time.");
     rdapJsonFormatter.rdapTosStaticUrl = "https://www.example.tld/about/rdap/tos.html";
+    rdapJsonFormatter.hostCache =
+        (repoId) -> Optional.ofNullable(EppResource.loadByCache(VKey.create(Host.class, repoId)));
     return rdapJsonFormatter;
   }
 

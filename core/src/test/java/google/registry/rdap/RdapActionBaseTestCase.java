@@ -28,8 +28,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
+import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Actions;
@@ -92,6 +94,8 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     action.rdapJsonFormatter = RdapTestHelper.getTestRdapJsonFormatter(clock);
     action.rdapMetrics = rdapMetrics;
     action.requestMethod = GET;
+    action.domainCache =
+        (domainName) -> ForeignKeyUtils.loadResourceByCache(Domain.class, domainName, clock.now());
     action.clock = new FakeClock(DateTime.parse("2025-01-01T00:00:00.000Z"));
     logout();
   }

@@ -67,10 +67,9 @@ public class RdapDomainAction extends RdapActionBase {
     }
     // The query string is not used; the RDAP syntax is /rdap/domain/mydomain.com.
     Optional<Domain> domain =
-        ForeignKeyUtils.loadResourceByCache(
-            Domain.class,
-            pathSearchString,
-            shouldIncludeDeleted() ? START_INSTANT : getRequestTime());
+        shouldIncludeDeleted() // the remote domain cache cannot handle times in the past
+            ? ForeignKeyUtils.loadResourceByCache(Domain.class, pathSearchString, START_INSTANT)
+            : domainCache.loadByDomainName(pathSearchString);
     if (domain.isEmpty() || !isAuthorized(domain.get())) {
       handlePossibleBsaBlock(domainName);
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
