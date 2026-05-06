@@ -35,21 +35,19 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
           .maximumSize(RegistryConfig.getEppResourceMaxCachedEntries())
           .build();
 
-  private final SimplifiedJedisClient<V> jedisClient;
+  private final SimplifiedJedisClient jedisClient;
 
-  protected MultilayerEppResourceCache(SimplifiedJedisClient<V> jedisClient) {
+  protected MultilayerEppResourceCache(SimplifiedJedisClient jedisClient) {
     this.jedisClient = jedisClient;
   }
 
   protected abstract Optional<V> loadFromDatabase(String key);
 
-  protected abstract String getJedisPrefix();
-
   protected boolean shouldPersistToRemoteCache(V value) {
     return true;
   }
 
-  protected Optional<V> loadFromCaches(String key) {
+  protected Optional<V> loadFromCaches(Class<V> clazz, String key) {
     // hopefully the resource is in the local cache
     Optional<V> possibleValue = Optional.ofNullable(localCache.getIfPresent(key));
     if (possibleValue.isPresent()) {
@@ -57,8 +55,7 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
     }
 
     // if not, try the remote cache
-    String jedisKey = getJedisPrefix() + key;
-    possibleValue = jedisClient.get(jedisKey);
+    possibleValue = jedisClient.get(clazz, key);
     if (possibleValue.isPresent()) {
       localCache.put(key, possibleValue.get());
       return possibleValue;
@@ -70,7 +67,7 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
             v -> {
               // Optional has no direct "peek" functionality to fill the caches
               if (shouldPersistToRemoteCache(v)) {
-                jedisClient.set(new SimplifiedJedisClient.JedisResource<>(jedisKey, v));
+                jedisClient.set(new SimplifiedJedisClient.JedisResource<>(key, v));
               }
               localCache.put(key, v);
               return v;

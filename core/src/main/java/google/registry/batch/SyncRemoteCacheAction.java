@@ -63,25 +63,20 @@ public class SyncRemoteCacheAction implements Runnable {
 
   private final LockHandler lockHandler;
   private final Response response;
-  private final Optional<SimplifiedJedisClient<Domain>> domainJedisClient;
-  private final Optional<SimplifiedJedisClient<Host>> hostJedisClient;
+  private final Optional<SimplifiedJedisClient> jedisClient;
 
   @Inject
   public SyncRemoteCacheAction(
-      LockHandler lockHandler,
-      Response response,
-      Optional<SimplifiedJedisClient<Domain>> domainJedisClient,
-      Optional<SimplifiedJedisClient<Host>> hostJedisClient) {
+      LockHandler lockHandler, Response response, Optional<SimplifiedJedisClient> jedisClient) {
     this.lockHandler = lockHandler;
     this.response = response;
-    this.domainJedisClient = domainJedisClient;
-    this.hostJedisClient = hostJedisClient;
+    this.jedisClient = jedisClient;
   }
 
   @Override
   public void run() {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
-    if (domainJedisClient.isEmpty() || hostJedisClient.isEmpty()) {
+    if (jedisClient.isEmpty()) {
       response.setStatus(SC_NO_CONTENT);
       response.setPayload("No Jedis/Valkey configuration found");
       return;
@@ -134,7 +129,7 @@ public class SyncRemoteCacheAction implements Runnable {
       return 0;
     }
     logger.atInfo().log("Processing %d domains", domains.size());
-    processResources(domainJedisClient.get(), domains, Domain::getDomainName);
+    processResources(Domain.class, domains, Domain::getDomainName);
     setNewCursorTime(domains, REMOTE_CACHE_DOMAIN_SYNC);
     return domains.size();
   }
@@ -154,13 +149,13 @@ public class SyncRemoteCacheAction implements Runnable {
       return 0;
     }
     logger.atInfo().log("Processing %d hosts", hosts.size());
-    processResources(hostJedisClient.get(), hosts, Host::getRepoId);
+    processResources(Host.class, hosts, Host::getRepoId);
     setNewCursorTime(hosts, REMOTE_CACHE_HOST_SYNC);
     return hosts.size();
   }
 
   private <T extends EppResource> void processResources(
-      SimplifiedJedisClient<T> jedisClient, List<T> resources, Function<T, String> getKeyFunction) {
+      Class<T> clazz, List<T> resources, Function<T, String> getKeyFunction) {
     ImmutableList.Builder<String> toDeleteBuilder = new ImmutableList.Builder<>();
     ImmutableList.Builder<SimplifiedJedisClient.JedisResource<T>> toSaveBuilder =
         new ImmutableList.Builder<>();
@@ -176,9 +171,9 @@ public class SyncRemoteCacheAction implements Runnable {
     ImmutableList<String> toDelete = toDeleteBuilder.build();
     ImmutableList<SimplifiedJedisClient.JedisResource<T>> toSave = toSaveBuilder.build();
 
-    jedisClient.deleteAll(toDelete);
+    jedisClient.get().deleteAll(clazz, toDelete);
     logger.atInfo().log("Invalidated %d from the remote cache", toDelete.size());
-    jedisClient.setAll(toSave);
+    jedisClient.get().setAll(toSave);
     logger.atInfo().log("Set %d in the remote cache", toSave.size());
   }
 

@@ -32,14 +32,14 @@ public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
 
   private final Clock clock;
 
-  public MultilayerDomainCache(SimplifiedJedisClient<Domain> jedisClient, Clock clock) {
+  public MultilayerDomainCache(SimplifiedJedisClient jedisClient, Clock clock) {
     super(jedisClient);
     this.clock = clock;
   }
 
   @Override
   public Optional<Domain> loadByDomainName(String domainName) {
-    return loadFromCaches(domainName);
+    return loadFromCaches(Domain.class, domainName);
   }
 
   @Override
@@ -54,11 +54,6 @@ public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
     return possibleDomain
         .filter(domain -> now.isBefore(domain.getDeletionTime()))
         .map(domain -> domain.cloneProjectedAtTime(now));
-  }
-
-  @Override
-  protected String getJedisPrefix() {
-    return "d_";
   }
 
   @Override

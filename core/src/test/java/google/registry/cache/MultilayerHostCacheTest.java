@@ -16,7 +16,6 @@ package google.registry.cache;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -38,7 +37,7 @@ public class MultilayerHostCacheTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final SimplifiedJedisClient<Host> jedisClient = mock(SimplifiedJedisClient.class);
+  private final SimplifiedJedisClient jedisClient = mock(SimplifiedJedisClient.class);
   private MultilayerHostCache cache;
 
   @BeforeEach
@@ -52,9 +51,8 @@ public class MultilayerHostCacheTest {
     assertThat(cache.loadByRepoId(host.getRepoId())).hasValue(host);
 
     // We should have filled the caches after one attempt to load from Valkey
-    verify(jedisClient).get("h_" + host.getRepoId());
-    verify(jedisClient)
-        .set(new SimplifiedJedisClient.JedisResource<>("h_" + host.getRepoId(), host));
+    verify(jedisClient).get(Host.class, host.getRepoId());
+    verify(jedisClient).set(new SimplifiedJedisClient.JedisResource<>(host.getRepoId(), host));
 
     // Further loads hit the local cache
     assertThat(cache.loadByRepoId(host.getRepoId())).hasValue(host);
@@ -66,7 +64,7 @@ public class MultilayerHostCacheTest {
     // Note: we don't save the host to SQL
     Host host = DatabaseHelper.newHost("ns1.example.tld");
     // We hit the Valkey cache first
-    when(jedisClient.get(eq("h_" + host.getRepoId()))).thenReturn(Optional.of(host));
+    when(jedisClient.get(Host.class, host.getRepoId())).thenReturn(Optional.of(host));
     assertThat(cache.loadByRepoId(host.getRepoId())).hasValue(host);
   }
 

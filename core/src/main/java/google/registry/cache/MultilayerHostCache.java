@@ -27,23 +27,18 @@ import java.util.Optional;
  */
 public class MultilayerHostCache extends MultilayerEppResourceCache<Host> implements HostCache {
 
-  public MultilayerHostCache(SimplifiedJedisClient<Host> jedisClient) {
+  public MultilayerHostCache(SimplifiedJedisClient jedisClient) {
     super(jedisClient);
   }
 
   @Override
   public Optional<Host> loadByRepoId(String repoId) {
-    return loadFromCaches(repoId);
+    return loadFromCaches(Host.class, repoId);
   }
 
   @Override
   protected Optional<Host> loadFromDatabase(String repoId) {
     return replicaTm()
         .transact(() -> replicaTm().loadByKeyIfPresent(VKey.create(Host.class, repoId)));
-  }
-
-  @Override
-  protected String getJedisPrefix() {
-    return "h_";
   }
 }

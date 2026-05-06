@@ -26,7 +26,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -65,8 +64,7 @@ class SyncRemoteCacheActionTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
-  @Mock private SimplifiedJedisClient<Domain> domainJedisClient;
-  @Mock private SimplifiedJedisClient<Host> hostJedisClient;
+  @Mock private SimplifiedJedisClient jedisClient;
 
   private final FakeResponse response = new FakeResponse();
   private FakeLockHandler lockHandler = new FakeLockHandler(true);
@@ -75,14 +73,12 @@ class SyncRemoteCacheActionTest {
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    action =
-        new SyncRemoteCacheAction(
-            lockHandler, response, Optional.of(domainJedisClient), Optional.of(hostJedisClient));
+    action = new SyncRemoteCacheAction(lockHandler, response, Optional.of(jedisClient));
   }
 
   @Test
   void test_noJedisConfig() {
-    action = new SyncRemoteCacheAction(lockHandler, response, Optional.empty(), Optional.empty());
+    action = new SyncRemoteCacheAction(lockHandler, response, Optional.empty());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload()).contains("No Jedis/Valkey configuration found");
@@ -91,9 +87,7 @@ class SyncRemoteCacheActionTest {
   @Test
   void test_lockAcquisitionFails() {
     lockHandler = new FakeLockHandler(false);
-    action =
-        new SyncRemoteCacheAction(
-            lockHandler, response, Optional.of(domainJedisClient), Optional.of(hostJedisClient));
+    action = new SyncRemoteCacheAction(lockHandler, response, Optional.of(jedisClient));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload()).contains("Could not acquire lock");
@@ -101,7 +95,7 @@ class SyncRemoteCacheActionTest {
 
   @Test
   void test_exceptionThrown() {
-    doThrow(new RuntimeException("Redis failed")).when(domainJedisClient).deleteAll(any());
+    doThrow(new RuntimeException("Redis failed")).when(jedisClient).deleteAll(any(), any());
     persistActiveDomain("example.tld"); // So there is something to process
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
@@ -112,7 +106,7 @@ class SyncRemoteCacheActionTest {
   void test_syncDomains_noDomains() {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    verifyNoInteractions(domainJedisClient);
+    verifyNoInteractions(jedisClient);
     assertThat(DatabaseHelper.loadByKeyIfPresent(Cursor.createGlobalVKey(REMOTE_CACHE_DOMAIN_SYNC)))
         .isEmpty();
   }
@@ -126,12 +120,11 @@ class SyncRemoteCacheActionTest {
     action.run();
 
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    verify(domainJedisClient)
+    verify(jedisClient)
         .setAll(
-            eq(
-                ImmutableList.of(
-                    new SimplifiedJedisClient.JedisResource<>("example1.tld", domain1),
-                    new SimplifiedJedisClient.JedisResource<>("example2.tld", domain2))));
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>("example1.tld", domain1),
+                new SimplifiedJedisClient.JedisResource<>("example2.tld", domain2)));
 
     assertThat(
             DatabaseHelper.loadByKey(Cursor.createGlobalVKey(REMOTE_CACHE_DOMAIN_SYNC))
@@ -148,12 +141,11 @@ class SyncRemoteCacheActionTest {
     action.run();
 
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    verify(domainJedisClient)
+    verify(jedisClient)
         .setAll(
-            eq(
-                ImmutableList.of(
-                    new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain))));
-    verify(domainJedisClient).deleteAll(eq(ImmutableList.of("deleted.tld")));
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain)));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("deleted.tld"));
   }
 
   @Test
@@ -171,18 +163,16 @@ class SyncRemoteCacheActionTest {
     action.run();
 
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    verify(domainJedisClient)
+    verify(jedisClient)
         .setAll(
-            eq(
-                ImmutableList.of(
-                    new SimplifiedJedisClient.JedisResource<>("example2.tld", domain2))));
+            ImmutableList.of(new SimplifiedJedisClient.JedisResource<>("example2.tld", domain2)));
   }
 
   @Test
   void test_syncHosts_noHosts() {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    verifyNoInteractions(hostJedisClient);
+    verifyNoInteractions(jedisClient);
     assertThat(DatabaseHelper.loadByKeyIfPresent(Cursor.createGlobalVKey(REMOTE_CACHE_HOST_SYNC)))
         .isEmpty();
   }
@@ -196,12 +186,11 @@ class SyncRemoteCacheActionTest {
     action.run();
 
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    verify(hostJedisClient)
+    verify(jedisClient)
         .setAll(
-            eq(
-                ImmutableList.of(
-                    new SimplifiedJedisClient.JedisResource<>(host1.getRepoId(), host1),
-                    new SimplifiedJedisClient.JedisResource<>(host2.getRepoId(), host2))));
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>(host1.getRepoId(), host1),
+                new SimplifiedJedisClient.JedisResource<>(host2.getRepoId(), host2)));
 
     assertThat(
             DatabaseHelper.loadByKey(Cursor.createGlobalVKey(REMOTE_CACHE_HOST_SYNC))
@@ -218,11 +207,10 @@ class SyncRemoteCacheActionTest {
     action.run();
 
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    verify(hostJedisClient)
+    verify(jedisClient)
         .setAll(
-            eq(
-                ImmutableList.of(
-                    new SimplifiedJedisClient.JedisResource<>(active.getRepoId(), active))));
-    verify(hostJedisClient).deleteAll(eq(ImmutableList.of(deleted.getRepoId())));
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>(active.getRepoId(), active)));
+    verify(jedisClient).deleteAll(Host.class, ImmutableList.of(deleted.getRepoId()));
   }
 }
