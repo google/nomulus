@@ -22,7 +22,6 @@ import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -46,6 +45,7 @@ import google.registry.persistence.VKey;
 import google.registry.tools.IamClient;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.RegistryEnvironment;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,8 +55,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Class to help build and persist all the OT&amp;E entities in the database.
@@ -94,9 +92,9 @@ public final class OteAccountBuilder {
   private static final Pattern REGISTRAR_PATTERN = Pattern.compile("^[a-z\\d]{3,14}$");
 
   // Durations are short so that registrars can test with quick transfer (etc.) turnaround.
-  private static final Duration SHORT_ADD_GRACE_PERIOD = Duration.standardMinutes(60);
-  private static final Duration SHORT_REDEMPTION_GRACE_PERIOD = Duration.standardMinutes(10);
-  private static final Duration SHORT_PENDING_DELETE_LENGTH = Duration.standardMinutes(5);
+  private static final Duration SHORT_ADD_GRACE_PERIOD = Duration.ofMinutes(60);
+  private static final Duration SHORT_REDEMPTION_GRACE_PERIOD = Duration.ofMinutes(10);
+  private static final Duration SHORT_PENDING_DELETE_LENGTH = Duration.ofMinutes(5);
 
   private static final String DEFAULT_PREMIUM_LIST = "default_sandbox_list";
 
@@ -234,8 +232,8 @@ public final class OteAccountBuilder {
   }
 
   /** Sets the client certificate to all the OT&amp;E Registrars. */
-  public OteAccountBuilder setCertificate(String asciiCert, DateTime now) {
-    return transformRegistrars(builder -> builder.setClientCertificate(asciiCert, toInstant(now)));
+  public OteAccountBuilder setCertificate(String asciiCert, Instant now) {
+    return transformRegistrars(builder -> builder.setClientCertificate(asciiCert, now));
   }
 
   /** Sets the IP allowlist to all the OT&amp;E Registrars. */

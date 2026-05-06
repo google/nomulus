@@ -20,7 +20,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
@@ -31,8 +31,8 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExte
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import java.time.Instant;
 import org.hibernate.annotations.Type;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -45,13 +45,13 @@ public class AllocationTokenStatusTransitionUserTypeTest {
           .withEntityClass(AllocationTokenStatusTransitionConverterTestEntity.class)
           .buildUnitTestExtension();
 
-  private static final ImmutableSortedMap<DateTime, TokenStatus> values =
+  private static final ImmutableSortedMap<Instant, TokenStatus> values =
       ImmutableSortedMap.of(
-          START_OF_TIME,
+          START_INSTANT,
           NOT_STARTED,
-          DateTime.parse("2001-01-01T00:00:00.0Z"),
+          Instant.parse("2001-01-01T00:00:00.0Z"),
           VALID,
-          DateTime.parse("2002-01-01T00:00:00.0Z"),
+          Instant.parse("2002-01-01T00:00:00.0Z"),
           ENDED);
 
   @Test

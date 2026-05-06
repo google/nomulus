@@ -21,12 +21,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.Duration;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.usertype.UserType;
-import org.joda.time.Duration;
-import org.joda.time.Period;
 import org.postgresql.util.PGInterval;
 
 /**
@@ -108,43 +107,31 @@ public class DurationUserType implements UserType<Duration> {
   }
 
   public static PGInterval convertToPGInterval(Duration duration) {
-    // When the period is created from duration by calling duration.toPeriod(), only precise fields
-    // in the period type will be used. Thus, only the hour, minute, second and millisecond fields
-    // on the period will be used. The year, month, week and day fields will not be populated:
-    //   1. If the duration is small, less than one day, then this method will just set
-    //      hours/minutes/seconds correctly.
-    //   2. If the duration is larger than one day then all the remaining duration will
-    //      be stored in the largest available field, hours in this case.
-    // So, when we convert the period to a PGInterval instance, we set the days field by extracting
-    // it from period's hours field.
-    Period period = duration.toPeriod();
     PGInterval interval = new PGInterval();
-    interval.setDays(period.getHours() / 24);
-    interval.setHours(period.getHours() % 24);
-    interval.setMinutes(period.getMinutes());
-    double millis = (double) period.getMillis() / 1000;
-    interval.setSeconds(period.getSeconds() + millis);
+    long seconds = duration.getSeconds();
+    int nanos = duration.getNano();
+    interval.setDays((int) (seconds / 86400));
+    seconds %= 86400;
+    interval.setHours((int) (seconds / 3600));
+    seconds %= 3600;
+    interval.setMinutes((int) (seconds / 60));
+    seconds %= 60;
+    interval.setSeconds(seconds + (double) nanos / 1_000_000_000);
     return interval;
   }
 
   @Nullable
   public static Duration convertToDuration(PGInterval dbData) {
-    PGInterval interval = null;
-    try {
-      interval = new PGInterval(dbData.toString());
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
-
-    if (interval.equals(new PGInterval())) {
+    if (dbData == null) {
       return null;
     }
-
-    final int days = interval.getDays();
-    final int hours = interval.getHours();
-    final int mins = interval.getMinutes();
-    final int secs = (int) interval.getSeconds();
-    final int millis = interval.getMicroSeconds() / 1000;
-    return new Period(0, 0, 0, days, hours, mins, secs, millis).toStandardDuration();
+    double seconds = dbData.getSeconds();
+    long fullSeconds = (long) seconds;
+    int nanos = (int) Math.round((seconds - fullSeconds) * 1_000_000_000);
+    return Duration.ofDays(dbData.getDays())
+        .plusHours(dbData.getHours())
+        .plusMinutes(dbData.getMinutes())
+        .plusSeconds(fullSeconds)
+        .plusNanos(nanos);
   }
 }

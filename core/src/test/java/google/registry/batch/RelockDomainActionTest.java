@@ -197,7 +197,7 @@ public class RelockDomainActionTest {
   @Test
   public void testFailure_transientFailure_enqueuesTask() {
     // Hard-delete the domain to simulate a DB failure
-    deleteTestDomain(domain, clock.nowUtc());
+    deleteTestDomain(domain, clock.now());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     // Cannot assert the entire payload status since the Java object ID will vary
@@ -208,7 +208,7 @@ public class RelockDomainActionTest {
   @Test
   void testFailure_sufficientTransientFailures_sendsEmail() throws Exception {
     // Hard-delete the domain to simulate a DB failure
-    deleteTestDomain(domain, clock.nowUtc());
+    deleteTestDomain(domain, clock.now());
     action = createAction(oldLock.getRevisionId(), RelockDomainAction.FAILURES_BEFORE_EMAIL);
     action.run();
     assertTaskEnqueued(RelockDomainAction.FAILURES_BEFORE_EMAIL + 1);
@@ -242,7 +242,7 @@ public class RelockDomainActionTest {
 
   @Test
   void testFailure_slowsDown() throws Exception {
-    deleteTestDomain(domain, clock.nowUtc());
+    deleteTestDomain(domain, clock.now());
     action = createAction(oldLock.getRevisionId(), RelockDomainAction.ATTEMPTS_BEFORE_SLOWDOWN);
     action.run();
     assertTaskEnqueued(
@@ -317,7 +317,7 @@ public class RelockDomainActionTest {
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(oldUnlockRevisionId))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, String.valueOf(numAttempts))
-            .scheduleTime(clock.nowUtc().plusMillis((int) duration.toMillis())));
+            .scheduleTime(clock.now().plus(duration)));
   }
 
   private RelockDomainAction createAction(Long oldUnlockRevisionId) throws Exception {

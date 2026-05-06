@@ -44,9 +44,9 @@ import google.registry.util.PasswordUtils.HashAlgorithm;
 import jakarta.inject.Inject;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
+import java.time.Duration;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.Duration;
 
 /**
  * Handler for retrieving / creating registry lock requests in the console.
@@ -163,7 +163,7 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
                           domainName,
                           registrarId,
                           isAdmin,
-                          relockDurationMillis.map(Duration::millis));
+                          relockDurationMillis.map(Duration::ofMillis));
               sendVerificationEmail(registryLock, registryLockEmail, isLock);
             });
     response.setStatus(SC_OK);

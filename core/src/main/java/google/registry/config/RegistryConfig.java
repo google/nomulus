@@ -18,7 +18,7 @@ import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static google.registry.config.ConfigUtils.makeUrl;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.Comparator.naturalOrder;
@@ -50,14 +50,14 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.net.URI;
 import java.net.URL;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
-import org.joda.time.Duration;
 
 /**
  * Central clearing-house for all configuration.
@@ -225,7 +225,7 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("databaseRetention")
-    public static java.time.Duration provideDatabaseRetention() {
+    public static Duration provideDatabaseRetention() {
       return getDatabaseRetention();
     }
 
@@ -281,8 +281,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("brdaInterval")
-    public static java.time.Duration provideBrdaInterval() {
-      return java.time.Duration.ofDays(7);
+    public static Duration provideBrdaInterval() {
+      return Duration.ofDays(7);
     }
 
     /**
@@ -315,8 +315,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("publishDnsUpdatesLockDuration")
-    public static java.time.Duration providePublishDnsUpdatesLockDuration() {
-      return java.time.Duration.ofMinutes(3);
+    public static Duration providePublishDnsUpdatesLockDuration() {
+      return Duration.ofMinutes(3);
     }
 
     /**
@@ -343,8 +343,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("readDnsRefreshRequestsActionRuntime")
-    public static java.time.Duration provideReadDnsRefreshRequestsRuntime() {
-      return java.time.Duration.ofSeconds(45);
+    public static Duration provideReadDnsRefreshRequestsRuntime() {
+      return Duration.ofSeconds(45);
     }
 
     /**
@@ -354,8 +354,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("dnsDefaultATtl")
-    public static java.time.Duration provideDnsDefaultATtl() {
-      return java.time.Duration.ofHours(1);
+    public static Duration provideDnsDefaultATtl() {
+      return Duration.ofHours(1);
     }
 
     /**
@@ -365,8 +365,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("dnsDefaultNsTtl")
-    public static java.time.Duration provideDnsDefaultNsTtl() {
-      return java.time.Duration.ofHours(3);
+    public static Duration provideDnsDefaultNsTtl() {
+      return Duration.ofHours(3);
     }
 
     /**
@@ -376,8 +376,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("dnsDefaultDsTtl")
-    public static java.time.Duration provideDnsDefaultDsTtl() {
-      return java.time.Duration.ofHours(1);
+    public static Duration provideDnsDefaultDsTtl() {
+      return Duration.ofHours(1);
     }
 
     @Provides
@@ -757,8 +757,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("rdeInterval")
-    public static java.time.Duration provideRdeInterval() {
-      return java.time.Duration.ofDays(1);
+    public static Duration provideRdeInterval() {
+      return Duration.ofDays(1);
     }
 
     /**
@@ -768,8 +768,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("rdeReportLockTimeout")
-    public static java.time.Duration provideRdeReportLockTimeout() {
-      return java.time.Duration.ofMinutes(1);
+    public static Duration provideRdeReportLockTimeout() {
+      return Duration.ofMinutes(1);
     }
 
     /**
@@ -792,8 +792,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("rdeUploadLockTimeout")
-    public static java.time.Duration provideRdeUploadLockTimeout() {
-      return java.time.Duration.ofMinutes(30);
+    public static Duration provideRdeUploadLockTimeout() {
+      return Duration.ofMinutes(30);
     }
 
     /**
@@ -805,8 +805,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("rdeUploadSftpCooldown")
-    public static java.time.Duration provideRdeUploadSftpCooldown() {
-      return java.time.Duration.ofHours(2);
+    public static Duration provideRdeUploadSftpCooldown() {
+      return Duration.ofHours(2);
     }
 
     /**
@@ -841,8 +841,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("sheetLockTimeout")
-    public static java.time.Duration provideSheetLockTimeout() {
-      return java.time.Duration.ofHours(1);
+    public static Duration provideSheetLockTimeout() {
+      return Duration.ofHours(1);
     }
 
     /**
@@ -865,8 +865,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("emailThrottleDuration")
-    public static java.time.Duration provideEmailThrottleSeconds(RegistryConfigSettings config) {
-      return java.time.Duration.ofSeconds(config.misc.emailThrottleSeconds);
+    public static Duration provideEmailThrottleSeconds(RegistryConfigSettings config) {
+      return Duration.ofSeconds(config.misc.emailThrottleSeconds);
     }
 
     /**
@@ -946,8 +946,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("sshTimeout")
-    public static java.time.Duration provideSshTimeout() {
-      return java.time.Duration.ofSeconds(30);
+    public static Duration provideSshTimeout() {
+      return Duration.ofSeconds(30);
     }
 
     /**
@@ -957,8 +957,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("transactionCooldown")
-    public static java.time.Duration provideTransactionCooldown() {
-      return java.time.Duration.ofMinutes(5);
+    public static Duration provideTransactionCooldown() {
+      return Duration.ofMinutes(5);
     }
 
     /**
@@ -1034,7 +1034,7 @@ public final class RegistryConfig {
     @Provides
     @Config("metricsWriteInterval")
     public static Duration provideMetricsWriteInterval(RegistryConfigSettings config) {
-      return Duration.standardSeconds(config.monitoring.writeIntervalSeconds);
+      return Duration.ofSeconds(config.monitoring.writeIntervalSeconds);
     }
 
     /**
@@ -1148,8 +1148,8 @@ public final class RegistryConfig {
 
     @Provides
     @Config("tokenRefreshDelay")
-    public static java.time.Duration provideTokenRefreshDelay(RegistryConfigSettings config) {
-      return java.time.Duration.ofSeconds(config.credentialOAuth.tokenRefreshDelaySeconds);
+    public static Duration provideTokenRefreshDelay(RegistryConfigSettings config) {
+      return Duration.ofSeconds(config.credentialOAuth.tokenRefreshDelaySeconds);
     }
 
     /** OAuth client ID used by the nomulus tool. */
@@ -1186,28 +1186,28 @@ public final class RegistryConfig {
 
     @Provides
     @Config("maxValidityDaysSchedule")
-    public static ImmutableSortedMap<DateTime, Integer> provideValidityDaysMap(
+    public static ImmutableSortedMap<Instant, Integer> provideValidityDaysMap(
         RegistryConfigSettings config) {
       return config.sslCertificateValidation.maxValidityDaysSchedule.entrySet().stream()
           .collect(
               toImmutableSortedMap(
                   naturalOrder(),
                   e ->
-                      "START_OF_TIME".equals(e.getKey())
-                          ? START_OF_TIME
-                          : DateTime.parse(e.getKey()),
+                      "START_INSTANT".equals(e.getKey())
+                          ? START_INSTANT
+                          : Instant.parse(e.getKey()),
                   Entry::getValue));
     }
 
     @Provides
     @Config("expirationWarningDays")
-    public static int provideExpirationWarningDays(RegistryConfigSettings config) {
+    public static long provideExpirationWarningDays(RegistryConfigSettings config) {
       return config.sslCertificateValidation.expirationWarningDays;
     }
 
     @Provides
     @Config("expirationWarningIntervalDays")
-    public static int provideExpirationWarningIntervalDays(RegistryConfigSettings config) {
+    public static long provideExpirationWarningIntervalDays(RegistryConfigSettings config) {
       return config.sslCertificateValidation.expirationWarningIntervalDays;
     }
 
@@ -1327,15 +1327,15 @@ public final class RegistryConfig {
 
     @Provides
     @Config("bsaLockLeaseExpiry")
-    public static java.time.Duration provideBsaLockLeaseExpiry(RegistryConfigSettings config) {
-      return java.time.Duration.ofMinutes(config.bsa.bsaLockLeaseExpiryMinutes);
+    public static Duration provideBsaLockLeaseExpiry(RegistryConfigSettings config) {
+      return Duration.ofMinutes(config.bsa.bsaLockLeaseExpiryMinutes);
     }
 
     /** Returns the desired interval between successive BSA downloads. */
     @Provides
     @Config("bsaDownloadInterval")
-    public static java.time.Duration provideBsaDownloadInterval(RegistryConfigSettings config) {
-      return java.time.Duration.ofMinutes(config.bsa.bsaDownloadIntervalMinutes);
+    public static Duration provideBsaDownloadInterval(RegistryConfigSettings config) {
+      return Duration.ofMinutes(config.bsa.bsaDownloadIntervalMinutes);
     }
 
     /**
@@ -1344,8 +1344,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("bsaMaxNopInterval")
-    public static java.time.Duration provideBsaMaxNopInterval(RegistryConfigSettings config) {
-      return java.time.Duration.ofHours(config.bsa.bsaMaxNopIntervalHours);
+    public static Duration provideBsaMaxNopInterval(RegistryConfigSettings config) {
+      return Duration.ofHours(config.bsa.bsaMaxNopIntervalHours);
     }
 
     @Provides
@@ -1356,16 +1356,14 @@ public final class RegistryConfig {
 
     @Provides
     @Config("domainCreateTxnCommitTimeLag")
-    public static java.time.Duration provideDomainCreateTxnCommitTimeLag(
-        RegistryConfigSettings config) {
-      return java.time.Duration.ofSeconds(config.bsa.domainCreateTxnCommitTimeLagSeconds);
+    public static Duration provideDomainCreateTxnCommitTimeLag(RegistryConfigSettings config) {
+      return Duration.ofSeconds(config.bsa.domainCreateTxnCommitTimeLagSeconds);
     }
 
     @Provides
     @Config("bsaValidationMaxStaleness")
-    public static java.time.Duration provideBsaValidationMaxStaleness(
-        RegistryConfigSettings config) {
-      return java.time.Duration.ofSeconds(config.bsa.bsaValidationMaxStalenessSeconds);
+    public static Duration provideBsaValidationMaxStaleness(RegistryConfigSettings config) {
+      return Duration.ofSeconds(config.bsa.bsaValidationMaxStalenessSeconds);
     }
 
     @Provides
@@ -1376,8 +1374,8 @@ public final class RegistryConfig {
 
     @Provides
     @Config("bsaAuthTokenExpiry")
-    public static java.time.Duration provideBsaAuthTokenExpiry(RegistryConfigSettings config) {
-      return java.time.Duration.ofSeconds(config.bsa.authTokenExpirySeconds);
+    public static Duration provideBsaAuthTokenExpiry(RegistryConfigSettings config) {
+      return Duration.ofSeconds(config.bsa.authTokenExpirySeconds);
     }
 
     @Provides
@@ -1490,8 +1488,8 @@ public final class RegistryConfig {
    *
    * @see google.registry.tools.server.GenerateZoneFilesAction
    */
-  public static java.time.Duration getDatabaseRetention() {
-    return java.time.Duration.ofDays(30);
+  public static Duration getDatabaseRetention() {
+    return Duration.ofDays(30);
   }
 
   public static boolean areServersLocal() {
@@ -1507,8 +1505,8 @@ public final class RegistryConfig {
   }
 
   /** Returns the amount of time a singleton should be cached, before expiring. */
-  public static java.time.Duration getSingletonCacheRefreshDuration() {
-    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.singletonCacheRefreshSeconds);
+  public static Duration getSingletonCacheRefreshDuration() {
+    return Duration.ofSeconds(CONFIG_SETTINGS.get().caching.singletonCacheRefreshSeconds);
   }
 
   /**
@@ -1517,13 +1515,13 @@ public final class RegistryConfig {
    * @see google.registry.model.tld.label.ReservedList
    * @see google.registry.model.tld.label.PremiumList
    */
-  public static java.time.Duration getDomainLabelListCacheDuration() {
-    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.domainLabelCachingSeconds);
+  public static Duration getDomainLabelListCacheDuration() {
+    return Duration.ofSeconds(CONFIG_SETTINGS.get().caching.domainLabelCachingSeconds);
   }
 
   /** Returns the amount of time a singleton should be cached in persist mode, before expiring. */
-  public static java.time.Duration getSingletonCachePersistDuration() {
-    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.singletonCachePersistSeconds);
+  public static Duration getSingletonCachePersistDuration() {
+    return Duration.ofSeconds(CONFIG_SETTINGS.get().caching.singletonCachePersistSeconds);
   }
 
   /**
@@ -1545,8 +1543,8 @@ public final class RegistryConfig {
   /**
    * Returns the amount of time an EPP resource or key should be cached in memory before expiring.
    */
-  public static java.time.Duration getEppResourceCachingDuration() {
-    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.eppResourceCachingSeconds);
+  public static Duration getEppResourceCachingDuration() {
+    return Duration.ofSeconds(CONFIG_SETTINGS.get().caching.eppResourceCachingSeconds);
   }
 
   /** Returns the maximum number of EPP resources and keys to keep in in-memory cache. */
@@ -1555,8 +1553,8 @@ public final class RegistryConfig {
   }
 
   /** Returns the amount of time that a particular claims list should be cached. */
-  public static java.time.Duration getClaimsListCacheDuration() {
-    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.claimsListCachingSeconds);
+  public static Duration getClaimsListCacheDuration() {
+    return Duration.ofSeconds(CONFIG_SETTINGS.get().caching.claimsListCachingSeconds);
   }
 
   /** Returns the email address that outgoing emails from the app are sent from. */

@@ -23,7 +23,7 @@ import static google.registry.flows.certs.CertificateChecker.CertificateViolatio
 import static google.registry.flows.certs.CertificateChecker.CertificateViolation.VALIDITY_LENGTH_TOO_LONG;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -36,8 +36,8 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
+import java.time.Instant;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CertificateChecker} */
@@ -48,7 +48,7 @@ class CertificateCheckerTest {
   private FakeClock fakeClock = new FakeClock();
   private CertificateChecker certificateChecker =
       new CertificateChecker(
-          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          ImmutableSortedMap.of(START_INSTANT, 825, Instant.parse("2020-09-01T00:00:00Z"), 398),
           30,
           15,
           2048,
@@ -57,19 +57,19 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCertificate_compliantCertPasses() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
   }
 
   @Test
   void test_checkCertificate_severalViolations() throws Exception {
-    fakeClock.setTo(DateTime.parse("2010-01-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2010-01-01T00:00:00Z"));
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
     keyGen.initialize(1024, new SecureRandom());
 
@@ -77,8 +77,8 @@ class CertificateCheckerTest {
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.parse("2010-04-01T00:00:00Z"),
-                DateTime.parse("2014-07-01T00:00:00Z"))
+                Instant.parse("2010-04-01T00:00:00Z"),
+                Instant.parse("2014-07-01T00:00:00Z"))
             .cert();
 
     assertThat(certificateChecker.checkCertificate(certificate))
@@ -87,36 +87,36 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCertificate_expiredCertificate() throws Exception {
-    fakeClock.setTo(DateTime.parse("2014-01-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2014-01-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2010-04-01T00:00:00Z"),
-                DateTime.parse("2012-07-01T00:00:00Z"))
+                Instant.parse("2010-04-01T00:00:00Z"),
+                Instant.parse("2012-07-01T00:00:00Z"))
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate)).containsExactly(EXPIRED);
   }
 
   @Test
   void test_checkCertificate_notYetValid() throws Exception {
-    fakeClock.setTo(DateTime.parse("2010-01-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2010-01-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2010-04-01T00:00:00Z"),
-                DateTime.parse("2012-07-01T00:00:00Z"))
+                Instant.parse("2010-04-01T00:00:00Z"),
+                Instant.parse("2012-07-01T00:00:00Z"))
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate)).containsExactly(NOT_YET_VALID);
   }
 
   @Test
   void test_checkCertificate_validityLengthWayTooLong() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2016-04-01T00:00:00Z"),
-                DateTime.parse("2021-07-01T00:00:00Z"))
+                Instant.parse("2016-04-01T00:00:00Z"),
+                Instant.parse("2021-07-01T00:00:00Z"))
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate))
         .containsExactly(VALIDITY_LENGTH_TOO_LONG);
@@ -124,12 +124,12 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCertificate_olderValidityLengthIssuedAfterCutoff() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2022-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2022-10-01T00:00:00Z"))
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate))
         .containsExactly(VALIDITY_LENGTH_TOO_LONG);
@@ -137,19 +137,19 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCertificate_olderValidityLengthIssuedBeforeCutoff() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2019-09-01T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2019-09-01T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
   }
 
   @Test
   void test_checkCertificate_rsaKeyLengthTooShort() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
     keyGen.initialize(1024, new SecureRandom());
 
@@ -157,8 +157,8 @@ class CertificateCheckerTest {
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
 
     assertThat(certificateChecker.checkCertificate(certificate))
@@ -167,7 +167,7 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCertificate_rsaKeyLengthLongerThanRequired() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
     keyGen.initialize(4096, new SecureRandom());
 
@@ -175,8 +175,8 @@ class CertificateCheckerTest {
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
 
     assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
@@ -184,7 +184,7 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCertificate_invalidAlgorithm() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA", new BouncyCastleProvider());
     keyGen.initialize(2048, new SecureRandom());
 
@@ -192,8 +192,8 @@ class CertificateCheckerTest {
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
 
     assertThat(certificateChecker.checkCertificate(certificate))
@@ -202,7 +202,7 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCertificate_validCertificateString() {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     assertThat(certificateChecker.checkCertificate(SAMPLE_CERT3)).isEmpty();
     assertThat(certificateChecker.checkCertificate(SAMPLE_CERT))
         .containsExactly(VALIDITY_LENGTH_TOO_LONG);
@@ -210,7 +210,7 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCertificate_invalidCertificateString() {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -232,8 +232,8 @@ class CertificateCheckerTest {
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
     assertThat(certificateChecker.getCertificate(certificateStr).equals(certificate)).isTrue();
@@ -244,8 +244,8 @@ class CertificateCheckerTest {
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     assertThat(
             certificateChecker.getCertificate(certificateChecker.serializeCertificate(certificate)))
@@ -254,43 +254,43 @@ class CertificateCheckerTest {
 
   @Test
   void test_shouldReceiveExpiringNotification_returnsFalse_greaterThan30() throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-07-20T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2021-07-20T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_OF_TIME, certificateStr))
+    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_INSTANT, certificateStr))
         .isFalse();
   }
 
   @Test
   void test_shouldReceiveExpiringNotification_returnsFalse_hasExpired() throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-10-20T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2021-10-20T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_OF_TIME, certificateStr))
+    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_INSTANT, certificateStr))
         .isFalse();
   }
 
   @Test
   void test_shouldReceiveExpiringNotification_returnsTrue_on15days() throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-08-16T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2021-08-16T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-08-30T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-08-30T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    DateTime lastExpiringNotificationSentDate = DateTime.parse("2021-08-01T00:00:00Z");
+    Instant lastExpiringNotificationSentDate = Instant.parse("2021-08-01T00:00:00Z");
     assertThat(
             certificateChecker.shouldReceiveExpiringNotification(
                 lastExpiringNotificationSentDate, certificateStr))
@@ -299,15 +299,15 @@ class CertificateCheckerTest {
 
   @Test
   void test_shouldReceiveExpiringNotification_returnsTrue_on30days() throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-01-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2021-01-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-01-02T00:00:00Z"),
-                DateTime.parse("2021-01-30T00:00:00Z"))
+                Instant.parse("2020-01-02T00:00:00Z"),
+                Instant.parse("2021-01-30T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_OF_TIME, certificateStr))
+    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_INSTANT, certificateStr))
         .isTrue();
   }
 
@@ -315,15 +315,15 @@ class CertificateCheckerTest {
   void
       test_shouldReceiveExpiringNotification_returnsFalse_between30and15_lastSentDateIsNotStartOfTime()
           throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-07-05T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2021-07-05T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-06-02T00:00:00Z"),
-                DateTime.parse("2021-07-25T00:00:00Z"))
+                Instant.parse("2020-06-02T00:00:00Z"),
+                Instant.parse("2021-07-25T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    DateTime lastExpiringNotificationSentDate = DateTime.parse("2021-07-04T00:00:00Z");
+    Instant lastExpiringNotificationSentDate = Instant.parse("2021-07-04T00:00:00Z");
     assertThat(
             certificateChecker.shouldReceiveExpiringNotification(
                 lastExpiringNotificationSentDate, certificateStr))
@@ -333,15 +333,15 @@ class CertificateCheckerTest {
   @Test
   void test_shouldReceiveExpiringNotification_returnsTrue_between30and15_lastSentDateIsStartOfTime()
       throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-07-05T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2021-07-05T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-06-02T00:00:00Z"),
-                DateTime.parse("2021-07-25T00:00:00Z"))
+                Instant.parse("2020-06-02T00:00:00Z"),
+                Instant.parse("2021-07-25T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_OF_TIME, certificateStr))
+    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_INSTANT, certificateStr))
         .isTrue();
   }
 
@@ -349,15 +349,15 @@ class CertificateCheckerTest {
   void
       test_shouldReceiveExpiringNotification_returnsFalse_between15and0_lastSentDateBetween30and15_butLate()
           throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-07-05T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2021-07-05T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-06-02T00:00:00Z"),
-                DateTime.parse("2021-07-18T00:00:00Z"))
+                Instant.parse("2020-06-02T00:00:00Z"),
+                Instant.parse("2021-07-18T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    DateTime lastExpiringNotificationSentDate = DateTime.parse("2021-07-01T00:00:00Z");
+    Instant lastExpiringNotificationSentDate = Instant.parse("2021-07-01T00:00:00Z");
     // The first notification date is late and difference between now and
     // lastExpiringNotificationSentDate is within expirationWarningIntervalDays.
     assertThat(
@@ -369,15 +369,15 @@ class CertificateCheckerTest {
   @Test
   void test_shouldReceiveExpiringNotification_returnsTrue_between15and0_lastSentDateBetween30and15()
       throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-07-05T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2021-07-05T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.parse("2020-06-02T00:00:00Z"),
-                DateTime.parse("2021-07-18T00:00:00Z"))
+                Instant.parse("2020-06-02T00:00:00Z"),
+                Instant.parse("2021-07-18T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    DateTime lastExpiringNotificationSentDate = DateTime.parse("2021-06-20T00:00:00Z");
+    Instant lastExpiringNotificationSentDate = Instant.parse("2021-06-20T00:00:00Z");
     assertThat(
             certificateChecker.shouldReceiveExpiringNotification(
                 lastExpiringNotificationSentDate, certificateStr))
@@ -399,7 +399,7 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCurveName_invalidCurve_returnsViolation() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     // Invalid curve
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
     AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
@@ -410,8 +410,8 @@ class CertificateCheckerTest {
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate))
         .containsExactly(INVALID_ECDSA_CURVE);
@@ -419,7 +419,7 @@ class CertificateCheckerTest {
 
   @Test
   void test_checkCurveName_p256Curve_returnsNoViolations() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     // valid P-256 curve
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
     AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
@@ -430,15 +430,15 @@ class CertificateCheckerTest {
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
   }
 
   @Test
   void test_checkCurveName_p384Curve_returnsNoViolations() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     // valid P-384 curve
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
     AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
@@ -449,8 +449,8 @@ class CertificateCheckerTest {
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
+                Instant.parse("2020-09-02T00:00:00Z"),
+                Instant.parse("2021-10-01T00:00:00Z"))
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
   }

@@ -17,7 +17,6 @@ package google.registry.flows;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -38,9 +37,9 @@ import google.registry.testing.TestCacheExtension;
 import google.registry.util.JdkLoggerConfig;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.logging.Level;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -69,20 +68,20 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   }
 
   @Nullable
-  protected R reloadResourceByForeignKey(DateTime now) throws Exception {
+  protected R reloadResourceByForeignKey(Instant now) throws Exception {
     return ForeignKeyUtils.loadResource(getResourceClass(), getUniqueIdFromCommand(), now)
         .orElse(null);
   }
 
   @Nullable
   protected R reloadResourceByForeignKey() throws Exception {
-    return reloadResourceByForeignKey(clock.nowUtc());
+    return reloadResourceByForeignKey(clock.now());
   }
 
-  protected <T extends EppResource> T reloadResourceAndCloneAtTime(T resource, DateTime now) {
+  protected <T extends EppResource> T reloadResourceAndCloneAtTime(T resource, Instant now) {
     @SuppressWarnings("unchecked")
     T refreshedResource =
-        (T) tm().transact(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(toInstant(now));
+        (T) tm().transact(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);
     return refreshedResource;
   }
 

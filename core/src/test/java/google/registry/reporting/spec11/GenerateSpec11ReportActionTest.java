@@ -15,8 +15,8 @@
 package google.registry.reporting.spec11;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.util.DateTimeUtils.toLocalDate;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static java.time.ZoneOffset.UTC;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +29,7 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +50,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            clock.now().atZone(UTC).toLocalDate(),
+            toLocalDate(clock.now()),
             true,
             clock,
             response,
@@ -72,7 +73,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            clock.now().atZone(UTC).toLocalDate(),
+            toLocalDate(clock.now()),
             true,
             clock,
             response,
@@ -90,7 +91,8 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             .method(HttpMethod.POST)
             .param("jobId", "jobid")
             .param("date", "2018-06-11")
-            .scheduleTime(clock.nowUtc().plusMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
+            .scheduleTime(
+                clock.now().plus(Duration.ofMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES))));
   }
 
   @Test
@@ -102,7 +104,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            clock.now().atZone(UTC).toLocalDate(),
+            toLocalDate(clock.now()),
             false,
             clock,
             response,

@@ -15,13 +15,13 @@
 package google.registry.security;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.base.Splitter;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.Duration;
+import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -34,7 +34,7 @@ class XsrfTokenManagerTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final String email = "test@example.com";
-  private final FakeClock clock = new FakeClock(START_OF_TIME);
+  private final FakeClock clock = new FakeClock(START_INSTANT);
   private final XsrfTokenManager xsrfTokenManager = new XsrfTokenManager(clock);
 
   private String token;
@@ -66,7 +66,7 @@ class XsrfTokenManagerTest {
 
   @Test
   void testValidate_tokenExpiresAfterOneDay() {
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
     assertThat(xsrfTokenManager.validateToken(email, token)).isTrue();
     clock.advanceOneMilli();
     assertThat(xsrfTokenManager.validateToken(email, token)).isFalse();
@@ -75,7 +75,7 @@ class XsrfTokenManagerTest {
   @Test
   void testValidate_tokenTimestampTamperedWith() {
     String encodedPart = Splitter.on(':').splitToList(token).get(2);
-    long fakeTimestamp = clock.nowUtc().plusMillis(1).getMillis();
+    long fakeTimestamp = clock.now().plusMillis(1).toEpochMilli();
     assertThat(xsrfTokenManager.validateToken(email, "1:" + fakeTimestamp + ':' + encodedPart))
         .isFalse();
   }

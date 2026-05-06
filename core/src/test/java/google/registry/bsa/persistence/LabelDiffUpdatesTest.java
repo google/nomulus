@@ -74,7 +74,7 @@ class LabelDiffUpdatesTest {
             () ->
                 tm().put(
                         tld.asBuilder()
-                            .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
+                            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
                             .setIdnTables(ImmutableSet.of(UNCONFUSABLE_LATIN))
                             .build()));
     app = tm().transact(() -> tm().loadByEntity(tld));

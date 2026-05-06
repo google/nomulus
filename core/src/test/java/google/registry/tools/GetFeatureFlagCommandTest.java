@@ -20,7 +20,8 @@ import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.plusWeeks;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -30,14 +31,14 @@ import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureFlagNotFoundException;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetFeatureFlagCommand}. */
 public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCommand> {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01T00:00:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2000-01-01T00:00:00Z"));
 
   @BeforeEach
   void beforeEach() {
@@ -50,9 +51,9 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
         new FeatureFlag.Builder()
             .setFeatureName(TEST_FEATURE)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
-                    .put(clock.nowUtc().plusWeeks(8), ACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
+                    .put(plusWeeks(clock.now(), 8), ACTIVE)
                     .build())
             .build());
     runCommand("TEST_FEATURE");
@@ -71,19 +72,19 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
         new FeatureFlag.Builder()
             .setFeatureName(TEST_FEATURE)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
-                    .put(clock.nowUtc().plusWeeks(8), ACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
+                    .put(plusWeeks(clock.now(), 8), ACTIVE)
                     .build())
             .build());
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
-                    .put(clock.nowUtc().plusWeeks(3), ACTIVE)
-                    .put(clock.nowUtc().plusWeeks(6), INACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
+                    .put(plusWeeks(clock.now(), 3), ACTIVE)
+                    .put(plusWeeks(clock.now(), 6), INACTIVE)
                     .build())
             .build());
     runCommand("TEST_FEATURE", "MINIMUM_DATASET_CONTACTS_OPTIONAL");
@@ -117,9 +118,9 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
         new FeatureFlag.Builder()
             .setFeatureName(TEST_FEATURE)
             .setStatusMap(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
-                    .put(clock.nowUtc().plusWeeks(8), ACTIVE)
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
+                    .put(plusWeeks(clock.now(), 8), ACTIVE)
                     .build())
             .build());
     assertThrows(

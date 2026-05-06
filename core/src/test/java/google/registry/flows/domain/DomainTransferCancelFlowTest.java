@@ -32,9 +32,9 @@ import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusMonths;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -58,8 +58,8 @@ import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import java.time.Duration;
 import java.time.Instant;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -93,7 +93,7 @@ class DomainTransferCancelFlowTest
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("NewRegistrar")
             .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(END_INSTANT)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainTransferRequest)
             .build(),
@@ -150,7 +150,7 @@ class DomainTransferCancelFlowTest
     assertBillingEvents(
         getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_INSTANT).build());
     // The poll message (in the future) to the gaining registrar for implicit ack should be gone.
-    assertThat(getPollMessages("NewRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();
+    assertThat(getPollMessages("NewRegistrar", plusMonths(clock.now(), 1))).isEmpty();
     // The poll message in the future to the losing registrar should be gone too, but there should
     // be two at the current time to the losing registrar - one for the original autorenew event,
     // and another for the transfer being cancelled.
@@ -160,7 +160,7 @@ class DomainTransferCancelFlowTest
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
             .setEventTime(originalExpirationTime)
-            .setAutorenewEndTime(END_OF_TIME)
+            .setAutorenewEndTime(END_INSTANT)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL))
             .build(),
@@ -324,7 +324,7 @@ class DomainTransferCancelFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    deleteTestDomain(domain, clock.nowUtc());
+    deleteTestDomain(domain, clock.now());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_cancel.xml"));
@@ -378,8 +378,8 @@ class DomainTransferCancelFlowTest
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setAutomaticTransferLength(Duration.standardDays(2))
-            .setTransferGracePeriodLength(Duration.standardDays(3))
+            .setAutomaticTransferLength(Duration.ofDays(2))
+            .setTransferGracePeriodLength(Duration.ofDays(3))
             .build());
     DomainTransactionRecord previousSuccessRecord =
         DomainTransactionRecord.create("tld", plusDays(clock.now(), 1), TRANSFER_SUCCESSFUL, 1);

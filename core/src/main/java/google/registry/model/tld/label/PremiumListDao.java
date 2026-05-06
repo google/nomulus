@@ -131,8 +131,7 @@ public final class PremiumListDao {
     checkArgument(!inputData.isEmpty(), "New premium list data cannot be empty");
     tm().assertInTransaction();
     return save(
-        PremiumListUtils.parseToPremiumList(
-            name, currencyUnit, inputData, tm().getTransactionTime()));
+        PremiumListUtils.parseToPremiumList(name, currencyUnit, inputData, tm().getTxTime()));
   }
 
   /** Saves the given premium list (and its premium list entries) to Cloud SQL. */

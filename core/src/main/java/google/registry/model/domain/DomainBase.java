@@ -80,7 +80,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
@@ -495,8 +494,7 @@ public class DomainBase extends EppResource {
                     GracePeriodStatus.TRANSFER,
                     domain.getRepoId(),
                     transferExpirationTime.plus(
-                        Duration.ofMillis(
-                            Tld.get(domain.getTld()).getTransferGracePeriodLength().getMillis())),
+                        Tld.get(domain.getTld()).getTransferGracePeriodLength()),
                     transferData.getGainingRegistrarId(),
                     transferData.getServerApproveBillingEvent())));
       } else {
@@ -533,8 +531,7 @@ public class DomainBase extends EppResource {
               GracePeriod.createForRecurrence(
                   GracePeriodStatus.AUTO_RENEW,
                   domain.getRepoId(),
-                  lastAutorenewTime.plusMillis(
-                      Tld.get(domain.getTld()).getAutoRenewGracePeriodLength().getMillis()),
+                  lastAutorenewTime.plus(Tld.get(domain.getTld()).getAutoRenewGracePeriodLength()),
                   domain.getCurrentSponsorRegistrarId(),
                   domain.getAutorenewBillingEvent()));
       newLastEppUpdateTime = Optional.of(lastAutorenewTime);
@@ -782,7 +779,7 @@ public class DomainBase extends EppResource {
     /**
      * Sets the autorenew end time, or clears it if empty is passed.
      *
-     * <p>Note that {@link DateTimeUtils#END_OF_TIME} is used as a sentinel value in the database
+     * <p>Note that {@link DateTimeUtils#END_INSTANT} is used as a sentinel value in the database
      * representation to signify that autorenew doesn't end, and is mapped to empty here for the
      * purposes of more legible business logic.
      */

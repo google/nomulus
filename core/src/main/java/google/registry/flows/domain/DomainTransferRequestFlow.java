@@ -220,7 +220,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
                 domainTransferRequestSuperuserExtension ->
                     now.plus(
                         domainTransferRequestSuperuserExtension.getAutomaticTransferLength(), DAYS))
-            .orElseGet(() -> now.plusMillis(tld.getAutomaticTransferLength().getMillis()));
+            .orElseGet(() -> now.plus(tld.getAutomaticTransferLength()));
     // If the domain will be in the auto-renew grace period at the moment of transfer, the transfer
     // will subsume the autorenew, so we don't add the normal extra year from the transfer.
     // The gaining registrar is still billed for the extra year; the losing registrar will get a
@@ -368,8 +368,8 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
             ImmutableSet.of(
                 DomainTransactionRecord.create(
                     tld.getTldStr(),
-                    now.plusMillis(tld.getAutomaticTransferLength().getMillis())
-                        .plusMillis(tld.getTransferGracePeriodLength().getMillis()),
+                    now.plus(tld.getAutomaticTransferLength())
+                        .plus(tld.getTransferGracePeriodLength()),
                     TransactionReportField.TRANSFER_SUCCESSFUL,
                     1)))
         .build();

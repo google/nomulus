@@ -77,7 +77,7 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
                 case EPP -> handleEppPasswordReset(request);
                 case REGISTRY_LOCK -> handleRegistryLockPasswordReset(request);
               }
-              tm().put(request.asBuilder().setFulfillmentTime(tm().getTransactionTime()).build());
+              tm().put(request.asBuilder().setFulfillmentTime(tm().getTxTime()).build());
 
               finishAndPersistConsoleUpdateHistory(
                   new ConsoleUpdateHistory.Builder()

@@ -17,7 +17,7 @@ package google.registry.persistence.converter;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
@@ -28,8 +28,8 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExte
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import java.time.Instant;
 import org.hibernate.annotations.Type;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -40,15 +40,15 @@ class TldStateTransitionUserTypeTest {
   public final JpaUnitTestExtension jpa =
       new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
-  private static final ImmutableSortedMap<DateTime, TldState> values =
+  private static final ImmutableSortedMap<Instant, TldState> values =
       ImmutableSortedMap.of(
-          START_OF_TIME,
+          START_INSTANT,
           TldState.PREDELEGATION,
-          DateTime.parse("2001-01-01T00:00:00.0Z"),
+          Instant.parse("2001-01-01T00:00:00.0Z"),
           TldState.QUIET_PERIOD,
-          DateTime.parse("2002-01-01T00:00:00.0Z"),
+          Instant.parse("2002-01-01T00:00:00.0Z"),
           TldState.PDT,
-          DateTime.parse("2003-01-01T00:00:00.0Z"),
+          Instant.parse("2003-01-01T00:00:00.0Z"),
           TldState.GENERAL_AVAILABILITY);
 
   @Test

@@ -17,7 +17,6 @@ package google.registry.ui.server.console;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.console.ConsolePermission.DOWNLOAD_DOMAINS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -32,9 +31,9 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import jakarta.persistence.TypedQuery;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Returns a (paginated) list of domains for a particular registrar. */
 @Action(
@@ -54,7 +53,7 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
   private static final String ORDER_BY_STATEMENT = " ORDER BY creationTime DESC";
 
   private final String registrarId;
-  private final Optional<DateTime> checkpointTime;
+  private final Optional<Instant> checkpointTime;
   private final int pageNumber;
   private final int resultsPerPage;
   private final Optional<Long> totalResults;
@@ -64,7 +63,7 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
   public ConsoleDomainListAction(
       ConsoleApiParams consoleApiParams,
       @Parameter("registrarId") String registrarId,
-      @Parameter("checkpointTime") Optional<DateTime> checkpointTime,
+      @Parameter("checkpointTime") Optional<Instant> checkpointTime,
       @Parameter("pageNumber") Optional<Integer> pageNumber,
       @Parameter("resultsPerPage") Optional<Integer> resultsPerPage,
       @Parameter("totalResults") Optional<Long> totalResults,
@@ -93,8 +92,8 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
 
     // We have to use a constant checkpoint time in order to have stable pagination, since domains
     // can be constantly created or deleted
-    DateTime checkpoint = checkpointTime.orElseGet(tm()::getTransactionTime);
-    CreateAutoTimestamp checkpointTimestamp = CreateAutoTimestamp.create(toInstant(checkpoint));
+    Instant checkpoint = checkpointTime.orElseGet(tm()::getTxTime);
+    CreateAutoTimestamp checkpointTimestamp = CreateAutoTimestamp.create(checkpoint);
     // Don't compute the number of total results over and over if we don't need to
     long actualTotalResults =
         totalResults.orElseGet(
@@ -102,13 +101,13 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
                 createCountQuery()
                     .setParameter("registrarId", registrarId)
                     .setParameter("createdBeforeTime", checkpointTimestamp)
-                    .setParameter("deletedAfterTime", toInstant(checkpoint))
+                    .setParameter("deletedAfterTime", checkpoint)
                     .getSingleResult());
     List<Domain> domains =
         createDomainQuery()
             .setParameter("registrarId", registrarId)
             .setParameter("createdBeforeTime", checkpointTimestamp)
-            .setParameter("deletedAfterTime", toInstant(checkpoint))
+            .setParameter("deletedAfterTime", checkpoint)
             .setFirstResult(numResultsToSkip)
             .setMaxResults(resultsPerPage)
             .getResultList();
@@ -146,10 +145,10 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
   @VisibleForTesting
   static final class DomainListResult {
     @Expose List<Domain> domains;
-    @Expose DateTime checkpointTime;
+    @Expose Instant checkpointTime;
     @Expose long totalResults;
 
-    private DomainListResult(List<Domain> domains, DateTime checkpointTime, long totalResults) {
+    private DomainListResult(List<Domain> domains, Instant checkpointTime, long totalResults) {
       this.domains = domains;
       this.checkpointTime = checkpointTime;
       this.totalResults = totalResults;

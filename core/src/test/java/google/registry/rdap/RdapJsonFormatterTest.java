@@ -27,6 +27,7 @@ import static google.registry.testing.GsonSubject.assertAboutJson;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
+import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 
@@ -52,7 +53,6 @@ import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.FakeClock;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -64,7 +64,7 @@ class RdapJsonFormatterTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("1999-01-01T00:00:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("1999-01-01T00:00:00Z"));
 
   private RdapJsonFormatter rdapJsonFormatter;
 
@@ -85,44 +85,44 @@ class RdapJsonFormatterTest {
         RdapAuthorization.create(RdapAuthorization.Role.REGISTRAR, "unicoderegistrar");
 
     // Create the registrar in 1999, then update it in 2000.
-    clock.setTo(DateTime.parse("1999-01-01T00:00:00Z"));
+    clock.setTo(Instant.parse("1999-01-01T00:00:00Z"));
     createTld("xn--q9jyb4c");
     registrar = persistResource(makeRegistrar("unicoderegistrar", "みんな", Registrar.State.ACTIVE));
-    clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
     registrar = persistResource(registrar);
 
     persistResources(makeMoreRegistrarPocs(registrar));
 
     hostIpv4 =
         makeAndPersistHost(
-            "ns1.cat.みんな", "1.2.3.4", null, clock.nowUtc().minusYears(1), "unicoderegistrar");
+            "ns1.cat.みんな", "1.2.3.4", null, minusYears(clock.now(), 1), "unicoderegistrar");
     hostIpv6 =
         makeAndPersistHost(
             "ns2.cat.みんな",
             "bad:f00d:cafe:0:0:0:15:beef",
             null,
-            clock.nowUtc().minusYears(2),
+            minusYears(clock.now(), 2),
             "unicoderegistrar");
     hostBoth =
         makeAndPersistHost(
             "ns3.cat.みんな",
             "1.2.3.4",
             "bad:f00d:cafe:0:0:0:15:beef",
-            clock.nowUtc().minusYears(3),
+            minusYears(clock.now(), 3),
             "unicoderegistrar");
     hostNoAddresses =
         makeAndPersistHost(
-            "ns4.cat.みんな", null, null, clock.nowUtc().minusYears(4), "unicoderegistrar");
+            "ns4.cat.みんな", null, null, minusYears(clock.now(), 4), "unicoderegistrar");
     hostNotLinked =
         makeAndPersistHost(
-            "ns5.cat.みんな", null, null, clock.nowUtc().minusYears(5), "unicoderegistrar");
+            "ns5.cat.みんな", null, null, minusYears(clock.now(), 5), "unicoderegistrar");
     // Create an unused domain that references hostBoth and hostNoAddresses so that
     // they will have "associated" (ie, StatusValue.LINKED) status.
     Domain dog = persistResource(makeDomain("dog.みんな", hostBoth, hostNoAddresses, registrar));
     hostSuperordinatePendingTransfer =
         persistResource(
             makeAndPersistHost(
-                    "ns1.dog.みんな", null, null, clock.nowUtc().minusYears(6), "unicoderegistrar")
+                    "ns1.dog.みんな", null, null, minusYears(clock.now(), 6), "unicoderegistrar")
                 .asBuilder()
                 .setSuperordinateDomain(
                     persistResource(
@@ -165,21 +165,21 @@ class RdapJsonFormatterTest {
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
-            clock.nowUtc().minusMonths(3)));
+            minusMonths(clock.now(), 3)));
     persistResource(
         makeHistoryEntry(
             domainFull,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
-            clock.nowUtc().minusMonths(1)));
+            minusMonths(clock.now(), 1)));
     persistResource(
         makeHistoryEntry(
             domainFull,
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
-            clock.nowUtc().minusMonths(2)));
+            minusMonths(clock.now(), 2)));
     // We create a "transfer approved" entry for domainNoNameserversNoTransfers that happened
     // before the domain was created, to make sure we don't show it
     persistResource(
@@ -188,7 +188,7 @@ class RdapJsonFormatterTest {
             HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE,
             null,
             null,
-            clock.nowUtc().minusMonths(3)));
+            minusMonths(clock.now(), 3)));
   }
 
   static ImmutableList<RegistrarPoc> makeMoreRegistrarPocs(Registrar registrar) {

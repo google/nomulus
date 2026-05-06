@@ -78,11 +78,11 @@ public class TransactionManagerTest {
   }
 
   @Test
-  void getTransactionTime_throwsExceptionWhenNotInTransaction() {
-    assertThrows(IllegalStateException.class, () -> tm().getTransactionTime());
+  void getTxTime_throwsExceptionWhenNotInTransaction() {
+    assertThrows(IllegalStateException.class, () -> tm().getTxTime());
     fakeClock.disableAutoIncrement();
-    tm().transact(() -> assertThat(tm().getTransactionTime()).isEqualTo(fakeClock.nowUtc()));
-    assertThrows(IllegalStateException.class, () -> tm().getTransactionTime());
+    tm().transact(() -> assertThat(tm().getTxTime()).isEqualTo(fakeClock.now()));
+    assertThrows(IllegalStateException.class, () -> tm().getTxTime());
   }
 
   @Test

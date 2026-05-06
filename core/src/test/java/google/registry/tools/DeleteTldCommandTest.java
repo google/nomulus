@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldNotFoundException;
 import google.registry.model.tld.Tld.TldType;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -73,7 +73,7 @@ class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
 
   @Test
   void testFailure_whenDomainsArePresent() {
-    persistDeletedDomain("domain." + TLD_TEST, DateTime.parse("2000-01-01TZ"));
+    persistDeletedDomain("domain." + TLD_TEST, Instant.parse("2000-01-01T00:00:00Z"));
 
     assertThrows(IllegalStateException.class, () -> runCommandForced("--tld=" + TLD_TEST));
   }

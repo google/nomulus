@@ -15,34 +15,33 @@
 package google.registry.xml;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.joda.time.DateTimeZone.UTC;
 
+import google.registry.util.DateTimeUtils;
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 
 /**
- * Adapter to use Joda {@link LocalDate} when marshalling the XML Schema {@code date} type.
+ * Adapter to use java.time {@link LocalDate} when marshalling the XML Schema {@code date} type.
  *
  * <p>Dates are represented as midnight in UTC. The parser aims to be permissive in what it accepts.
  * Timestamps are converted to UTC if a zone is specified and then the time section is truncated.
- * This can lead to unexpected behavior, but it will be your fault.
  */
 public class DateAdapter extends XmlAdapter<String, LocalDate> {
 
-  /** @see ISODateTimeFormat#date */
-  private static final DateTimeFormatter MARSHAL_FORMAT = ISODateTimeFormat.date();
+  private static final DateTimeFormatter MARSHAL_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
 
-  /** @see ISODateTimeFormat#dateTimeParser */
-  private static final DateTimeFormatter UNMARSHAL_FORMAT = ISODateTimeFormat.dateTimeParser();
+  private static final DateTimeFormatter UNMARSHAL_FORMAT =
+      DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneOffset.UTC);
 
   /**
-   * Parses an ISO timestamp string into a UTC {@link LocalDate} object, converting timezones
-   * and truncating time to midnight if necessary. If {@code timestamp} is empty or {@code null}
-   * then {@code null} is returned.
+   * Parses an ISO timestamp string into a UTC {@link LocalDate} object, converting timezones and
+   * truncating time to midnight if necessary. If {@code timestamp} is empty or {@code null} then
+   * {@code null} is returned.
    */
   @Nullable
   @CheckForNull
@@ -51,18 +50,23 @@ public class DateAdapter extends XmlAdapter<String, LocalDate> {
     if (isNullOrEmpty(timestamp)) {
       return null;
     }
-    return UNMARSHAL_FORMAT.parseDateTime(timestamp).withZone(UTC).toLocalDate();
+    // If it's already just a date, parse it as such.
+    if (timestamp.length() == 10 && timestamp.chars().filter(c -> c == '-').count() == 2) {
+      return LocalDate.parse(timestamp);
+    }
+    // Otherwise, parse as a date-time and convert to UTC.
+    return DateTimeUtils.toLocalDate(OffsetDateTime.parse(timestamp, UNMARSHAL_FORMAT).toInstant());
   }
 
   /**
-   * Converts {@link LocalDate} to UTC and returns it as an RFC3339 string. If {@code timestamp}
-   * is {@code null} then an empty string is returned.
+   * Converts {@link LocalDate} to UTC and returns it as an RFC3339 string. If {@code timestamp} is
+   * {@code null} then an empty string is returned.
    */
   @Override
   public String marshal(@Nullable LocalDate date) {
     if (date == null) {
       return "";
     }
-    return MARSHAL_FORMAT.print(date.toDateTimeAtStartOfDay(UTC));
+    return MARSHAL_FORMAT.format(date);
   }
 }

@@ -19,7 +19,8 @@ import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.stripBillingEventId;
 import static google.registry.testing.TestDataHelper.loadFile;
-import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.formatInstant;
+import static google.registry.util.DateTimeUtils.plusMinutes;
 import static google.registry.xml.XmlTestUtils.assertXmlEqualsWithMessage;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -49,7 +50,6 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 public class EppTestCase {
 
@@ -81,27 +81,22 @@ public class EppTestCase {
   public class CommandAsserter {
     private final String inputFilename;
     @Nullable private final Map<String, String> inputSubstitutions;
-    private DateTime now;
+    private Instant now;
 
     private CommandAsserter(
         String inputFilename, @Nullable Map<String, String> inputSubstitutions) {
       this.inputFilename = inputFilename;
       this.inputSubstitutions = inputSubstitutions;
-      now = clock.nowUtc();
+      now = clock.now();
     }
 
-    public CommandAsserter atTime(DateTime now) {
+    public CommandAsserter atTime(Instant now) {
       this.now = now;
       return this;
     }
 
-    public CommandAsserter atTime(Instant now) {
-      this.now = toDateTime(now);
-      return this;
-    }
-
     public CommandAsserter atTime(String now) {
-      return atTime(DateTime.parse(now));
+      return atTime(Instant.parse(now));
     }
 
     public String hasResponse(String outputFilename) throws Exception {
@@ -115,14 +110,14 @@ public class EppTestCase {
     }
 
     public void hasSuccessfulLogin() throws Exception {
-      assertLoginCommandAndResponse(inputFilename, inputSubstitutions, null, clock.nowUtc());
+      assertLoginCommandAndResponse(inputFilename, inputSubstitutions, null, clock.now());
     }
 
     private void assertLoginCommandAndResponse(
         String inputFilename,
         @Nullable Map<String, String> inputSubstitutions,
         @Nullable Map<String, String> outputSubstitutions,
-        DateTime now)
+        Instant now)
         throws Exception {
       String outputFilename = "generic_success_response.xml";
       clock.setTo(now);
@@ -139,7 +134,7 @@ public class EppTestCase {
         @Nullable Map<String, String> inputSubstitutions,
         String outputFilename,
         @Nullable Map<String, String> outputSubstitutions,
-        DateTime now)
+        Instant now)
         throws Exception {
       clock.setTo(now);
       String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
@@ -201,11 +196,11 @@ public class EppTestCase {
 
   CommandAsserter assertThatLogin(String registrarId, String password) {
     return assertThatCommand("login.xml", ImmutableMap.of("CLID", registrarId, "PW", password))
-        .atTime(clock.nowUtc());
+        .atTime(clock.now());
   }
 
   protected void assertThatLoginSucceeds(String registrarId, String password) throws Exception {
-    assertThatLogin(registrarId, password).atTime(clock.nowUtc()).hasSuccessfulLogin();
+    assertThatLogin(registrarId, password).atTime(clock.now()).hasSuccessfulLogin();
   }
 
   protected void assertThatLogoutSucceeds() throws Exception {
@@ -232,21 +227,25 @@ public class EppTestCase {
 
   /** Create the two hosts. */
   void createHosts() throws Exception {
-    DateTime createTime = DateTime.parse("2000-06-01T00:00:00Z");
+    Instant createTime = Instant.parse("2000-06-01T00:00:00Z");
     assertThatCommand("host_create.xml", ImmutableMap.of("HOSTNAME", "ns1.example.external"))
-        .atTime(createTime.plusMinutes(2))
+        .atTime(plusMinutes(createTime, 2))
         .hasResponse(
             "host_create_response.xml",
             ImmutableMap.of(
-                "HOSTNAME", "ns1.example.external",
-                "CRDATE", createTime.plusMinutes(2).toString()));
+                "HOSTNAME",
+                "ns1.example.external",
+                "CRDATE",
+                formatInstant(plusMinutes(createTime, 2))));
     assertThatCommand("host_create.xml", ImmutableMap.of("HOSTNAME", "ns2.example.external"))
-        .atTime(createTime.plusMinutes(3))
+        .atTime(plusMinutes(createTime, 3))
         .hasResponse(
             "host_create_response.xml",
             ImmutableMap.of(
-                "HOSTNAME", "ns2.example.external",
-                "CRDATE", createTime.plusMinutes(3).toString()));
+                "HOSTNAME",
+                "ns2.example.external",
+                "CRDATE",
+                formatInstant(plusMinutes(createTime, 3))));
   }
 
   /** Creates the domain fakesite.example with two nameservers on it. */
@@ -294,8 +293,7 @@ public class EppTestCase {
         .setCost(Money.parse("USD 24.00"))
         .setPeriodYears(2)
         .setEventTime(createTime)
-        .setBillingTime(
-            createTime.plusMillis(Tld.get(domain.getTld()).getAddGracePeriodLength().getMillis()))
+        .setBillingTime(createTime.plus(Tld.get(domain.getTld()).getAddGracePeriodLength()))
         .setDomainHistory(
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
         .build();
@@ -310,8 +308,7 @@ public class EppTestCase {
         .setCost(Money.parse("USD 33.00"))
         .setPeriodYears(3)
         .setEventTime(renewTime)
-        .setBillingTime(
-            renewTime.plusMillis(Tld.get(domain.getTld()).getRenewGracePeriodLength().getMillis()))
+        .setBillingTime(renewTime.plus(Tld.get(domain.getTld()).getRenewGracePeriodLength()))
         .setDomainHistory(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
         .build();
   }
@@ -356,8 +353,7 @@ public class EppTestCase {
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
         .setBillingEvent(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
-        .setBillingTime(
-            createTime.plusMillis(Tld.get(domain.getTld()).getAddGracePeriodLength().getMillis()))
+        .setBillingTime(createTime.plus(Tld.get(domain.getTld()).getAddGracePeriodLength()))
         .setReason(Reason.CREATE)
         .setDomainHistory(
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))
@@ -372,8 +368,7 @@ public class EppTestCase {
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
         .setBillingEvent(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
-        .setBillingTime(
-            renewTime.plusMillis(Tld.get(domain.getTld()).getRenewGracePeriodLength().getMillis()))
+        .setBillingTime(renewTime.plus(Tld.get(domain.getTld()).getRenewGracePeriodLength()))
         .setReason(Reason.RENEW)
         .setDomainHistory(
             getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))

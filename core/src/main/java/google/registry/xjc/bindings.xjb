@@ -10,9 +10,9 @@
   <globalBindings generateElementClass="true">
     <xjc:simple/>
     <xjc:superClass name="google.registry.xjc.XjcObject"/>
-    <xjc:javaType name="org.joda.time.DateTime" xmlType="xsd:dateTime"
-                  adapter="google.registry.xml.UtcDateTimeAdapter"/>
-    <xjc:javaType name="org.joda.time.LocalDate" xmlType="xsd:date"
+    <xjc:javaType name="java.time.Instant" xmlType="xsd:dateTime"
+                  adapter="google.registry.xml.UtcInstantAdapter"/>
+    <xjc:javaType name="java.time.LocalDate" xmlType="xsd:date"
                   adapter="google.registry.xml.DateAdapter"/>
   </globalBindings>
   <bindings schemaLocation="epp.xsd" node="/xsd:schema">

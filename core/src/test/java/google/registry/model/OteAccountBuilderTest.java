@@ -45,14 +45,15 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import google.registry.testing.FakeClock;
 import google.registry.tools.IamClient;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SystemClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -63,6 +64,7 @@ public final class OteAccountBuilderTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
+  private final FakeClock fakeClock = new FakeClock(Instant.parse("2024-01-01T00:00:00Z"));
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
   private final IamClient iamClient = mock(IamClient.class);
 
@@ -81,19 +83,19 @@ public final class OteAccountBuilderTest {
     persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
   }
 
-  private static void assertTldExists(String tld, TldState tldState, Money eapFee) {
+  private void assertTldExists(String tld, TldState tldState, Money eapFee) {
     Tld registry = Tld.get(tld);
     assertThat(registry).isNotNull();
     assertThat(registry.getPremiumListName()).hasValue("default_sandbox_list");
     assertThat(registry.getTldStateTransitions()).containsExactly(START_INSTANT, tldState);
     assertThat(registry.getDnsWriters()).containsExactly("VoidDnsWriter");
-    assertThat(registry.getAddGracePeriodLength()).isEqualTo(Duration.standardHours(1));
-    assertThat(registry.getPendingDeleteLength()).isEqualTo(Duration.standardMinutes(5));
-    assertThat(registry.getRedemptionGracePeriodLength()).isEqualTo(Duration.standardMinutes(10));
+    assertThat(registry.getAddGracePeriodLength()).isEqualTo(Duration.ofHours(1));
+    assertThat(registry.getPendingDeleteLength()).isEqualTo(Duration.ofMinutes(5));
+    assertThat(registry.getRedemptionGracePeriodLength()).isEqualTo(Duration.ofMinutes(10));
     assertThat(registry.getCurrency()).isEqualTo(eapFee.getCurrencyUnit());
     // This uses "now" on purpose - so the test will break at 2022 when the current EapFee in OTE
     // goes back to 0
-    assertThat(registry.getEapFeeFor(Instant.now()).getCost()).isEqualTo(eapFee.getAmount());
+    assertThat(registry.getEapFeeFor(fakeClock.now()).getCost()).isEqualTo(eapFee.getAmount());
   }
 
   private static void assertRegistrarExists(String registrarId, String tld) {
@@ -215,7 +217,7 @@ public final class OteAccountBuilderTest {
   @Test
   void testCreateOteEntities_setCertificate() {
     OteAccountBuilder.forRegistrarId("myclientid")
-        .setCertificate(SAMPLE_CERT, new SystemClock().nowUtc())
+        .setCertificate(SAMPLE_CERT, new SystemClock().now())
         .buildAndPersist();
 
     assertThat(Registrar.loadByRegistrarId("myclientid-3").get().getClientCertificateHash())

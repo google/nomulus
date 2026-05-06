@@ -34,7 +34,7 @@ import static google.registry.flows.domain.token.AllocationTokenFlowUtils.maybeA
 import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verifyBulkTokenAllowedOnDomain;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toLocalDate;
 import static java.time.ZoneOffset.UTC;
 
 import com.google.common.collect.ImmutableList;
@@ -87,10 +87,10 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 
 /**
  * An EPP flow that renews a domain.
@@ -310,7 +310,7 @@ public final class DomainRenewFlow implements MutatingFlow {
             ImmutableSet.of(
                 DomainTransactionRecord.create(
                     newDomain.getTld(),
-                    now.plusMillis(renewGracePeriod.getMillis()),
+                    now.plus(renewGracePeriod),
                     TransactionReportField.netRenewsFieldFromYears(period.getValue()),
                     1)))
         .build();
@@ -335,7 +335,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     // If the date they specify doesn't match the expiration, fail. (This is an idempotence check).
     if (!command
         .getCurrentExpirationDate()
-        .equals(toDateTime(existingDomain.getRegistrationExpirationTime()).toLocalDate())) {
+        .equals(toLocalDate(existingDomain.getRegistrationExpirationTime()))) {
       throw new IncorrectCurrentExpirationDateException();
     }
   }
@@ -359,7 +359,7 @@ public final class DomainRenewFlow implements MutatingFlow {
                 .filter(t -> AllocationToken.TokenBehavior.DEFAULT.equals(t.getTokenBehavior()))
                 .map(AllocationToken::createVKey)
                 .orElse(null))
-        .setBillingTime(now.plusMillis(Tld.get(tld).getRenewGracePeriodLength().getMillis()))
+        .setBillingTime(now.plus(Tld.get(tld).getRenewGracePeriodLength()))
         .setDomainHistoryId(domainHistoryId)
         .build();
   }

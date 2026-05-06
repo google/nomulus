@@ -18,8 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createHistoryEntryForEppResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusMonths;
+import static google.registry.util.DateTimeUtils.minusYears;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -31,7 +34,7 @@ import google.registry.flows.poll.PollAckFlow.NotAuthorizedToAckMessageException
 import google.registry.model.domain.Domain;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DatabaseHelper;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +49,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   @BeforeEach
   void setUp() {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-2011"));
-    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
+    clock.setTo(Instant.parse("2011-01-02T01:01:01Z"));
     setRegistrarIdForFlow("NewRegistrar");
     createTld("example");
     domain = persistResource(DatabaseHelper.newDomain("test.example"));
@@ -57,18 +60,18 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
         new PollMessage.OneTime.Builder()
             .setId(messageId)
             .setRegistrarId(getRegistrarIdForFlow())
-            .setEventTime(clock.nowUtc().minusDays(1))
+            .setEventTime(minusDays(clock.now(), 1))
             .setMsg("Some poll message.")
             .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
   }
 
-  private void persistAutorenewPollMessage(DateTime eventTime, DateTime endTime) {
+  private void persistAutorenewPollMessage(Instant eventTime, Instant endTime) {
     persistResource(
         new PollMessage.Autorenew.Builder()
             .setId(MESSAGE_ID)
             .setRegistrarId(getRegistrarIdForFlow())
-            .setEventTime(toInstant(eventTime))
+            .setEventTime(eventTime)
             .setAutorenewEndTime(endTime)
             .setMsg("Domain was auto-renewed.")
             .setTargetId("example.com")
@@ -85,7 +88,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   @Test
   void testSuccess_recentActiveAutorenew() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-2010"));
-    persistAutorenewPollMessage(clock.nowUtc().minusMonths(6), END_OF_TIME);
+    persistAutorenewPollMessage(minusMonths(clock.now(), 6), END_INSTANT);
     assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
   }
@@ -93,7 +96,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   @Test
   void testSuccess_oldActiveAutorenew() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-2009"));
-    persistAutorenewPollMessage(clock.nowUtc().minusYears(2), END_OF_TIME);
+    persistAutorenewPollMessage(minusYears(clock.now(), 2), END_INSTANT);
     // Create three other messages to be queued for retrieval to get our count right, since the poll
     // ack response wants there to be 4 messages in the queue when the ack comes back.
     for (int i = 1; i < 4; i++) {
@@ -107,7 +110,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   @Test
   void testSuccess_oldInactiveAutorenew() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "3-2010"));
-    persistAutorenewPollMessage(clock.nowUtc().minusMonths(6), clock.nowUtc());
+    persistAutorenewPollMessage(minusMonths(clock.now(), 6), clock.now());
     assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
   }
@@ -164,7 +167,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
             .setRegistrarId("TheRegistrar")
-            .setEventTime(clock.nowUtc().minusDays(1))
+            .setEventTime(minusDays(clock.now(), 1))
             .setMsg("Some poll message.")
             .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());
@@ -178,7 +181,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
             .setRegistrarId(getRegistrarIdForFlow())
-            .setEventTime(clock.nowUtc().plusDays(1))
+            .setEventTime(plusDays(clock.now(), 1))
             .setMsg("Some poll message.")
             .setHistoryEntry(createHistoryEntryForEppResource(domain))
             .build());

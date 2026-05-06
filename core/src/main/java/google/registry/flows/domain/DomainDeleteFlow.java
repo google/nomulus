@@ -40,9 +40,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.union;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
-import static java.time.ZoneOffset.UTC;
+import static google.registry.util.DateTimeUtils.minusYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -101,14 +99,13 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.model.transfer.TransferStatus;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * An EPP flow that deletes a domain.
@@ -172,10 +169,9 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
         eppInput.getSingleExtension(DomainDeleteSuperuserExtension.class);
     if (domainDeleteSuperuserExtension.isPresent()) {
       redemptionGracePeriodLength =
-          Duration.standardDays(
-              domainDeleteSuperuserExtension.get().getRedemptionGracePeriodDays());
+          Duration.ofDays(domainDeleteSuperuserExtension.get().getRedemptionGracePeriodDays());
       pendingDeleteLength =
-          Duration.standardDays(domainDeleteSuperuserExtension.get().getPendingDeleteDays());
+          Duration.ofDays(domainDeleteSuperuserExtension.get().getPendingDeleteDays());
     }
     boolean inAddGracePeriod =
         existingDomain.getGracePeriodStatuses().contains(GracePeriodStatus.ADD);
@@ -188,11 +184,11 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
             : redemptionGracePeriodLength.plus(pendingDeleteLength);
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
-    Instant deletionTime = now.plusMillis(durationUntilDelete.getMillis());
+    Instant deletionTime = now.plus(durationUntilDelete);
     if (durationUntilDelete.equals(Duration.ZERO)) {
       builder.setDeletionTime(now).setStatusValues(null);
     } else {
-      Instant redemptionTime = now.plusMillis(redemptionGracePeriodLength.getMillis());
+      Instant redemptionTime = now.plus(redemptionGracePeriodLength);
       asyncTaskEnqueuer.enqueueAsyncResave(
           existingDomain.createVKey(), now, ImmutableSortedSet.of(redemptionTime, deletionTime));
       builder
@@ -217,7 +213,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     // Enqueue the deletion poll message if the delete is asynchronous or if requested by a
     // superuser (i.e. the registrar didn't request this delete and thus should be notified even if
     // it is synchronous).
-    if (durationUntilDelete.isLongerThan(Duration.ZERO) || isSuperuser) {
+    if (durationUntilDelete.compareTo(Duration.ZERO) > 0 || isSuperuser) {
       if (RegistryConfig.getNoPollMessageOnDeletionRegistrarIds()
           .contains(existingDomain.getCurrentSponsorRegistrarId())) {
         logger.atInfo().log(
@@ -233,7 +229,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
 
     // Send a second poll message immediately if the domain is being deleted asynchronously by a
     // registrar other than the sponsoring registrar (which will necessarily be a superuser).
-    if (durationUntilDelete.isLongerThan(Duration.ZERO)
+    if (durationUntilDelete.compareTo(Duration.ZERO) > 0
         && !registrarId.equals(existingDomain.getPersistedCurrentSponsorRegistrarId())) {
       entitiesToInsert.add(
           createImmediateDeletePollMessage(existingDomain, domainHistoryId, now, deletionTime));
@@ -250,12 +246,11 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
           // Take the amount of registration time being refunded off the expiration time.
           // This can be either add grace periods or renew grace periods.
           BillingEvent billingEvent = tm().loadByKey(gracePeriod.getBillingEvent());
-          newExpirationTime =
-              newExpirationTime.atZone(UTC).minusYears(billingEvent.getPeriodYears()).toInstant();
+          newExpirationTime = minusYears(newExpirationTime, billingEvent.getPeriodYears());
         } else if (gracePeriod.getBillingRecurrence() != null) {
           // Take 1 year off the registration if in the autorenew grace period (no need to load the
           // recurrence billing event; all autorenews are for 1 year).
-          newExpirationTime = newExpirationTime.atZone(UTC).minusYears(1).toInstant();
+          newExpirationTime = minusYears(newExpirationTime, 1);
         }
       }
     }
@@ -343,7 +338,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
               cancelledRecords,
               DomainTransactionRecord.create(
                   domain.getTld(),
-                  now.plusMillis(durationUntilDelete.getMillis()),
+                  now.plus(durationUntilDelete),
                   inAddGracePeriod
                       ? TransactionReportField.DELETED_DOMAINS_GRACE
                       : TransactionReportField.DELETED_DOMAINS_NOGRACE,
@@ -420,9 +415,9 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
       BillingRecurrence billingRecurrence, GracePeriod gracePeriod, Instant now) {
     if (gracePeriod.getType() == GracePeriodStatus.AUTO_RENEW) {
       // If we updated the autorenew billing event, reuse it.
-      DateTime autoRenewTime =
-          toDateTime(billingRecurrence.getRecurrenceTimeOfYear().getLastInstanceBeforeOrAt(now));
-      return getDomainRenewCost(targetId, toInstant(autoRenewTime), 1);
+      Instant autoRenewTime =
+          billingRecurrence.getRecurrenceTimeOfYear().getLastInstanceBeforeOrAt(now);
+      return getDomainRenewCost(targetId, autoRenewTime, 1);
     }
     return tm().loadByKey(checkNotNull(gracePeriod.getBillingEvent())).getCost();
   }

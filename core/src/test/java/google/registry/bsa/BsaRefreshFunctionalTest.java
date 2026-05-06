@@ -122,9 +122,7 @@ class BsaRefreshFunctionalTest {
         .forEach(
             tld ->
                 persistResource(
-                    tld.asBuilder()
-                        .setBsaEnrollStartTimeInstant(Optional.of(START_INSTANT))
-                        .build()));
+                    tld.asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build()));
 
     createReservedList(RESERVED_LIST_NAME, "dummy", RESERVED_FOR_SPECIFIC_USE);
     addReservedListsToTld("app", ImmutableList.of(RESERVED_LIST_NAME));
@@ -155,8 +153,8 @@ class BsaRefreshFunctionalTest {
 
   @Test
   void newRegisteredDomain_addedAsUnblockable() throws Exception {
-    persistActiveDomain("blocked1.dev", fakeClock.nowUtc());
-    persistActiveDomain("dummy.dev", fakeClock.nowUtc());
+    persistActiveDomain("blocked1.dev", fakeClock.now());
+    persistActiveDomain("dummy.dev", fakeClock.now());
     String jobName = getRefreshJobName(fakeClock.now());
     action.run();
     UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.dev", Reason.REGISTERED);
@@ -171,12 +169,12 @@ class BsaRefreshFunctionalTest {
 
   @Test
   void registeredUnblockable_unregistered() {
-    Domain domain = persistActiveDomain("blocked1.dev", fakeClock.nowUtc());
+    Domain domain = persistActiveDomain("blocked1.dev", fakeClock.now());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(new UnblockableDomain("blocked1.dev", Reason.REGISTERED));
     fakeClock.advanceOneMilli();
-    deleteTestDomain(domain, fakeClock.nowUtc());
+    deleteTestDomain(domain, fakeClock.now());
     fakeClock.advanceOneMilli();
 
     String jobName = getRefreshJobName(fakeClock.now());
@@ -219,12 +217,12 @@ class BsaRefreshFunctionalTest {
   void registeredAndReservedUnblockable_noLongerRegistered_stillUnblockable() throws Exception {
     addReservedDomainToList(
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
-    Domain domain = persistActiveDomain("blocked1.app", fakeClock.nowUtc());
+    Domain domain = persistActiveDomain("blocked1.app", fakeClock.now());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));
     fakeClock.advanceOneMilli();
-    deleteTestDomain(domain, fakeClock.nowUtc());
+    deleteTestDomain(domain, fakeClock.now());
     fakeClock.advanceOneMilli();
 
     String jobName = getRefreshJobName(fakeClock.now());
@@ -251,7 +249,7 @@ class BsaRefreshFunctionalTest {
     assertThat(queryUnblockableDomains())
         .containsExactly(new UnblockableDomain("blocked1.app", Reason.RESERVED));
     fakeClock.advanceOneMilli();
-    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
+    persistActiveDomain("blocked1.app", fakeClock.now());
     fakeClock.advanceOneMilli();
 
     Mockito.reset(bsaReportSender);
@@ -274,7 +272,7 @@ class BsaRefreshFunctionalTest {
   void newRegisteredAndReservedDomain_addedAsRegisteredUnblockable() throws Exception {
     addReservedDomainToList(
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
-    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
+    persistActiveDomain("blocked1.app", fakeClock.now());
     String jobName = getRefreshJobName(fakeClock.now());
     action.run();
     UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.app", Reason.REGISTERED);
@@ -287,7 +285,7 @@ class BsaRefreshFunctionalTest {
   void registeredAndReservedUnblockable_noLongerReserved_noChange() throws Exception {
     addReservedDomainToList(
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
-    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
+    persistActiveDomain("blocked1.app", fakeClock.now());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));
@@ -311,7 +309,7 @@ class BsaRefreshFunctionalTest {
 
   @Test
   void registeredUblockable_becomesReserved_noChange() throws Exception {
-    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
+    persistActiveDomain("blocked1.app", fakeClock.now());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));

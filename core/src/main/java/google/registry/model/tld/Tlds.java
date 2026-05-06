@@ -25,7 +25,6 @@ import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Joiner;
@@ -41,7 +40,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
 
 /** Utilities for finding and listing {@link Tld} entities. */
 public final class Tlds {
@@ -158,14 +156,5 @@ public final class Tlds {
   /** Returns true if at least one TLD is enrolled {@code now}. */
   public static boolean hasActiveBsaEnrollment(Instant now) {
     return getTldEntitiesOfType(TldType.REAL).stream().anyMatch(tld -> isEnrolledWithBsa(tld, now));
-  }
-
-  /**
-   * @deprecated Use {@link #hasActiveBsaEnrollment(Instant)}
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static boolean hasActiveBsaEnrollment(DateTime now) {
-    return hasActiveBsaEnrollment(toInstant(now));
   }
 }

@@ -168,8 +168,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                                 hasBulkToken ? null : existingBillingRecurrence)
                             .getRenewCost())
                     .setEventTime(now)
-                    .setBillingTime(
-                        now.plusMillis(Tld.get(tldStr).getTransferGracePeriodLength().getMillis()))
+                    .setBillingTime(now.plus(Tld.get(tldStr).getTransferGracePeriodLength()))
                     .setDomainHistoryId(domainHistoryId)
                     .build());
 
@@ -292,7 +291,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                 cancelingRecords,
                 DomainTransactionRecord.create(
                     newDomain.getTld(),
-                    now.plusMillis(tld.getTransferGracePeriodLength().getMillis()),
+                    now.plus(tld.getTransferGracePeriodLength()),
                     TRANSFER_SUCCESSFUL,
                     1)))
         .build();

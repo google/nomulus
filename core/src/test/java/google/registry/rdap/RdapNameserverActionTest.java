@@ -22,6 +22,7 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makePunycodedHo
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.GsonSubject.assertAboutJson;
 import static google.registry.util.DateTimeUtils.minusMonths;
+import static google.registry.util.DateTimeUtils.minusYears;
 import static org.mockito.Mockito.verify;
 
 import google.registry.model.registrar.Registrar;
@@ -45,17 +46,17 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
   void beforeEach() {
     // normal
     createTld("lol");
-    makeAndPersistHost("ns1.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1));
+    makeAndPersistHost("ns1.cat.lol", "1.2.3.4", minusYears(clock.now(), 1));
     // idn
     createTld("xn--q9jyb4c");
     makeAndPersistHost(
-        "ns1.cat.xn--q9jyb4c", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(1));
+        "ns1.cat.xn--q9jyb4c", "bad:f00d:cafe:0:0:0:15:beef", minusYears(clock.now(), 1));
     // multilevel
     createTld("1.tld");
-    makeAndPersistHost("ns1.domain.1.tld", "5.6.7.8", clock.nowUtc().minusYears(1));
+    makeAndPersistHost("ns1.domain.1.tld", "5.6.7.8", minusYears(clock.now(), 1));
     // deleted
     persistResource(
-        makeAndPersistHost("nsdeleted.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1))
+        makeAndPersistHost("nsdeleted.cat.lol", "1.2.3.4", minusYears(clock.now(), 1))
             .asBuilder()
             .setDeletionTime(minusMonths(clock.now(), 1))
             .build());
@@ -63,7 +64,7 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     persistResource(
         makeRegistrar("otherregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE, 102L));
     // external
-    makeAndPersistHost("ns1.domain.external", "9.10.11.12", clock.nowUtc().minusYears(1));
+    makeAndPersistHost("ns1.domain.external", "9.10.11.12", minusYears(clock.now(), 1));
   }
 
   @Test

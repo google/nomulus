@@ -83,6 +83,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
+import java.time.Duration;
 import java.time.Instant;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.Test;
@@ -116,8 +117,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
    */
   private Domain createDomainWithServerApprovedTransfer(String domainName) {
     Instant now = clock.now();
-    Instant requestTime =
-        minusDays(now, 1).minusMillis(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH.getMillis());
+    Instant requestTime = minusDays(now, 1).minus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
     Instant transferExpirationTime = minusDays(now, 1);
     return DatabaseHelper.newDomain(domainName)
         .asBuilder()
@@ -173,7 +173,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     assertThat(reloadResourceByForeignKey()).isNull();
     // However, it should load correctly if we use the new name (taken from the xml).
     Host renamedHost =
-        ForeignKeyUtils.loadResource(Host.class, "ns2.example.tld", clock.nowUtc()).get();
+        ForeignKeyUtils.loadResource(Host.class, "ns2.example.tld", clock.now()).get();
     assertAboutHosts()
         .that(renamedHost)
         .hasOnlyOneHistoryEntryWhich()
@@ -190,7 +190,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     Host renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
     assertHostDnsRequests("ns1.example.tld", "ns2.example.tld");
-    assertThat(ForeignKeyUtils.loadKey(Host.class, oldHostName(), clock.nowUtc())).isEmpty();
+    assertThat(ForeignKeyUtils.loadKey(Host.class, oldHostName(), clock.now())).isEmpty();
   }
 
   @Test
@@ -245,7 +245,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     sessionMetadata.setRegistrarId("NewRegistrar");
     setEppInput("host_update_name_unchanged.xml");
     createTld("tld");
-    // Create a domain that will belong to NewRegistrar after cloneProjectedAtInstant is called.
+    // Create a domain that will belong to NewRegistrar after cloneProjectedAtTime is called.
     Domain domain = persistResource(createDomainWithServerApprovedTransfer("example.tld"));
     Host oldHost = persistActiveSubordinateHost(oldHostName(), domain);
     clock.advanceOneMilli();
@@ -906,7 +906,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
 
   @Test
   void testFailure_existedButWasDeleted() throws Exception {
-    persistDeletedHost(oldHostName(), clock.nowUtc().minusDays(1));
+    persistDeletedHost(oldHostName(), clock.now().minus(Duration.ofDays(1)));
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -1234,7 +1234,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
   void testSuccess_authorizedClientReadFromTransferredSuperordinate() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
-    // Create a domain that will belong to NewRegistrar after cloneProjectedAtInstant is called.
+    // Create a domain that will belong to NewRegistrar after cloneProjectedAtTime is called.
     Domain domain = persistResource(createDomainWithServerApprovedTransfer("example.tld"));
     persistResource(
         newHost("ns1.example.tld")
@@ -1252,7 +1252,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
   void testFailure_unauthorizedClientReadFromTransferredSuperordinate() {
     sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("tld");
-    // Create a domain that will belong to NewRegistrar after cloneProjectedAtInstant is called.
+    // Create a domain that will belong to NewRegistrar after cloneProjectedAtTime is called.
     Domain domain = persistResource(createDomainWithServerApprovedTransfer("example.tld"));
     persistResource(
         newHost("ns1.example.tld")
@@ -1293,7 +1293,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     createTld("foo");
     createTld("tld");
     Host host = persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.foo"));
-    // The domain will belong to NewRegistrar after cloneProjectedAtInstant is called.
+    // The domain will belong to NewRegistrar after cloneProjectedAtTime is called.
     Domain domain = persistResource(createDomainWithServerApprovedTransfer("example.tld"));
     assertAboutDomains().that(domain).hasPersistedCurrentSponsorRegistrarId("TheRegistrar");
     assertAboutHosts().that(host).hasPersistedCurrentSponsorRegistrarId("TheRegistrar");
@@ -1309,7 +1309,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("foo");
     createTld("tld");
-    // The domain will belong to NewRegistrar after cloneProjectedAtInstant is called.
+    // The domain will belong to NewRegistrar after cloneProjectedAtTime is called.
     Domain domain = persistResource(createDomainWithServerApprovedTransfer("example.tld"));
     Domain superordinate =
         persistResource(

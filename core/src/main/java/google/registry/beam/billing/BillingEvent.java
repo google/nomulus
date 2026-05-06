@@ -14,6 +14,7 @@
 
 package google.registry.beam.billing;
 
+import static google.registry.util.DateTimeUtils.toLocalDate;
 import static java.time.ZoneOffset.UTC;
 
 import com.google.common.base.Joiner;
@@ -23,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 import org.apache.beam.sdk.coders.AtomicCoder;
@@ -164,11 +164,10 @@ public record BillingEvent(
   /** Returns the grouping key for this {@code BillingEvent}, to generate the overall invoice. */
   InvoiceGroupingKey getInvoiceGroupingKey() {
     return new InvoiceGroupingKey(
-        ZonedDateTime.ofInstant(billingTime(), UTC).toLocalDate().withDayOfMonth(1).toString(),
+        toLocalDate(billingTime()).withDayOfMonth(1).toString(),
         years() == 0
             ? ""
-            : ZonedDateTime.ofInstant(billingTime(), UTC)
-                .toLocalDate()
+            : toLocalDate(billingTime())
                 .withDayOfMonth(1)
                 .plusYears(years())
                 .minusDays(1)

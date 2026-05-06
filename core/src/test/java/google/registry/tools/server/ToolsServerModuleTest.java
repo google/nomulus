@@ -21,8 +21,8 @@ import static org.mockito.Mockito.when;
 
 import google.registry.request.HttpException.BadRequestException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ToolsServerModule}. */
@@ -34,8 +34,8 @@ public class ToolsServerModuleTest {
   void test_provideDeletionTime() throws Exception {
     when(request.getParameter("activeOrDeletedSince")).thenReturn("1991-07-01T00:00:00Z");
 
-    DateTime expected = DateTime.parse("1991-07-01T00:00:00Z");
-    Optional<DateTime> dateTimeParam = ToolsServerModule.provideDeletionTime(request);
+    Instant expected = Instant.parse("1991-07-01T00:00:00Z");
+    Optional<Instant> dateTimeParam = ToolsServerModule.provideDeletionTime(request);
 
     assertThat(dateTimeParam).hasValue(expected);
   }

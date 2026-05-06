@@ -37,6 +37,7 @@ import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferStatus;
+import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -66,9 +67,9 @@ class DomainTransferQueryFlowTest
         getGainingClientAutorenewEvent(),
         getLosingClientAutorenewEvent());
     // Look in the future and make sure the poll messages for implicit ack are there.
-    assertThat(getPollMessages("NewRegistrar", clock.nowUtc().plusYears(1)))
+    assertThat(getPollMessages("NewRegistrar", clock.now().plus(Duration.ofDays(365))))
         .hasSize(numPollMessages);
-    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusYears(1))).hasSize(1);
+    assertThat(getPollMessages("TheRegistrar", clock.now().plus(Duration.ofDays(365)))).hasSize(1);
   }
 
   private void doFailingTest(String commandFilename) throws Exception {
@@ -215,7 +216,7 @@ class DomainTransferQueryFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    deleteTestDomain(domain, clock.nowUtc());
+    deleteTestDomain(domain, clock.now());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_query.xml"));

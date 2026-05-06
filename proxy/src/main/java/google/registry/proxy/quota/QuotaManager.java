@@ -15,10 +15,10 @@
 package google.registry.proxy.quota;
 
 import google.registry.proxy.quota.TokenStore.TimestampedInteger;
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import javax.annotation.concurrent.ThreadSafe;
-import org.joda.time.DateTime;
 
 /**
  * A thread-safe quota manager that schedules background refresh if necessary.
@@ -42,10 +42,10 @@ public class QuotaManager {
   public record QuotaRequest(String userId) {}
 
   /** Value class representing a quota response. */
-  public record QuotaResponse(boolean success, String userId, DateTime grantedTokenRefillTime) {}
+  public record QuotaResponse(boolean success, String userId, Instant grantedTokenRefillTime) {}
 
   /** Value class representing a quota rebate. */
-  public record QuotaRebate(String userId, DateTime grantedTokenRefillTime) {
+  public record QuotaRebate(String userId, Instant grantedTokenRefillTime) {
     public static QuotaRebate create(QuotaResponse response) {
       return new QuotaRebate(response.userId(), response.grantedTokenRefillTime());
     }

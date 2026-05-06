@@ -49,12 +49,11 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -70,7 +69,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
   @BeforeEach
   void beforeEach() {
-    fakeClock.setTo(DateTime.parse("2018-07-07TZ"));
+    fakeClock.setTo(Instant.parse("2018-07-07T00:00:00Z"));
     command.clock = fakeClock;
     command.passwordGenerator = passwordGenerator;
     command.maybeGroupEmailAddress = Optional.of("group@example.com");
@@ -88,9 +87,9 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     assertThat(registry.getTldState(Instant.now())).isEqualTo(tldState);
     assertThat(registry.getDnsWriters()).containsExactly("VoidDnsWriter");
     assertThat(registry.getPremiumListName()).hasValue("default_sandbox_list");
-    assertThat(registry.getAddGracePeriodLength()).isEqualTo(Duration.standardMinutes(60));
-    assertThat(registry.getRedemptionGracePeriodLength()).isEqualTo(Duration.standardMinutes(10));
-    assertThat(registry.getPendingDeleteLength()).isEqualTo(Duration.standardMinutes(5));
+    assertThat(registry.getAddGracePeriodLength()).isEqualTo(Duration.ofMinutes(60));
+    assertThat(registry.getRedemptionGracePeriodLength()).isEqualTo(Duration.ofMinutes(10));
+    assertThat(registry.getPendingDeleteLength()).isEqualTo(Duration.ofMinutes(5));
     ImmutableSortedMap<Instant, Money> eapFeeSchedule = registry.getEapFeeScheduleAsMap();
     if (!isEarlyAccess) {
       assertThat(eapFeeSchedule).isEqualTo(ImmutableSortedMap.of(START_INSTANT, Money.of(USD, 0)));

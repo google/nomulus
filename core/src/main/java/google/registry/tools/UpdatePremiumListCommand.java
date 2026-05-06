@@ -63,7 +63,7 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
     checkArgument(!inputData.isEmpty(), "New premium list data cannot be empty");
     currency = existingList.getCurrency();
     PremiumList updatedPremiumList =
-        PremiumListUtils.parseToPremiumList(name, currency, inputData, clock.nowUtc());
+        PremiumListUtils.parseToPremiumList(name, currency, inputData, clock.now());
     if (!existingList
         .getLabelsToPrices()
         .entrySet()

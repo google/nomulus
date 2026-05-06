@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.testing.TestLogHandlerUtils.findFirstLogMessageByPrefix;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -42,9 +42,9 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.util.JdkLoggerConfig;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -65,7 +65,7 @@ class FlowRunnerTest {
 
   private final CertificateChecker certificateChecker =
       new CertificateChecker(
-          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          ImmutableSortedMap.of(START_INSTANT, 825, Instant.parse("2020-09-01T00:00:00Z"), 398),
           30,
           15,
           2048,

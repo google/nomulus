@@ -17,8 +17,7 @@ package google.registry.flows;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static google.registry.util.DateTimeUtils.toInstant;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.X509Utils.getCertificateHash;
 
 import com.google.common.collect.ImmutableMap;
@@ -33,11 +32,12 @@ import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.SelfSignedCaCertificate;
 import java.io.StringWriter;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.bouncycastle.util.io.pem.PemWriter;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -56,7 +56,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   private final CertificateChecker certificateChecker =
       new CertificateChecker(
-          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          ImmutableSortedMap.of(START_INSTANT, 825, Instant.parse("2020-09-01T00:00:00Z"), 398),
           30,
           15,
           2048,
@@ -74,7 +74,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @BeforeEach
   void beforeEach() {
-    clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    clock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -100,7 +100,7 @@ class EppLoginTlsTest extends EppTestCase {
     setCredentials(SAMPLE_CERT3_HASH);
     // For TLS login, we also check the epp xml password.
     assertThatLogin("NewRegistrar", "incorrect")
-        .atTime(clock.nowUtc())
+        .atTime(clock.now())
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of("CODE", "2200", "MSG", "Registrar password is incorrect"));
@@ -114,7 +114,7 @@ class EppLoginTlsTest extends EppTestCase {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
     assertThatLogin("TheRegistrar", "password2")
-        .atTime(clock.nowUtc())
+        .atTime(clock.now())
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -153,12 +153,12 @@ class EppLoginTlsTest extends EppTestCase {
   @Test
   void testGoodPrimaryCertificate() throws Exception {
     setCredentials(SAMPLE_CERT3_HASH);
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, toInstant(now))
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, toInstant(now))
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, now)
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, now)
             .build());
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
   }
@@ -166,12 +166,12 @@ class EppLoginTlsTest extends EppTestCase {
   @Test
   void testGoodFailoverCertificate() throws Exception {
     setCredentials(SAMPLE_CERT3_HASH);
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT, toInstant(now))
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT3, toInstant(now))
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT, now)
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT3, now)
             .build());
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
   }
@@ -179,12 +179,12 @@ class EppLoginTlsTest extends EppTestCase {
   @Test
   void testMissingPrimaryCertificateButHasFailover_usesFailover() throws Exception {
     setCredentials(SAMPLE_CERT3_HASH);
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(null, toInstant(now))
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT3, toInstant(now))
+            .setClientCertificate(null, now)
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT3, now)
             .build());
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
   }
@@ -192,12 +192,12 @@ class EppLoginTlsTest extends EppTestCase {
   @Test
   void testRegistrarHasNoCertificatesOnFile_fails() throws Exception {
     setCredentials("laffo");
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(null, toInstant(now))
-            .setFailoverClientCertificate(null, toInstant(now))
+            .setClientCertificate(null, now)
+            .setFailoverClientCertificate(null, now)
             .build());
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
@@ -231,7 +231,9 @@ class EppLoginTlsTest extends EppTestCase {
   void testCertificateDoesNotMeetMultipleRequirements_fails() throws Exception {
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
-                "test", clock.nowUtc().minusDays(5000), clock.nowUtc().minusDays(100))
+                "test",
+                clock.now().minus(Duration.ofDays(5000)),
+                clock.now().minus(Duration.ofDays(100)))
             .cert();
 
     StringWriter sw = new StringWriter();

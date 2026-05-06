@@ -18,6 +18,7 @@ import static google.registry.model.eppoutput.CheckData.HostCheck.create;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -64,7 +65,7 @@ class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, Host> {
 
   @Test
   void testOneExistsButWasDeleted() throws Exception {
-    persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
+    persistDeletedHost("ns1.example.tld", minusDays(clock.now(), 1));
     // These ids come from the check xml.
     doCheckTest(
         create(true, "ns1.example.tld", null),

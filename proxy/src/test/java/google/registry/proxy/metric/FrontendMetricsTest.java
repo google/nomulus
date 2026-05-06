@@ -24,8 +24,8 @@ import com.google.common.collect.ImmutableSet;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.DefaultChannelId;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.time.Duration;
 import java.util.Random;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -97,9 +97,9 @@ class FrontendMetricsTest {
         .and()
         .hasNoOtherValues();
 
-    metrics.responseSent(PROTOCOL, CERT_HASH, Duration.millis(10));
-    metrics.responseSent(PROTOCOL, CERT_HASH, Duration.millis(8));
-    metrics.responseSent(PROTOCOL, CERT_HASH, Duration.millis(13));
+    metrics.responseSent(PROTOCOL, CERT_HASH, Duration.ofMillis(10));
+    metrics.responseSent(PROTOCOL, CERT_HASH, Duration.ofMillis(8));
+    metrics.responseSent(PROTOCOL, CERT_HASH, Duration.ofMillis(13));
 
     metrics.registerActiveConnection(PROTOCOL, CERT_HASH, channel3);
     assertThat(channel3.isActive()).isTrue();

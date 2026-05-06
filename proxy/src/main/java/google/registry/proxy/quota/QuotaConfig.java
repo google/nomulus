@@ -20,7 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import google.registry.proxy.ProxyConfig.Quota;
 import google.registry.proxy.ProxyConfig.Quota.QuotaGroup;
-import org.joda.time.Duration;
+import java.time.Duration;
 
 /** Value class that stores the quota configuration for a protocol. */
 public class QuotaConfig {
@@ -72,12 +72,12 @@ public class QuotaConfig {
 
   /** Returns the refill period for the given {@code userId}. */
   Duration getRefillPeriod(String userId) {
-    return Duration.standardSeconds(findQuotaGroup(userId).refillSeconds);
+    return Duration.ofSeconds(findQuotaGroup(userId).refillSeconds);
   }
 
   /** Returns the refresh period for this quota config. */
   Duration getRefreshPeriod() {
-    return Duration.standardSeconds(refreshSeconds);
+    return Duration.ofSeconds(refreshSeconds);
   }
 
   /** Returns the name of the protocol for which this quota config is made. */

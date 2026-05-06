@@ -208,14 +208,14 @@ class QueriesTest {
     createTlds("tld");
     persistNewRegistrar("TheRegistrar");
     // time 0:
-    persistActiveDomain("d1.tld", fakeClock.nowUtc());
+    persistActiveDomain("d1.tld", fakeClock.now());
     // time 0, deletion time 1
     persistDomainAsDeleted(
         newDomain("will-delete.tld").asBuilder().setCreationTimeForTest(fakeClock.now()).build(),
         fakeClock.now().plusMillis(1));
     fakeClock.advanceOneMilli();
     // time 1
-    persistActiveDomain("d2.tld", fakeClock.nowUtc());
+    persistActiveDomain("d2.tld", fakeClock.now());
     fakeClock.advanceOneMilli();
     // Now is time 2
     assertThat(
@@ -232,14 +232,14 @@ class QueriesTest {
     createTlds("tld");
     persistNewRegistrar("TheRegistrar");
     // time 0:
-    persistActiveDomain("d1.tld", fakeClock.nowUtc());
+    persistActiveDomain("d1.tld", fakeClock.now());
     // time 0, deletion time 1
     persistDomainAsDeleted(
         newDomain("will-delete.tld").asBuilder().setCreationTimeForTest(fakeClock.now()).build(),
         fakeClock.now().plusMillis(1));
     fakeClock.advanceOneMilli();
     // time 1
-    persistActiveDomain("d2.tld", fakeClock.nowUtc());
+    persistActiveDomain("d2.tld", fakeClock.now());
     fakeClock.advanceOneMilli();
     // Now is time 2, ask for domains created since time 1
     assertThat(
@@ -255,8 +255,8 @@ class QueriesTest {
     Instant testStartTime = fakeClock.now();
     createTlds("tld", "tld2");
     persistNewRegistrar("TheRegistrar");
-    persistActiveDomain("d1.tld", fakeClock.nowUtc());
-    persistActiveDomain("d2.tld2", fakeClock.nowUtc());
+    persistActiveDomain("d1.tld", fakeClock.now());
+    persistActiveDomain("d2.tld2", fakeClock.now());
     fakeClock.advanceOneMilli();
     assertThat(
             bsaQuery(
@@ -271,10 +271,10 @@ class QueriesTest {
     createTlds("tld", "tld2");
     persistNewRegistrar("TheRegistrar");
     Instant time1 = fakeClock.now();
-    persistActiveDomain("unblocked1.tld", fakeClock.nowUtc());
-    persistActiveDomain("unblocked2.tld2", fakeClock.nowUtc());
-    persistActiveDomain("label1.tld", fakeClock.nowUtc());
-    persistActiveDomain("label2.tld2", fakeClock.nowUtc());
+    persistActiveDomain("unblocked1.tld", fakeClock.now());
+    persistActiveDomain("unblocked2.tld2", fakeClock.now());
+    persistActiveDomain("label1.tld", fakeClock.now());
+    persistActiveDomain("label2.tld2", fakeClock.now());
     fakeClock.advanceOneMilli();
     Instant time2 = fakeClock.now();
     persistDomainAsDeleted(
@@ -283,7 +283,7 @@ class QueriesTest {
     // Deleted in the future
     persistDomainAsDeleted(
         newDomain("label3.tld2").asBuilder().setCreationTimeForTest(fakeClock.now()).build(),
-        fakeClock.nowUtc().plusHours(1));
+        plusHours(fakeClock.now(), 1));
     fakeClock.advanceOneMilli();
     assertThat(
             (ImmutableList<DomainLifeSpan>)

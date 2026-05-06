@@ -14,16 +14,13 @@
 
 package google.registry.testing;
 
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.joda.time.DateTimeZone.UTC;
-import static org.joda.time.Duration.millis;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import google.registry.util.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.concurrent.ThreadSafe;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.joda.time.ReadableDuration;
 import org.joda.time.ReadableInstant;
 
@@ -39,12 +36,13 @@ public final class FakeClock implements Clock {
 
   private volatile long autoIncrementStepMs;
 
-  /** Creates a FakeClock that starts at START_OF_TIME. */
+  /** Creates a FakeClock that starts at START_INSTANT. */
   public FakeClock() {
-    this(START_OF_TIME);
+    this(START_INSTANT);
   }
 
   /** Creates a FakeClock initialized to a specific time. */
+  @Deprecated
   public FakeClock(ReadableInstant startTime) {
     setTo(startTime);
   }
@@ -52,12 +50,6 @@ public final class FakeClock implements Clock {
   /** Creates a FakeClock initialized to a specific time. */
   public FakeClock(Instant startTime) {
     setTo(startTime);
-  }
-
-  /** Returns the current time. */
-  @Override
-  public DateTime nowUtc() {
-    return new DateTime(currentTimeMillis.addAndGet(autoIncrementStepMs), UTC);
   }
 
   @Override
@@ -74,27 +66,44 @@ public final class FakeClock implements Clock {
    * @param autoIncrementStep the new auto increment duration
    * @return this
    */
+  @Deprecated
   public FakeClock setAutoIncrementStep(ReadableDuration autoIncrementStep) {
     this.autoIncrementStepMs = autoIncrementStep.getMillis();
     return this;
   }
 
+  /**
+   * Sets the increment applied to the clock whenever it is queried. The increment is zero by
+   * default: the clock is left unchanged when queried.
+   *
+   * <p>Passing a duration of zero to this method effectively unsets the auto increment mode.
+   *
+   * @param autoIncrementStep the new auto increment duration
+   * @return this
+   */
+  public FakeClock setAutoIncrementStep(Duration autoIncrementStep) {
+    this.autoIncrementStepMs = autoIncrementStep.toMillis();
+    return this;
+  }
+
   /** Advances clock by one millisecond. */
   public void advanceOneMilli() {
-    advanceBy(millis(1));
+    advanceBy(Duration.ofMillis(1));
   }
 
   /** Advances clock by some duration. */
+  @Deprecated
   public void advanceBy(ReadableDuration duration) {
     currentTimeMillis.addAndGet(duration.getMillis());
   }
 
   /** Advances clock by some duration. */
-  public void advanceBy(java.time.Duration duration) {
+  public void advanceBy(Duration duration) {
     currentTimeMillis.addAndGet(duration.toMillis());
   }
 
   /** Sets the time to the specified instant. */
+  @Deprecated
   public void setTo(ReadableInstant time) {
     currentTimeMillis.set(time.getMillis());
   }
@@ -106,7 +115,7 @@ public final class FakeClock implements Clock {
 
   /** Invokes {@link #setAutoIncrementStep} with one millisecond-step. */
   public FakeClock setAutoIncrementByOneMilli() {
-    return setAutoIncrementStep(Duration.millis(1));
+    return setAutoIncrementStep(Duration.ofMillis(1));
   }
 
   /** Disables the auto-increment mode. */

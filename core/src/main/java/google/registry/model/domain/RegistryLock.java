@@ -23,6 +23,7 @@ import com.google.gson.annotations.Expose;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestampEntity;
+import google.registry.persistence.converter.DurationUserType;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.AttributeOverride;
@@ -37,10 +38,11 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.Duration;
+import org.hibernate.annotations.Type;
 
 /**
  * Represents a registry lock/unlock object, meaning that the domain is locked on the registry
@@ -156,6 +158,8 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
 
   /** The duration after which we will re-lock this domain after it is unlocked. */
   @Column(columnDefinition = "interval")
+  @Type(DurationUserType.class)
+  @Expose
   private Duration relockDuration;
 
   public String getRepoId() {

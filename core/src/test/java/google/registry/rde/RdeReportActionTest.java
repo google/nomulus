@@ -60,7 +60,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -157,8 +156,8 @@ public class RdeReportActionTest {
     // Verify the payload XML was the same as what's in testdata/report.xml.
     XjcRdeReportReport report = parseReport(connectionOutputStream.toByteArray());
     assertThat(report.getId()).isEqualTo("20101017001");
-    assertThat(report.getCrDate()).isEqualTo(DateTime.parse("2010-10-17T00:15:00.0Z"));
-    assertThat(report.getWatermark()).isEqualTo(DateTime.parse("2010-10-17T00:00:00Z"));
+    assertThat(report.getCrDate()).isEqualTo(Instant.parse("2010-10-17T00:15:00.0Z"));
+    assertThat(report.getWatermark()).isEqualTo(Instant.parse("2010-10-17T00:00:00Z"));
   }
 
   @Test
@@ -179,8 +178,8 @@ public class RdeReportActionTest {
     // Verify the payload XML was the same as what's in testdata/report.xml.
     XjcRdeReportReport report = parseReport(connectionOutputStream.toByteArray());
     assertThat(report.getId()).isEqualTo("20101017001");
-    assertThat(report.getCrDate()).isEqualTo(DateTime.parse("2010-10-17T00:15:00.0Z"));
-    assertThat(report.getWatermark()).isEqualTo(DateTime.parse("2010-10-17T00:00:00Z"));
+    assertThat(report.getCrDate()).isEqualTo(Instant.parse("2010-10-17T00:15:00.0Z"));
+    assertThat(report.getWatermark()).isEqualTo(Instant.parse("2010-10-17T00:00:00Z"));
   }
 
   @Test
@@ -224,8 +223,8 @@ public class RdeReportActionTest {
     // Verify the payload XML was the same as what's in testdata/report.xml.
     XjcRdeReportReport report = parseReport(connectionOutputStream.toByteArray());
     assertThat(report.getId()).isEqualTo("20101017001");
-    assertThat(report.getCrDate()).isEqualTo(DateTime.parse("2010-10-17T00:15:00.0Z"));
-    assertThat(report.getWatermark()).isEqualTo(DateTime.parse("2010-10-17T00:00:00Z"));
+    assertThat(report.getCrDate()).isEqualTo(Instant.parse("2010-10-17T00:15:00.0Z"));
+    assertThat(report.getWatermark()).isEqualTo(Instant.parse("2010-10-17T00:00:00Z"));
   }
 
   @Test

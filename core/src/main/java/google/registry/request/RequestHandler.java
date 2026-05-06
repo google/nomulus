@@ -34,11 +34,11 @@ import jakarta.inject.Provider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * Dagger-based request processor.
@@ -172,7 +172,7 @@ public class RequestHandler<C> {
         .build();
     // Apply the selected Route to the component to produce an Action instance, and run it.
     boolean success = true;
-    DateTime startTime = clock.nowUtc();
+    Instant startTime = clock.now();
     try {
       route.get().instantiator().apply(component).run();
       if (route.get().action().automaticallyPrintOk()) {
@@ -188,7 +188,7 @@ public class RequestHandler<C> {
       logger.atSevere().withCause(e).log("Encountered internal server error");
     } finally {
       requestMetrics.record(
-          new Duration(startTime, clock.nowUtc()),
+          Duration.between(startTime, clock.now()),
           path,
           method,
           authResult.get().authLevel(),

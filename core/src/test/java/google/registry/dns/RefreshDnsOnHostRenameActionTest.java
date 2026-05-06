@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
@@ -70,7 +71,7 @@ public class RefreshDnsOnHostRenameActionTest {
             .asBuilder()
             .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD))
             .build());
-    persistDomainAsDeleted(newDomain("deleted.tld", host), clock.nowUtc().minusDays(1));
+    persistDomainAsDeleted(newDomain("deleted.tld", host), minusDays(clock.now(), 1));
     createAction(host.createVKey().stringify());
     action.run();
     assertDomainDnsRequests("example.tld", "otherexample.tld");
@@ -89,7 +90,7 @@ public class RefreshDnsOnHostRenameActionTest {
 
   @Test
   void testFailure_deletedHost() {
-    Host host = persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
+    Host host = persistDeletedHost("ns1.example.tld", minusDays(clock.now(), 1));
     persistResource(newDomain("example.tld", host));
     createAction(host.createVKey().stringify());
     action.run();

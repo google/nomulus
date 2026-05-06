@@ -153,7 +153,15 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*java\.util\.Date.*",
         "java",
-        {"/node_modules/", "JpaTransactionManagerImpl.java", "DateTimeUtils.java"},
+        {
+            "/node_modules/",
+            "JpaTransactionManagerImpl.java",
+            "DateTimeUtils.java",
+            "SelfSignedCaCertificate.java",
+            "X509Utils.java",
+            "TmchCertificateAuthority.java",
+            "DelegatedCredentials.java"
+        },
     ):
         "Do not use java.util.Date. Use classes in java.time package instead.",
     PresubmitCheck(
@@ -208,29 +216,29 @@ PRESUBMITS = {
     ):
         "Do not double-wrap toInstant(toDateTime(...)).",
     PresubmitCheck(
-        r".*toInstant\([^;]*[cC]lock\.nowUtc\(\).*",
+        r".*toInstant\([^;]*[cC]lock\.now\(\).*",
         "java",
         {},
     ):
-        "Do not use toInstant(clock.nowUtc()). Use clock.now() instead.",
+        "Do not use toInstant(clock.now()). Use clock.now() instead.",
     PresubmitCheck(
         r".*toDateTime\([^;]*[cC]lock\.now\(\).*",
         "java",
         {},
     ):
-        "Do not use toDateTime(clock.now()). Use clock.nowUtc() instead.",
+        "Do not use toDateTime(clock.now()). Use clock.now() and Instant overloads instead.",
     PresubmitCheck(
-        r".*toInstant\([^;]*tm\(\)\.getTransactionTime\(\).*",
+        r".*toInstant\([^;]*tm\(\)\.getTxTime\(\).*",
         "java",
         {},
     ):
-        "Do not use toInstant(tm().getTransactionTime()). Use tm().getTxTime() instead.",
+        "Do not use toInstant(tm().getTxTime()). Use tm().getTxTime() instead.",
     PresubmitCheck(
         r".*toDateTime\([^;]*tm\(\)\.getTxTime\(\).*",
         "java",
         {},
     ):
-        "Do not use toDateTime(tm().getTxTime()). Use tm().getTransactionTime() instead.",
+        "Do not use toDateTime(tm().getTxTime()). Use tm().getTxTime() and Instant overloads instead.",
     PresubmitCheck(
         r".*\(\s*Instant\s*\)\s*(?:this\.)?(?:fakeClock|clock)\.now\(\s*\).*",
         "java",
@@ -266,37 +274,13 @@ PRESUBMITS = {
         "java",
         {},
     ):
-        "Do not use cloneProjectedAtTime(toDateTime(...)). Use cloneProjectedAtInstant(...) instead.",
+        "Do not use cloneProjectedAtTime(toDateTime(...)). Use cloneProjectedAtTime(...) instead.",
     PresubmitCheck(
         r".*ZoneId\.of\(\s*\"UTC\"\s*\).*",
         "java",
         {},
     ):
-        "Do not use ZoneId.of(\"UTC\"). Use java.time.ZoneOffset.UTC.",
-    PresubmitCheck(
-        r".*toDateTime\(\s*END_INSTANT\s*\).*",
-        "java",
-        {"DateTimeUtilsTest.java"},
-    ):
-        "Do not wrap END_INSTANT in toDateTime. Use END_OF_TIME.",
-    PresubmitCheck(
-        r".*toInstant\(\s*END_OF_TIME\s*\).*",
-        "java",
-        {"DateTimeUtilsTest.java"},
-    ):
-        "Do not wrap END_OF_TIME in toInstant. Use END_INSTANT.",
-    PresubmitCheck(
-        r".*toDateTime\(\s*START_INSTANT\s*\).*",
-        "java",
-        {"DateTimeUtilsTest.java"},
-    ):
-        "Do not wrap START_INSTANT in toDateTime. Use START_OF_TIME.",
-    PresubmitCheck(
-        r".*toInstant\(\s*START_OF_TIME\s*\).*",
-        "java",
-        {"DateTimeUtilsTest.java"},
-    ):
-        "Do not wrap START_OF_TIME in toInstant. Use START_INSTANT."
+        "Do not use ZoneId.of(\"UTC\"). Use java.time.ZoneOffset.UTC."
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to

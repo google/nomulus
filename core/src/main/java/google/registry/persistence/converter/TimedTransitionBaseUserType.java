@@ -46,7 +46,7 @@ public abstract class TimedTransitionBaseUserType<V extends Serializable>
 
   @Override
   Map<String, String> toStringMap(TimedTransitionProperty<V> map) {
-    return map.toValueMapInstant().entrySet().stream()
+    return map.toValueMap().entrySet().stream()
         .collect(toImmutableMap(e -> formatInstant(e.getKey()), e -> valueToString(e.getValue())));
   }
 
@@ -59,6 +59,6 @@ public abstract class TimedTransitionBaseUserType<V extends Serializable>
                     Ordering.natural(),
                     e -> parseInstant(e.getKey()),
                     e -> stringToValue(e.getValue())));
-    return TimedTransitionProperty.fromValueMapInstant(valueMap);
+    return TimedTransitionProperty.fromValueMap(valueMap);
   }
 }

@@ -134,11 +134,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     hostNs1CatLol =
         addHostToMap(
             FullFieldsTestEntityHelper.makeAndPersistHost(
-                "ns1.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1)));
+                "ns1.cat.lol", "1.2.3.4", minusYears(clock.now(), 1)));
     hostNs2CatLol =
         addHostToMap(
             FullFieldsTestEntityHelper.makeAndPersistHost(
-                "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2)));
+                "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", minusYears(clock.now(), 2)));
     domainCatLol =
         persistResource(
             makeDomain("cat.lol", hostNs1CatLol, hostNs2CatLol, registrar)
@@ -158,12 +158,12 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                     "cat2.lol",
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
-                            "ns1.cat.example", "10.20.30.40", clock.nowUtc().minusYears(1))),
+                            "ns1.cat.example", "10.20.30.40", minusYears(clock.now(), 1))),
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns2.dog.lol",
                             "12:feed:5000:0:0:0:15:beef",
-                            clock.nowUtc().minusYears(2))),
+                            minusYears(clock.now(), 2))),
                     registrar)
                 .asBuilder()
                 .setCreationTimeForTest(minusYears(clock.now(), 3))
@@ -184,7 +184,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns2.external.tld",
                             "bad:f00d:cafe:0:0:0:16:beef",
-                            clock.nowUtc().minusYears(2))),
+                            minusYears(clock.now(), 2))),
                     registrar)
                 .asBuilder()
                 .setCreationTimeForTest(minusYears(clock.now(), 3))
@@ -200,12 +200,12 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                     "cat.みんな",
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
-                            "ns1.cat.みんな", "1.2.3.5", clock.nowUtc().minusYears(1))),
+                            "ns1.cat.みんな", "1.2.3.5", minusYears(clock.now(), 1))),
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns2.cat.みんな",
                             "bad:f00d:cafe:0:0:0:14:beef",
-                            clock.nowUtc().minusYears(2))),
+                            minusYears(clock.now(), 2))),
                     registrar)
                 .asBuilder()
                 .setCreationTimeForTest(minusYears(clock.now(), 3))
@@ -221,12 +221,12 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                     "cat.1.test",
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
-                            "ns1.cat.1.test", "1.2.3.5", clock.nowUtc().minusYears(1))),
+                            "ns1.cat.1.test", "1.2.3.5", minusYears(clock.now(), 1))),
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns2.cat.2.test",
                             "bad:f00d:cafe:0:0:0:14:beef",
-                            clock.nowUtc().minusYears(2))),
+                            minusYears(clock.now(), 2))),
                     registrar)
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.cat.1.test"))
@@ -243,35 +243,35 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            clock.nowUtc()));
+            clock.now()));
     persistResource(
         makeHistoryEntry(
             domainCatLol2,
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            clock.nowUtc()));
+            clock.now()));
     persistResource(
         makeHistoryEntry(
             domainCatExample,
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            clock.nowUtc()));
+            clock.now()));
     persistResource(
         makeHistoryEntry(
             domainIdn,
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            clock.nowUtc()));
+            clock.now()));
     persistResource(
         makeHistoryEntry(
             domainMultipart,
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            clock.nowUtc()));
+            clock.now()));
 
     action.requestMethod = POST;
     action.nameParam = Optional.empty();
@@ -303,7 +303,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             HistoryEntry.Type.DOMAIN_DELETE,
             Period.create(1, Period.Unit.YEARS),
             "deleted",
-            clock.nowUtc().minusMonths(6)));
+            minusMonths(clock.now(), 6)));
   }
 
   private void createManyDomainsAndHosts(
@@ -318,7 +318,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
           FullFieldsTestEntityHelper.makeAndPersistHost(
               hostName,
               String.format("5.5.%d.%d", 5 + i / 250, i % 250),
-              clock.nowUtc().minusYears(1));
+              minusYears(clock.now(), 1));
       hostKeysBuilder.add(host.createVKey());
     }
     ImmutableSet<VKey<Host>> hostKeys = hostKeysBuilder.build();

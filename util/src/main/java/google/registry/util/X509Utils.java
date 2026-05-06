@@ -40,13 +40,13 @@ import java.security.cert.CertificateRevokedException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Base64;
+import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.annotation.Tainted;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeComparator;
 
 /** X.509 Public Key Infrastructure (PKI) helper functions. */
 public final class X509Utils {
@@ -144,9 +144,9 @@ public final class X509Utils {
    *     currently in memory.
    */
   public static void verifyCertificate(
-      X509Certificate rootCert, X509CRL crl, @Tainted X509Certificate cert, DateTime now)
+      X509Certificate rootCert, X509CRL crl, @Tainted X509Certificate cert, Instant now)
       throws GeneralSecurityException {
-    cert.checkValidity(checkNotNull(now, "now").toDate());
+    cert.checkValidity(Date.from(checkNotNull(now, "now")));
     cert.verify(rootCert.getPublicKey());
     if (crl.isRevoked(cert)) {
       X509CRLEntry entry = crl.getRevokedCertificate(cert);
@@ -168,17 +168,16 @@ public final class X509Utils {
    *     incorrect keys, and for invalid, old, not-yet-valid or revoked certificates.
    */
   public static void verifyCrl(
-      X509Certificate rootCert, @Nullable X509CRL oldCrl, @Tainted X509CRL newCrl, DateTime now)
+      X509Certificate rootCert, @Nullable X509CRL oldCrl, @Tainted X509CRL newCrl, Instant now)
       throws GeneralSecurityException {
     if (oldCrl != null
-        && DateTimeComparator.getInstance().compare(newCrl.getThisUpdate(), oldCrl.getThisUpdate())
-            < 0) {
+        && newCrl.getThisUpdate().toInstant().isBefore(oldCrl.getThisUpdate().toInstant())) {
       throw new CRLException(
           String.format(
               "New CRL is more out of date than our current CRL. %s < %s\n%s",
               newCrl.getThisUpdate(), oldCrl.getThisUpdate(), newCrl));
     }
-    if (DateTimeComparator.getInstance().compare(new DateTime(newCrl.getNextUpdate()), now) < 0) {
+    if (newCrl.getNextUpdate().toInstant().isBefore(now)) {
       throw new CRLException("CRL has expired.\n" + newCrl);
     }
     newCrl.verify(rootCert.getPublicKey());

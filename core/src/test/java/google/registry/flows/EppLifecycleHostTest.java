@@ -27,7 +27,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -192,7 +192,7 @@ class EppLifecycleHostTest extends EppTestCase {
             "host_create_response.xml",
             ImmutableMap.of("HOSTNAME", "ns1.example.tld", "CRDATE", "2000-06-01T00:05:00Z"));
 
-    DateTime timeAfterCreates = DateTime.parse("2000-06-01T00:06:00Z");
+    Instant timeAfterCreates = Instant.parse("2000-06-01T00:06:00Z");
 
     Host exampleBarFooTldHost =
         loadResource(Host.class, "ns1.example.bar.foo.tld", timeAfterCreates).get();

@@ -15,15 +15,15 @@
 package google.registry.flows.certs;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.toLocalDate;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
-import google.registry.util.DateTimeUtils;
 import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
@@ -33,6 +33,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -41,51 +43,49 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.bouncycastle.util.io.pem.PemWriter;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeComparator;
-import org.joda.time.Days;
 
 /** A utility to check that a given certificate meets our requirements */
 public class CertificateChecker {
 
-  private final ImmutableSortedMap<DateTime, Integer> maxValidityLengthSchedule;
-  private final int expirationWarningDays;
+  private final ImmutableSortedMap<Instant, Integer> maxValidityLengthSchedule;
+  private final long expirationWarningDays;
   private final int minimumRsaKeyLength;
   private final Clock clock;
   private final ImmutableSet<String> allowedEcdsaCurves;
-  private final int expirationWarningIntervalDays;
+  private final long expirationWarningIntervalDays;
 
   /**
    * Constructs a CertificateChecker instance with the specified configuration parameters.
    *
-   * <p>The max validity length schedule is a sorted map of {@link DateTime} to {@link Integer}
+   * <p>The max validity length schedule is a sorted map of {@link Instant} to {@link Integer}
    * entries representing a maximum validity period for certificates issued on or after that date.
-   * The first entry must have a key of {@link DateTimeUtils#START_OF_TIME}, such that every
-   * possible date has an applicable max validity period. Since security requirements tighten over
-   * time, the max validity periods will be decreasing as the date increases.
+   * The first entry must have a key of {@link google.registry.util.DateTimeUtils#START_INSTANT},
+   * such that every possible date has an applicable max validity period. Since security
+   * requirements tighten over time, the max validity periods will be decreasing as the date
+   * increases.
    *
    * <p>The validity length schedule used by all major Web browsers as of 2020Q4 would be
    * represented as:
    *
    * <pre>
    *   ImmutableSortedMap.of(
-   *     START_OF_TIME, 825,
-   *     DateTime.parse("2020-09-01T00:00:00Z"), 398
+   *     START_INSTANT, 825,
+   *     Instant.parse("2020-09-01T00:00:00Z"), 398
    *   );
    * </pre>
    */
   @Inject
   public CertificateChecker(
       @Config("maxValidityDaysSchedule")
-          ImmutableSortedMap<DateTime, Integer> maxValidityDaysSchedule,
-      @Config("expirationWarningDays") int expirationWarningDays,
-      @Config("expirationWarningIntervalDays") int expirationWarningIntervalDays,
+          ImmutableSortedMap<Instant, Integer> maxValidityDaysSchedule,
+      @Config("expirationWarningDays") long expirationWarningDays,
+      @Config("expirationWarningIntervalDays") long expirationWarningIntervalDays,
       @Config("minimumRsaKeyLength") int minimumRsaKeyLength,
       @Config("allowedEcdsaCurves") ImmutableSet<String> allowedEcdsaCurves,
       Clock clock) {
     checkArgument(
-        maxValidityDaysSchedule.containsKey(START_OF_TIME),
-        "Max validity length schedule must contain an entry for START_OF_TIME");
+        maxValidityDaysSchedule.containsKey(START_INSTANT),
+        "Max validity length schedule must contain an entry for START_INSTANT");
     this.maxValidityLengthSchedule = maxValidityDaysSchedule;
     this.expirationWarningDays = expirationWarningDays;
     this.minimumRsaKeyLength = minimumRsaKeyLength;
@@ -94,10 +94,10 @@ public class CertificateChecker {
     this.clock = clock;
   }
 
-  private static int getValidityLengthInDays(X509Certificate certificate) {
-    DateTime start = toDateTime(certificate.getNotBefore().toInstant());
-    DateTime end = toDateTime(certificate.getNotAfter().toInstant());
-    return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay()).getDays();
+  private static long getValidityLengthInDays(X509Certificate certificate) {
+    return ChronoUnit.DAYS.between(
+        toLocalDate(certificate.getNotBefore().toInstant()),
+        toLocalDate(certificate.getNotAfter().toInstant()));
   }
 
   /** Checks if the curve used for a public key is in the list of acceptable curves. */
@@ -159,16 +159,16 @@ public class CertificateChecker {
     ImmutableSet.Builder<CertificateViolation> violations = new ImmutableSet.Builder<>();
 
     // Check if currently in validity period
-    DateTime now = clock.nowUtc();
-    if (DateTimeComparator.getInstance().compare(certificate.getNotAfter(), now) < 0) {
+    Instant now = clock.now();
+    if (certificate.getNotAfter().toInstant().isBefore(now)) {
       violations.add(CertificateViolation.EXPIRED);
-    } else if (DateTimeComparator.getInstance().compare(certificate.getNotBefore(), now) > 0) {
+    } else if (certificate.getNotBefore().toInstant().isAfter(now)) {
       violations.add(CertificateViolation.NOT_YET_VALID);
     }
 
     // Check validity period length
-    int maxValidityDays =
-        maxValidityLengthSchedule.floorEntry(new DateTime(certificate.getNotBefore())).getValue();
+    long maxValidityDays =
+        maxValidityLengthSchedule.floorEntry(certificate.getNotBefore().toInstant()).getValue();
     if (getValidityLengthInDays(certificate) > maxValidityDays) {
       violations.add(CertificateViolation.VALIDITY_LENGTH_TOO_LONG);
     }
@@ -225,25 +225,24 @@ public class CertificateChecker {
 
   /** Returns whether the client should receive a notification email. */
   public boolean shouldReceiveExpiringNotification(
-      DateTime lastExpiringNotificationSentDate, String certificateStr) {
+      Instant lastExpiringNotificationSentDate, String certificateStr) {
     X509Certificate certificate = getCertificate(certificateStr);
-    DateTime now = clock.nowUtc();
+    Instant now = clock.now();
     // the expiration date is one day after lastValidDate
-    DateTime lastValidDate = new DateTime(certificate.getNotAfter());
+    Instant lastValidDate = certificate.getNotAfter().toInstant();
     if (lastValidDate.isBefore(now)) {
       return false;
     }
     /*
      * Client should receive a notification if:
      *    1) client has never received notification (lastExpiringNotificationSentDate is initially
-     *    set to START_OF_TIME) and the certificate has entered the expiring period, OR
+     *    set to START_INSTANT) and the certificate has entered the expiring period, OR
      *    2) client has received notification but the interval between now and
      *    lastExpiringNotificationSentDate is greater than expirationWarningIntervalDays.
      */
-    return !lastValidDate.isAfter(now.plusDays(expirationWarningDays))
-        && (lastExpiringNotificationSentDate.equals(START_OF_TIME)
-            || !lastExpiringNotificationSentDate
-                .plusDays(expirationWarningIntervalDays)
+    return !lastValidDate.isAfter(plusDays(now, expirationWarningDays))
+        && (lastExpiringNotificationSentDate.equals(START_INSTANT)
+            || !plusDays(lastExpiringNotificationSentDate, expirationWarningIntervalDays)
                 .isAfter(now));
   }
 

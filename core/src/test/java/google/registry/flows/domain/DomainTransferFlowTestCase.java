@@ -44,8 +44,8 @@ import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
+import java.time.Duration;
 import java.time.Instant;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 
 /**
@@ -62,8 +62,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
 
   static final Instant TRANSFER_REQUEST_TIME = Instant.parse("2000-06-06T22:00:00.0Z");
   static final Instant TRANSFER_EXPIRATION_TIME =
-      TRANSFER_REQUEST_TIME.plusMillis(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH.getMillis());
-  private static final Duration TIME_SINCE_REQUEST = Duration.standardDays(3);
+      TRANSFER_REQUEST_TIME.plus(Tld.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
+  private static final Duration TIME_SINCE_REQUEST = Duration.ofDays(3);
   private static final int EXTENDED_REGISTRATION_YEARS = 1;
   private static final Instant REGISTRATION_EXPIRATION_TIME =
       Instant.parse("2001-09-08T22:00:00.0Z");
@@ -75,8 +75,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   private DomainHistory historyEntryDomainCreate;
 
   DomainTransferFlowTestCase() {
-    checkState(!Tld.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
-    clock.setTo(TRANSFER_REQUEST_TIME.plusMillis(TIME_SINCE_REQUEST.getMillis()));
+    checkState(Tld.DEFAULT_TRANSFER_GRACE_PERIOD.compareTo(TIME_SINCE_REQUEST) >= 0);
+    clock.setTo(TRANSFER_REQUEST_TIME.plus(TIME_SINCE_REQUEST));
   }
 
   @BeforeEach

@@ -540,8 +540,7 @@ class EppLifecycleDomainTest extends EppTestCase {
             .setPeriodYears(1)
             .setCost(Money.parse("USD 100.00"))
             .setEventTime(createTime)
-            .setBillingTime(
-                createTime.plusMillis(Tld.get("tld").getRenewGracePeriodLength().getMillis()))
+            .setBillingTime(createTime.plus(Tld.get("tld").getRenewGracePeriodLength()))
             .setDomainHistory(
                 getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
             .build();

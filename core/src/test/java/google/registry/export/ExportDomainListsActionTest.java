@@ -22,6 +22,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -48,9 +49,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.FakeClock;
-import google.registry.util.DateTimeUtils;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -99,7 +98,7 @@ class ExportDomainListsActionTest {
   void test_outputsOnlyActiveDomains_txt() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
-    persistDeletedDomain("mortuary.tld", DateTime.parse("2001-03-14T10:11:12Z"));
+    persistDeletedDomain("mortuary.tld", Instant.parse("2001-03-14T10:11:12Z"));
     action.run();
     BlobId existingFile = BlobId.of("outputbucket", "tld.txt");
     String tlds = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
@@ -114,7 +113,7 @@ class ExportDomainListsActionTest {
     persistFeatureFlag(ACTIVE);
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
-    persistDeletedDomain("mortuary.tld", DateTime.parse("2001-03-14T10:11:12Z"));
+    persistDeletedDomain("mortuary.tld", Instant.parse("2001-03-14T10:11:12Z"));
     action.run();
     BlobId existingFile = BlobId.of("outputbucket", "tld.txt");
     String tlds = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
@@ -262,7 +261,7 @@ class ExportDomainListsActionTest {
         new FeatureFlag()
             .asBuilder()
             .setFeatureName(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS)
-            .setStatusMap(ImmutableSortedMap.of(DateTimeUtils.START_OF_TIME, status))
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, status))
             .build());
   }
 }

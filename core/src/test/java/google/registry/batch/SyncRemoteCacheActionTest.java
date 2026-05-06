@@ -22,6 +22,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -43,7 +44,6 @@ import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,7 +58,7 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class SyncRemoteCacheActionTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2025-01-01T00:00:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2025-01-01T00:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -136,7 +136,7 @@ class SyncRemoteCacheActionTest {
   @Test
   void test_syncDomains_withDeletedDomains() {
     Domain activeDomain = persistActiveDomain("active.tld");
-    persistDeletedDomain("deleted.tld", clock.nowUtc().minusDays(1));
+    persistDeletedDomain("deleted.tld", minusDays(clock.now(), 1));
 
     action.run();
 
@@ -202,7 +202,7 @@ class SyncRemoteCacheActionTest {
   @Test
   void test_syncHosts_withDeletedHosts() {
     Host active = persistActiveHost("ns1.example.tld");
-    Host deleted = persistDeletedHost("ns2.example.tld", clock.nowUtc().minusDays(1));
+    Host deleted = persistDeletedHost("ns2.example.tld", minusDays(clock.now(), 1));
 
     action.run();
 

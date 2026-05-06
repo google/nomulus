@@ -58,28 +58,28 @@ public class IdnCheckerTest {
         persistResource(
             jaonly
                 .asBuilder()
-                .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc()))
+                .setBsaEnrollStartTime(Optional.of(fakeClock.now()))
                 .setIdnTables(ImmutableSet.of(JA))
                 .build());
     jandelatin =
         persistResource(
             jandelatin
                 .asBuilder()
-                .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc()))
+                .setBsaEnrollStartTime(Optional.of(fakeClock.now()))
                 .setIdnTables(ImmutableSet.of(JA, EXTENDED_LATIN))
                 .build());
     strictlatin =
         persistResource(
             strictlatin
                 .asBuilder()
-                .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc()))
+                .setBsaEnrollStartTime(Optional.of(fakeClock.now()))
                 .setIdnTables(ImmutableSet.of(UNCONFUSABLE_LATIN))
                 .build());
     auglatin =
         persistResource(
             auglatin
                 .asBuilder()
-                .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc()))
+                .setBsaEnrollStartTime(Optional.of(fakeClock.now()))
                 .setIdnTables(ImmutableSet.of(AUGMENTED_LATIN))
                 .build());
     fakeClock.advanceOneMilli();

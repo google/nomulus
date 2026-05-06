@@ -227,7 +227,7 @@ public class MosApiMetrics {
   }
 
   private void pushBatchMetrics(ImmutableList<TldServiceState> states) {
-    Instant now = Instant.ofEpochMilli(clock.nowUtc().getMillis());
+    Instant now = clock.now();
     TimeInterval interval = new TimeInterval().setEndTime(now.toString());
     Stream<TimeSeries> allTimeSeriesStream =
         states.stream().flatMap(state -> createMetricsForState(state, interval));

@@ -34,7 +34,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
 
 /**
  * A {@link JpaTransactionManager} that load-balances across multiple read-only replicas.
@@ -154,11 +153,6 @@ public class DelegatingReplicaJpaTransactionManager implements JpaTransactionMan
           work.run();
           return null;
         });
-  }
-
-  @Override
-  public DateTime getTransactionTime() {
-    return getReplica().getTransactionTime();
   }
 
   @Override

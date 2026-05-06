@@ -40,7 +40,7 @@ public class InstantTypeAdapter extends StringBaseTypeAdapter<Instant> {
   @Override
   public void write(JsonWriter writer, Instant value) throws IOException {
     if (value == null) {
-      writer.value("null");
+      writer.nullValue();
     } else {
       writer.value(formatInstant(value));
     }

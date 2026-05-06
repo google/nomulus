@@ -26,7 +26,7 @@ import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import java.io.File;
 import java.io.IOException;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -96,9 +96,7 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
   }
 
   ReservedList createCloudSqlReservedList(
-      String name,
-      DateTime creationTime,
-      ImmutableMap<String, ReservedListEntry> labelsToEntries) {
+      String name, Instant creationTime, ImmutableMap<String, ReservedListEntry> labelsToEntries) {
     return new ReservedList.Builder()
         .setName(name)
         .setCreationTimestamp(creationTime)

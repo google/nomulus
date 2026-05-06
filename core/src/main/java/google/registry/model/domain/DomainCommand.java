@@ -46,10 +46,10 @@ import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.XmlValue;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.joda.time.LocalDate;
 
 /** A collection of {@link Domain} commands. */
 public class DomainCommand {

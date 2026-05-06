@@ -27,10 +27,12 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntr
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static google.registry.testing.GsonSubject.assertAboutJson;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
@@ -51,8 +53,8 @@ import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -74,10 +76,10 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         persistResource(
             makeRegistrar("evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrarLol));
-    host1 = makeAndPersistHost("ns1.cat.lol", "1.2.3.4", null, clock.nowUtc().minusYears(1));
+    host1 = makeAndPersistHost("ns1.cat.lol", "1.2.3.4", null, minusYears(clock.now(), 1));
     Host host2 =
         makeAndPersistHost(
-            "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
+            "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", minusYears(clock.now(), 2));
     persistResource(
         makeDomain("cat.lol", host1, host2, registrarLol)
             .asBuilder()
@@ -88,7 +90,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     // deleted domain in lol
     Host hostDodo2 =
         makeAndPersistHost(
-            "ns2.dodo.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
+            "ns2.dodo.lol", "bad:f00d:cafe:0:0:0:15:beef", minusYears(clock.now(), 2));
     Domain domainDeleted =
         persistResource(
             makeDomain("dodo.lol", host1, hostDodo2, registrarLol)
@@ -129,7 +131,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             HistoryEntry.Type.DOMAIN_DELETE,
             Period.create(1, Period.Unit.YEARS),
             "deleted",
-            clock.nowUtc().minusMonths(6)));
+            minusMonths(clock.now(), 6)));
   }
 
   private void assertProperResponseForCatLol(String queryString, String expectedOutputFile) {
@@ -332,8 +334,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
   @Test
   void testAddGracePeriod() {
-    persistActiveDomainWithHost(
-        "addgraceperiod", "lol", clock.nowUtc(), clock.nowUtc().plusYears(1));
+    persistActiveDomainWithHost("addgraceperiod", "lol", clock.now(), plusYears(clock.now(), 1));
     assertAboutJson()
         .that(generateActualJson("addgraceperiod.lol"))
         .isEqualTo(
@@ -344,7 +345,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   @Test
   void testAutoRenewGracePeriod() {
     persistActiveDomainWithHost(
-        "autorenew", "lol", clock.nowUtc().minusYears(1).minusDays(1), clock.nowUtc().minusDays(1));
+        "autorenew", "lol", minusDays(minusYears(clock.now(), 1), 1), minusDays(clock.now(), 1));
     assertAboutJson()
         .that(generateActualJson("autorenew.lol"))
         .isEqualTo(
@@ -354,7 +355,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
   @Test
   void testRedemptionGracePeriod() {
-    Domain domain = persistActiveDomain("redemption.lol", clock.nowUtc().minusYears(1));
+    Domain domain = persistActiveDomain("redemption.lol", minusYears(clock.now(), 1));
     persistResource(
         domain
             .asBuilder()
@@ -380,7 +381,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   void testRenewGracePeriod() {
     Domain domain =
         persistActiveDomainWithHost(
-            "renew", "lol", clock.nowUtc().minusYears(1), clock.nowUtc().plusYears(1));
+            "renew", "lol", minusYears(clock.now(), 1), plusYears(clock.now(), 1));
     persistResource(
         domain
             .asBuilder()
@@ -403,7 +404,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   void testTransferGracePeriod() {
     Domain domain =
         persistActiveDomainWithHost(
-            "transfer", "lol", clock.nowUtc().minusMonths(6), clock.nowUtc().plusYears(1));
+            "transfer", "lol", minusMonths(clock.now(), 6), plusYears(clock.now(), 1));
     persistResource(
         domain
             .asBuilder()
@@ -445,7 +446,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   @Test
   void testBlockedByBsa() {
     persistResource(
-        Tld.get("lol").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+        Tld.get("lol").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistBsaLabel("example");
     ImmutableMap<?, ?> expectedBsaNotice =
         ImmutableMap.of(
@@ -474,10 +475,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   }
 
   private Domain persistActiveDomainWithHost(
-      String label, String tld, DateTime creationTime, DateTime expirationTime) {
+      String label, String tld, Instant creationTime, Instant expirationTime) {
     return persistResource(
-        persistDomainWithDependentResources(
-                label, tld, clock.nowUtc(), creationTime, expirationTime)
+        persistDomainWithDependentResources(label, tld, clock.now(), creationTime, expirationTime)
             .asBuilder()
             .addNameserver(host1.createVKey())
             .build());

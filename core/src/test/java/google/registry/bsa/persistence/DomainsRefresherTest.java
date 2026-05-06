@@ -57,7 +57,7 @@ public class DomainsRefresherTest {
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().minusMillis(1)))
+            .setBsaEnrollStartTime(Optional.of(fakeClock.now().minusMillis(1)))
             .build());
     refresher = new DomainsRefresher(START_INSTANT, fakeClock.now(), Duration.ZERO, 100);
   }

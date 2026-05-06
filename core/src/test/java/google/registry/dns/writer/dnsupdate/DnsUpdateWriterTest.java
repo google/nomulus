@@ -25,6 +25,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHos
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -44,11 +45,11 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -94,12 +95,7 @@ public class DnsUpdateWriterTest {
 
     writer =
         new DnsUpdateWriter(
-            "tld",
-            java.time.Duration.ZERO,
-            java.time.Duration.ZERO,
-            java.time.Duration.ZERO,
-            mockResolver,
-            clock);
+            "tld", Duration.ZERO, Duration.ZERO, Duration.ZERO, mockResolver, clock);
   }
 
   @Test
@@ -124,7 +120,7 @@ public class DnsUpdateWriterTest {
         update,
         "example.tld.",
         Type.NS,
-        Duration.ZERO.getStandardSeconds(),
+        Duration.ZERO.toSeconds(),
         "ns1.example.tld.",
         "ns2.example.tld.");
     assertThatTotalUpdateSetsIs(update, 2); // The delete and NS sets
@@ -183,9 +179,9 @@ public class DnsUpdateWriterTest {
     assertThatUpdateDeletes(update, "example1.tld.", Type.ANY);
     assertThatUpdateDeletes(update, "example2.tld.", Type.ANY);
     assertThatUpdateAdds(
-        update, "example1.tld.", Type.NS, Duration.ZERO.getStandardSeconds(), "ns.example1.tld.");
+        update, "example1.tld.", Type.NS, Duration.ZERO.toSeconds(), "ns.example1.tld.");
     assertThatUpdateAdds(
-        update, "example2.tld.", Type.NS, Duration.ZERO.getStandardSeconds(), "ns.example2.tld.");
+        update, "example2.tld.", Type.NS, Duration.ZERO.toSeconds(), "ns.example2.tld.");
     assertThatTotalUpdateSetsIs(update, 4); // The delete and NS sets for each TLD
   }
 
@@ -208,13 +204,9 @@ public class DnsUpdateWriterTest {
     assertThatUpdatedZoneIs(update, "tld.");
     assertThatUpdateDeletes(update, "example.tld.", Type.ANY);
     assertThatUpdateAdds(
-        update, "example.tld.", Type.NS, Duration.ZERO.getStandardSeconds(), "ns1.example.tld.");
+        update, "example.tld.", Type.NS, Duration.ZERO.toSeconds(), "ns1.example.tld.");
     assertThatUpdateAdds(
-        update,
-        "example.tld.",
-        Type.DS,
-        Duration.ZERO.getStandardSeconds(),
-        "1 3 1 " + BASE16_SHA1_DIGEST);
+        update, "example.tld.", Type.DS, Duration.ZERO.toSeconds(), "1 3 1 " + BASE16_SHA1_DIGEST);
     assertThatTotalUpdateSetsIs(update, 3); // The delete, the NS, and DS sets
   }
 
@@ -223,8 +215,8 @@ public class DnsUpdateWriterTest {
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setDnsNsTtl(Duration.millis(500))
-            .setDnsDsTtl(Duration.millis(400))
+            .setDnsNsTtl(Duration.ofMillis(500))
+            .setDnsDsTtl(Duration.ofMillis(400))
             .build());
     Domain domain =
         persistActiveDomain("example.tld")
@@ -243,16 +235,12 @@ public class DnsUpdateWriterTest {
     assertThatUpdatedZoneIs(update, "tld.");
     assertThatUpdateDeletes(update, "example.tld.", Type.ANY);
     assertThatUpdateAdds(
-        update,
-        "example.tld.",
-        Type.NS,
-        Duration.millis(500).getStandardSeconds(),
-        "ns1.example.tld.");
+        update, "example.tld.", Type.NS, Duration.ofMillis(500).toSeconds(), "ns1.example.tld.");
     assertThatUpdateAdds(
         update,
         "example.tld.",
         Type.DS,
-        Duration.millis(400).getStandardSeconds(),
+        Duration.ofMillis(400).toSeconds(),
         "1 3 1 " + BASE16_SHA1_DIGEST);
     assertThatTotalUpdateSetsIs(update, 3); // The delete, the NS, and DS sets
   }
@@ -279,7 +267,7 @@ public class DnsUpdateWriterTest {
 
   @Test
   void testPublishDomainDelete_removesDnsRecords() throws Exception {
-    persistDeletedDomain("example.tld", clock.nowUtc().minusDays(1));
+    persistDeletedDomain("example.tld", minusDays(clock.now(), 1));
 
     writer.publishDomain("example.tld");
     writer.commit();
@@ -319,20 +307,15 @@ public class DnsUpdateWriterTest {
     assertThatUpdateDeletes(update, "example.tld.", Type.ANY);
     assertThatUpdateDeletes(update, "ns1.example.tld.", Type.ANY);
     assertThatUpdateAdds(
-        update,
-        "ns1.example.tld.",
-        Type.A,
-        Duration.ZERO.getStandardSeconds(),
-        "10.0.0.1",
-        "10.1.0.1");
+        update, "ns1.example.tld.", Type.A, Duration.ZERO.toSeconds(), "10.0.0.1", "10.1.0.1");
     assertThatUpdateAdds(
         update,
         "ns1.example.tld.",
         Type.AAAA,
-        Duration.ZERO.getStandardSeconds(),
+        Duration.ZERO.toSeconds(),
         "fd0e:a5c8:6dfb:6a5e:0:0:0:1");
     assertThatUpdateAdds(
-        update, "example.tld.", Type.NS, Duration.ZERO.getStandardSeconds(), "ns1.example.tld.");
+        update, "example.tld.", Type.NS, Duration.ZERO.toSeconds(), "ns1.example.tld.");
     assertThatTotalUpdateSetsIs(update, 5);
   }
 
@@ -341,8 +324,8 @@ public class DnsUpdateWriterTest {
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setDnsAPlusAaaaTtl(Duration.millis(500))
-            .setDnsNsTtl(Duration.millis(400))
+            .setDnsAPlusAaaaTtl(Duration.ofMillis(500))
+            .setDnsNsTtl(Duration.ofMillis(400))
             .build());
     Host host =
         persistResource(
@@ -373,27 +356,23 @@ public class DnsUpdateWriterTest {
         update,
         "ns1.example.tld.",
         Type.A,
-        Duration.millis(500).getStandardSeconds(),
+        Duration.ofMillis(500).toSeconds(),
         "10.0.0.1",
         "10.1.0.1");
     assertThatUpdateAdds(
         update,
         "ns1.example.tld.",
         Type.AAAA,
-        Duration.millis(500).getStandardSeconds(),
+        Duration.ofMillis(500).toSeconds(),
         "fd0e:a5c8:6dfb:6a5e:0:0:0:1");
     assertThatUpdateAdds(
-        update,
-        "example.tld.",
-        Type.NS,
-        Duration.millis(400).getStandardSeconds(),
-        "ns1.example.tld.");
+        update, "example.tld.", Type.NS, Duration.ofMillis(400).toSeconds(), "ns1.example.tld.");
     assertThatTotalUpdateSetsIs(update, 5);
   }
 
   @Test
   void testPublishHostDelete_removesDnsRecords() throws Exception {
-    persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
+    persistDeletedHost("ns1.example.tld", minusDays(clock.now(), 1));
     persistActiveDomain("example.tld");
 
     writer.publishHost("ns1.example.tld");
@@ -409,7 +388,7 @@ public class DnsUpdateWriterTest {
 
   @Test
   void testPublishHostDelete_removesGlueRecords() throws Exception {
-    persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
+    persistDeletedHost("ns1.example.tld", minusDays(clock.now(), 1));
     persistResource(
         persistActiveDomain("example.tld")
             .asBuilder()
@@ -425,7 +404,7 @@ public class DnsUpdateWriterTest {
     assertThatUpdateDeletes(update, "example.tld.", Type.ANY);
     assertThatUpdateDeletes(update, "ns1.example.tld.", Type.ANY);
     assertThatUpdateAdds(
-        update, "example.tld.", Type.NS, Duration.ZERO.getStandardSeconds(), "ns1.example.com.");
+        update, "example.tld.", Type.NS, Duration.ZERO.toSeconds(), "ns1.example.com.");
     assertThatTotalUpdateSetsIs(update, 3);
   }
 
@@ -464,21 +443,16 @@ public class DnsUpdateWriterTest {
         update,
         "example.tld.",
         Type.NS,
-        Duration.ZERO.getStandardSeconds(),
+        Duration.ZERO.toSeconds(),
         "ns1.example.com.",
         "ns1.example.tld.");
     assertThatUpdateAdds(
-        update,
-        "ns1.example.tld.",
-        Type.A,
-        Duration.ZERO.getStandardSeconds(),
-        "10.0.0.1",
-        "10.1.0.1");
+        update, "ns1.example.tld.", Type.A, Duration.ZERO.toSeconds(), "10.0.0.1", "10.1.0.1");
     assertThatUpdateAdds(
         update,
         "ns1.example.tld.",
         Type.AAAA,
-        Duration.ZERO.getStandardSeconds(),
+        Duration.ZERO.toSeconds(),
         "fd0e:a5c8:6dfb:6a5e:0:0:0:1");
     assertThatTotalUpdateSetsIs(update, 5);
   }
@@ -514,19 +488,14 @@ public class DnsUpdateWriterTest {
     assertThatUpdateDeletes(update, "ns1.example.tld.", Type.ANY);
     assertThatUpdateDeletes(update, "foo.example.tld.", Type.ANY);
     assertThatUpdateAdds(
-        update, "example.tld.", Type.NS, Duration.ZERO.getStandardSeconds(), "ns1.example.tld.");
+        update, "example.tld.", Type.NS, Duration.ZERO.toSeconds(), "ns1.example.tld.");
     assertThatUpdateAdds(
-        update,
-        "ns1.example.tld.",
-        Type.A,
-        Duration.ZERO.getStandardSeconds(),
-        "10.0.0.1",
-        "10.1.0.1");
+        update, "ns1.example.tld.", Type.A, Duration.ZERO.toSeconds(), "10.0.0.1", "10.1.0.1");
     assertThatUpdateAdds(
         update,
         "ns1.example.tld.",
         Type.AAAA,
-        Duration.ZERO.getStandardSeconds(),
+        Duration.ZERO.toSeconds(),
         "fd0e:a5c8:6dfb:6a5e:0:0:0:1");
     assertThatTotalUpdateSetsIs(update, 6);
   }
