@@ -90,9 +90,9 @@ public class Cursor extends UpdateAutoTimestampEntity {
     RECURRING_BILLING(false),
 
     /**
-     * Cursor for {@link google.registry.export.sheet.SyncRegistrarsSheetAction}. The DateTime
-     * stored is the last time that registrar changes were successfully synced to the sheet. If
-     * there were no changes since the last time the action run, the cursor is not updated.
+     * Cursor for {@link google.registry.export.sheet.SyncRegistrarsSheetAction}. The Instant stored
+     * is the last time that registrar changes were successfully synced to the sheet. If there were
+     * no changes since the last time the action run, the cursor is not updated.
      */
     SYNC_REGISTRAR_SHEET(false),
 

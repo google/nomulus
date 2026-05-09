@@ -111,7 +111,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
    *     get().generateAction}.
    */
   private void runStep(Token token) {
-    long start = clock.now().toEpochMilli();
+    long start = clock.nowMillis();
 
     ProbingAction currentAction;
     ChannelFuture future;
@@ -133,7 +133,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
           get().messageTemplate().name(),
           get().messageTemplate().responseName(),
           MetricsCollector.ResponseType.ERROR,
-          clock.now().toEpochMilli() - start);
+          clock.nowMillis() - start);
       return;
 
     } catch (Exception e) {
@@ -146,7 +146,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
           get().messageTemplate().name(),
           get().messageTemplate().responseName(),
           MetricsCollector.ResponseType.ERROR,
-          clock.now().toEpochMilli() - start);
+          clock.nowMillis() - start);
 
       // Restart the sequence at the very first step.
       restartSequence();
@@ -165,7 +165,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
                 get().messageTemplate().name(),
                 get().messageTemplate().responseName(),
                 MetricsCollector.ResponseType.SUCCESS,
-                clock.now().toEpochMilli() - start);
+                clock.nowMillis() - start);
           } else {
             // On a failed result, we log the failure and note either a failure or error.
             logger.atSevere().withCause(f.cause()).log("Did not result in future success");
@@ -177,14 +177,14 @@ public class ProbingSequence extends CircularList<ProbingStep> {
                   get().messageTemplate().name(),
                   get().messageTemplate().responseName(),
                   MetricsCollector.ResponseType.FAILURE,
-                  clock.now().toEpochMilli() - start);
+                  clock.nowMillis() - start);
             } else {
               metrics.recordResult(
                   get().protocol().name(),
                   get().messageTemplate().name(),
                   get().messageTemplate().responseName(),
                   MetricsCollector.ResponseType.ERROR,
-                  clock.now().toEpochMilli() - start);
+                  clock.nowMillis() - start);
             }
 
             // If not unrecoverable, we restart the sequence.

@@ -18,7 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link YearMonthParameter}. */
@@ -28,7 +29,7 @@ class YearMonthParameterTest {
 
   @Test
   void testConvert_awfulMonth() {
-    assertThat(instance.convert("1984-12")).isEqualTo(new YearMonth(1984, 12));
+    assertThat(instance.convert("1984-12")).isEqualTo(YearMonth.of(1984, 12));
   }
 
   @Test
@@ -38,22 +39,22 @@ class YearMonthParameterTest {
 
   @Test
   void testConvert_empty_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert(""));
+    assertThrows(DateTimeParseException.class, () -> instance.convert(""));
   }
 
   @Test
   void testConvert_sillyString_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("foo"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("foo"));
   }
 
   @Test
   void testConvert_wrongOrder() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("12-1984"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("12-1984"));
   }
 
   @Test
   void testConvert_noHyphen() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("198412"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("198412"));
   }
 
   @Test

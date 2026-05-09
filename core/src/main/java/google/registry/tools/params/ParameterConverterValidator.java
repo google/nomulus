@@ -17,6 +17,7 @@ package google.registry.tools.params;
 import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.ParameterException;
+import java.time.DateTimeException;
 
 /** Base class for parameters that do both conversion and validation (reduces boilerplate). */
 public abstract class ParameterConverterValidator<T>
@@ -39,7 +40,7 @@ public abstract class ParameterConverterValidator<T>
   public void validate(String name, String value) throws ParameterException {
     try {
       convert(value);
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalArgumentException | DateTimeException e) {
       throw new ParameterException(String.format("%s=%s %s", name, value, messageForInvalid), e);
     }
   }
