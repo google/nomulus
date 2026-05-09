@@ -132,4 +132,3 @@ class KeyValueMapParameterTest {
     assertThrows(IllegalArgumentException.class, () -> currencyUnitToStringMap.convert("foo"));
   }
 }
-

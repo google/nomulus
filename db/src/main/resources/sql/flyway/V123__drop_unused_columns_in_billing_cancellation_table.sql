@@ -16,4 +16,3 @@ ALTER TABLE "BillingCancellation" DROP COLUMN billing_event_domain_repo_id;
 ALTER TABLE "BillingCancellation" DROP COLUMN billing_event_history_id;
 ALTER TABLE "BillingCancellation" DROP COLUMN billing_recurrence_domain_repo_id;
 ALTER TABLE "BillingCancellation" DROP COLUMN billing_recurrence_history_id;
-

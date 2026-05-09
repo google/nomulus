@@ -25,7 +25,6 @@ import static google.registry.testing.DatabaseHelper.persistDomainWithDependentR
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.plusDays;
-import static org.joda.time.Duration.standardDays;
 import static org.mockito.Mockito.verify;
 
 import com.google.cloud.tasks.v2.HttpMethod;
@@ -41,6 +40,7 @@ import google.registry.request.Response;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -121,7 +121,7 @@ public class ResaveEntityActionTest {
                             plusDays(clock.now(), 30),
                             "TheRegistrar")))
                 .build());
-    clock.advanceBy(standardDays(30));
+    clock.advanceBy(Duration.ofDays(30));
     Instant requestedTime = clock.now();
 
     assertThat(domain.getGracePeriods()).isNotEmpty();

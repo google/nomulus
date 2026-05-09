@@ -108,7 +108,6 @@ public class RecreateBillingRecurrencesCommandTest
             otherNewRecurrence);
   }
 
-
   @Test
   void testFailure_badDomain() {
     assertThat(assertThrows(IllegalArgumentException.class, () -> runCommandForced("foo.tld")))

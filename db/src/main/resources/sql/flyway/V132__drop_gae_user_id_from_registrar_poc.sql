@@ -13,4 +13,3 @@
 -- limitations under the License.
 
 ALTER TABLE "RegistrarPoc" DROP COLUMN gae_user_id;
-

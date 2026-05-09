@@ -29,10 +29,10 @@ import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -135,14 +135,14 @@ public class PasswordResetVerifyActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testFailure_get_expired() throws Exception {
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
     createAction("GET", verificationCode, null).run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
   }
 
   @Test
   void testFailure_post_expired() throws Exception {
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
     createAction("POST", verificationCode, "newPassword").run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
   }

@@ -33,7 +33,6 @@ dependencies {
   implementation deps['io.netty:netty-handler']
   implementation deps['io.netty:netty-transport']
   implementation deps['jakarta.inject:jakarta.inject-api']
-  implementation deps['joda-time:joda-time']
   implementation deps['org.bouncycastle:bcpkix-jdk18on']
   implementation deps['org.bouncycastle:bcprov-jdk18on']
   implementation deps['xerces:xmlParserAPIs']

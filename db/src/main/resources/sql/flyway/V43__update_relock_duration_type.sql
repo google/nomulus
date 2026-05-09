@@ -15,4 +15,3 @@
 ALTER TABLE "RegistryLock" DROP COLUMN relock_duration;
 
 ALTER TABLE "RegistryLock" ADD COLUMN relock_duration interval;
-

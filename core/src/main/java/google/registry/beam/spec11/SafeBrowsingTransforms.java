@@ -14,7 +14,6 @@
 
 package google.registry.beam.spec11;
 
-import static google.registry.util.DateTimeUtils.toJodaInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -132,7 +131,13 @@ public class SafeBrowsingTransforms {
       if (!domainNameInfoBuffer.isEmpty()) {
         ImmutableSet<KV<DomainNameInfo, ThreatMatch>> results = evaluateAndFlush();
         results.forEach(
-            (kv) -> context.output(kv, toJodaInstant(clock.now()), GlobalWindow.INSTANCE));
+            kv -> {
+              // The Apache Beam API requires org.joda.time.Instant here.
+              @SuppressWarnings("UnnecessarilyFullyQualified")
+              org.joda.time.Instant timestamp =
+                  org.joda.time.Instant.ofEpochMilli(clock.nowMillis());
+              context.output(kv, timestamp, GlobalWindow.INSTANCE);
+            });
       }
     }
 

@@ -14,4 +14,3 @@
 
 alter table "RegistrarPoc" add column login_email_address text;
 create index registrarpoc_login_email_idx on "RegistrarPoc" (login_email_address);
-

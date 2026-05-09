@@ -15,7 +15,6 @@
 package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -24,14 +23,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
-import java.time.format.SignStyle;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import javax.annotation.Nullable;
-import org.joda.time.DateTime;
-import org.joda.time.ReadableDuration;
 
 public abstract class DateTimeUtils {
 
@@ -52,15 +45,15 @@ public abstract class DateTimeUtils {
    *
    * <p>Example: {@code 2024-03-27T10:15:30.105Z}
    *
-   * <p>Handles large/negative years by using a sign prefix if necessary, compatible with {@link
-   * Instant#parse}.
+   * <p>Note: We deliberately strip the leading {@code +} sign from the formatted year field if
+   * present. While standard ISO 8601 specifies that years with more than 4 digits should be
+   * prefixed with a {@code +} sign, W3C XML Schema 1.0 (which our EPP RDE XSD uses) strictly
+   * forbids leading plus signs in {@code xsd:dateTime} strings. Suppressing the plus sign ensures
+   * our generated XML continues to pass strict XSD validation for large years (e.g. {@code
+   * 294247-01-10T04:00:54.775Z}).
    */
   private static final DateTimeFormatter ISO_8601_FORMATTER =
-      new DateTimeFormatterBuilder()
-          .appendValue(ChronoField.YEAR, 4, 10, SignStyle.NOT_NEGATIVE)
-          .appendPattern("-MM-dd'T'HH:mm:ss.SSS'Z'")
-          .toFormatter()
-          .withZone(ZoneOffset.UTC);
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
 
   /** A formatter that produces lowercase, filename-safe and job-name-safe timestamps. */
   public static final DateTimeFormatter LOWERCASE_TIMESTAMP_FORMATTER =
@@ -68,7 +61,8 @@ public abstract class DateTimeUtils {
 
   /** Formats an {@link Instant} to an ISO-8601 string. */
   public static String formatInstant(Instant instant) {
-    return ISO_8601_FORMATTER.format(instant);
+    String formatted = ISO_8601_FORMATTER.format(instant);
+    return formatted.startsWith("+") ? formatted.substring(1) : formatted;
   }
 
   /**
@@ -79,9 +73,15 @@ public abstract class DateTimeUtils {
    * large years (e.g. {@code 294247-01-10T04:00:54.775Z}).
    */
   public static Instant parseInstant(String timestamp) {
+    if (!timestamp.startsWith("+") && !timestamp.startsWith("-")) {
+      int dashIndex = timestamp.indexOf('-');
+      if (dashIndex > 4) {
+        timestamp = "+" + timestamp;
+      }
+    }
     try {
       // Try the standard millisecond precision format first.
-      return Instant.from(ISO_8601_FORMATTER.parse(timestamp));
+      return Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestamp));
     } catch (DateTimeParseException e) {
       // Fall back to the standard ISO instant parser which handles varied precision.
       return Instant.parse(timestamp);
@@ -93,7 +93,7 @@ public abstract class DateTimeUtils {
     return earliestOf(Lists.asList(first, rest));
   }
 
-  /** Returns the earliest element in a {@link Instant} iterable. */
+  /** Returns the earliest element in an {@link Instant} iterable. */
   public static Instant earliestOf(Iterable<Instant> instants) {
     checkArgument(!Iterables.isEmpty(instants));
     return Ordering.<Instant>natural().min(instants);
@@ -104,22 +104,10 @@ public abstract class DateTimeUtils {
     return latestOf(Lists.asList(first, rest));
   }
 
-  /** Returns the latest element in a {@link Instant} iterable. */
+  /** Returns the latest element in an {@link Instant} iterable. */
   public static Instant latestOf(Iterable<Instant> instants) {
     checkArgument(!Iterables.isEmpty(instants));
     return Ordering.<Instant>natural().max(instants);
-  }
-
-  /** Converts a Joda-Time Duration to a java.time.Duration. */
-  @Nullable
-  public static java.time.Duration toJavaDuration(@Nullable ReadableDuration duration) {
-    return duration == null ? null : java.time.Duration.ofMillis(duration.getMillis());
-  }
-
-  /** Converts a java.time.Duration to a Joda-Time Duration. */
-  @Nullable
-  public static org.joda.time.Duration toJodaDuration(@Nullable java.time.Duration duration) {
-    return duration == null ? null : org.joda.time.Duration.millis(duration.toMillis());
   }
 
   /** Returns whether the first {@link Instant} is equal to or earlier than the second. */
@@ -134,7 +122,7 @@ public abstract class DateTimeUtils {
 
   /**
    * Adds years to a date, in the {@code Duration} sense of semantic years. Use this instead of
-   * {@link java.time.ZonedDateTime#plusYears} to ensure that we never end up on February 29.
+   * {@link java.time.OffsetDateTime#plusYears} to ensure that we never end up on February 29.
    */
   public static Instant plusYears(Instant now, int years) {
     checkArgument(years >= 0);
@@ -157,7 +145,7 @@ public abstract class DateTimeUtils {
 
   /**
    * Subtracts years from a date, in the {@code Duration} sense of semantic years. Use this instead
-   * of {@link java.time.ZonedDateTime#minusYears} to ensure that we never end up on February 29.
+   * of {@link java.time.OffsetDateTime#minusYears} to ensure that we never end up on February 29.
    */
   public static Instant minusYears(Instant now, long years) {
     checkArgument(years >= 0);
@@ -169,24 +157,6 @@ public abstract class DateTimeUtils {
   /** Converts an Instant to a java.time.LocalDate in UTC. */
   public static LocalDate toLocalDate(Instant instant) {
     return instant.atZone(ZoneOffset.UTC).toLocalDate();
-  }
-
-  /** Convert a joda {@link DateTime} to a java.time {@link Instant}, null-safe. */
-  @Nullable
-  public static Instant toInstant(@Nullable DateTime dateTime) {
-    return (dateTime == null) ? null : Instant.ofEpochMilli(dateTime.getMillis());
-  }
-
-  /** Convert a java.time {@link Instant} to a joda {@link DateTime}, null-safe. */
-  @Nullable
-  public static DateTime toDateTime(@Nullable Instant instant) {
-    return (instant == null) ? null : new DateTime(instant.toEpochMilli(), UTC);
-  }
-
-  /** Convert a java.time {@link java.time.Instant} to a joda {@link org.joda.time.Instant}. */
-  @Nullable
-  public static org.joda.time.Instant toJodaInstant(@Nullable java.time.Instant instant) {
-    return (instant == null) ? null : org.joda.time.Instant.ofEpochMilli(instant.toEpochMilli());
   }
 
   public static Instant plusHours(Instant instant, long hours) {

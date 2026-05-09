@@ -81,7 +81,6 @@ public record CheckApiMetric(
     }
   }
 
-
   public static Builder builder(Clock clock) {
     return new AutoBuilder_CheckApiMetric_Builder().startTimestamp(clock.now()).setClock(clock);
   }

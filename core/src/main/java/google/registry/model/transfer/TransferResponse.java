@@ -14,7 +14,6 @@
 
 package google.registry.model.transfer;
 
-
 import google.registry.model.EppResource;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import google.registry.xml.UtcInstantAdapter;

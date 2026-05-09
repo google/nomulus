@@ -41,7 +41,6 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
  */
 public final class KeySerializer {
 
-
   private KeySerializer() {}
 
   /**

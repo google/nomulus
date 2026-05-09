@@ -71,7 +71,6 @@
     <max-backoff>180s</max-backoff>
   </queue>
 
-
   <!-- Queue for tasks that communicate with TMCH MarksDB webserver. -->
   <queue>
     <name>marksdb</name>

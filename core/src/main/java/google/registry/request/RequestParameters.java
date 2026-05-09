@@ -30,7 +30,6 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** Utilities for extracting parameters from HTTP requests. */
 public final class RequestParameters {
@@ -298,33 +297,6 @@ public final class RequestParameters {
    * @throws BadRequestException if request parameter named {@code name} is absent, empty, or could
    *     not be parsed as an ISO 8601 timestamp
    */
-  public static DateTime extractRequiredDatetimeParameter(HttpServletRequest req, String name) {
-    String stringValue = extractRequiredParameter(req, name);
-    try {
-      return DateTime.parse(stringValue);
-    } catch (IllegalArgumentException e) {
-      throw new BadRequestException("Bad ISO 8601 timestamp: " + name);
-    }
-  }
-
-  /**
-   * Returns first request parameter associated with {@code name} parsed as an <a
-   * href="https://goo.gl/pk5Q2k">ISO 8601</a> timestamp, e.g. {@code 1984-12-18TZ}, {@code
-   * 2000-01-01T16:20:00Z}.
-   *
-   * @throws BadRequestException if request parameter is present but not a valid {@link DateTime}.
-   */
-  public static Optional<DateTime> extractOptionalDatetimeParameter(
-      HttpServletRequest req, String name) {
-    String stringParam = req.getParameter(name);
-    try {
-      return isNullOrEmpty(stringParam)
-          ? Optional.empty()
-          : Optional.of(DateTime.parse(stringParam));
-    } catch (IllegalArgumentException e) {
-      throw new BadRequestException("Bad ISO 8601 timestamp: " + name);
-    }
-  }
 
   public static ImmutableSet<Instant> extractSetOfInstantParameters(
       HttpServletRequest req, String name) {
@@ -334,26 +306,6 @@ public final class RequestParameters {
           .map(Instant::parse)
           .collect(toImmutableSet());
     } catch (DateTimeParseException e) {
-      throw new BadRequestException("Bad ISO 8601 timestamp: " + name);
-    }
-  }
-
-  /**
-   * Returns all GET or POST date parameters associated with {@code name}, or an empty set if none.
-   *
-   * <p>Dates are parsed as an <a href="https://goo.gl/pk5Q2k">ISO 8601</a> timestamp, e.g. {@code
-   * 1984-12-18TZ}, {@code 2000-01-01T16:20:00Z}.
-   *
-   * @throws BadRequestException if one of the parameter values is not a valid {@link DateTime}.
-   */
-  public static ImmutableSet<DateTime> extractSetOfDatetimeParameters(
-      HttpServletRequest req, String name) {
-    try {
-      return extractSetOfParameters(req, name).stream()
-          .filter(not(String::isEmpty))
-          .map(DateTime::parse)
-          .collect(toImmutableSet());
-    } catch (IllegalArgumentException e) {
       throw new BadRequestException("Bad ISO 8601 timestamp: " + name);
     }
   }

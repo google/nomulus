@@ -14,7 +14,6 @@
 
 package google.registry.rde;
 
-
 import static com.google.common.base.Verify.verify;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;

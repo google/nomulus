@@ -14,8 +14,8 @@
 
 package google.registry.tools.params;
 
-import org.joda.time.LocalDate;
-import org.joda.time.format.ISODateTimeFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 /** {@linkplain LocalDate} CLI parameter converter/validator. */
 public final class LocalDateParameter extends ParameterConverterValidator<LocalDate> {
@@ -26,6 +26,6 @@ public final class LocalDateParameter extends ParameterConverterValidator<LocalD
 
   @Override
   public LocalDate convert(String value) {
-    return LocalDate.parse(value, ISODateTimeFormat.date());
+    return LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
   }
 }

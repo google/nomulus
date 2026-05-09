@@ -14,7 +14,6 @@
 
 package google.registry.util;
 
-
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
 
