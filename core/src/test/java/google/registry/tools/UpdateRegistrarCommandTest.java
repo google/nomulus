@@ -44,7 +44,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -255,7 +254,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testSuccess_certFile() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isEmpty();
     assertThat(registrar.getClientCertificateHash()).isEmpty();
@@ -271,7 +270,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testSuccess_rotatePrimaryCert() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -295,7 +294,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void test_rotatePrimaryCert_noPrimaryCert() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isEmpty();
     assertThat(registrar.getClientCertificateHash()).isEmpty();
@@ -327,7 +326,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testFail_certFileWithViolation() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isEmpty();
     assertThat(registrar.getClientCertificateHash()).isEmpty();
@@ -344,7 +343,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testFail_certFileWithMultipleViolations() throws Exception {
-    fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2055-10-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isEmpty();
     assertThat(registrar.getClientCertificateHash()).isEmpty();
@@ -361,7 +360,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testFail_failoverCertFileWithViolation() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getFailoverClientCertificate()).isEmpty();
     InsecureCertificateException thrown =
@@ -378,7 +377,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testFail_failoverCertFileWithMultipleViolations() throws Exception {
-    fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2055-10-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getFailoverClientCertificate()).isEmpty();
     InsecureCertificateException thrown =
@@ -395,7 +394,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testSuccess_failoverCertFile() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getFailoverClientCertificate()).isEmpty();
     runCommand("--failover_cert_file=" + getCertFilename(SAMPLE_CERT3), "--force", "NewRegistrar");

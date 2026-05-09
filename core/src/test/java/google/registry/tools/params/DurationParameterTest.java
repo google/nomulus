@@ -18,8 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.joda.time.Duration;
-import org.joda.time.Period;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DurationParameter}. */
@@ -29,32 +29,32 @@ class DurationParameterTest {
 
   @Test
   void testConvert_isoHours() {
-    assertThat(instance.convert("PT36H")).isEqualTo(Duration.standardHours(36));
+    assertThat(instance.convert("PT36H")).isEqualTo(Duration.ofHours(36));
   }
 
   @Test
   void testConvert_isoDaysAndHours() {
-    assertThat(instance.convert("P1DT12H")).isEqualTo(Duration.standardHours(36));
+    assertThat(instance.convert("P1DT12H")).isEqualTo(Duration.ofHours(36));
   }
 
   @Test
   void testConvert_isoLowercase_isAllowed() {
-    assertThat(instance.convert("pt36h")).isEqualTo(Duration.standardHours(36));
+    assertThat(instance.convert("pt36h")).isEqualTo(Duration.ofHours(36));
   }
 
   @Test
   void testIsoMissingP_notAllowed() {
-    assertThrows(IllegalArgumentException.class, () -> Period.parse("T36H"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("T36H"));
   }
 
   @Test
   void testIsoMissingPT_notAllowed() {
-    assertThrows(IllegalArgumentException.class, () -> Period.parse("36H"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("36H"));
   }
 
   @Test
   void testConvert_isoMissingP_notAllowed() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("T36H"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("T36H"));
   }
 
   @Test
@@ -64,17 +64,17 @@ class DurationParameterTest {
 
   @Test
   void testConvert_empty_throws() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert(""));
+    assertThrows(DateTimeParseException.class, () -> instance.convert(""));
   }
 
   @Test
   void testConvert_numeric_throws() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("1234"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("1234"));
   }
 
   @Test
   void testConvert_sillyString_throws() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("foo"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("foo"));
   }
 
   @Test

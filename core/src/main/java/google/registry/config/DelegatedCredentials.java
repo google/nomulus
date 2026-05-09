@@ -155,7 +155,7 @@ public class DelegatedCredentials extends GoogleCredentials {
   @Override
   public AccessToken refreshAccessToken() throws IOException {
     JsonFactory jsonFactory = JSON_FACTORY;
-    long currentTime = clock.now().toEpochMilli();
+    long currentTime = clock.nowMillis();
     String assertion = createAssertion(jsonFactory, currentTime);
 
     GenericData tokenRequest = new GenericData();

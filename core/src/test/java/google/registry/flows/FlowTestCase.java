@@ -27,7 +27,6 @@ import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -53,12 +52,12 @@ import google.registry.testing.FakeHttpSession;
 import google.registry.testing.TestDataHelper;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import google.registry.xml.ValidationMode;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -83,7 +82,7 @@ public abstract class FlowTestCase<F extends Flow> {
 
   protected EppLoader eppLoader;
   protected SessionMetadata sessionMetadata;
-  protected FakeClock clock = new FakeClock(DateTime.now(UTC));
+  protected FakeClock clock = new FakeClock(Instant.now());
   protected TransportCredentials credentials = new PasswordOnlyTransportCredentials();
   protected EppRequestSource eppRequestSource = EppRequestSource.UNIT_TEST;
   protected CloudTasksHelper cloudTasksHelper;

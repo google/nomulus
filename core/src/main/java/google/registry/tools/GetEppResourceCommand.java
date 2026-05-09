@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.EppResource;
-import google.registry.tools.params.InstantParameter;
+import google.registry.tools.params.DateTimeParameter;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.time.Instant;
@@ -32,7 +32,7 @@ abstract class GetEppResourceCommand implements Command {
   @Parameter(
       names = "--read_timestamp",
       description = "Timestamp to use when reading. May not be in the past.",
-      converter = InstantParameter.class)
+      converter = DateTimeParameter.class)
   protected Instant readTimestamp;
 
   @Parameter(

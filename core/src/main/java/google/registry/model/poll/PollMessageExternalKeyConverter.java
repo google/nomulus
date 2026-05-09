@@ -18,7 +18,7 @@ import static java.time.ZoneOffset.UTC;
 
 import com.google.common.base.Splitter;
 import google.registry.persistence.VKey;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -46,7 +46,7 @@ public final class PollMessageExternalKeyConverter {
   public static String makePollMessageExternalId(PollMessage pollMessage) {
     return String.format(
         "%d-%d",
-        pollMessage.getId(), ZonedDateTime.ofInstant(pollMessage.getEventTime(), UTC).getYear());
+        pollMessage.getId(), OffsetDateTime.ofInstant(pollMessage.getEventTime(), UTC).getYear());
   }
 
   /**

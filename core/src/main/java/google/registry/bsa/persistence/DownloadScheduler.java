@@ -114,11 +114,7 @@ public final class DownloadScheduler {
   }
 
   private boolean isTimeAgain(BsaDownload mostRecent, Duration interval) {
-    return mostRecent
-        .getCreationTime()
-        .plusMillis(interval.toMillis())
-        .minusMillis(CRON_JITTER.toMillis())
-        .isBefore(clock.now());
+    return mostRecent.getCreationTime().plus(interval).minus(CRON_JITTER).isBefore(clock.now());
   }
 
   /**

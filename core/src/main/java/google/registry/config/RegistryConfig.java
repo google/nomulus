@@ -50,6 +50,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.net.URI;
 import java.net.URL;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map.Entry;
@@ -57,7 +58,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.joda.time.DateTimeConstants;
 
 /**
  * Central clearing-house for all configuration.
@@ -271,7 +271,7 @@ public final class RegistryConfig {
     @Provides
     @Config("brdaDayOfWeek")
     public static int provideBrdaDayOfWeek() {
-      return DateTimeConstants.TUESDAY;
+      return DayOfWeek.TUESDAY.getValue();
     }
 
     /**

@@ -17,7 +17,7 @@ package google.registry.model.transfer;
 
 import google.registry.model.EppResource;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
-import google.registry.xml.UtcInstantAdapter;
+import google.registry.xml.UtcDateTimeAdapter;
 import jakarta.persistence.Embeddable;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
@@ -61,7 +61,7 @@ public class TransferResponse extends BaseTransferObject implements ResponseData
      * will only be set on pending or approved transfers, not on cancelled or rejected ones.
      */
     @XmlElement(name = "exDate")
-    @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+    @XmlJavaTypeAdapter(UtcDateTimeAdapter.class)
     Instant extendedRegistrationExpirationTime;
 
     public Instant getExtendedRegistrationExpirationTime() {

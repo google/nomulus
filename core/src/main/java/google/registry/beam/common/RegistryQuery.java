@@ -22,12 +22,10 @@ import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaQuery;
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** Interface for query instances used by {@link RegistryJpaIO.Read}. */
 public interface RegistryQuery<T> extends Serializable {
@@ -61,11 +59,7 @@ public interface RegistryQuery<T> extends Serializable {
       if (parameters != null) {
         parameters.forEach(
             (key, value) -> {
-              if (value instanceof DateTime dt) {
-                query.setParameter(key, Instant.ofEpochMilli(dt.getMillis()));
-              } else {
-                query.setParameter(key, value);
-              }
+              query.setParameter(key, value);
             });
       }
       JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);

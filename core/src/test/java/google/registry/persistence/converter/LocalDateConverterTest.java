@@ -24,8 +24,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import org.joda.time.LocalDate;
-import org.joda.time.format.ISODateTimeFormat;
+import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -38,7 +37,7 @@ public class LocalDateConverterTest {
           .withEntityClass(LocalDateConverterTestEntity.class)
           .buildUnitTestExtension();
 
-  private final LocalDate exampleDate = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
+  private final LocalDate exampleDate = LocalDate.parse("2020-06-10");
 
   @Test
   void testNullInput() {
