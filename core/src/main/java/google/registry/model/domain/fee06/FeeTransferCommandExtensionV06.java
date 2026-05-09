@@ -19,9 +19,13 @@ import google.registry.model.domain.fee.Credit;
 import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 
-/** A fee extension that may be present on domain transfer requests. */
+/**
+ * An XML data object that represents a fee extension that may be present on EPP domain transfer
+ * commands.
+ */
 @XmlRootElement(name = "transfer")
 @XmlType(propOrder = {"currency", "fees"})
 public class FeeTransferCommandExtensionV06 extends FeeTransferCommandExtension {
@@ -33,6 +37,7 @@ public class FeeTransferCommandExtensionV06 extends FeeTransferCommandExtension 
 
   /** This version of the extension doesn't support the "credit" field. */
   @Override
+  @XmlTransient
   public ImmutableList<Credit> getCredits() {
     return ImmutableList.of();
   }

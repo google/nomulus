@@ -16,9 +16,11 @@ package google.registry.model.domain.superuser;
 
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 
 /** A superuser extension that may be present on domain delete commands. */
 @XmlRootElement(name = "domainDelete")
+@XmlType(propOrder = {"redemptionGracePeriodDays", "pendingDeleteDays"})
 public class DomainDeleteSuperuserExtension extends SuperuserExtension {
 
   @XmlElement(name = "redemptionGracePeriodDays")
@@ -26,6 +28,14 @@ public class DomainDeleteSuperuserExtension extends SuperuserExtension {
 
   @XmlElement(name = "pendingDeleteDays")
   int pendingDeleteDays;
+
+  public static DomainDeleteSuperuserExtension create(
+      int redemptionGracePeriodDays, int pendingDeleteDays) {
+    DomainDeleteSuperuserExtension instance = new DomainDeleteSuperuserExtension();
+    instance.redemptionGracePeriodDays = redemptionGracePeriodDays;
+    instance.pendingDeleteDays = pendingDeleteDays;
+    return instance;
+  }
 
   public int getRedemptionGracePeriodDays() {
     return redemptionGracePeriodDays;

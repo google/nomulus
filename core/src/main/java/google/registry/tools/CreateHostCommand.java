@@ -18,14 +18,14 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.net.InetAddresses;
-import com.google.template.soy.data.SoyMapData;
-import google.registry.tools.soy.HostCreateSoyInfo;
+import google.registry.model.eppinput.EppInput;
+import google.registry.model.host.HostCommand;
 import google.registry.util.DomainNameUtils;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.util.Comparator;
 import java.util.List;
 
 /** A command to create a new host via EPP. */
@@ -52,25 +52,19 @@ final class CreateHostCommand extends MutatingEppToolCommand {
 
   @Override
   protected void initMutatingEppToolCommand() {
-    setSoyTemplate(HostCreateSoyInfo.getInstance(), HostCreateSoyInfo.HOSTCREATE);
-    ImmutableList.Builder<String> ipv4Addresses = new ImmutableList.Builder<>();
-    ImmutableList.Builder<String> ipv6Addresses = new ImmutableList.Builder<>();
+    ImmutableSet.Builder<InetAddress> inetAddresses = new ImmutableSet.Builder<>();
     for (String address : nullToEmpty(addresses)) {
-      InetAddress inetAddress = InetAddresses.forString(address);
-      if (inetAddress instanceof Inet4Address) {
-        ipv4Addresses.add(inetAddress.getHostAddress());
-      } else if (inetAddress instanceof Inet6Address) {
-        ipv6Addresses.add(inetAddress.getHostAddress());
-      } else {
-        throw new IllegalArgumentException(
-            String.format("IP address in unknown format: %s", address));
-      }
+      inetAddresses.add(InetAddresses.forString(address));
     }
-    addSoyRecord(
+
+    HostCommand.Create.Builder createBuilder = new HostCommand.Create.Builder();
+    createBuilder.setTargetId(DomainNameUtils.canonicalizeHostname(hostName));
+    createBuilder.setInetAddresses(
+        ImmutableSortedSet.copyOf(
+            Comparator.comparing(InetAddresses::toAddrString), inetAddresses.build()));
+
+    addEppInput(
         clientId,
-        new SoyMapData(
-            "hostname", DomainNameUtils.canonicalizeHostname(hostName),
-            "ipv4addresses", ipv4Addresses.build(),
-            "ipv6addresses", ipv6Addresses.build()));
+        EppInput.create(EppInput.Create.create(createBuilder.build())).withClTrid("RegistryTool"));
   }
 }

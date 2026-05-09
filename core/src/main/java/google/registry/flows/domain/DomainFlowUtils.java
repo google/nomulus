@@ -43,8 +43,8 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
-import static java.time.ZoneOffset.UTC;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.CharMatcher;
@@ -154,7 +154,7 @@ public class DomainFlowUtils {
   /** Warning message for allocation of collision domains in sunrise. */
   public static final String COLLISION_MESSAGE =
       "Domain on the name collision list was allocated. But by policy, the domain will not be "
-          + "delegated. Please visit https://www.icann.org/namecollision  for more information on "
+          + "delegated. Please visit https://www.icann.org/namecollision for more information on "
           + "name collision.";
 
   /** Strict validator for ascii lowercase letters, digits, and "-", allowing "." as a separator */
@@ -581,13 +581,12 @@ public class DomainFlowUtils {
       InternetDomainName domainName,
       Optional<Domain> domain,
       @Nullable CurrencyUnit topLevelCurrency,
-      Instant currentDate,
+      Instant now,
       DomainPricingLogic pricingLogic,
       Optional<AllocationToken> allocationToken,
       boolean isAvailable,
       @Nullable BillingRecurrence billingRecurrence)
       throws EppException {
-    Instant now = currentDate;
     // Use the custom effective date specified in the fee check request, if there is one.
     if (feeRequest.getEffectiveDate().isPresent()) {
       now = feeRequest.getEffectiveDate().get();
@@ -816,7 +815,7 @@ public class DomainFlowUtils {
       return fee.getType();
     }
     ImmutableList<FeeType> types = fee.parseDescriptionForTypes();
-    if (types.size() == 0) {
+    if (types.isEmpty()) {
       throw new FeeDescriptionParseException(fee.getDescription());
     } else if (types.size() > 1) {
       throw new FeeDescriptionMultipleMatchesException(fee.getDescription(), types);
@@ -848,7 +847,7 @@ public class DomainFlowUtils {
    */
   public static void validateRegistrationPeriod(Instant now, Instant newExpirationTime)
       throws EppException {
-    if (now.atZone(UTC).plusYears(MAX_REGISTRATION_YEARS).toInstant().isBefore(newExpirationTime)) {
+    if (plusYears(now, MAX_REGISTRATION_YEARS).isBefore(newExpirationTime)) {
       throw new ExceedsMaxRegistrationYearsException();
     }
   }
@@ -907,7 +906,7 @@ public class DomainFlowUtils {
     return ImmutableSet.copyOf(union(difference(oldDsData, toRemove), toAdd));
   }
 
-  /** If a domain "clientUpdateProhibited" set, updates must clear it or fail. */
+  /** If a domain has "clientUpdateProhibited" set, updates must clear it or fail. */
   static void verifyClientUpdateNotProhibited(Update command, Domain existingResource)
       throws ResourceHasClientUpdateProhibitedException {
     if (existingResource.getStatusValues().contains(StatusValue.CLIENT_UPDATE_PROHIBITED)
@@ -996,7 +995,13 @@ public class DomainFlowUtils {
     }
   }
 
-  /** Check that the claims period hasn't ended. */
+  /**
+   * Check that the claims period hasn't ended.
+   *
+   * @param tld the {@link Tld} to check
+   * @param now the current {@link Instant}
+   * @throws ClaimsPeriodEndedException if the claims period has ended
+   */
   static void verifyClaimsPeriodNotEnded(Tld tld, Instant now) throws ClaimsPeriodEndedException {
     if (!now.isBefore(tld.getClaimsPeriodEnd())) {
       throw new ClaimsPeriodEndedException(tld.getTldStr());
@@ -1008,6 +1013,9 @@ public class DomainFlowUtils {
    *
    * <p>{@link BigDecimal} has a concept of significant figures, so zero is not always zero. E.g.
    * zero in USD is 0.00, whereas zero in Yen is 0, and zero in Dinars is 0.000 (!).
+   *
+   * @param currencyUnit the {@link CurrencyUnit}
+   * @return zero in the given currency
    */
   static BigDecimal zeroInCurrency(CurrencyUnit currencyUnit) {
     return Money.of(currencyUnit, BigDecimal.ZERO).getAmount();
@@ -1016,6 +1024,12 @@ public class DomainFlowUtils {
   /**
    * Check that if there's a claims notice it's on the claims list, and that if there's not one it's
    * not on the claims list.
+   *
+   * @param domainName the {@link InternetDomainName} to check
+   * @param claimsList the current {@link ClaimsList}
+   * @param hasSignedMarks whether signed marks are present
+   * @param hasClaimsNotice whether a claims notice is present
+   * @throws EppException if the claims notice status is incorrect
    */
   static void verifyClaimsNoticeIfAndOnlyIfNeeded(
       InternetDomainName domainName,
@@ -1032,7 +1046,12 @@ public class DomainFlowUtils {
     }
   }
 
-  /** Check that there are no code marks, which is a type of mark we don't support. */
+  /**
+   * Check that there are no code marks, which is a type of mark we don't support.
+   *
+   * @param launchCreate the {@link LaunchCreateExtension}
+   * @throws UnsupportedMarkTypeException if code marks are present
+   */
   static void verifyNoCodeMarks(LaunchCreateExtension launchCreate)
       throws UnsupportedMarkTypeException {
     if (launchCreate.hasCodeMarks()) {
@@ -1040,7 +1059,13 @@ public class DomainFlowUtils {
     }
   }
 
-  /** Create a response extension listing the fees on a domain create. */
+  /**
+   * Create a response extension listing the fees on a domain create.
+   *
+   * @param feeCreate the {@link FeeTransformCommandExtension}
+   * @param feesAndCredits the {@link FeesAndCredits}
+   * @return the {@link FeeTransformResponseExtension}
+   */
   static FeeTransformResponseExtension createFeeCreateResponse(
       FeeTransformCommandExtension feeCreate, FeesAndCredits feesAndCredits) {
     return feeCreate
@@ -1058,10 +1083,21 @@ public class DomainFlowUtils {
    * their flow. For example, if a grace period delete occurs, we must add -1 counters for the
    * associated NET_ADDS_#_YRS field, if it exists.
    *
-   * <p>The steps are as follows: 1. Find all HistoryEntries under the domain modified in the past,
-   * up to the maxSearchPeriod. 2. Only keep HistoryEntries with a DomainTransactionRecord that a)
-   * hasn't been reported yet and b) matches the predicate 3. Return the transactionRecords under
-   * the most recent HistoryEntry that fits the above criteria, with negated reportAmounts.
+   * <p>The steps are as follows:
+   *
+   * <ol>
+   *   <li>Find all HistoryEntries under the domain modified in the past, up to the maxSearchPeriod.
+   *   <li>Only keep HistoryEntries with a DomainTransactionRecord that a) hasn't been reported yet
+   *       and b) matches the predicate
+   *   <li>Return the transactionRecords under the most recent HistoryEntry that fits the above
+   *       criteria, with negated reportAmounts.
+   * </ol>
+   *
+   * @param domain the {@link Domain} to create records for
+   * @param now the current {@link Instant}
+   * @param maxSearchPeriod the {@link Duration} to search back
+   * @param cancelableFields the set of {@link TransactionReportField}s that can be canceled
+   * @return the set of canceling {@link DomainTransactionRecord}s
    */
   public static ImmutableSet<DomainTransactionRecord> createCancelingRecords(
       Domain domain,
@@ -1225,13 +1261,6 @@ public class DomainFlowUtils {
     }
   }
 
-  /** Having a registrant is prohibited by registry policy. */
-  public static class RegistrantProhibitedException extends ParameterValuePolicyErrorException {
-    public RegistrantProhibitedException() {
-      super("Having a registrant is prohibited by registry policy");
-    }
-  }
-
   /** Too many nameservers set on this domain. */
   static class TooManyNameserversException extends ParameterValuePolicyErrorException {
     public TooManyNameserversException(String message) {
@@ -1381,6 +1410,13 @@ public class DomainFlowUtils {
               "The fees passed in the transform command for type \"%s\" do not match the expected "
                   + "fee of %s",
               type, correctFee));
+    }
+  }
+
+  /** Having a registrant is prohibited by registry policy. */
+  public static class RegistrantProhibitedException extends ParameterValuePolicyErrorException {
+    public RegistrantProhibitedException() {
+      super("Having a registrant is prohibited by registry policy");
     }
   }
 

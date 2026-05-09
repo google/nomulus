@@ -14,14 +14,14 @@
 
 package google.registry.tools;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
-import com.google.template.soy.data.SoyMapData;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.tools.soy.DomainCheckSoyInfo;
+import google.registry.model.domain.DomainCommand;
+import google.registry.model.eppinput.EppExtensions;
+import google.registry.model.eppinput.EppInput;
 import jakarta.inject.Inject;
 import java.util.Collection;
 import java.util.List;
@@ -57,14 +57,20 @@ final class CheckDomainCommand extends NonMutatingEppToolCommand {
       clientId = registryAdminClientId;
     }
 
-    Multimap<String, String> domainNameMap = validateAndGroupDomainNamesByTld(mainParameters);
+    Multimap<String, String> domainNameMap =
+        validateAndGroupDomainNamesByTld(ImmutableList.copyOf(mainParameters));
     for (Collection<String> values : domainNameMap.asMap().values()) {
-      setSoyTemplate(DomainCheckSoyInfo.getInstance(), DomainCheckSoyInfo.DOMAINCHECK);
-      SoyMapData soyMapData = new SoyMapData("domainNames", values);
-      if (!isNullOrEmpty(allocationToken)) {
-        soyMapData.put("allocationToken", allocationToken);
-      }
-      addSoyRecord(clientId, soyMapData);
+      ImmutableList<String> domainNames = ImmutableList.copyOf(values);
+      DomainCommand.Check checkCommand = new DomainCommand.Check();
+      checkCommand.setTargetIds(domainNames);
+
+      addEppInput(
+          clientId,
+          EppInput.create(
+                  EppInput.Check.create(checkCommand),
+                  EppExtensions.feeCheckCreateV06(domainNames),
+                  EppExtensions.allocationToken(allocationToken))
+              .withClTrid("RegistryTool"));
     }
   }
 }

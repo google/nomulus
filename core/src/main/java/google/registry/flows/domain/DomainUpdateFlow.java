@@ -14,7 +14,6 @@
 
 package google.registry.flows.domain;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.collect.Sets.symmetricDifference;
 import static com.google.common.collect.Sets.union;
@@ -58,17 +57,17 @@ import google.registry.flows.custom.DomainUpdateFlowCustomLogic.BeforeSaveParame
 import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
-import google.registry.model.domain.DomainCommand.Update.AddRemove;
 import google.registry.model.domain.DomainCommand.Update.Change;
+import google.registry.model.domain.DomainCommand.Update.DomainAddRemove;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.FeeUpdateCommandExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
-import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension.Add;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension.Remove;
@@ -118,6 +117,7 @@ import java.util.Optional;
  * @error {@link NameserversNotSpecifiedForTldWithNameserverAllowListException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link RegistrantProhibitedException}
+ * @error {@link ContactsProhibitedException}
  * @error {@link DomainFlowUtils.SecDnsAllUsageException}
  * @error {@link DomainFlowUtils.TooManyDsRecordsException}
  * @error {@link DomainFlowUtils.TooManyNameserversException}
@@ -214,8 +214,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
   private void verifyUpdateAllowed(Update command, Domain existingDomain, Instant now)
       throws EppException {
     verifyOptionalAuthInfo(authInfo, existingDomain);
-    AddRemove add = command.getInnerAdd();
-    AddRemove remove = command.getInnerRemove();
+    DomainAddRemove add = command.getInnerAdd();
+    DomainAddRemove remove = command.getInnerRemove();
     String tldStr = existingDomain.getTld();
     if (!isSuperuser) {
       verifyNoDisallowedStatuses(existingDomain, UPDATE_DISALLOWED_STATUSES);
@@ -234,8 +234,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
   }
 
   private Domain performUpdate(Update command, Domain domain, Instant now) throws EppException {
-    AddRemove add = command.getInnerAdd();
-    AddRemove remove = command.getInnerRemove();
+    DomainAddRemove add = command.getInnerAdd();
+    DomainAddRemove remove = command.getInnerRemove();
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
     verifyAddsAndRemoves(domain.getNameservers(), add.getNameservers(), remove.getNameservers());
@@ -251,28 +251,29 @@ public final class DomainUpdateFlow implements MutatingFlow {
     Domain.Builder domainBuilder =
         domain
             .asBuilder()
-            // Handle the secDNS extension. As dsData in secDnsUpdate is read from EPP input and
-            // does not have domainRepoId set, we create a copy of the existing dsData without
-            // domainRepoId for comparison.
+            // Handle the secDNS extension.
             .setDsData(
                 secDnsUpdate.isPresent()
-                    ? updateDsData(
-                        domain.getDsData().stream()
-                            .map(DomainDsData::cloneWithoutDomainRepoId)
-                            .collect(toImmutableSet()),
-                        secDnsUpdate.get())
+                    ? updateDsData(domain.getDsData(), secDnsUpdate.get())
                     : domain.getDsData())
             .setLastEppUpdateTime(now)
-            .setLastEppUpdateRegistrarId(registrarId)
-            .addStatusValues(add.getStatusValues())
-            .removeStatusValues(remove.getStatusValues())
-            .setAuthInfo(Optional.ofNullable(change.getAuthInfo()).orElse(domain.getAuthInfo()));
+            .setLastEppUpdateRegistrarId(registrarId);
+
+    if (!add.getStatusValues().isEmpty()) {
+      domainBuilder.addStatusValues(add.getStatusValues());
+    }
+    if (!remove.getStatusValues().isEmpty()) {
+      domainBuilder.removeStatusValues(remove.getStatusValues());
+    }
+
+    domainBuilder.setAuthInfo(
+        Optional.ofNullable(change.getAuthInfo()).orElse(domain.getAuthInfo()));
 
     if (!add.getNameservers().isEmpty()) {
-      domainBuilder.addNameservers(add.getNameservers().stream().collect(toImmutableSet()));
+      domainBuilder.addNameservers(add.getNameservers());
     }
     if (!remove.getNameservers().isEmpty()) {
-      domainBuilder.removeNameservers(remove.getNameservers().stream().collect(toImmutableSet()));
+      domainBuilder.removeNameservers(remove.getNameservers());
     }
 
     Optional<DomainUpdateSuperuserExtension> superuserExt =

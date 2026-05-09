@@ -14,8 +14,6 @@
 
 package google.registry.model.domain.fee06;
 
-import com.google.common.collect.ImmutableList;
-import google.registry.model.domain.fee.Credit;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
@@ -25,12 +23,5 @@ import jakarta.xml.bind.annotation.XmlType;
  * domain create commands.
  */
 @XmlRootElement(name = "creData")
-@XmlType(propOrder = {"currency", "fees"})
-public class FeeCreateResponseExtensionV06 extends FeeTransformResponseExtension {
-
-  /** This version of the extension doesn't support the "credit" field. */
-  @Override
-  public ImmutableList<Credit> getCredits() {
-    return ImmutableList.of();
-  }
-}
+@XmlType(propOrder = {"currency", "fees", "credits"})
+public class FeeCreateResponseExtensionV06 extends FeeTransformResponseExtension {}

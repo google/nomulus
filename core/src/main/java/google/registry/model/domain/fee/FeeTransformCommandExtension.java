@@ -30,7 +30,7 @@ public abstract class FeeTransformCommandExtension
     extends ImmutableObject implements CommandExtension {
 
   /** The currency of the fee. */
-  CurrencyUnit currency;
+  @XmlElement public CurrencyUnit currency;
 
   /**
    * The magnitude of the fee, in the specified units, with an optional description.
@@ -38,7 +38,7 @@ public abstract class FeeTransformCommandExtension
    * <p>This is a list because a single operation can involve multiple fees.
    */
   @XmlElement(name = "fee")
-  List<Fee> fees;
+  public List<Fee> fees;
 
   public CurrencyUnit getCurrency() {
     return currency;

@@ -14,12 +14,14 @@
 
 package google.registry.model.eppinput;
 
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.bulktoken.BulkTokenExtension;
@@ -60,6 +62,8 @@ import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
 import google.registry.model.host.HostCommand;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementRef;
@@ -69,21 +73,26 @@ import jakarta.xml.bind.annotation.XmlElements;
 import jakarta.xml.bind.annotation.XmlEnumValue;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlSchema;
+import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 
 /** This class represents the root EPP XML element for input. */
 @XmlRootElement(name = "epp")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class EppInput extends ImmutableObject {
 
   @XmlElements({
-      @XmlElement(name = "command", type = CommandWrapper.class),
-      @XmlElement(name = "hello", type = Hello.class) })
+    @XmlElement(name = "command", type = CommandWrapper.class),
+    @XmlElement(name = "hello", type = Hello.class)
+  })
   CommandWrapper commandWrapper;
 
   public CommandWrapper getCommandWrapper() {
@@ -107,11 +116,11 @@ public class EppInput extends ImmutableObject {
   public Optional<String> getResourceType() {
     ResourceCommand resourceCommand = getResourceCommand();
     if (resourceCommand != null) {
-       XmlSchema xmlSchemaAnnotation =
-           resourceCommand.getClass().getPackage().getAnnotation(XmlSchema.class);
-       if (xmlSchemaAnnotation != null && xmlSchemaAnnotation.xmlns().length > 0) {
-         return Optional.of(xmlSchemaAnnotation.xmlns()[0].prefix());
-       }
+      XmlSchema xmlSchemaAnnotation =
+          resourceCommand.getClass().getPackage().getAnnotation(XmlSchema.class);
+      if (xmlSchemaAnnotation != null && xmlSchemaAnnotation.xmlns().length > 0) {
+        return Optional.of(xmlSchemaAnnotation.xmlns()[0].prefix());
+      }
     }
     return Optional.empty();
   }
@@ -123,6 +132,9 @@ public class EppInput extends ImmutableObject {
 
   @Nullable
   private ResourceCommand getResourceCommand() {
+    if (commandWrapper == null) {
+      return null;
+    }
     InnerCommand innerCommand = commandWrapper.getCommand();
     return innerCommand instanceof ResourceCommandWrapper resourceCommandWrapper
         ? resourceCommandWrapper.getResourceCommand()
@@ -136,7 +148,7 @@ public class EppInput extends ImmutableObject {
   public Optional<String> getSingleTargetId() {
     ResourceCommand resourceCommand = getResourceCommand();
     return resourceCommand instanceof SingleResourceCommand singleResourceCommand
-        ? Optional.of(singleResourceCommand.getTargetId())
+        ? Optional.ofNullable(singleResourceCommand.getTargetId())
         : Optional.empty();
   }
 
@@ -147,7 +159,8 @@ public class EppInput extends ImmutableObject {
   public ImmutableList<String> getTargetIds() {
     ResourceCommand resourceCommand = getResourceCommand();
     if (resourceCommand instanceof SingleResourceCommand singleResourceCommand) {
-      return ImmutableList.of(singleResourceCommand.getTargetId());
+      String targetId = singleResourceCommand.getTargetId();
+      return targetId == null ? ImmutableList.of() : ImmutableList.of(targetId);
     } else if (resourceCommand instanceof ResourceCheck resourceCheck) {
       return resourceCheck.getTargetIds();
     } else {
@@ -157,17 +170,53 @@ public class EppInput extends ImmutableObject {
 
   /** Get the extension based on type, or null. If there are multiple, it chooses the first. */
   public <E extends CommandExtension> Optional<E> getSingleExtension(Class<E> clazz) {
-    return getCommandWrapper().getExtensions().stream()
+    if (commandWrapper == null) {
+      return Optional.empty();
+    }
+    return commandWrapper.getExtensions().stream()
         .filter(clazz::isInstance)
         .map(clazz::cast)
         .findFirst();
   }
 
+  /**
+   * Static factory method to create an {@link EppInput} from an {@link InnerCommand} and
+   * extensions.
+   */
+  public static EppInput create(InnerCommand command, CommandExtension... extensions) {
+    EppInput instance = new EppInput();
+    instance.commandWrapper = new CommandWrapper();
+    instance.commandWrapper.command = command;
+    ImmutableList<CommandExtension> validExtensions =
+        Arrays.stream(extensions).filter(Objects::nonNull).collect(ImmutableList.toImmutableList());
+    if (!validExtensions.isEmpty()) {
+      instance.commandWrapper.extension = validExtensions;
+    }
+    return instance;
+  }
+
+  public EppInput withClTrid(String clTrid) {
+    this.commandWrapper.clTrid = clTrid;
+    return this;
+  }
+
+  /** Builder for {@link EppInput}. */
+  public static class Builder extends Buildable.Builder<EppInput> {
+    public Builder setCommandWrapper(CommandWrapper commandWrapper) {
+      getInstance().commandWrapper = commandWrapper;
+      return this;
+    }
+  }
+
   /** A tag that goes inside an EPP {@literal <command>}. */
-  public static class InnerCommand extends ImmutableObject {}
+  @XmlTransient
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public abstract static class InnerCommand extends ImmutableObject {}
 
   /** A command that has an extension inside of it. */
-  public static class ResourceCommandWrapper extends InnerCommand {
+  @XmlTransient
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public abstract static class ResourceCommandWrapper extends InnerCommand {
     @XmlElementRefs({
         @XmlElementRef(type = DomainCommand.Check.class),
         @XmlElementRef(type = DomainCommand.Create.class),
@@ -189,21 +238,65 @@ public class EppInput extends ImmutableObject {
   }
 
   /** Epp envelope wrapper for check on some objects. */
-  public static class Check extends ResourceCommandWrapper {}
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public static class Check extends ResourceCommandWrapper {
+    public static Check create(ResourceCommand resourceCommand) {
+      Check instance = new Check();
+      instance.resourceCommand = resourceCommand;
+      return instance;
+    }
+  }
 
   /** Epp envelope wrapper for create of some object. */
-  public static class Create extends ResourceCommandWrapper {}
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public static class Create extends ResourceCommandWrapper {
+    public static Create create(ResourceCommand resourceCommand) {
+      Create instance = new Create();
+      instance.resourceCommand = resourceCommand;
+      return instance;
+    }
+
+    /** Builder for {@link Create}. */
+    public static class Builder extends Buildable.Builder<Create> {
+      public Builder setResourceCommand(ResourceCommand resourceCommand) {
+        getInstance().resourceCommand = resourceCommand;
+        return this;
+      }
+    }
+  }
 
   /** Epp envelope wrapper for delete of some object. */
-  public static class Delete extends ResourceCommandWrapper {}
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public static class Delete extends ResourceCommandWrapper {
+    public static Delete create(ResourceCommand resourceCommand) {
+      Delete instance = new Delete();
+      instance.resourceCommand = resourceCommand;
+      return instance;
+    }
+  }
 
   /** Epp envelope wrapper for info on some object. */
-  public static class Info extends ResourceCommandWrapper {}
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public static class Info extends ResourceCommandWrapper {
+    public static Info create(ResourceCommand resourceCommand) {
+      Info instance = new Info();
+      instance.resourceCommand = resourceCommand;
+      return instance;
+    }
+  }
 
   /** Epp envelope wrapper for renewing some object. */
-  public static class Renew extends ResourceCommandWrapper {}
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public static class Renew extends ResourceCommandWrapper {
+    public static Renew create(ResourceCommand resourceCommand) {
+      Renew instance = new Renew();
+      instance.resourceCommand = resourceCommand;
+      return instance;
+    }
+  }
 
   /** Epp envelope wrapper for transferring some object. */
+  @XmlAccessorType(XmlAccessType.FIELD)
   public static class Transfer extends ResourceCommandWrapper {
 
     /** Enum of the possible values for the "op" attribute in transfer flows. */
@@ -230,12 +323,35 @@ public class EppInput extends ImmutableObject {
     public TransferOp getTransferOp() {
       return transferOp;
     }
+
+    public static Transfer create(TransferOp transferOp, ResourceCommand resourceCommand) {
+      Transfer instance = new Transfer();
+      instance.transferOp = transferOp;
+      instance.resourceCommand = resourceCommand;
+      return instance;
+    }
   }
 
   /** Epp envelope wrapper for update of some object. */
-  public static class Update extends ResourceCommandWrapper {}
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public static class Update extends ResourceCommandWrapper {
+    public static Update create(ResourceCommand resourceCommand) {
+      Update instance = new Update();
+      instance.resourceCommand = resourceCommand;
+      return instance;
+    }
+
+    /** Builder for {@link Update}. */
+    public static class Builder extends Buildable.Builder<Update> {
+      public Builder setResourceCommand(ResourceCommand resourceCommand) {
+        getInstance().resourceCommand = resourceCommand;
+        return this;
+      }
+    }
+  }
 
   /** Poll command. */
+  @XmlAccessorType(XmlAccessType.FIELD)
   public static class Poll extends InnerCommand {
 
     /** Enum of the possible values for the "op" attribute in poll commands. */
@@ -253,19 +369,28 @@ public class EppInput extends ImmutableObject {
     @XmlAttribute
     PollOp op;
 
-    @XmlAttribute
-    String msgID;
+    @XmlAttribute(name = "msgID")
+    String msgId;
 
     public PollOp getPollOp() {
       return op;
     }
 
     public String getMessageId() {
-      return msgID;
+      return msgId;
+    }
+
+    public static Poll create(PollOp op, @Nullable String msgId) {
+      Poll instance = new Poll();
+      instance.op = op;
+      instance.msgId = msgId;
+      return instance;
     }
   }
 
   /** Login command. */
+  @XmlAccessorType(XmlAccessType.FIELD)
+  @XmlType(propOrder = {"clientId", "password", "newPassword", "options", "services"})
   public static class Login extends InnerCommand {
     @XmlElement(name = "clID")
     String clientId;
@@ -303,10 +428,12 @@ public class EppInput extends ImmutableObject {
   }
 
   /** Logout command. */
+  @XmlAccessorType(XmlAccessType.FIELD)
   public static class Logout extends InnerCommand {}
 
   /** The "command" element that holds an actual command inside of it. */
-  @XmlType(propOrder = {"command", "extension", "clTRID"})
+  @XmlAccessorType(XmlAccessType.FIELD)
+  @XmlType(propOrder = {"command", "extension", "clTrid"})
   public static class CommandWrapper extends ImmutableObject {
     @XmlElements({
       @XmlElement(name = "check", type = Check.class),
@@ -376,7 +503,9 @@ public class EppInput extends ImmutableObject {
     @XmlElementWrapper
     List<CommandExtension> extension;
 
-    @Nullable String clTRID;
+    @XmlElement(name = "clTRID")
+    @Nullable
+    String clTrid;
 
     /**
      * Returns the client transaction ID.
@@ -384,7 +513,7 @@ public class EppInput extends ImmutableObject {
      * <p>This is optional (i.e. it may not be specified) per RFC 5730.
      */
     public Optional<String> getClTrid() {
-      return Optional.ofNullable(clTRID);
+      return Optional.ofNullable(clTrid);
     }
 
     public InnerCommand getCommand() {
@@ -394,12 +523,34 @@ public class EppInput extends ImmutableObject {
     public ImmutableList<CommandExtension> getExtensions() {
       return nullToEmptyImmutableCopy(extension);
     }
+
+    /** Builder for {@link CommandWrapper}. */
+    public static class Builder extends Buildable.Builder<CommandWrapper> {
+
+      public Builder setCommand(InnerCommand command) {
+        getInstance().command = command;
+        return this;
+      }
+
+      public Builder setExtensions(ImmutableList<CommandExtension> extension) {
+        getInstance().extension = isNullOrEmpty(extension) ? null : extension;
+        return this;
+      }
+
+      public Builder setClTrid(String clTrid) {
+        getInstance().clTrid = clTrid;
+        return this;
+      }
+    }
   }
 
   /** Empty type to represent the empty "hello" command. */
+  @XmlAccessorType(XmlAccessType.FIELD)
   public static class Hello extends CommandWrapper {}
 
   /** An options object inside of {@link Login}. */
+  @XmlAccessorType(XmlAccessType.FIELD)
+  @XmlType(propOrder = {"version", "language"})
   public static class Options extends ImmutableObject {
     @XmlJavaTypeAdapter(VersionAdapter.class)
     String version;
@@ -413,6 +564,8 @@ public class EppInput extends ImmutableObject {
   }
 
   /** A services object inside of {@link Login}. */
+  @XmlAccessorType(XmlAccessType.FIELD)
+  @XmlType(propOrder = {"objectServices", "serviceExtensions"})
   public static class Services extends ImmutableObject {
     @XmlElement(name = "objURI")
     Set<String> objectServices;
@@ -431,15 +584,15 @@ public class EppInput extends ImmutableObject {
   }
 
   /**
-   * RFC 5730 says we should check the version and return special error code 2100 if it isn't
-   * what we support, but it also specifies a schema that only allows 1.0 in the version field, so
-   * any other version doesn't validate. As a result, if we didn't do this here it would throw a
-   * {@code SyntaxErrorException} when it failed to validate.
+   * RFC 5730 says we should check the version and return special error code 2100 if it isn't what
+   * we support, but it also specifies a schema that only allows 1.0 in the version field, so any
+   * other version doesn't validate. As a result, if we didn't do this here it would throw a {@code
+   * SyntaxErrorException} when it failed to validate.
    *
-   * @see <a href="http://tools.ietf.org/html/rfc5730#page-41">
-   *     RFC 5730 - EPP - Command error responses</a>
+   * @see <a href="http://tools.ietf.org/html/rfc5730#page-41">RFC 5730 - EPP - Command error
+   *     responses</a>
    */
-  public static class VersionAdapter extends XmlAdapter<String, String>  {
+  public static class VersionAdapter extends XmlAdapter<String, String> {
     @Override
     public String unmarshal(String version) throws Exception {
       if (!"1.0".equals(version)) {
@@ -449,8 +602,8 @@ public class EppInput extends ImmutableObject {
     }
 
     @Override
-    public String marshal(String ignored) {
-      throw new UnsupportedOperationException();
+    public String marshal(String version) {
+      return version;
     }
   }
 

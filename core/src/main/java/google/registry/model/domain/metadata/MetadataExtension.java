@@ -14,39 +14,62 @@
 
 package google.registry.model.domain.metadata;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
+
+import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
+import javax.annotation.Nullable;
 
-/** A metadata extension that may be present on EPP create/mutate commands. */
+/**
+ * Extension for EPP commands that provides metadata.
+ *
+ * @see <a href="https://www.google.com/search?q=EPP+metadata+extension">EPP Metadata Extension</a>
+ */
 @XmlRootElement(name = "metadata")
+@XmlType(propOrder = {"reason", "requestedByRegistrar", "isAnchorTenant"})
 public class MetadataExtension extends ImmutableObject implements CommandExtension {
 
-  /** The reason for the change. */
-  @XmlElement(name = "reason")
-  String reason;
+  /** Reason for the command. */
+  @XmlElement @Nullable String reason;
 
-  /** Whether a change was requested by a registrar. */
-  @XmlElement(name = "requestedByRegistrar")
-  boolean requestedByRegistrar;
+  /** Whether the command was requested by a registrar. */
+  @XmlElement Boolean requestedByRegistrar;
 
-  /**
-   * Whether a domain is being created for an anchor tenant. This field is only
-   * relevant for domain creates, and should be omitted for all other operations.
-   */
+  /** Whether this is an anchor tenant. */
   @XmlElement(name = "anchorTenant")
-  boolean isAnchorTenant;
+  Boolean isAnchorTenant;
 
   public String getReason() {
     return reason;
   }
 
-  public boolean getRequestedByRegistrar() {
+  public Boolean getRequestedByRegistrar() {
     return requestedByRegistrar;
   }
 
-  public boolean getIsAnchorTenant() {
-    return isAnchorTenant;
+  public Boolean getIsAnchorTenant() {
+    return firstNonNull(isAnchorTenant, false);
+  }
+
+  /** Builder for {@link MetadataExtension}. */
+  public static class Builder extends Buildable.Builder<MetadataExtension> {
+    public Builder setReason(String reason) {
+      getInstance().reason = reason;
+      return this;
+    }
+
+    public Builder setRequestedByRegistrar(Boolean requestedByRegistrar) {
+      getInstance().requestedByRegistrar = requestedByRegistrar;
+      return this;
+    }
+
+    public Builder setAnchorTenant(Boolean isAnchorTenant) {
+      getInstance().isAnchorTenant = isAnchorTenant;
+      return this;
+    }
   }
 }

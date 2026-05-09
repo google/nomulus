@@ -16,12 +16,17 @@ package google.registry.reporting.spec11;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.beam.spec11.ThreatMatch;
-import java.util.List;
 
-/** Value record representing the registrar and list-of-threat-matches pair stored in GCS. */
-public record RegistrarThreatMatches(String clientId, ImmutableList<ThreatMatch> threatMatches) {
-
-  static RegistrarThreatMatches create(String clientId, List<ThreatMatch> threatMatches) {
-    return new RegistrarThreatMatches(clientId, ImmutableList.copyOf(threatMatches));
+/**
+ * A value record representing a registrar and its associated list of threat matches.
+ *
+ * @param registrarId the ID of the registrar
+ * @param threatMatches the list of {@link ThreatMatch} objects associated with the registrar
+ */
+public record RegistrarThreatMatches(String registrarId, ImmutableList<ThreatMatch> threatMatches) {
+  /** Creates a new {@link RegistrarThreatMatches} instance. */
+  static RegistrarThreatMatches create(
+      String registrarId, ImmutableList<ThreatMatch> threatMatches) {
+    return new RegistrarThreatMatches(registrarId, threatMatches);
   }
 }

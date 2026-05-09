@@ -19,9 +19,13 @@ import google.registry.model.domain.fee.Credit;
 import google.registry.model.domain.fee.FeeRenewCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 
-/** A fee extension that may be present on domain renew commands. */
+/**
+ * An XML data object that represents a fee extension that may be present on EPP domain renew
+ * commands.
+ */
 @XmlRootElement(name = "renew")
 @XmlType(propOrder = {"currency", "fees"})
 public class FeeRenewCommandExtensionV06 extends FeeRenewCommandExtension {
@@ -33,6 +37,7 @@ public class FeeRenewCommandExtensionV06 extends FeeRenewCommandExtension {
 
   /** This version of the extension doesn't support the "credit" field. */
   @Override
+  @XmlTransient
   public ImmutableList<Credit> getCredits() {
     return ImmutableList.of();
   }

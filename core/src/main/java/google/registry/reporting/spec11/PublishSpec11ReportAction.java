@@ -24,7 +24,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 
 import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.model.Job;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -32,11 +31,10 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
-import com.google.template.soy.parseinfo.SoyTemplateInfo;
 import google.registry.beam.spec11.ThreatMatch;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.ReportingModule;
-import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
+import google.registry.reporting.spec11.Spec11EmailUtils.Spec11EmailTemplate;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -45,14 +43,13 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Optional;
-import java.util.Set;
 import org.json.JSONException;
 
 /**
  * Retries until a {@code Dataflow} job with a given {@code jobId} completes, continuing the Spec11
  * pipeline accordingly.
  *
- * <p>This calls {@link Spec11EmailUtils#emailSpec11Reports(LocalDate, SoyTemplateInfo, String,
+ * <p>This calls {@link Spec11EmailUtils#emailSpec11Reports(LocalDate, Spec11EmailTemplate, String,
  * ImmutableSet)} on success or {@link Spec11EmailUtils#sendAlertEmail(String, String)} on failure.
  */
 @Action(
@@ -134,7 +131,7 @@ public class PublishSpec11ReportAction implements Runnable {
               String.format("Spec11 %s job %s ended in status failure.", date, jobId));
         }
         default -> {
-          logger.atInfo().log("Job in non-terminal state %s, retrying:", state);
+          logger.atInfo().log("Job in non-terminal state %s, retrying.", state);
           response.setStatus(SC_SERVICE_UNAVAILABLE);
         }
       }
@@ -153,8 +150,7 @@ public class PublishSpec11ReportAction implements Runnable {
     ImmutableSet<RegistrarThreatMatches> monthlyMatchesSet =
         spec11RegistrarThreatMatchesParser.getRegistrarThreatMatches(date);
     String subject = String.format("%s Monthly Threat Detector [%s]", registryName, date);
-    emailUtils.emailSpec11Reports(
-        date, Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL, subject, monthlyMatchesSet);
+    emailUtils.emailSpec11Reports(date, Spec11EmailTemplate.MONTHLY, subject, monthlyMatchesSet);
   }
 
   private void processDailyDiff(LocalDate previousDate) throws IOException, JSONException {
@@ -165,7 +161,7 @@ public class PublishSpec11ReportAction implements Runnable {
     String dailySubject = String.format("%s Daily Threat Detector [%s]", registryName, date);
     emailUtils.emailSpec11Reports(
         date,
-        Spec11EmailSoyInfo.DAILY_SPEC_11_EMAIL,
+        Spec11EmailTemplate.DAILY,
         dailySubject,
         getNewMatches(previousMatches, currentMatches));
   }
@@ -173,19 +169,20 @@ public class PublishSpec11ReportAction implements Runnable {
   private ImmutableSet<RegistrarThreatMatches> getNewMatches(
       ImmutableSet<RegistrarThreatMatches> previousMatchesSet,
       ImmutableSet<RegistrarThreatMatches> currentMatchesSet) {
-    ImmutableMap<String, ImmutableSet<ThreatMatch>> previousMatchesByEmail =
+    ImmutableMap<String, ImmutableSet<ThreatMatch>> previousMatchesByRegistrarId =
         groupByKeyAndFlatMap(previousMatchesSet);
-    ImmutableMap<String, ImmutableSet<ThreatMatch>> currentMatchesByEmail =
+    ImmutableMap<String, ImmutableSet<ThreatMatch>> currentMatchesByRegistrarId =
         groupByKeyAndFlatMap(currentMatchesSet);
     ImmutableSet.Builder<RegistrarThreatMatches> resultsBuilder = ImmutableSet.builder();
-    for (String email : currentMatchesByEmail.keySet()) {
+    for (String registrarId : currentMatchesByRegistrarId.keySet()) {
       // Only include matches in the result if they're non-empty
-      Set<ThreatMatch> difference =
-          Sets.difference(
-              currentMatchesByEmail.get(email),
-              previousMatchesByEmail.getOrDefault(email, ImmutableSet.of()));
+      ImmutableSet<ThreatMatch> difference =
+          ImmutableSet.copyOf(
+              Sets.difference(
+                  currentMatchesByRegistrarId.get(registrarId),
+                  previousMatchesByRegistrarId.getOrDefault(registrarId, ImmutableSet.of())));
       if (!difference.isEmpty()) {
-        resultsBuilder.add(RegistrarThreatMatches.create(email, ImmutableList.copyOf(difference)));
+        resultsBuilder.add(RegistrarThreatMatches.create(registrarId, difference.asList()));
       }
     }
     return resultsBuilder.build();
@@ -193,13 +190,13 @@ public class PublishSpec11ReportAction implements Runnable {
 
   private ImmutableMap<String, ImmutableSet<ThreatMatch>> groupByKeyAndFlatMap(
       ImmutableSet<RegistrarThreatMatches> registrarThreatMatches) {
-    // Group by email address then flat-map all of the ThreatMatch objects together
+    // Group by registrarId then flat-map all of the ThreatMatch objects together
     return ImmutableMap.copyOf(
         Maps.transformValues(
-            Multimaps.index(registrarThreatMatches, RegistrarThreatMatches::clientId).asMap(),
+            Multimaps.index(registrarThreatMatches, RegistrarThreatMatches::registrarId).asMap(),
             registrarThreatMatchesCollection ->
                 registrarThreatMatchesCollection.stream()
-                    .flatMap(matches -> matches.threatMatches().stream())
+                    .flatMap(rtm -> rtm.threatMatches().stream())
                     .collect(toImmutableSet())));
   }
 

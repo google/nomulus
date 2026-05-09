@@ -20,15 +20,21 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
+import google.registry.model.Buildable;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.Period;
 
 /**
- * A fee, in currency units specified elsewhere in the xml, with type of the fee an optional fee
- * description.
+ * A fee, in currency units specified elsewhere in the XML, with a type and an optional description.
  */
 public class Fee extends BaseFee {
+
+  @Override
+  public Fee clone() {
+    return (Fee) super.clone();
+  }
 
   /** Creates a Fee for the given cost and type with the default description. */
   public static Fee create(
@@ -55,7 +61,7 @@ public class Fee extends BaseFee {
       BigDecimal cost, FeeType type, boolean isPremium, String description) {
     Fee instance = new Fee();
     instance.cost = checkNotNull(cost);
-    checkArgument(instance.cost.signum() >= 0, "Cost must be a positive number");
+    checkArgument(instance.cost.signum() >= 0, "Cost must be a non-negative number");
     instance.type = checkNotNull(type);
     instance.isPremium = isPremium;
     instance.description = description;
@@ -68,4 +74,38 @@ public class Fee extends BaseFee {
           ServiceExtension.FEE_0_12.getUri(),
           ServiceExtension.FEE_0_11.getUri(),
           ServiceExtension.FEE_0_6.getUri());
+
+  /** Builder for {@link Fee}. */
+  public static class Builder extends Buildable.Builder<Fee> {
+
+    /** Sets the cost of the fee. */
+    public Builder setCost(BigDecimal cost) {
+      getInstance().cost = cost;
+      return this;
+    }
+
+    /** Sets the description of the fee. */
+    public Builder setDescription(String description) {
+      getInstance().description = description;
+      return this;
+    }
+
+    /** Sets whether the fee is refundable. */
+    public Builder setRefundable(Boolean refundable) {
+      getInstance().refundable = refundable;
+      return this;
+    }
+
+    /** Sets the grace period of the fee. */
+    public Builder setGracePeriod(Period gracePeriod) {
+      getInstance().gracePeriod = gracePeriod;
+      return this;
+    }
+
+    /** Sets when the fee is applied. */
+    public Builder setApplied(AppliedType applied) {
+      getInstance().applied = applied;
+      return this;
+    }
+  }
 }
