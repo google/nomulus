@@ -41,8 +41,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,7 +64,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   protected C command;
 
-  protected final FakeClock fakeClock = new FakeClock(DateTime.parse("2022-09-01T00:00:00.000Z"));
+  protected final FakeClock fakeClock = new FakeClock(Instant.parse("2022-09-01T00:00:00.000Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =

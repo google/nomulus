@@ -24,9 +24,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import java.io.ByteArrayInputStream;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link SafeObjectInputStream}. */
@@ -72,7 +72,7 @@ public class SafeObjectInputStreamTest {
 
   @Test
   void nonJavaNonNomulusUnitaryFailure() throws Exception {
-    Serializable orig = Duration.millis(1);
+    Serializable orig = Duration.ofMillis(1);
     try (SafeObjectInputStream sois =
         new SafeObjectInputStream(new ByteArrayInputStream(serialize(orig)))) {
       assertThrows(ClassNotFoundException.class, () -> sois.readObject());

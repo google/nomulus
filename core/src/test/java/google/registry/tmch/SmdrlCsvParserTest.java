@@ -16,14 +16,13 @@ package google.registry.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.joda.time.Duration.millis;
-import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharSource;
 import google.registry.model.smd.SignedMarkRevocationList;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Test;
@@ -50,7 +49,7 @@ class SmdrlCsvParserTest {
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.now())).isTrue();
     clock.setTo(clock.now().minusMillis(1));
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.now())).isFalse();
-    clock.advanceBy(millis(2));
+    clock.advanceBy(Duration.ofMillis(2));
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.now())).isTrue();
   }
 
@@ -61,7 +60,7 @@ class SmdrlCsvParserTest {
     assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.now())).isTrue();
     clock.setTo(clock.now().minusMillis(1));
     assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.now())).isFalse();
-    clock.advanceBy(millis(2));
+    clock.advanceBy(Duration.ofMillis(2));
     assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.now())).isTrue();
   }
 
@@ -70,7 +69,7 @@ class SmdrlCsvParserTest {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(SMDRL_LATEST_CSV.readLines());
     clock.setTo(Instant.parse("2013-08-09T12:00:00.0Z"));
     assertThat(smdrl.isSmdRevoked("0000002101376042766438-65535", clock.now())).isFalse();
-    clock.advanceBy(standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
     assertThat(smdrl.isSmdRevoked("0000002101376042766438-65535", clock.now())).isTrue();
   }
 

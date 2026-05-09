@@ -18,17 +18,15 @@ import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.testing.EqualsTester;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
-import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PosixTarHeader}. */
@@ -76,7 +74,7 @@ class PosixTarHeaderTest {
             .setMode(0640)
             // This timestamp should have been midnight but I think GNU tar might not understand
             // daylight savings time. Woe is me.
-            .setMtime(DateTime.parse("2013-08-13T01:50:12Z"))
+            .setMtime(Instant.parse("2013-08-13T01:50:12Z"))
             .setUname("jart")
             .setGname("eng")
             .setUid(180918) // echo $UID
@@ -125,7 +123,7 @@ class PosixTarHeaderTest {
             .setName("(◕‿◕).txt")
             .setSize(666)
             .setMode(0777)
-            .setMtime(DateTime.parse("1984-12-18T04:20:00Z"))
+            .setMtime(Instant.parse("1984-12-18T04:20:00Z"))
             .setUname("everything i ever touched")
             .setGname("everything i ever had, has died")
             .setUid(180918)
@@ -139,7 +137,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("everything i ever had, has died");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(5000);
-    assertThat(header.getMtime()).isEqualTo(DateTime.parse("1984-12-18T04:20:00Z"));
+    assertThat(header.getMtime()).isEqualTo(Instant.parse("1984-12-18T04:20:00Z"));
     assertThat(header.getMagic()).isEqualTo("ustar");
     assertThat(header.getVersion()).isEqualTo("00");
   }
@@ -152,7 +150,7 @@ class PosixTarHeaderTest {
             .setName("Black lung full of fumes, choke on memories")
             .setSize(1024 * 1024 * 1024)
             .setMode(31337)
-            .setMtime(DateTime.parse("2020-12-18T04:20:00Z"))
+            .setMtime(Instant.parse("2020-12-18T04:20:00Z"))
             .setUname("every street i ever walked")
             .setGname("every home i ever had, is lost")
             .setUid(0)
@@ -166,7 +164,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("every home i ever had, is lost");
     assertThat(header.getUid()).isEqualTo(0);
     assertThat(header.getGid()).isEqualTo(31337);
-    assertThat(header.getMtime()).isEqualTo(DateTime.parse("2020-12-18T04:20:00Z"));
+    assertThat(header.getMtime()).isEqualTo(Instant.parse("2020-12-18T04:20:00Z"));
   }
 
   @Test
@@ -177,7 +175,7 @@ class PosixTarHeaderTest {
             .setName("(◕‿◕).txt")
             .setSize(31337)
             .setMode(0777)
-            .setMtime(DateTime.parse("1984-12-18T04:20:00Z"))
+            .setMtime(Instant.parse("1984-12-18T04:20:00Z"))
             .setUname("everything i ever touched")
             .setGname("everything i ever had, has died")
             .setUid(180918)
@@ -192,7 +190,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("everything i ever had, has died");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(5000);
-    assertThat(header.getMtime()).isEqualTo(DateTime.parse("1984-12-18T04:20:00Z"));
+    assertThat(header.getMtime()).isEqualTo(Instant.parse("1984-12-18T04:20:00Z"));
     assertThat(header.getMagic()).isEqualTo("ustar");
     assertThat(header.getVersion()).isEqualTo("00");
   }
@@ -203,7 +201,7 @@ class PosixTarHeaderTest {
         new PosixTarHeader.Builder()
             .setName("(◕‿◕).txt")
             .setSize(31337)
-            .setMtime(DateTime.now(UTC))
+            .setMtime(Instant.now())
             .build();
     byte[] bytes = header.getBytes();
     bytes[150] = '0';
@@ -220,7 +218,7 @@ class PosixTarHeaderTest {
             new PosixTarHeader.Builder()
                 .setName("(◕‿◕).txt")
                 .setSize(123)
-                .setMtime(DateTime.parse("1984-12-18TZ"))
+                .setMtime(Instant.parse("1984-12-18T00:00:00Z"))
                 .setUid(1234)
                 .setGid(456)
                 .setUname("jart")
@@ -229,7 +227,7 @@ class PosixTarHeaderTest {
             new PosixTarHeader.Builder()
                 .setName("(◕‿◕).txt")
                 .setSize(123)
-                .setMtime(DateTime.parse("1984-12-18TZ"))
+                .setMtime(Instant.parse("1984-12-18T00:00:00Z"))
                 .setUid(1234)
                 .setGid(456)
                 .setUname("jart")
@@ -239,7 +237,7 @@ class PosixTarHeaderTest {
             new PosixTarHeader.Builder()
                 .setName("(•︵•).txt") // Awwwww! It looks so sad...
                 .setSize(123)
-                .setMtime(DateTime.now(UTC))
+                .setMtime(Instant.now())
                 .build())
         .testEquals();
   }
@@ -277,7 +275,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("wheel");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(0);
-    assertThat(header.getMtime().toString(ISODateTimeFormat.date())).isEqualTo("2013-08-16");
+    assertThat(header.getMtime().toString().substring(0, 10)).isEqualTo("2013-08-16");
 
     assertThat(input.read(block)).isEqualTo(512);
     assertThat(new String(block, 0, likeTears.length(), UTF_8)).isEqualTo(likeTears);
@@ -291,7 +289,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("wheel");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(0);
-    assertThat(header.getMtime().toString(ISODateTimeFormat.date())).isEqualTo("2013-08-16");
+    assertThat(header.getMtime().toString().substring(0, 10)).isEqualTo("2013-08-16");
 
     assertThat(input.read(block)).isEqualTo(512);
     assertThat(new String(block, 0, inRain.length(), UTF_8)).isEqualTo(inRain);
@@ -335,7 +333,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("wheel");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(0);
-    assertThat(header.getMtime().toString(ISODateTimeFormat.date())).isEqualTo("2013-08-16");
+    assertThat(header.getMtime().toString().substring(0, 10)).isEqualTo("2013-08-16");
 
     assertThat(input.read(block)).isEqualTo(512);
     assertThat(new String(block, 0, likeTears.length(), UTF_8)).isEqualTo(likeTears);
@@ -349,7 +347,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("wheel");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(0);
-    assertThat(header.getMtime().toString(ISODateTimeFormat.date())).isEqualTo("2013-08-16");
+    assertThat(header.getMtime().toString().substring(0, 10)).isEqualTo("2013-08-16");
 
     assertThat(input.read(block)).isEqualTo(512);
     assertThat(new String(block, 0, inRain.length(), UTF_8)).isEqualTo(inRain);
@@ -393,7 +391,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("eng");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(5000);
-    assertThat(header.getMtime().toString(ISODateTimeFormat.date())).isEqualTo("2013-08-16");
+    assertThat(header.getMtime().toString().substring(0, 10)).isEqualTo("2013-08-16");
 
     assertThat(input.read(block)).isEqualTo(512);
     assertThat(new String(block, 0, likeTears.length(), UTF_8)).isEqualTo(likeTears);
@@ -407,7 +405,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("eng");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(5000);
-    assertThat(header.getMtime().toString(ISODateTimeFormat.date())).isEqualTo("2013-08-16");
+    assertThat(header.getMtime().toString().substring(0, 10)).isEqualTo("2013-08-16");
 
     assertThat(input.read(block)).isEqualTo(512);
     assertThat(new String(block, 0, inRain.length(), UTF_8)).isEqualTo(inRain);
@@ -452,7 +450,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("eng");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(5000);
-    assertThat(header.getMtime().toString(ISODateTimeFormat.date())).isEqualTo("2013-08-16");
+    assertThat(header.getMtime().toString().substring(0, 10)).isEqualTo("2013-08-16");
 
     assertThat(input.read(block)).isEqualTo(512);
     assertThat(new String(block, 0, likeTears.length(), UTF_8)).isEqualTo(likeTears);
@@ -467,7 +465,7 @@ class PosixTarHeaderTest {
     assertThat(header.getGname()).isEqualTo("eng");
     assertThat(header.getUid()).isEqualTo(180918);
     assertThat(header.getGid()).isEqualTo(5000);
-    assertThat(header.getMtime().toString(ISODateTimeFormat.date())).isEqualTo("2013-08-16");
+    assertThat(header.getMtime().toString().substring(0, 10)).isEqualTo("2013-08-16");
 
     assertThat(input.read(block)).isEqualTo(512);
     assertThat(new String(block, 0, inRain.length(), UTF_8)).isEqualTo(inRain);

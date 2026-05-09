@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -103,11 +104,11 @@ public class GenerateEscrowDepositCommandTest
 
   @Test
   void testCommand_malformedWatermark() {
-    IllegalArgumentException thrown =
+    DateTimeParseException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            DateTimeParseException.class,
             () -> runCommand("--tld=tld", "--watermark=blah", "--mode=full", "-r 42", "-o test"));
-    assertThat(thrown).hasMessageThat().contains("Invalid format: \"blah\"");
+    assertThat(thrown).hasMessageThat().contains("could not be parsed");
   }
 
   @Test

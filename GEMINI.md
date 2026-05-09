@@ -24,9 +24,9 @@ This document outlines foundational mandates, architectural patterns, and projec
 - **UTC Timezones:** Do not use `ZoneId.of("UTC")`. Use a statically imported `UTC` from `ZoneOffset` instead (`import static java.time.ZoneOffset.UTC;`).
 - **Millisecond Precision:** Always truncate `Instant.now()` to milliseconds (using `.truncatedTo(ChronoUnit.MILLIS)`) to maintain consistency with Joda `DateTime` and the PostgreSQL schema (which enforces millisecond precision via JPA converters).
 - **Clock Injection:**
-    - Avoid direct calls to `Instant.now()`, `DateTime.now()`, `ZonedDateTime.now()`, or `System.currentTimeMillis()`.
+    - Avoid direct calls to `Instant.now()`, `DateTime.now()`, `OffsetDateTime.now()`, or `System.currentTimeMillis()`.
     - Inject `google.registry.util.Clock` (production) or `google.registry.testing.FakeClock` (tests).
-    - Use `clock.nowDate()` to get a `ZonedDateTime` in UTC.
+    - Use `clock.nowDate()` to get a `LocalDate` in UTC, or `clock.nowDateTime()` to get an `OffsetDateTime` in UTC.
     - When defining timestamps for tests, prefer using a fixed, static constant (e.g., `Instant.parse("2024-03-27T10:15:30.105Z")`) over capturing `clock.now()` to prevent flaky tests caused by the passage of real time. Avoid using the Unix epoch (`START_INSTANT`) unless specifically testing epoch-related logic; instead, use realistic dates and vary them across different test suites to ensure logic isn't dependent on a specific "standard" date.
 - **Beam Pipelines:**
     - Ensure `Clock` is serializable (it is by default in this project) when used in Beam `DoFn`s.
@@ -115,7 +115,7 @@ This document captures high-level architectural patterns, lessons learned from l
 ## Self-Review Guidelines
 Before finalizing any PR or declaring a task complete, you MUST perform a thorough, rigorous self-review of your entire diff. Run `git diff HEAD^` (or review the staged changes) and actively verify the following against every modified line:
 
-1. **Imports & FQNs:** Did I leave any fully-qualified class names or static variables inline? Did I add the necessary imports for them? *Crucial Exception:* If the file already imports a class with the identical name (e.g., it uses both `java.time.Duration` and `org.joda.time.Duration`), one MUST remain fully qualified to avoid a compilation conflict.
+1. **Imports & FQNs:** Did I leave any fully-qualified class names or static variables inline? Did I add the necessary imports for them? *Crucial Exception:* If the file already imports a class with the identical name (e.g., it uses both `java.util.Date` and `java.sql.Date`), one MUST remain fully qualified to avoid a compilation conflict.
 2. **Redundant Conversions:** Did I use `toDateTime(clock.now())` where `clock.nowUtc()` would suffice? Did I use `toDateTime(END_INSTANT)` instead of `END_OF_TIME`? Did I use `.toInstant()` or `.toDateTime()` on something that could be avoided by using a different method overload (e.g., `tm().getTxTime()`)?
 3. **Verbose Math:** Did I write any verbose time conversions inline? Are there `DateTimeUtils` methods I should be using instead? If not, should I abstract this math into `DateTimeUtils`?
 4. **Assertion Cleanliness:** Am I polluting test assertions with `toDateTime(...)` wraps? If so, I need to add overloaded assertions to the Truth Subjects instead.

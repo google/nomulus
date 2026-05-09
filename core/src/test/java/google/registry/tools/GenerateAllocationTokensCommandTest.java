@@ -25,9 +25,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -47,11 +45,11 @@ import google.registry.util.StringGenerator.Alphabets;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Collection;
 import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -136,8 +134,8 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @Test
   void testSuccess_promotionToken() throws Exception {
-    DateTime promoStart = DateTime.now(UTC);
-    DateTime promoEnd = promoStart.plusMonths(1);
+    Instant promoStart = fakeClock.now();
+    Instant promoEnd = promoStart.atZone(ZoneOffset.UTC).plusMonths(1).toInstant();
     runCommand(
         "--number", "1",
         "--prefix", "promo",
@@ -163,16 +161,16 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
-                    .put(toInstant(promoStart), TokenStatus.VALID)
-                    .put(toInstant(promoEnd), TokenStatus.ENDED)
+                    .put(promoStart, TokenStatus.VALID)
+                    .put(promoEnd, TokenStatus.ENDED)
                     .build())
             .build());
   }
 
   @Test
   void testSuccess_promotionToken_withDiscountPrice() throws Exception {
-    DateTime promoStart = DateTime.now(UTC);
-    DateTime promoEnd = promoStart.plusMonths(1);
+    Instant promoStart = fakeClock.now();
+    Instant promoEnd = promoStart.atZone(ZoneOffset.UTC).plusMonths(1).toInstant();
     runCommand(
         "--number",
         "1",
@@ -205,8 +203,8 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
                     .put(START_INSTANT, TokenStatus.NOT_STARTED)
-                    .put(toInstant(promoStart), TokenStatus.VALID)
-                    .put(toInstant(promoEnd), TokenStatus.ENDED)
+                    .put(promoStart, TokenStatus.VALID)
+                    .put(promoEnd, TokenStatus.ENDED)
                     .build())
             .build());
   }
@@ -479,7 +477,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
                         "--number",
                         "999",
                         String.format(
-                            "--token_status_transitions=\"%s=INVALID_STATUS\"", START_INSTANT))))
+                            "--token_status_transitions=%s=INVALID_STATUS", START_INSTANT))))
         .hasCauseThat()
         .isInstanceOf(IllegalArgumentException.class);
   }

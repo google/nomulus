@@ -81,8 +81,7 @@ public abstract class EppToken extends Token {
    */
   private String getNewTRID() {
     return String.format(
-        "prober-%s-%d-%d",
-        "localhost", clock.now().toEpochMilli(), clientIdSuffix.incrementAndGet());
+        "prober-%s-%d-%d", "localhost", clock.nowMillis(), clientIdSuffix.incrementAndGet());
   }
 
   /** Return a fully qualified domain label to use, derived from the client transaction ID. */
