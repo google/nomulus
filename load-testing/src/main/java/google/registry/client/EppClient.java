@@ -54,6 +54,7 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -69,8 +70,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 /** A simple EPP client that can be used for load testing. */
 @Parameters(separators = " =")
@@ -316,8 +315,7 @@ public class EppClient implements Runnable {
 
   @Override
   public void run() {
-    String outputFolder =
-        createOutputFolder(String.format("load-tests/%s", DateTime.now(DateTimeZone.UTC)));
+    String outputFolder = createOutputFolder(String.format("load-tests/%s", Instant.now()));
     ImmutableList.Builder<ExecutorService> builder = ImmutableList.builderWithExpectedSize(5);
     for (int i = 0; i < 5; ++i) {
       builder.add(Executors.newSingleThreadExecutor());

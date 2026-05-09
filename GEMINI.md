@@ -115,7 +115,7 @@ This document captures high-level architectural patterns, lessons learned from l
 ## Self-Review Guidelines
 Before finalizing any PR or declaring a task complete, you MUST perform a thorough, rigorous self-review of your entire diff. Run `git diff HEAD^` (or review the staged changes) and actively verify the following against every modified line:
 
-1. **Imports & FQNs:** Did I leave any fully-qualified class names or static variables inline? Did I add the necessary imports for them? *Crucial Exception:* If the file already imports a class with the identical name (e.g., it uses both `java.time.Duration` and `org.joda.time.Duration`), one MUST remain fully qualified to avoid a compilation conflict.
+1. **Imports & FQNs:** Did I leave any fully-qualified class names or static variables inline? Did I add the necessary imports for them? *Crucial Exception:* If the file already imports a class with the identical name (e.g., it uses both `java.util.Date` and `java.sql.Date`), one MUST remain fully qualified to avoid a compilation conflict.
 2. **Redundant Conversions:** Did I use `toDateTime(clock.now())` where `clock.nowUtc()` would suffice? Did I use `toDateTime(END_INSTANT)` instead of `END_OF_TIME`? Did I use `.toInstant()` or `.toDateTime()` on something that could be avoided by using a different method overload (e.g., `tm().getTxTime()`)?
 3. **Verbose Math:** Did I write any verbose time conversions inline? Are there `DateTimeUtils` methods I should be using instead? If not, should I abstract this math into `DateTimeUtils`?
 4. **Assertion Cleanliness:** Am I polluting test assertions with `toDateTime(...)` wraps? If so, I need to add overloaded assertions to the Truth Subjects instead.

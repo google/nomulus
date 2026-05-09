@@ -216,7 +216,7 @@ public class CloudTasksUtilsTest {
 
     assertThat(task.getScheduleTime().getSeconds()).isNotEqualTo(0);
     Instant scheduleTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
-    Instant lowerBoundTime = Instant.ofEpochMilli(clock.now().toEpochMilli());
+    Instant lowerBoundTime = Instant.ofEpochMilli(clock.nowMillis());
     Instant upperBound = Instant.ofEpochMilli(clock.now().plusSeconds(100).toEpochMilli());
 
     assertThat(scheduleTime.isBefore(lowerBoundTime)).isFalse();

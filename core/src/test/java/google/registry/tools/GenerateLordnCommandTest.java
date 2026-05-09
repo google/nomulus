@@ -24,7 +24,7 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.testing.DatabaseHelper;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,7 +35,7 @@ class GenerateLordnCommandTest extends CommandTestCase<GenerateLordnCommand> {
 
   @BeforeEach
   void beforeEach() {
-    fakeClock.setTo(DateTime.parse("2021-04-16T10:04:00.000Z"));
+    fakeClock.setTo(Instant.parse("2021-04-16T10:04:00.000Z"));
     command.clock = fakeClock;
   }
 

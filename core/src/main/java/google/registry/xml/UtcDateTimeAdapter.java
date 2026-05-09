@@ -15,54 +15,53 @@
 package google.registry.xml;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.joda.time.DateTimeZone.UTC;
 
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 
 /**
- * Adapter to use Joda {@link DateTime} when marshalling XML timestamps.
+ * Adapter to use Java {@link Instant} when marshalling XML timestamps.
  *
  * <p>These fields shall contain timestamps indicating the date and time in UTC as specified in
- * RFC3339, with no offset from the zero meridian. For example: {@code 2010-10-17T00:00:00Z}.
+ * RFC3339.
+ *
+ * @see <a href="http://tools.ietf.org/html/rfc3339">RFC3339</a>
  */
-public class UtcDateTimeAdapter extends XmlAdapter<String, DateTime> {
+public class UtcDateTimeAdapter extends XmlAdapter<String, Instant> {
 
-  /** @see ISODateTimeFormat#dateTimeNoMillis */
-  private static final DateTimeFormatter MARSHAL_FORMAT = ISODateTimeFormat.dateTimeNoMillis();
+  private static final DateTimeFormatter MARSHAL_FORMAT =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
 
-  /** @see ISODateTimeFormat#dateTimeParser */
-  private static final DateTimeFormatter UNMARSHAL_FORMAT = ISODateTimeFormat.dateTimeParser();
+  private static final DateTimeFormatter UNMARSHAL_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-  /** Same as {@link #marshal(DateTime)}, but in a convenient static format. */
-  public static String getFormattedString(@Nullable DateTime timestamp) {
-    return (timestamp == null) ? "" : MARSHAL_FORMAT.print(timestamp.toDateTime(UTC));
+  public static String getFormattedString(@Nullable Instant timestamp) {
+    return (timestamp == null) ? "" : MARSHAL_FORMAT.format(timestamp);
   }
 
   /**
-   * Parses an ISO timestamp string into a UTC {@link DateTime} object, converting timezones if
+   * Parses an ISO timestamp string into a UTC {@link Instant} object, converting timezones if
    * necessary. If {@code timestamp} is empty or {@code null} then {@code null} is returned.
    */
-  @Nullable
-  @CheckForNull
   @Override
-  public DateTime unmarshal(@Nullable String timestamp) {
+  @CheckForNull
+  public Instant unmarshal(@Nullable String timestamp) {
     if (isNullOrEmpty(timestamp)) {
       return null;
     }
-    return UNMARSHAL_FORMAT.parseDateTime(timestamp).withZone(UTC);
+    return OffsetDateTime.parse(timestamp, UNMARSHAL_FORMAT).toInstant();
   }
 
   /**
-   * Converts {@link DateTime} to UTC and returns it as an RFC3339 string. If {@code timestamp} is
+   * Converts {@link Instant} to UTC and returns it as an RFC3339 string. If {@code timestamp} is
    * {@code null} then an empty string is returned.
    */
   @Override
-  public String marshal(@Nullable DateTime timestamp) {
+  public String marshal(@Nullable Instant timestamp) {
     return getFormattedString(timestamp);
   }
 }

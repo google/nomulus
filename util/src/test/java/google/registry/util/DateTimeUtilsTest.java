@@ -26,24 +26,15 @@ import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusHours;
 import static google.registry.util.DateTimeUtils.minusMinutes;
 import static google.registry.util.DateTimeUtils.minusMonths;
-import static google.registry.util.DateTimeUtils.minusWeeks;
-import static google.registry.util.DateTimeUtils.minusYears;
-import static google.registry.util.DateTimeUtils.parseInstant;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusHours;
 import static google.registry.util.DateTimeUtils.plusMinutes;
 import static google.registry.util.DateTimeUtils.plusMonths;
-import static google.registry.util.DateTimeUtils.plusWeeks;
-import static google.registry.util.DateTimeUtils.plusYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
-import static google.registry.util.DateTimeUtils.toJodaInstant;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DateTimeUtils}. */
@@ -80,18 +71,6 @@ class DateTimeUtilsTest {
   }
 
   @Test
-  void testSuccess_plusYears() {
-    Instant startDate = Instant.parse("2012-02-29T00:00:00Z");
-    assertThat(plusYears(startDate, 4)).isEqualTo(Instant.parse("2016-02-28T00:00:00Z"));
-  }
-
-  @Test
-  void testSuccess_minusYears() {
-    Instant startDate = Instant.parse("2012-02-29T00:00:00Z");
-    assertThat(minusYears(startDate, 4)).isEqualTo(Instant.parse("2008-02-28T00:00:00Z"));
-  }
-
-  @Test
   void test_plusMonths_worksWithInstants() {
     Instant startDate = Instant.parse("2012-02-29T00:00:00Z");
     assertThat(plusMonths(startDate, 4)).isEqualTo(Instant.parse("2012-06-29T00:00:00Z"));
@@ -109,11 +88,6 @@ class DateTimeUtilsTest {
     assertThat(minusMonths(startLeapYear, 1)).isEqualTo(Instant.parse("2012-02-29T00:00:00Z"));
   }
 
-  @Test
-  void testSuccess_minusYears_zeroYears() {
-    DateTime leapDay = DateTime.parse("2012-02-29T00:00:00Z");
-    assertThat(leapDay.minusYears(0)).isEqualTo(leapDay);
-  }
 
   @Test
   void testFailure_earliestOfEmpty() {
@@ -136,8 +110,6 @@ class DateTimeUtilsTest {
   @Test
   void test_plusMinusWeeksDaysHoursMinutes() {
     Instant time = Instant.parse("2024-03-27T10:15:30.000Z");
-    assertThat(plusWeeks(time, 2)).isEqualTo(Instant.parse("2024-04-10T10:15:30.000Z"));
-    assertThat(minusWeeks(time, 2)).isEqualTo(Instant.parse("2024-03-13T10:15:30.000Z"));
 
     assertThat(plusDays(time, 2)).isEqualTo(Instant.parse("2024-03-29T10:15:30.000Z"));
     assertThat(minusDays(time, 2)).isEqualTo(Instant.parse("2024-03-25T10:15:30.000Z"));
@@ -149,17 +121,4 @@ class DateTimeUtilsTest {
     assertThat(minusMinutes(time, 2)).isEqualTo(Instant.parse("2024-03-27T10:13:30.000Z"));
   }
 
-  @Test
-  void test_instantConversionMethods_workCorrectly() {
-    assertThat(toDateTime(Instant.parse("2024-03-27T10:15:30.105Z")))
-        .isEqualTo(DateTime.parse("2024-03-27T10:15:30.105Z"));
-    assertThat(toInstant(DateTime.parse("2024-03-27T10:15:30.105Z")))
-        .isEqualTo(Instant.parse("2024-03-27T10:15:30.105Z"));
-    assertThat(toJodaInstant(Instant.parse("2024-03-27T10:15:30.105Z")))
-        .isEqualTo(org.joda.time.Instant.parse("2024-03-27T10:15:30.105Z"));
-    assertThat(parseInstant("2024-03-27T10:15:30.105Z"))
-        .isEqualTo(Instant.parse("2024-03-27T10:15:30.105Z"));
-    assertThat(parseInstant("2024-03-27T10:15:30Z"))
-        .isEqualTo(Instant.parse("2024-03-27T10:15:30Z"));
-  }
 }

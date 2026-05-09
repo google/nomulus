@@ -17,7 +17,7 @@ package google.registry.tools.params;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DateParameter}. */
@@ -28,7 +28,7 @@ class DateParameterTest {
   @Test
   void testConvert_onlyDate() {
     String exampleDate = "2014-01-01";
-    assertThat(instance.convert(exampleDate)).isEqualTo(DateTime.parse("2014-01-01T00:00:00Z"));
+    assertThat(instance.convert(exampleDate)).isEqualTo(Instant.parse("2014-01-01T00:00:00Z"));
   }
 
   @Test

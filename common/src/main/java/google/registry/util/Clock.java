@@ -16,6 +16,7 @@ package google.registry.util;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import javax.annotation.concurrent.ThreadSafe;
@@ -24,7 +25,7 @@ import javax.annotation.concurrent.ThreadSafe;
  * A clock that tells the current time in milliseconds or nanoseconds.
  *
  * <p>Clocks are technically serializable because they are either a stateless wrapper around the
- * system clock, or for testing, are just a wrapper around a DateTime. This means that if you
+ * system clock, or for testing, are just a wrapper around a Instant. This means that if you
  * serialize a clock and deserialize it elsewhere, you won't necessarily get the same time or time
  * zone -- what you will get is a functioning clock.
  */
@@ -37,5 +38,15 @@ public interface Clock extends Serializable {
   /** Returns the current time as a {@link ZonedDateTime} in UTC. */
   default ZonedDateTime nowDate() {
     return ZonedDateTime.ofInstant(now(), ZoneOffset.UTC);
+  }
+
+  /** Returns the current time as a {@link LocalDate} in UTC. */
+  default LocalDate todayUtc() {
+    return LocalDate.ofInstant(now(), ZoneOffset.UTC);
+  }
+
+  /** Returns the current time in milliseconds since the epoch. */
+  default long nowMillis() {
+    return now().toEpochMilli();
   }
 }

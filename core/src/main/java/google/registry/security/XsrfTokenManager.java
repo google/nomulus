@@ -56,7 +56,7 @@ public final class XsrfTokenManager {
   /** Generates an XSRF token for a given user based on email address. */
   public String generateToken(String email) {
     checkArgumentNotNull(email);
-    long timestampMillis = clock.now().toEpochMilli();
+    long timestampMillis = clock.nowMillis();
     return encodeToken(ServerSecret.get().asBytes(), email, timestampMillis);
   }
 

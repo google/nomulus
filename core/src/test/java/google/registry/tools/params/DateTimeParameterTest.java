@@ -15,11 +15,10 @@
 package google.registry.tools.params;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DateTimeParameter}. */
@@ -29,26 +28,25 @@ class DateTimeParameterTest {
 
   @Test
   void testConvert_numeric_returnsMillisFromEpochUtc() {
-    assertThat(instance.convert("1234")).isEqualTo(new DateTime(1234L, UTC));
+    assertThat(instance.convert("1234")).isEqualTo(Instant.ofEpochMilli(1234L));
   }
 
   @Test
   void testConvert_iso8601_returnsSameAsDateTimeParse() {
     String exampleDate = "2014-01-01T01:02:03.004Z";
-    assertThat(instance.convert(exampleDate))
-        .isEqualTo(DateTime.parse(exampleDate));
+    assertThat(instance.convert(exampleDate)).isEqualTo(Instant.parse(exampleDate));
   }
 
   @Test
   void testConvert_isoDateTimeWithMillis_returnsSameAsDateTimeParse() {
     String exampleDate = "2014-01-01T01:02:03.004Z";
-    assertThat(instance.convert(exampleDate)).isEqualTo(DateTime.parse(exampleDate));
+    assertThat(instance.convert(exampleDate)).isEqualTo(Instant.parse(exampleDate));
   }
 
   @Test
   void testConvert_weirdTimezone_convertsToUtc() {
     assertThat(instance.convert("1984-12-18T00:00:00-0520"))
-        .isEqualTo(DateTime.parse("1984-12-18T05:20:00Z"));
+        .isEqualTo(Instant.parse("1984-12-18T05:20:00Z"));
   }
 
   @Test

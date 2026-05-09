@@ -15,11 +15,10 @@
 package google.registry.xml;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UtcDateTimeAdapter}. */
@@ -27,15 +26,14 @@ class UtcDateTimeAdapterTest {
 
   @Test
   void testMarshal() {
-    assertThat(new UtcDateTimeAdapter().marshal(new DateTime(2010, 10, 17, 4, 20, 0, UTC)))
+    assertThat(new UtcDateTimeAdapter().marshal(Instant.parse("2010-10-17T04:20:00Z")))
         .isEqualTo("2010-10-17T04:20:00Z");
   }
 
   @Test
   void testMarshalConvertsToZuluTime() {
-    assertThat(new UtcDateTimeAdapter().marshal(
-        new DateTime(2010, 10, 17, 0, 20, 0, DateTimeZone.forOffsetHours(-4))))
-            .isEqualTo("2010-10-17T04:20:00Z");
+    assertThat(new UtcDateTimeAdapter().marshal(Instant.parse("2010-10-17T00:20:00-04:00")))
+        .isEqualTo("2010-10-17T04:20:00Z");
   }
 
   @Test
@@ -46,13 +44,13 @@ class UtcDateTimeAdapterTest {
   @Test
   void testUnmarshal() {
     assertThat(new UtcDateTimeAdapter().unmarshal("2010-10-17T04:20:00Z"))
-        .isEqualTo(new DateTime(2010, 10, 17, 4, 20, 0, UTC));
+        .isEqualTo(Instant.parse("2010-10-17T04:20:00Z"));
   }
 
   @Test
   void testUnmarshalConvertsToZuluTime() {
     assertThat(new UtcDateTimeAdapter().unmarshal("2010-10-17T00:20:00-04:00"))
-        .isEqualTo(new DateTime(2010, 10, 17, 4, 20, 0, UTC));
+        .isEqualTo(Instant.parse("2010-10-17T04:20:00Z"));
   }
 
   @Test
@@ -64,7 +62,7 @@ class UtcDateTimeAdapterTest {
   @Test
   void testUnmarshalInvalid() {
     assertThrows(
-        IllegalArgumentException.class,
+        DateTimeParseException.class,
         () -> assertThat(new UtcDateTimeAdapter().unmarshal("oh my goth")).isNull());
   }
 }

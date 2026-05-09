@@ -18,7 +18,7 @@ package google.registry.model.transfer;
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
-import google.registry.xml.UtcInstantAdapter;
+import google.registry.xml.UtcDateTimeAdapter;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -44,7 +44,7 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
 
   /** The time that the last transfer was requested. Can be null if never transferred. */
   @XmlElement(name = "reDate")
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+  @XmlJavaTypeAdapter(UtcDateTimeAdapter.class)
   Instant transferRequestTime;
 
   /** The losing registrar of the current or last transfer. Can be null if never transferred. */
@@ -58,7 +58,7 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
    * this holds the time that the last pending transfer ended. Can be null if never transferred.
    */
   @XmlElement(name = "acDate")
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+  @XmlJavaTypeAdapter(UtcDateTimeAdapter.class)
   @Column(name = "transfer_pending_expiration_time")
   Instant pendingTransferExpirationTime;
 

@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.joda.time.YearMonth;
+import java.time.YearMonth;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link YearMonthParameter}. */
@@ -28,7 +28,7 @@ class YearMonthParameterTest {
 
   @Test
   void testConvert_awfulMonth() {
-    assertThat(instance.convert("1984-12")).isEqualTo(new YearMonth(1984, 12));
+    assertThat(instance.convert("1984-12")).isEqualTo(YearMonth.of(1984, 12));
   }
 
   @Test

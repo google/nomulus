@@ -16,8 +16,6 @@ package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.util.DateTimeUtils.toDateTime;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.io.ByteStreams;
 import google.registry.util.ImprovedInputStream;
@@ -53,7 +51,7 @@ final class RydeTar {
           new PosixTarHeader.Builder()
               .setName(filename)
               .setSize(expectedSize)
-              .setMtime(toDateTime(modified))
+              .setMtime(modified)
               .build()
               .getBytes());
       return new ImprovedOutputStream("RydeTarWriter", os) {
@@ -96,7 +94,7 @@ final class RydeTar {
 
     /** Returns the creation/modification time of the file archived in this TAR. */
     Instant getModified() {
-      return toInstant(header.getMtime());
+      return header.getMtime();
     }
   }
 

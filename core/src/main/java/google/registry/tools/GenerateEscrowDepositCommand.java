@@ -33,9 +33,10 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.model.rde.RdeMode;
 import google.registry.rde.RdeStagingAction;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.joda.time.DateTime;
 
 /**
  * Command to kick off the server-side generation of an XML RDE or BRDA escrow deposit, which will
@@ -54,7 +55,7 @@ final class GenerateEscrowDepositCommand implements Command {
       names = {"-w", "--watermark"},
       description = "Point-in-time timestamp(s) for which time the deposit should be generated",
       required = true)
-  private List<DateTime> watermarks;
+  private List<Instant> watermarks;
 
   @Parameter(
       names = {"-m", "--mode"},
@@ -88,14 +89,14 @@ final class GenerateEscrowDepositCommand implements Command {
     }
 
     // We need to test for cases where "--watermark=" is passed in as a parameter, because it would
-    // first be converted to an empty list, and as such the DateTime converter would not be called.
+    // first be converted to an empty list, and as such the Instant converter would not be called.
     if (tlds.isEmpty()) {
       throw new ParameterException("At least one TLD must be specified");
     }
     assertTldsExist(tlds);
 
-    for (DateTime watermark : watermarks) {
-      if (!watermark.withTimeAtStartOfDay().equals(watermark)) {
+    for (Instant watermark : watermarks) {
+      if (!watermark.truncatedTo(ChronoUnit.DAYS).equals(watermark)) {
         throw new ParameterException("Each watermark date must be the start of a day");
       }
     }
@@ -117,7 +118,7 @@ final class GenerateEscrowDepositCommand implements Command {
             .put(PARAM_TLDS, tlds.stream().collect(Collectors.joining(",")))
             .put(
                 PARAM_WATERMARKS,
-                watermarks.stream().map(DateTime::toString).collect(Collectors.joining(",")));
+                watermarks.stream().map(Instant::toString).collect(Collectors.joining(",")));
 
     if (revision != null) {
       paramsBuilder.put(PARAM_REVISION, String.valueOf(revision));
