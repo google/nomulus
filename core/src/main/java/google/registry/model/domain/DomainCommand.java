@@ -17,7 +17,6 @@ package google.registry.model.domain;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Sets.difference;
-import static google.registry.util.CollectionUtils.difference;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -26,15 +25,17 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
-import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
 import google.registry.flows.exceptions.ContactsProhibitedException;
+import google.registry.model.Buildable;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.ImmutableObject;
+import google.registry.model.eppcommon.AuthInfo;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceCommand;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
 import google.registry.model.eppinput.ResourceCommand.ResourceUpdate;
-import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
+import google.registry.model.eppinput.SingleResourceCommand;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
 import jakarta.xml.bind.annotation.XmlAttribute;
@@ -70,8 +71,8 @@ public class DomainCommand {
 
   /** The fields on "chgType" from <a href="http://tools.ietf.org/html/rfc5731">RFC5731</a>. */
   @XmlTransient
-  public static class DomainCreateOrChange<B extends Domain.Builder> extends ImmutableObject
-      implements ResourceCreateOrChange<B> {
+  public abstract static class DomainCreateOrChange<B extends Domain.Builder>
+      extends ImmutableObject implements ResourceCreateOrChange<B> {
 
     /** The contactId of the registrant who registered this domain. */
     @XmlElement(name = "registrant")
@@ -148,8 +149,14 @@ public class DomainCommand {
     }
 
     @Override
-    public DomainAuthInfo getAuthInfo() {
-      return authInfo;
+    public Create clone() {
+      try {
+        Create clone = (Create) super.clone();
+        clone.hashCode = null;
+        return clone;
+      } catch (CloneNotSupportedException e) {
+        throw new AssertionError();
+      }
     }
 
     /** Creates a copy of this {@link Create} with hard links to hosts and contacts. */
@@ -157,7 +164,13 @@ public class DomainCommand {
     public Create cloneAndLinkReferences(Instant now)
         throws InvalidReferencesException, ParameterValuePolicyErrorException {
       Create clone = clone(this);
-      clone.nameservers = linkHosts(clone.nameserverHostNames, now);
+      if (isNullOrEmpty(clone.nameserverHostNames)) {
+        clone.nameserverHostNames = null;
+      }
+      if (isNullOrEmpty(clone.foreignKeyedDesignatedContacts)) {
+        clone.foreignKeyedDesignatedContacts = null;
+      }
+      clone.nameservers = linkHosts(nullSafeImmutableCopy(clone.nameserverHostNames), now);
       if (registrantContactId != null) {
         throw new RegistrantProhibitedException();
       }
@@ -165,6 +178,42 @@ public class DomainCommand {
         throw new ContactsProhibitedException();
       }
       return clone;
+    }
+
+    /** Builder for {@link Create}. */
+    public static class Builder extends Buildable.Builder<Create> {
+      public Builder setDomainName(String domainName) {
+        getInstance().domainName = domainName;
+        return this;
+      }
+
+      public Builder setPeriod(Period period) {
+        getInstance().period = period;
+        return this;
+      }
+
+      public Builder setNameserverHostNames(ImmutableSet<String> nameserverHostNames) {
+        getInstance().nameserverHostNames =
+            isNullOrEmpty(nameserverHostNames) ? null : nameserverHostNames;
+        return this;
+      }
+
+      public Builder setForeignKeyedDesignatedContacts(
+          ImmutableSet<ForeignKeyedDesignatedContact> foreignKeyedDesignatedContacts) {
+        getInstance().foreignKeyedDesignatedContacts =
+            isNullOrEmpty(foreignKeyedDesignatedContacts) ? null : foreignKeyedDesignatedContacts;
+        return this;
+      }
+
+      public Builder setRegistrant(String registrant) {
+        getInstance().registrantContactId = registrant;
+        return this;
+      }
+
+      public Builder setAuthInfo(DomainAuthInfo authInfo) {
+        getInstance().authInfo = authInfo;
+        return this;
+      }
     }
   }
 
@@ -226,7 +275,7 @@ public class DomainCommand {
     }
 
     @Override
-    public DomainAuthInfo getAuthInfo() {
+    public AuthInfo getAuthInfo() {
       return authInfo;
     }
   }
@@ -237,6 +286,7 @@ public class DomainCommand {
 
   /** A renew command for a {@link Domain}. */
   @XmlRootElement
+  @XmlType(propOrder = {"targetId", "currentExpirationDate", "period"})
   public static class Renew extends AbstractSingleResourceCommand {
     @XmlElement(name = "curExpDate")
     LocalDate currentExpirationDate;
@@ -251,10 +301,29 @@ public class DomainCommand {
     public Period getPeriod() {
       return firstNonNull(period, DEFAULT_PERIOD);
     }
+
+    /** Builder for {@link Renew}. */
+    public static class Builder extends Buildable.Builder<Renew> {
+      public Builder setTargetId(String targetId) {
+        getInstance().setTargetId(targetId);
+        return this;
+      }
+
+      public Builder setCurrentExpirationDate(LocalDate currentExpirationDate) {
+        getInstance().currentExpirationDate = currentExpirationDate;
+        return this;
+      }
+
+      public Builder setPeriod(Period period) {
+        getInstance().period = period;
+        return this;
+      }
+    }
   }
 
   /** A transfer operation for a {@link Domain}. */
   @XmlRootElement
+  @XmlType(propOrder = {"targetId", "period", "authInfo"})
   public static class Transfer extends AbstractSingleResourceCommand {
     /** The period to extend this domain's registration upon completion of the transfer. */
     Period period;
@@ -267,7 +336,7 @@ public class DomainCommand {
     }
 
     @Override
-    public DomainAuthInfo getAuthInfo() {
+    public AuthInfo getAuthInfo() {
       return authInfo;
     }
   }
@@ -275,17 +344,18 @@ public class DomainCommand {
   /** An update to a {@link Domain}. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "innerAdd", "innerRemove", "innerChange"})
-  public static class Update extends ResourceUpdate<Update.AddRemove, Domain.Builder, Update.Change>
+  public static class Update
+      extends ResourceUpdate<Update.DomainAddRemove, Domain.Builder, Update.Change>
       implements CreateOrUpdate<Update> {
 
     @XmlElement(name = "chg")
     protected Change innerChange;
 
     @XmlElement(name = "add")
-    protected AddRemove innerAdd;
+    protected DomainAddRemove innerAdd;
 
     @XmlElement(name = "rem")
-    protected AddRemove innerRemove;
+    protected DomainAddRemove innerRemove;
 
     @Override
     protected Change getNullableInnerChange() {
@@ -293,25 +363,48 @@ public class DomainCommand {
     }
 
     @Override
-    protected AddRemove getNullableInnerAdd() {
+    protected DomainAddRemove getNullableInnerAdd() {
       return innerAdd;
     }
 
     @Override
-    protected AddRemove getNullableInnerRemove() {
+    protected DomainAddRemove getNullableInnerRemove() {
       return innerRemove;
     }
 
     public boolean noChangesPresent() {
-      AddRemove emptyAddRemove = new AddRemove();
+      DomainAddRemove emptyAddRemove = new DomainAddRemove();
       return emptyAddRemove.equals(getInnerAdd())
           && emptyAddRemove.equals(getInnerRemove())
           && new Change().equals(getInnerChange());
     }
 
+    /** Builder for {@link Update}. */
+    public static class Builder extends Buildable.Builder<Update> {
+      public Builder setTargetId(String targetId) {
+        getInstance().setTargetId(targetId);
+        return this;
+      }
+
+      public Builder setInnerAdd(DomainAddRemove innerAdd) {
+        getInstance().innerAdd = innerAdd;
+        return this;
+      }
+
+      public Builder setInnerRemove(DomainAddRemove innerRemove) {
+        getInstance().innerRemove = innerRemove;
+        return this;
+      }
+
+      public Builder setInnerChange(Change innerChange) {
+        getInstance().innerChange = innerChange;
+        return this;
+      }
+    }
+
     /** The inner change type on a domain update command. */
     @XmlType(propOrder = {"nameserverHostNames", "foreignKeyedDesignatedContacts", "statusValues"})
-    public static class AddRemove extends ResourceUpdate.AddRemove {
+    public static class DomainAddRemove extends ResourceUpdate.AddRemove {
       /** Fully qualified host names of the hosts that are the nameservers for the domain. */
       @XmlElementWrapper(name = "ns")
       @XmlElement(name = "hostObj")
@@ -324,6 +417,25 @@ public class DomainCommand {
       @XmlElement(name = "contact")
       Set<ForeignKeyedDesignatedContact> foreignKeyedDesignatedContacts;
 
+      @XmlElement(name = "status")
+      Set<StatusValue> statusValues;
+
+      public boolean isEmpty() {
+        return isNullOrEmpty(nameserverHostNames)
+            && isNullOrEmpty(foreignKeyedDesignatedContacts)
+            && isNullOrEmpty(statusValues);
+      }
+
+      @Override
+      public void setStatusValues(ImmutableSet<StatusValue> statusValues) {
+        this.statusValues = statusValues;
+      }
+
+      @Override
+      public ImmutableSet<StatusValue> getStatusValues() {
+        return nullToEmptyImmutableCopy(statusValues);
+      }
+
       public ImmutableSet<String> getNameserverHostNames() {
         return nullSafeImmutableCopy(nameserverHostNames);
       }
@@ -332,11 +444,45 @@ public class DomainCommand {
         return nullToEmptyImmutableCopy(nameservers);
       }
 
-      /** Creates a copy of this {@link AddRemove} with hard links to hosts and contacts. */
-      private AddRemove cloneAndLinkReferences(Instant now)
+      @Override
+      public DomainAddRemove clone() {
+        DomainAddRemove clone = (DomainAddRemove) super.clone();
+        clone.hashCode = null;
+        return clone;
+      }
+
+      /** Builder for {@link DomainAddRemove}. */
+      public static class Builder extends Buildable.Builder<DomainAddRemove> {
+        public Builder setNameserverHostNames(ImmutableSet<String> nameserverHostNames) {
+          getInstance().nameserverHostNames =
+              isNullOrEmpty(nameserverHostNames) ? null : nameserverHostNames;
+          return this;
+        }
+
+        public Builder setStatusValues(ImmutableSet<StatusValue> statusValues) {
+          getInstance().statusValues = isNullOrEmpty(statusValues) ? null : statusValues;
+          return this;
+        }
+      }
+
+      /** Creates a copy of this {@link DomainAddRemove} with hard links to hosts and contacts. */
+      private DomainAddRemove cloneAndLinkReferences(Instant now)
           throws InvalidReferencesException, ContactsProhibitedException {
-        AddRemove clone = clone(this);
-        clone.nameservers = linkHosts(clone.nameserverHostNames, now);
+        DomainAddRemove clone = clone(this);
+        if (isNullOrEmpty(clone.nameserverHostNames)) {
+          clone.nameserverHostNames = null;
+        }
+        if (isNullOrEmpty(clone.foreignKeyedDesignatedContacts)) {
+          clone.foreignKeyedDesignatedContacts = null;
+        }
+        if (isNullOrEmpty(clone.statusValues)) {
+          clone.statusValues = null;
+        }
+        try {
+          clone.nameservers = linkHosts(nullSafeImmutableCopy(clone.nameserverHostNames), now);
+        } catch (Exception e) {
+          throw new InvalidReferencesException(Host.class, clone.nameserverHostNames);
+        }
         if (!isNullOrEmpty(foreignKeyedDesignatedContacts)) {
           throw new ContactsProhibitedException();
         }
@@ -347,6 +493,25 @@ public class DomainCommand {
     /** The inner change type on a domain update command. */
     @XmlType(propOrder = {"registrantContactId", "authInfo"})
     public static class Change extends DomainCreateOrChange<Domain.Builder> {
+      /** Builder for {@link Change}. */
+      public static class Builder extends Buildable.Builder<Change> {
+        public Builder setAuthInfo(DomainAuthInfo authInfo) {
+          getInstance().authInfo = authInfo;
+          return this;
+        }
+      }
+
+      @Override
+      public Change clone() {
+        try {
+          Change clone = (Change) super.clone();
+          clone.hashCode = null;
+          return clone;
+        } catch (CloneNotSupportedException e) {
+          throw new AssertionError();
+        }
+      }
+
       Change cloneAndLinkReferences() throws RegistrantProhibitedException {
         Change clone = clone(this);
         if (clone.registrantContactId != null) {
@@ -373,7 +538,7 @@ public class DomainCommand {
     }
   }
 
-  private static Set<VKey<Host>> linkHosts(Set<String> hostNames, Instant now)
+  private static ImmutableSet<VKey<Host>> linkHosts(ImmutableSet<String> hostNames, Instant now)
       throws InvalidReferencesException {
     if (hostNames == null) {
       return null;
@@ -383,7 +548,7 @@ public class DomainCommand {
 
   /** Loads host keys to cached EPP resources by their foreign keys. */
   private static ImmutableMap<String, VKey<Host>> loadByForeignKeysCached(
-      Set<String> foreignKeys, Instant now) throws InvalidReferencesException {
+      ImmutableSet<String> foreignKeys, Instant now) throws InvalidReferencesException {
     ImmutableMap<String, VKey<Host>> fks =
         ForeignKeyUtils.loadKeysByCacheIfEnabled(Host.class, foreignKeys, now);
     if (!fks.keySet().equals(foreignKeys)) {
@@ -393,15 +558,22 @@ public class DomainCommand {
     return fks;
   }
 
+  /** Exception to throw if the registrant is changed. */
+  public static class RegistrantProhibitedException extends ParameterValuePolicyErrorException {
+    public RegistrantProhibitedException() {
+      super("Having a registrant is prohibited by registry policy");
+    }
+  }
+
   /** Exception to throw when referenced objects don't exist. */
-  public static class InvalidReferencesException extends Exception {
+  public static class InvalidReferencesException extends ParameterValuePolicyErrorException {
     private final ImmutableSet<String> foreignKeys;
     private final Class<?> type;
 
-    InvalidReferencesException(Class<?> type, ImmutableSet<String> foreignKeys) {
+    public InvalidReferencesException(Class<?> type, Set<String> foreignKeys) {
       super(String.format("Invalid %s reference IDs: %s", type.getSimpleName(), foreignKeys));
       this.type = checkNotNull(type);
-      this.foreignKeys = foreignKeys;
+      this.foreignKeys = nullToEmptyImmutableCopy(foreignKeys);
     }
 
     public ImmutableSet<String> getForeignKeys() {

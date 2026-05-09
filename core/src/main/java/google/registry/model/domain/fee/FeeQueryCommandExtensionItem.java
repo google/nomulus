@@ -78,6 +78,10 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
   /** The period for the command being checked. */
   Period period;
 
+  public void setPeriod(Period period) {
+    this.period = period;
+  }
+
   /**
    * Three-character ISO4217 currency code.
    *

@@ -14,10 +14,8 @@
 
 package google.registry.tools;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Maps.filterValues;
-import static com.google.common.io.Resources.getResource;
 import static google.registry.model.tld.Tlds.findTldForNameOrThrow;
 import static google.registry.tools.CommandUtilities.addHeader;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
@@ -33,19 +31,16 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.net.InternetDomainName;
 import com.google.common.net.MediaType;
-import com.google.template.soy.SoyFileSet;
-import com.google.template.soy.data.SoyRecord;
-import com.google.template.soy.parseinfo.SoyFileInfo;
-import com.google.template.soy.parseinfo.SoyTemplateInfo;
+import google.registry.model.eppcommon.EppXmlTransformer;
+import google.registry.model.eppinput.EppInput;
 import google.registry.model.registrar.Registrar;
 import google.registry.util.Clock;
+import google.registry.xml.ValidationMode;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /** A command to execute an epp command. */
@@ -57,9 +52,6 @@ abstract class EppToolCommand extends ConfirmingCommand implements CommandWithCo
       names = {"-u", "--superuser"},
       description = "Run in superuser mode")
   boolean superuser = false;
-
-  private SoyFileInfo soyFileInfo;
-  private SoyTemplateInfo soyRenderer;
 
   private List<XmlEppParameters> commands = new ArrayList<>();
 
@@ -74,10 +66,11 @@ abstract class EppToolCommand extends ConfirmingCommand implements CommandWithCo
   }
 
   /**
-   * Helper function for grouping sets of domain names into respective TLDs. Useful for batched
-   * EPP calls when invoking commands (i.e. domain check) with sets of domains across multiple TLDs.
+   * Helper function for grouping sets of domain names into respective TLDs. Useful for batched EPP
+   * calls when invoking commands (i.e. domain check) with sets of domains across multiple TLDs.
    */
-  protected static Multimap<String, String> validateAndGroupDomainNamesByTld(List<String> names) {
+  protected static Multimap<String, String> validateAndGroupDomainNamesByTld(
+      ImmutableList<String> names) {
     ImmutableMultimap.Builder<String, String> builder = new ImmutableMultimap.Builder<>();
     for (String name : names) {
       String canonicalDomain = canonicalizeHostname(name);
@@ -85,11 +78,6 @@ abstract class EppToolCommand extends ConfirmingCommand implements CommandWithCo
       builder.put(tld.toString(), canonicalDomain);
     }
     return builder.build();
-  }
-
-  protected void setSoyTemplate(SoyFileInfo soyFileInfo, SoyTemplateInfo soyRenderer) {
-    this.soyFileInfo = soyFileInfo;
-    this.soyRenderer = soyRenderer;
   }
 
   @Override
@@ -103,16 +91,20 @@ abstract class EppToolCommand extends ConfirmingCommand implements CommandWithCo
     commands.add(new XmlEppParameters(clientId, xml));
   }
 
-  protected void addSoyRecord(String clientId, SoyRecord record) {
-    checkNotNull(soyFileInfo, "SoyFileInfo is missing, cannot add record.");
-    checkNotNull(soyRenderer, "SoyRenderer is missing, cannot add record.");
-    addXmlCommand(clientId, SoyFileSet.builder()
-        .add(getResource(soyFileInfo.getClass(), soyFileInfo.getFileName()))
-        .build()
-        .compileToTofu()
-        .newRenderer(soyRenderer)
-        .setData(record)
-        .render());
+  /**
+   * Adds an EPP command to the list of commands to be executed.
+   *
+   * @param clientId the registrar client ID to execute the command as
+   * @param eppInput the EPP input object to marshal and send
+   */
+  protected void addEppInput(String clientId, EppInput eppInput) {
+    try {
+      String xml =
+          new String(EppXmlTransformer.marshalInput(eppInput, ValidationMode.STRICT), UTF_8);
+      addXmlCommand(clientId, xml);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to marshal EppInput", e);
+    }
   }
 
   /** Subclasses can override to implement a dry run flag. False by default. */
@@ -133,21 +125,23 @@ abstract class EppToolCommand extends ConfirmingCommand implements CommandWithCo
     return prompt;
   }
 
-  private List<String> processCommands(boolean dryRun) throws IOException {
+  private ImmutableList<String> processCommands(boolean dryRun) throws IOException {
     ImmutableList.Builder<String> responses = new ImmutableList.Builder<>();
     for (XmlEppParameters command : commands) {
-      Map<String, Object> params = new HashMap<>();
-      params.put("dryRun", dryRun);
-      params.put("clientId", command.clientId);
-      params.put("superuser", superuser);
-      params.put("xml", URLEncoder.encode(command.xml, UTF_8));
+      ImmutableMap<String, Object> params =
+          ImmutableMap.<String, Object>builder()
+              .put("dryRun", dryRun)
+              .put("clientId", command.clientId)
+              .put("superuser", superuser)
+              .put("xml", URLEncoder.encode(command.xml, UTF_8))
+              .build();
       String requestBody =
           Joiner.on('&').withKeyValueSeparator("=").join(filterValues(params, Objects::nonNull));
       responses.add(
           nullToEmpty(
               connection.sendPostRequest(
                   "/_dr/epptool",
-                  ImmutableMap.<String, String>of(),
+                  ImmutableMap.of(),
                   MediaType.FORM_DATA,
                   requestBody.getBytes(UTF_8))));
     }

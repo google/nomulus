@@ -16,16 +16,20 @@ package google.registry.model.contact;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.CollectionUtils.nullToEmpty;
+import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.PostalInfo.Type;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceCommand;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
 import google.registry.model.eppinput.ResourceCommand.ResourceUpdate;
-import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
+import google.registry.model.eppinput.SingleResourceCommand;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
@@ -34,6 +38,7 @@ import jakarta.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** A collection of (vestigial) Contact commands. */
 public class ContactCommand {
@@ -46,7 +51,7 @@ public class ContactCommand {
     /** Postal info for the contact. */
     List<PostalInfo> postalInfo;
 
-     /** Contact’s voice number. */
+    /** Contact’s voice number. */
     ContactPhoneNumber voice;
 
     /** Contact’s fax number. */
@@ -138,6 +143,63 @@ public class ContactCommand {
     public ContactAuthInfo getAuthInfo() {
       return authInfo;
     }
+
+    @Override
+    public Create clone() {
+      try {
+        Create clone = (Create) super.clone();
+        clone.hashCode = null;
+        return clone;
+      } catch (CloneNotSupportedException e) {
+        throw new AssertionError();
+      }
+    }
+
+    /** Builder for {@link Create}. */
+    public static class Builder extends Buildable.Builder<Create> {
+
+      /** Sets the contact identifier. */
+      public Builder setContactId(String contactId) {
+        getInstance().contactId = contactId;
+        return this;
+      }
+
+      /** Sets the postal information. */
+      public Builder setPostalInfo(List<PostalInfo> postalInfo) {
+        getInstance().postalInfo = postalInfo;
+        return this;
+      }
+
+      /** Sets the voice number. */
+      public Builder setVoice(ContactPhoneNumber voice) {
+        getInstance().voice = voice;
+        return this;
+      }
+
+      /** Sets the fax number. */
+      public Builder setFax(ContactPhoneNumber fax) {
+        getInstance().fax = fax;
+        return this;
+      }
+
+      /** Sets the email address. */
+      public Builder setEmail(String email) {
+        getInstance().email = email;
+        return this;
+      }
+
+      /** Sets the authorization info. */
+      public Builder setAuthInfo(ContactAuthInfo authInfo) {
+        getInstance().authInfo = authInfo;
+        return this;
+      }
+
+      /** Sets the disclosure policy. */
+      public Builder setDisclose(Disclose disclose) {
+        getInstance().disclose = disclose;
+        return this;
+      }
+    }
   }
 
   /** A delete command for a (vestigial) Contact. */
@@ -162,16 +224,16 @@ public class ContactCommand {
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "innerAdd", "innerRemove", "innerChange"})
   public static class Update
-      extends ResourceUpdate<Update.AddRemove, EppResource.Builder<?, ?>, Update.Change> {
+      extends ResourceUpdate<Update.ContactAddRemove, EppResource.Builder<?, ?>, Update.Change> {
 
     @XmlElement(name = "chg")
     protected Change innerChange;
 
     @XmlElement(name = "add")
-    protected AddRemove innerAdd;
+    protected ContactAddRemove innerAdd;
 
     @XmlElement(name = "rem")
-    protected AddRemove innerRemove;
+    protected ContactAddRemove innerRemove;
 
     @Override
     protected Change getNullableInnerChange() {
@@ -179,20 +241,79 @@ public class ContactCommand {
     }
 
     @Override
-    protected AddRemove getNullableInnerAdd() {
+    protected ContactAddRemove getNullableInnerAdd() {
       return innerAdd;
     }
 
     @Override
-    protected AddRemove getNullableInnerRemove() {
+    protected ContactAddRemove getNullableInnerRemove() {
       return innerRemove;
     }
 
+    /** Builder for {@link Update}. */
+    public static class Builder extends Buildable.Builder<Update> {
+
+      /** Sets the target contact identifier. */
+      public Builder setTargetId(String targetId) {
+        getInstance().targetId = targetId;
+        return this;
+      }
+
+      /** Sets the change component. */
+      public Builder setInnerChange(Change innerChange) {
+        getInstance().innerChange = innerChange;
+        return this;
+      }
+
+      /** Sets the add component. */
+      public Builder setInnerAdd(ContactAddRemove innerAdd) {
+        getInstance().innerAdd = innerAdd;
+        return this;
+      }
+
+      /** Sets the remove component. */
+      public Builder setInnerRemove(ContactAddRemove innerRemove) {
+        getInstance().innerRemove = innerRemove;
+        return this;
+      }
+    }
+
     /** The inner change type on a contact update command. */
-    public static class AddRemove extends ResourceUpdate.AddRemove {}
+    public static class ContactAddRemove extends ResourceUpdate.AddRemove {
+      @XmlElement(name = "status")
+      Set<StatusValue> statusValues;
+
+      @Override
+      public void setStatusValues(ImmutableSet<StatusValue> statusValues) {
+        this.statusValues = statusValues;
+      }
+
+      @Override
+      public ImmutableSet<StatusValue> getStatusValues() {
+        return nullToEmptyImmutableCopy(statusValues);
+      }
+
+      @Override
+      public ContactAddRemove clone() {
+        ContactAddRemove clone = (ContactAddRemove) super.clone();
+        clone.hashCode = null;
+        return clone;
+      }
+    }
 
     /** The inner change type on a contact update command. */
     @XmlType(propOrder = {"postalInfo", "voice", "fax", "email", "authInfo", "disclose"})
-    public static class Change extends ContactCreateOrChange {}
+    public static class Change extends ContactCreateOrChange {
+      @Override
+      public Change clone() {
+        try {
+          Change clone = (Change) super.clone();
+          clone.hashCode = null;
+          return clone;
+        } catch (CloneNotSupportedException e) {
+          throw new AssertionError();
+        }
+      }
+    }
   }
 }

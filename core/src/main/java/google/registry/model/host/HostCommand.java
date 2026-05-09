@@ -14,10 +14,13 @@
 
 package google.registry.model.host;
 
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.Buildable;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceCommand;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
@@ -56,6 +59,30 @@ public class HostCommand {
     public ImmutableSet<InetAddress> getInetAddresses() {
       return nullSafeImmutableCopy(inetAddresses);
     }
+
+    @Override
+    public Create clone() {
+      try {
+        Create clone = (Create) super.clone();
+        clone.hashCode = null;
+        return clone;
+      } catch (CloneNotSupportedException e) {
+        throw new AssertionError();
+      }
+    }
+
+    /** Builder for {@link Create}. */
+    public static class Builder extends Buildable.Builder<Create> {
+      public Builder setTargetId(String targetId) {
+        getInstance().setTargetId(targetId);
+        return this;
+      }
+
+      public Builder setInetAddresses(ImmutableSet<InetAddress> inetAddresses) {
+        getInstance().inetAddresses = inetAddresses;
+        return this;
+      }
+    }
   }
 
   /** A delete command for a {@link Host}. */
@@ -73,16 +100,17 @@ public class HostCommand {
   /** An update to a {@link Host}. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "innerAdd", "innerRemove", "innerChange"})
-  public static class Update extends ResourceUpdate<Update.AddRemove, Host.Builder, Update.Change> {
+  public static class Update
+      extends ResourceUpdate<Update.HostAddRemove, Host.Builder, Update.Change> {
 
     @XmlElement(name = "chg")
     protected Change innerChange;
 
     @XmlElement(name = "add")
-    protected AddRemove innerAdd;
+    protected HostAddRemove innerAdd;
 
     @XmlElement(name = "rem")
-    protected AddRemove innerRemove;
+    protected HostAddRemove innerRemove;
 
     @Override
     protected Change getNullableInnerChange() {
@@ -90,28 +118,72 @@ public class HostCommand {
     }
 
     @Override
-    protected AddRemove getNullableInnerAdd() {
+    protected HostAddRemove getNullableInnerAdd() {
       return innerAdd;
     }
 
     @Override
-    protected AddRemove getNullableInnerRemove() {
+    protected HostAddRemove getNullableInnerRemove() {
       return innerRemove;
     }
 
     /** The add/remove type on a host update command. */
-    @XmlType(propOrder = { "inetAddresses", "statusValues" })
-    public static class AddRemove extends ResourceUpdate.AddRemove {
+    @XmlType(propOrder = {"inetAddresses", "statusValues"})
+    public static class HostAddRemove extends ResourceUpdate.AddRemove {
       /** IP Addresses for this host. Can be null if this is an external host. */
       @XmlElement(name = "addr")
       Set<InetAddress> inetAddresses;
 
+      @XmlElement(name = "status")
+      Set<StatusValue> statusValues;
+
+      @Override
+      public void setStatusValues(ImmutableSet<StatusValue> statusValues) {
+        this.statusValues = statusValues;
+      }
+
+      @Override
+      public ImmutableSet<StatusValue> getStatusValues() {
+        return nullToEmptyImmutableCopy(statusValues);
+      }
+
       public ImmutableSet<InetAddress> getInetAddresses() {
         return nullToEmptyImmutableCopy(inetAddresses);
+      }
+
+      @Override
+      public HostAddRemove clone() {
+        HostAddRemove clone = (HostAddRemove) super.clone();
+        clone.hashCode = null;
+        return clone;
+      }
+
+      /** Builder for {@link HostAddRemove}. */
+      public static class Builder extends Buildable.Builder<HostAddRemove> {
+        public Builder setInetAddresses(ImmutableSet<InetAddress> inetAddresses) {
+          getInstance().inetAddresses = isNullOrEmpty(inetAddresses) ? null : inetAddresses;
+          return this;
+        }
+
+        public Builder setStatusValues(ImmutableSet<StatusValue> statusValues) {
+          getInstance().statusValues = isNullOrEmpty(statusValues) ? null : statusValues;
+          return this;
+        }
       }
     }
 
     /** The inner change type on a host update command. */
-    public static class Change extends HostCreateOrChange {}
+    public static class Change extends HostCreateOrChange {
+      @Override
+      public Change clone() {
+        try {
+          Change clone = (Change) super.clone();
+          clone.hashCode = null;
+          return clone;
+        } catch (CloneNotSupportedException e) {
+          throw new AssertionError();
+        }
+      }
+    }
   }
 }

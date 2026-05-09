@@ -128,7 +128,6 @@ import google.registry.flows.domain.DomainFlowUtils.NameserversNotAllowedForTldE
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.PremiumNameBlockedException;
-import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrarMustBeActiveForThisOperationException;
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TooManyDsRecordsException;
@@ -151,6 +150,7 @@ import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainCommand.RegistrantProhibitedException;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;

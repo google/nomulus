@@ -23,12 +23,14 @@ import jakarta.persistence.Transient;
 import jakarta.xml.bind.DatatypeConverter;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /** Base class for {@link DomainDsData} and {@link DomainDsDataHistory}. */
 @MappedSuperclass
 @Access(AccessType.FIELD)
+@XmlType(propOrder = {"keyTag", "algorithm", "digestType", "digest"})
 public abstract class DomainDsDataBase extends ImmutableObject implements UnsafeSerializable {
 
   @XmlTransient @Transient @Insignificant String domainRepoId;

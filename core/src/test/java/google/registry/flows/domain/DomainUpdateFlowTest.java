@@ -82,7 +82,6 @@ import google.registry.flows.domain.DomainFlowUtils.MaxSigLifeChangeNotSupported
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotAllowedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
-import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
 import google.registry.flows.domain.DomainFlowUtils.SecDnsAllUsageException;
 import google.registry.flows.domain.DomainFlowUtils.TooManyDsRecordsException;
 import google.registry.flows.domain.DomainFlowUtils.TooManyNameserversException;
@@ -96,6 +95,7 @@ import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
+import google.registry.model.domain.DomainCommand.RegistrantProhibitedException;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
