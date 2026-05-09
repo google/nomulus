@@ -19,4 +19,3 @@ create index IDXq9gy8x2xynt9tb16yajn1gcm8 on "Domain" (billing_contact);
 create index IDXr22ciyccwi9rrqmt1ro0s59qf on "Domain" (tech_contact);
 
 create index IDXa7fu0bqynfb79rr80528b4jqt on "Domain" (registrant_contact);
-

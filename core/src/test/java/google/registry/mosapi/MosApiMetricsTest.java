@@ -34,10 +34,10 @@ import google.registry.mosapi.MosApiModels.TldServiceState;
 import google.registry.request.lock.LockHandler;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.IntStream;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -61,7 +61,7 @@ public class MosApiMetricsTest {
       mock(Monitoring.Projects.MetricDescriptors.Create.class);
 
   // Fixed Clock for deterministic testing
-  private final FakeClock clock = new FakeClock(DateTime.parse("2026-01-01T12:00:00Z"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2026-01-01T12:00:00Z"));
   private MosApiMetrics mosApiMetrics;
 
   @BeforeEach

@@ -17,9 +17,7 @@
     xmlns = @XmlNs(prefix = "launch", namespaceURI = "urn:ietf:params:xml:ns:launch-1.0"),
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlJavaTypeAdapters({
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
-})
+@XmlJavaTypeAdapters({@XmlJavaTypeAdapter(UtcInstantAdapter.class)})
 package google.registry.model.domain.launch;
 
 import google.registry.xml.UtcInstantAdapter;

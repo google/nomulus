@@ -40,17 +40,17 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.util.Idn;
 import google.registry.util.TypeUtils;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Common unit test code for actions inheriting {@link RdapActionBase}. */
 abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
-  protected final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  protected final FakeClock clock = new FakeClock(Instant.parse("2000-01-01T00:00:00Z"));
   static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
   @RegisterExtension
@@ -96,7 +96,7 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     action.requestMethod = GET;
     action.domainCache =
         (domainName) -> ForeignKeyUtils.loadResourceByCache(Domain.class, domainName, clock.now());
-    action.clock = new FakeClock(DateTime.parse("2025-01-01T00:00:00.000Z"));
+    action.clock = new FakeClock(Instant.parse("2025-01-01T00:00:00.000Z"));
     logout();
   }
 

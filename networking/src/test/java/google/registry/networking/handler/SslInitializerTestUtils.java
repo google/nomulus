@@ -15,7 +15,6 @@
 package google.registry.networking.handler;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
@@ -28,6 +27,9 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import javax.net.ssl.SSLSession;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -38,7 +40,6 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.joda.time.DateTime;
 
 /**
  * Utility class that provides methods used by {@link SslClientInitializerTest} and {@link
@@ -72,7 +73,7 @@ public final class SslInitializerTestUtils {
    * @return signed public key (of the key pair) certificate
    */
   public static X509Certificate signKeyPair(
-      SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname, DateTime from, DateTime to)
+      SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname, Instant from, Instant to)
       throws Exception {
     X500Name subjectDnName = new X500Name("CN=" + hostname);
     BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
@@ -82,8 +83,8 @@ public final class SslInitializerTestUtils {
         new JcaX509v3CertificateBuilder(
             issuerDnName,
             serialNumber,
-            from.toDate(),
-            to.toDate(),
+            Date.from(from),
+            Date.from(to),
             subjectDnName,
             keyPair.getPublic());
 
@@ -102,7 +103,11 @@ public final class SslInitializerTestUtils {
   public static X509Certificate signKeyPair(
       SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname) throws Exception {
     return signKeyPair(
-        ssc, keyPair, hostname, DateTime.now(UTC).minusDays(1), DateTime.now(UTC).plusDays(1));
+        ssc,
+        keyPair,
+        hostname,
+        Instant.now().minus(1, ChronoUnit.DAYS),
+        Instant.now().plus(1, ChronoUnit.DAYS));
   }
 
   /**

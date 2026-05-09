@@ -18,7 +18,6 @@ createUberJar('buildLoadTestClient', 'loadTest', 'google.registry.client.EppClie
 
 dependencies {
     def deps = rootProject.dependencyMap
-    implementation deps['joda-time:joda-time']
     implementation deps['io.netty:netty-buffer']
     implementation deps['io.netty:netty-codec']
     implementation deps['io.netty:netty-codec-http']

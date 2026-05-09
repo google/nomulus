@@ -15,13 +15,13 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.testing.FakeClock;
 import google.registry.util.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.hibernate.cfg.Environment;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -166,7 +165,7 @@ public class JpaTestExtensions {
     /** Builds a {@link JpaIntegrationTestExtension} instance. */
     public JpaIntegrationTestExtension buildIntegrationTestExtension() {
       return new JpaIntegrationTestExtension(
-          clock == null ? new FakeClock(DateTime.now(UTC)) : clock,
+          clock == null ? new FakeClock(Instant.now()) : clock,
           ImmutableList.copyOf(extraEntityClasses),
           ImmutableMap.copyOf(userProperties),
           !withoutCannedData);
@@ -190,7 +189,7 @@ public class JpaTestExtensions {
           !Objects.equals(GOLDEN_SCHEMA_SQL_PATH, initScript),
           "Unit tests must not depend on the Nomulus schema.");
       return new JpaUnitTestExtension(
-          clock == null ? new FakeClock(DateTime.now(UTC)) : clock,
+          clock == null ? new FakeClock(Instant.now()) : clock,
           // Use the hstore extension by default so we can save the migration schedule
           Optional.of(initScript == null ? HSTORE_EXTENSION_SQL_PATH : initScript),
           ImmutableList.copyOf(extraEntityClasses),

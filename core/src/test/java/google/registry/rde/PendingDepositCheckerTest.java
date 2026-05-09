@@ -24,7 +24,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadByKeyIfPresent;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static org.joda.time.DateTimeConstants.TUESDAY;
 
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.model.common.Cursor;
@@ -33,6 +32,7 @@ import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +51,7 @@ public class PendingDepositCheckerTest {
 
   @BeforeEach
   void beforeEach() {
-    checker.brdaDayOfWeek = TUESDAY;
+    checker.brdaDayOfWeek = DayOfWeek.TUESDAY.getValue();
     checker.brdaInterval = Duration.ofDays(7);
     checker.clock = clock;
     checker.rdeInterval = Duration.ofDays(1);
@@ -198,4 +198,3 @@ public class PendingDepositCheckerTest {
     persistResource(Tld.get(tld).asBuilder().setEscrowEnabled(true).build());
   }
 }
-

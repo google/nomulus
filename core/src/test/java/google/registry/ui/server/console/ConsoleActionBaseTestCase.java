@@ -25,7 +25,7 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -33,7 +33,7 @@ public abstract class ConsoleActionBaseTestCase {
 
   protected static final Gson GSON = GsonUtils.provideGson();
 
-  protected final FakeClock clock = new FakeClock(DateTime.parse("2024-04-15T00:00:00.000Z"));
+  protected final FakeClock clock = new FakeClock(Instant.parse("2024-04-15T00:00:00.000Z"));
 
   @RegisterExtension
   final JpaTestExtensions.JpaIntegrationTestExtension jpa =

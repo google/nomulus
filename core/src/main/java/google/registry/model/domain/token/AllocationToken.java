@@ -335,8 +335,6 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return tokenType;
   }
 
-
-
   @JsonIgnore
   public TimedTransitionProperty<TokenStatus> getTokenStatusTransitions() {
     return tokenStatusTransitions;

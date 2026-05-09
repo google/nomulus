@@ -14,7 +14,6 @@
 
 package google.registry.util;
 
-
 import com.google.common.flogger.FluentLogger;
 import java.util.Map;
 import java.util.Optional;

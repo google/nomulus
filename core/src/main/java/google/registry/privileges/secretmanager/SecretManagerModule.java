@@ -14,7 +14,6 @@
 
 package google.registry.privileges.secretmanager;
 
-
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import com.google.cloud.secretmanager.v1.SecretManagerServiceSettings;
 import dagger.Module;

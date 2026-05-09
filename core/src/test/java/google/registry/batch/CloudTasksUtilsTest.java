@@ -216,8 +216,8 @@ public class CloudTasksUtilsTest {
 
     assertThat(task.getScheduleTime().getSeconds()).isNotEqualTo(0);
     Instant scheduleTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
-    Instant lowerBoundTime = Instant.ofEpochMilli(clock.now().toEpochMilli());
-    Instant upperBound = Instant.ofEpochMilli(clock.now().plusSeconds(100).toEpochMilli());
+    Instant lowerBoundTime = clock.now();
+    Instant upperBound = clock.now().plusSeconds(100);
 
     assertThat(scheduleTime.isBefore(lowerBoundTime)).isFalse();
     assertThat(upperBound.isBefore(scheduleTime)).isFalse();
@@ -253,7 +253,7 @@ public class CloudTasksUtilsTest {
         .isEqualTo("https://backend.registry.test/the/path?key1=val1&key2=val2&key1=val3");
     verifyOidcToken(task);
     assertThat(Instant.ofEpochSecond(task.getScheduleTime().getSeconds()))
-        .isEqualTo(Instant.ofEpochMilli(clock.now().plus(Duration.ofMinutes(10)).toEpochMilli()));
+        .isEqualTo(clock.now().plus(Duration.ofMinutes(10)));
   }
 
   @Test

@@ -34,7 +34,6 @@ public class FeeCheckResponseExtensionV11
   @XmlElement(name = "cd")
   ImmutableList<FeeCheckResponseExtensionItemV11> items;
 
-
   @Override
   public void setCurrencyIfSupported(CurrencyUnit currency) {}
 

@@ -37,7 +37,7 @@ import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -45,7 +45,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link ReservedList}. */
 class ReservedListTest {
 
-  private FakeClock clock = new FakeClock(DateTime.parse("2010-01-01T10:00:00Z"));
+  private FakeClock clock = new FakeClock(Instant.parse("2010-01-01T10:00:00Z"));
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =

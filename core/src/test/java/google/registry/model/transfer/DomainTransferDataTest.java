@@ -15,8 +15,6 @@
 package google.registry.model.transfer;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.util.DateTimeUtils.toInstant;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.billing.BillingCancellation;
@@ -26,14 +24,14 @@ import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainTransferData}. */
 public class DomainTransferDataTest {
 
-  private final DateTime now = DateTime.now(UTC);
+  private final Instant now = Instant.parse("2024-03-27T10:15:30.105Z");
 
   private VKey<BillingEvent> transferBillingEventKey;
   private VKey<BillingCancellation> otherServerApproveBillingEventKey;
@@ -55,7 +53,7 @@ public class DomainTransferDataTest {
     DomainTransferData constantTransferData =
         new DomainTransferData.Builder()
             .setTransferRequestTrid(Trid.create("server-trid", "client-trid"))
-            .setTransferRequestTime(toInstant(now))
+            .setTransferRequestTime(now)
             .setGainingRegistrarId("NewRegistrar")
             .setLosingRegistrarId("TheRegistrar")
             // Test must use a non-1-year period, since that's the default value.
@@ -64,7 +62,7 @@ public class DomainTransferDataTest {
     DomainTransferData fullTransferData =
         constantTransferData
             .asBuilder()
-            .setPendingTransferExpirationTime(toInstant(now))
+            .setPendingTransferExpirationTime(now)
             .setTransferStatus(TransferStatus.PENDING)
             .setServerApproveEntities(
                 "4-TLD",

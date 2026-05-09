@@ -137,4 +137,3 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTMtVExE");
   }
 }
-
