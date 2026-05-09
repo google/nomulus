@@ -21,7 +21,6 @@ import static google.registry.rdap.RdapTestHelper.parseJsonObject;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static org.joda.time.Duration.millis;
 import static org.mockito.Mockito.verify;
 
 import google.registry.rdap.RdapMetrics.EndpointType;
@@ -33,6 +32,7 @@ import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +66,7 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
         throw new RuntimeException();
       }
       if (pathSearchString.equals("advanceClock")) {
-        ((FakeClock) clock).advanceBy(millis(50));
+        ((FakeClock) clock).advanceBy(Duration.ofMillis(50));
       }
       return new ReplyPayloadBase(BoilerplateType.OTHER) {
         @JsonableElement String key = "value";

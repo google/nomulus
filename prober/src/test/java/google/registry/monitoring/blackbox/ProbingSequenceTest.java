@@ -36,7 +36,7 @@ import google.registry.util.Clock;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.joda.time.Duration;
+import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -60,7 +60,7 @@ class ProbingSequenceTest {
   private static final String PROTOCOL_NAME = "PROTOCOL";
   private static final String MESSAGE_NAME = "MESSAGE";
   private static final String RESPONSE_NAME = "RESPONSE";
-  private static final Duration LATENCY = Duration.millis(2L);
+  private static final Duration LATENCY = Duration.ofMillis(2L);
 
   /** Default mock {@link ProbingAction} returned when generating an action with a mockStep. */
   private ProbingAction mockAction = Mockito.mock(ProbingAction.class);
@@ -223,7 +223,7 @@ class ProbingSequenceTest {
     // name and message name).
     verify(metrics)
         .recordResult(
-            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.SUCCESS, LATENCY.getMillis());
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.SUCCESS, LATENCY.toMillis());
   }
 
   @Test
@@ -305,7 +305,7 @@ class ProbingSequenceTest {
     // name and message name) two times: once for mockStep and once for secondStep.
     verify(metrics, times(2))
         .recordResult(
-            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.SUCCESS, LATENCY.getMillis());
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.SUCCESS, LATENCY.toMillis());
 
     // Verify that on second pass, since we purposely throw UnrecoverableStateException, we
     // record the ERROR. Also, we haven't had any time pass in the fake clock, so recorded
@@ -390,13 +390,13 @@ class ProbingSequenceTest {
     // name and message name).
     verify(metrics)
         .recordResult(
-            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.FAILURE, LATENCY.getMillis());
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.FAILURE, LATENCY.toMillis());
 
     // Verify that on second pass, since we purposely throw UnrecoverableStateException, we
     // record the ERROR. We also should make sure LATENCY seconds have passed.
     verify(metrics)
         .recordResult(
-            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.ERROR, LATENCY.getMillis());
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.ERROR, LATENCY.toMillis());
   }
 
   @Test
@@ -421,6 +421,6 @@ class ProbingSequenceTest {
     // for terminating the sequence.
     verify(metrics, times(2))
         .recordResult(
-            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.ERROR, LATENCY.getMillis());
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.ERROR, LATENCY.toMillis());
   }
 }

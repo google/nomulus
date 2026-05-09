@@ -100,7 +100,7 @@ public final class IcannReportingUploadAction implements Runnable {
   IcannReportingUploadAction() {}
 
   /**
-   * Get the scheduled time for the next month of the given {@link DateTime}.
+   * Get the scheduled time for the next month of the given {@link Instant}.
    *
    * <p>The scheduled time is always the second day of next month at 10AM UTC. This is because the
    * staging action is scheduled to run at 9AM UTC on that day, and there is no reason to run the

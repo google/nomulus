@@ -14,8 +14,7 @@
 
 package google.registry.tools.params;
 
-import org.joda.time.Duration;
-import org.joda.time.Period;
+import java.time.Duration;
 
 /** Duration CLI parameter converter/validator. */
 public final class DurationParameter extends ParameterConverterValidator<Duration> {
@@ -26,6 +25,6 @@ public final class DurationParameter extends ParameterConverterValidator<Duratio
 
   @Override
   public Duration convert(String value) {
-    return Period.parse(value).toStandardDuration();
+    return Duration.parse(value);
   }
 }

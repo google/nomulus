@@ -17,10 +17,10 @@
     xmlns = @XmlNs(prefix = "mark", namespaceURI = "urn:ietf:params:xml:ns:mark-1.0"),
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlJavaTypeAdapter(UtcInstantAdapter.class)
+@XmlJavaTypeAdapter(UtcDateTimeAdapter.class)
 package google.registry.model.mark;
 
-import google.registry.xml.UtcInstantAdapter;
+import google.registry.xml.UtcDateTimeAdapter;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlNs;

@@ -15,7 +15,6 @@
 package google.registry.reporting.spec11;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.util.DateTimeUtils.toLocalDate;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.mockito.Mockito.when;
@@ -50,7 +49,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            toLocalDate(clock.now()),
+            clock.nowDate(),
             true,
             clock,
             response,
@@ -73,7 +72,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            toLocalDate(clock.now()),
+            clock.nowDate(),
             true,
             clock,
             response,
@@ -104,7 +103,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            toLocalDate(clock.now()),
+            clock.nowDate(),
             false,
             clock,
             response,

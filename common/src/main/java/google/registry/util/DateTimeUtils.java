@@ -15,7 +15,6 @@
 package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -29,9 +28,6 @@ import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import javax.annotation.Nullable;
-import org.joda.time.DateTime;
-import org.joda.time.ReadableDuration;
 
 public abstract class DateTimeUtils {
 
@@ -93,7 +89,7 @@ public abstract class DateTimeUtils {
     return earliestOf(Lists.asList(first, rest));
   }
 
-  /** Returns the earliest element in a {@link Instant} iterable. */
+  /** Returns the earliest element in an {@link Instant} iterable. */
   public static Instant earliestOf(Iterable<Instant> instants) {
     checkArgument(!Iterables.isEmpty(instants));
     return Ordering.<Instant>natural().min(instants);
@@ -104,23 +100,12 @@ public abstract class DateTimeUtils {
     return latestOf(Lists.asList(first, rest));
   }
 
-  /** Returns the latest element in a {@link Instant} iterable. */
+  /** Returns the latest element in an {@link Instant} iterable. */
   public static Instant latestOf(Iterable<Instant> instants) {
     checkArgument(!Iterables.isEmpty(instants));
     return Ordering.<Instant>natural().max(instants);
   }
 
-  /** Converts a Joda-Time Duration to a java.time.Duration. */
-  @Nullable
-  public static java.time.Duration toJavaDuration(@Nullable ReadableDuration duration) {
-    return duration == null ? null : java.time.Duration.ofMillis(duration.getMillis());
-  }
-
-  /** Converts a java.time.Duration to a Joda-Time Duration. */
-  @Nullable
-  public static org.joda.time.Duration toJodaDuration(@Nullable java.time.Duration duration) {
-    return duration == null ? null : org.joda.time.Duration.millis(duration.toMillis());
-  }
 
   /** Returns whether the first {@link Instant} is equal to or earlier than the second. */
   public static boolean isBeforeOrAt(Instant timeToCheck, Instant timeToCompareTo) {
@@ -134,7 +119,7 @@ public abstract class DateTimeUtils {
 
   /**
    * Adds years to a date, in the {@code Duration} sense of semantic years. Use this instead of
-   * {@link java.time.ZonedDateTime#plusYears} to ensure that we never end up on February 29.
+   * {@link java.time.OffsetDateTime#plusYears} to ensure that we never end up on February 29.
    */
   public static Instant plusYears(Instant now, int years) {
     checkArgument(years >= 0);
@@ -157,7 +142,7 @@ public abstract class DateTimeUtils {
 
   /**
    * Subtracts years from a date, in the {@code Duration} sense of semantic years. Use this instead
-   * of {@link java.time.ZonedDateTime#minusYears} to ensure that we never end up on February 29.
+   * of {@link java.time.OffsetDateTime#minusYears} to ensure that we never end up on February 29.
    */
   public static Instant minusYears(Instant now, long years) {
     checkArgument(years >= 0);
@@ -171,23 +156,6 @@ public abstract class DateTimeUtils {
     return instant.atZone(ZoneOffset.UTC).toLocalDate();
   }
 
-  /** Convert a joda {@link DateTime} to a java.time {@link Instant}, null-safe. */
-  @Nullable
-  public static Instant toInstant(@Nullable DateTime dateTime) {
-    return (dateTime == null) ? null : Instant.ofEpochMilli(dateTime.getMillis());
-  }
-
-  /** Convert a java.time {@link Instant} to a joda {@link DateTime}, null-safe. */
-  @Nullable
-  public static DateTime toDateTime(@Nullable Instant instant) {
-    return (instant == null) ? null : new DateTime(instant.toEpochMilli(), UTC);
-  }
-
-  /** Convert a java.time {@link java.time.Instant} to a joda {@link org.joda.time.Instant}. */
-  @Nullable
-  public static org.joda.time.Instant toJodaInstant(@Nullable java.time.Instant instant) {
-    return (instant == null) ? null : org.joda.time.Instant.ofEpochMilli(instant.toEpochMilli());
-  }
 
   public static Instant plusHours(Instant instant, long hours) {
     return instant.plus(hours, ChronoUnit.HOURS);

@@ -28,15 +28,15 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.testing.FakeClock;
 import java.io.Serializable;
+import java.time.Instant;
 import org.apache.beam.sdk.transforms.Create;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit test for {@link RegistryJpaIO.Write}. */
 class RegistryJpaWriteTest implements Serializable {
 
-  private final FakeClock fakeClock = new FakeClock(DateTime.parse("2000-01-01T00:00:00.0Z"));
+  private final FakeClock fakeClock = new FakeClock(Instant.parse("2000-01-01T00:00:00.0Z"));
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension jpa =

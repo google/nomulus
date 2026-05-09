@@ -160,7 +160,8 @@ PRESUBMITS = {
             "SelfSignedCaCertificate.java",
             "X509Utils.java",
             "TmchCertificateAuthority.java",
-            "DelegatedCredentials.java"
+            "DelegatedCredentials.java",
+            "SslInitializerTestUtils.java"
         },
     ):
         "Do not use java.util.Date. Use classes in java.time package instead.",
@@ -202,79 +203,12 @@ PRESUBMITS = {
         {},
     ):
         "Do not use .isEqualTo(Optional.of(...)). Use Truth's .hasValue(...) instead.",
-    # TODO: Remove the java.time migration presubmit checks below once the entire codebase has been migrated to java.time.
     PresubmitCheck(
-        r".*toDateTime\(\s*toInstant\(.*",
-        "java",
-        {"DateTimeUtilsTest.java"},
-    ):
-        "Do not double-wrap toDateTime(toInstant(...)).",
-    PresubmitCheck(
-        r".*toInstant\(\s*toDateTime\(.*",
-        "java",
-        {"DateTimeUtilsTest.java"},
-    ):
-        "Do not double-wrap toInstant(toDateTime(...)).",
-    PresubmitCheck(
-        r".*toInstant\([^;]*[cC]lock\.now\(\).*",
+        r".*java\.time\.ZonedDateTime.*",
         "java",
         {},
     ):
-        "Do not use toInstant(clock.now()). Use clock.now() instead.",
-    PresubmitCheck(
-        r".*toDateTime\([^;]*[cC]lock\.now\(\).*",
-        "java",
-        {},
-    ):
-        "Do not use toDateTime(clock.now()). Use clock.now() and Instant overloads instead.",
-    PresubmitCheck(
-        r".*toInstant\([^;]*tm\(\)\.getTxTime\(\).*",
-        "java",
-        {},
-    ):
-        "Do not use toInstant(tm().getTxTime()). Use tm().getTxTime() instead.",
-    PresubmitCheck(
-        r".*toDateTime\([^;]*tm\(\)\.getTxTime\(\).*",
-        "java",
-        {},
-    ):
-        "Do not use toDateTime(tm().getTxTime()). Use tm().getTxTime() and Instant overloads instead.",
-    PresubmitCheck(
-        r".*\(\s*Instant\s*\)\s*(?:this\.)?(?:fakeClock|clock)\.now\(\s*\).*",
-        "java",
-        {},
-    ):
-        "Do not unnecessarily cast clock.now() to Instant.",
-    PresubmitCheck(
-        r".*toDateTime\(\s*Instant\.now\(.*",
-        "java",
-        {},
-    ):
-        "Do not wrap Instant.now() in toDateTime. Use DateTime.now(UTC) directly.",
-    PresubmitCheck(
-        r".*toInstant\(\s*DateTime\.now\(.*",
-        "java",
-        {},
-    ):
-        "Do not wrap DateTime.now() in toInstant. Use Instant.now().truncatedTo(ChronoUnit.MILLIS) directly.",
-    PresubmitCheck(
-        r".*toDateTime\(\s*Instant\.parse\(.*",
-        "java",
-        {"DateTimeUtilsTest.java"},
-    ):
-        "Do not wrap Instant.parse in toDateTime. Use DateTime.parse directly.",
-    PresubmitCheck(
-        r".*toInstant\(\s*DateTime\.parse\(.*",
-        "java",
-        {"DateTimeUtilsTest.java"},
-    ):
-        "Do not wrap DateTime.parse in toInstant. Use Instant.parse directly.",
-    PresubmitCheck(
-        r".*cloneProjectedAtTime\(\s*toDateTime\(.*",
-        "java",
-        {},
-    ):
-        "Do not use cloneProjectedAtTime(toDateTime(...)). Use cloneProjectedAtTime(...) instead.",
+        "Do not use java.time.ZonedDateTime. Use java.time.OffsetDateTime per go/avoid-zdt.",
     PresubmitCheck(
         r".*ZoneId\.of\(\s*\"UTC\"\s*\).*",
         "java",

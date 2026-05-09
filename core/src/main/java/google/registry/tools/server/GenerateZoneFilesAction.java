@@ -127,7 +127,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     if (exportTime.isAfter(minusMinutes(now, 2))) {
       throw new BadRequestException("Invalid export time: must be > 2 minutes ago");
     }
-    if (exportTime.isBefore(now.minusMillis(databaseRetention.toMillis()))) {
+    if (exportTime.isBefore(now.minus(databaseRetention))) {
       throw new BadRequestException(
           String.format("Invalid export time: must be < %d days ago", databaseRetention.toDays()));
     }

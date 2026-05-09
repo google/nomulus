@@ -45,11 +45,11 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeClock;
 import google.registry.util.Clock;
 import google.registry.xml.ValidationMode;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,7 +81,7 @@ class EppControllerTest {
   @Mock EppResponse eppResponse;
   @Mock Result result;
 
-  private static final DateTime START_TIME = DateTime.parse("2016-09-01T00:00:00Z");
+  private static final Instant START_TIME = Instant.parse("2016-09-01T00:00:00Z");
 
   private final Clock clock = new FakeClock(START_TIME);
   private final TestLogHandler logHandler = new TestLogHandler();

@@ -25,7 +25,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
 import google.registry.tools.CommandUtilities.ResourceType;
-import google.registry.tools.params.InstantParameter;
+import google.registry.tools.params.DateTimeParameter;
 import google.registry.util.Clock;
 import google.registry.xml.XmlTransformer;
 import jakarta.inject.Inject;
@@ -42,13 +42,13 @@ final class GetHistoryEntriesCommand implements Command {
   @Parameter(
       names = {"-a", "--after"},
       description = "Only show history entries that occurred at or after this time",
-      converter = InstantParameter.class)
+      converter = DateTimeParameter.class)
   private Instant after = START_INSTANT;
 
   @Parameter(
       names = {"-b", "--before"},
       description = "Only show history entries that occurred at or before this time",
-      converter = InstantParameter.class)
+      converter = DateTimeParameter.class)
   private Instant before = END_INSTANT;
 
   @Parameter(names = "--type", description = "Resource type.")

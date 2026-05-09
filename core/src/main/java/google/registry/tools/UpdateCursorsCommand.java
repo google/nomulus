@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Tld;
-import google.registry.tools.params.InstantParameter;
+import google.registry.tools.params.DateTimeParameter;
 import java.time.Instant;
 import java.util.List;
 
@@ -40,7 +40,7 @@ final class UpdateCursorsCommand extends ConfirmingCommand implements Command {
   @Parameter(
       names = "--timestamp",
       description = "The new timestamp to set.",
-      converter = InstantParameter.class,
+      converter = DateTimeParameter.class,
       required = true)
   private Instant newTimestamp;
 

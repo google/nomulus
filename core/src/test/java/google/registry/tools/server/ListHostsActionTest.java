@@ -18,8 +18,8 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,7 @@ class ListHostsActionTest extends ListActionTestCase {
   void beforeEach() {
     createTld("foo");
     action = new ListHostsAction();
-    action.clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+    action.clock = new FakeClock(Instant.parse("2000-01-01T00:00:00Z"));
   }
 
   @Test

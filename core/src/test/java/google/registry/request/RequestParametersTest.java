@@ -17,10 +17,10 @@ package google.registry.request;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractEnumParameter;
-import static google.registry.request.RequestParameters.extractOptionalDatetimeParameter;
 import static google.registry.request.RequestParameters.extractOptionalEnumParameter;
+import static google.registry.request.RequestParameters.extractOptionalInstantParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
-import static google.registry.request.RequestParameters.extractRequiredDatetimeParameter;
+import static google.registry.request.RequestParameters.extractRequiredInstantParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfEnumParameters;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableMap;
 import google.registry.request.HttpException.BadRequestException;
 import jakarta.servlet.http.HttpServletRequest;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RequestParameters}. */
@@ -257,8 +257,8 @@ class RequestParametersTest {
   @Test
   void testExtractRequiredDatetimeParameter_correctValue_works() {
     when(req.getParameter("timeParam")).thenReturn("2015-08-27T13:25:34.123Z");
-    assertThat(extractRequiredDatetimeParameter(req, "timeParam"))
-        .isEqualTo(DateTime.parse("2015-08-27T13:25:34.123Z"));
+    assertThat(extractRequiredInstantParameter(req, "timeParam"))
+        .isEqualTo(Instant.parse("2015-08-27T13:25:34.123Z"));
   }
 
   @Test
@@ -266,15 +266,15 @@ class RequestParametersTest {
     when(req.getParameter("timeParam")).thenReturn("Tuesday at three o'clock");
     BadRequestException thrown =
         assertThrows(
-            BadRequestException.class, () -> extractRequiredDatetimeParameter(req, "timeParam"));
+            BadRequestException.class, () -> extractRequiredInstantParameter(req, "timeParam"));
     assertThat(thrown).hasMessageThat().contains("timeParam");
   }
 
   @Test
   void testExtractOptionalDatetimeParameter_correctValue_works() {
     when(req.getParameter("timeParam")).thenReturn("2015-08-27T13:25:34.123Z");
-    assertThat(extractOptionalDatetimeParameter(req, "timeParam"))
-        .hasValue(DateTime.parse("2015-08-27T13:25:34.123Z"));
+    assertThat(extractOptionalInstantParameter(req, "timeParam"))
+        .hasValue(Instant.parse("2015-08-27T13:25:34.123Z"));
   }
 
   @Test
@@ -282,21 +282,21 @@ class RequestParametersTest {
     when(req.getParameter("timeParam")).thenReturn("Tuesday at three o'clock");
     BadRequestException thrown =
         assertThrows(
-            BadRequestException.class, () -> extractOptionalDatetimeParameter(req, "timeParam"));
+            BadRequestException.class, () -> extractOptionalInstantParameter(req, "timeParam"));
     assertThat(thrown).hasMessageThat().contains("timeParam");
   }
 
   @Test
   void testExtractOptionalDatetimeParameter_empty_returnsEmpty() {
     when(req.getParameter("timeParam")).thenReturn("");
-    assertThat(extractOptionalDatetimeParameter(req, "timeParam")).isEmpty();
+    assertThat(extractOptionalInstantParameter(req, "timeParam")).isEmpty();
   }
 
   @Test
   void testExtractRequiredDatetimeParameter_noValue_throwsBadRequest() {
     BadRequestException thrown =
         assertThrows(
-            BadRequestException.class, () -> extractRequiredDatetimeParameter(req, "timeParam"));
+            BadRequestException.class, () -> extractRequiredInstantParameter(req, "timeParam"));
     assertThat(thrown).hasMessageThat().contains("timeParam");
   }
 }

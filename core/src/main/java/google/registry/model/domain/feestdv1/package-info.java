@@ -19,12 +19,12 @@
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlJavaTypeAdapters({
   @XmlJavaTypeAdapter(CurrencyUnitAdapter.class),
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+  @XmlJavaTypeAdapter(UtcDateTimeAdapter.class)
 })
 package google.registry.model.domain.feestdv1;
 
 import google.registry.model.adapters.CurrencyUnitAdapter;
-import google.registry.xml.UtcInstantAdapter;
+import google.registry.xml.UtcDateTimeAdapter;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlNs;

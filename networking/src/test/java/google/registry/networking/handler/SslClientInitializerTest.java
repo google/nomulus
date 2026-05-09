@@ -19,7 +19,6 @@ import static google.registry.networking.handler.SslInitializerTestUtils.getKeyP
 import static google.registry.networking.handler.SslInitializerTestUtils.setUpSslChannel;
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.verifySslException;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.testing.FakeClock;
@@ -45,10 +44,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -243,7 +243,11 @@ class SslClientInitializerTest {
     SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(new FakeClock());
     X509Certificate cert =
         signKeyPair(
-            ssc, keyPair, SSL_HOST, DateTime.now(UTC).minusDays(2), DateTime.now(UTC).minusDays(1));
+            ssc,
+            keyPair,
+            SSL_HOST,
+            Instant.now().minus(2, ChronoUnit.DAYS),
+            Instant.now().minus(1, ChronoUnit.DAYS));
 
     // Set up the server to use the signed cert and private key to perform handshake;
     PrivateKey privateKey = keyPair.getPrivate();
@@ -280,7 +284,11 @@ class SslClientInitializerTest {
     SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(new FakeClock());
     X509Certificate cert =
         signKeyPair(
-            ssc, keyPair, SSL_HOST, DateTime.now(UTC).plusDays(1), DateTime.now(UTC).plusDays(2));
+            ssc,
+            keyPair,
+            SSL_HOST,
+            Instant.now().plus(1, ChronoUnit.DAYS),
+            Instant.now().plus(2, ChronoUnit.DAYS));
 
     // Set up the server to use the signed cert and private key to perform handshake;
     PrivateKey privateKey = keyPair.getPrivate();

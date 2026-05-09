@@ -14,15 +14,25 @@
 
 package google.registry.util;
 
+import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
-import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 
-/** GSON type adapter for Joda {@link DateTime} objects. */
-public class DateTimeTypeAdapter extends StringBaseTypeAdapter<DateTime> {
+/** GSON type adapter for {@link Instant} objects. */
+public class DateTimeTypeAdapter extends StringBaseTypeAdapter<Instant> {
 
   @Override
-  protected DateTime fromString(String stringValue) throws IOException {
-    return ISODateTimeFormat.dateTime().withZoneUTC().parseDateTime(stringValue);
+  protected Instant fromString(String stringValue) throws IOException {
+    return OffsetDateTime.parse(stringValue).toInstant();
+  }
+
+  @Override
+  public void write(JsonWriter writer, Instant t) throws IOException {
+    if (t == null) {
+      writer.nullValue();
+    } else {
+      writer.value(DateTimeUtils.formatInstant(t));
+    }
   }
 }

@@ -14,8 +14,6 @@
 
 package google.registry.tools.params;
 
-import static google.registry.util.DateTimeUtils.toInstant;
-
 import java.time.Instant;
 
 /** {@linkplain Instant} CLI parameter converter/validator. Can be ISO or millis from epoch. */
@@ -34,6 +32,6 @@ public final class InstantParameter extends ParameterConverterValidator<Instant>
    */
   @Override
   public Instant convert(String value) {
-    return toInstant(DATE_TIME_CONVERTER.convert(value));
+    return DATE_TIME_CONVERTER.convert(value);
   }
 }

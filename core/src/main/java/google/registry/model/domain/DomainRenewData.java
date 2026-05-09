@@ -16,7 +16,7 @@ package google.registry.model.domain;
 
 
 import google.registry.model.eppoutput.EppResponse.ResponseData;
-import google.registry.xml.UtcInstantAdapter;
+import google.registry.xml.UtcDateTimeAdapter;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
@@ -31,7 +31,7 @@ public class DomainRenewData implements ResponseData {
   String name;
 
   @XmlElement(name = "exDate")
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+  @XmlJavaTypeAdapter(UtcDateTimeAdapter.class)
   Instant expirationDate;
 
   public static DomainRenewData create(String name, Instant expirationDate) {
