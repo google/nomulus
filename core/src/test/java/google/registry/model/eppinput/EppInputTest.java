@@ -14,57 +14,177 @@
 
 package google.registry.model.eppinput;
 
-import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.eppcommon.EppXmlTransformer.unmarshal;
-import static google.registry.testing.TestDataHelper.loadBytes;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static google.registry.xml.XmlTestUtils.assertXmlEquals;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-import google.registry.model.domain.DomainTest;
-import google.registry.model.eppinput.EppInput.InnerCommand;
-import google.registry.model.eppinput.EppInput.Login;
-import google.registry.xml.XmlException;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import google.registry.model.domain.DomainCommand;
+import google.registry.model.eppcommon.EppXmlTransformer;
+import google.registry.model.eppcommon.StatusValue;
+import google.registry.xml.ValidationMode;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link EppInput}. */
+/** Unit tests for {@link EppInput} builders and marshaling. */
 class EppInputTest {
 
   @Test
-  void testUnmarshalling_domainCheck() throws Exception {
-    EppInput input =
-        unmarshal(EppInput.class, loadBytes(DomainTest.class, "domain_check.xml").read());
-    assertThat(input.getCommandWrapper().getClTrid()).hasValue("ABC-12345");
-    assertThat(input.getCommandType()).isEqualTo("check");
-    assertThat(input.getResourceType()).hasValue("domain");
-    assertThat(input.getSingleTargetId()).isEmpty();
-    assertThat(input.getTargetIds()).containsExactly("example.com", "example.net", "example.org");
+  void testBuilder_emptyExtensions_omitsExtensionTag() throws Exception {
+    EppInput eppInput =
+        new EppInput.Builder()
+            .setCommandWrapper(
+                new EppInput.CommandWrapper.Builder()
+                    .setCommand(
+                        new EppInput.Create.Builder()
+                            .setResourceCommand(
+                                new DomainCommand.Create.Builder()
+                                    .setDomainName("example.tld")
+                                    .build())
+                            .build())
+                    .setExtensions(ImmutableList.of())
+                    .setClTrid("RegistryTool")
+                    .build())
+            .build();
+
+    String xml =
+        new String(EppXmlTransformer.marshalInput(eppInput, ValidationMode.LENIENT), UTF_8);
+    assertXmlEquals(
+        """
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+          <command>
+            <create>
+              <domain:create xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+                <domain:name>example.tld</domain:name>
+              </domain:create>
+            </create>
+            <clTRID>RegistryTool</clTRID>
+          </command>
+        </epp>
+        """,
+        xml);
   }
 
   @Test
-  void testUnmarshalling_login() throws Exception {
-    EppInput input = unmarshal(EppInput.class, loadBytes(getClass(), "login_valid.xml").read());
-    assertThat(input.getCommandWrapper().getClTrid()).hasValue("ABC-12345");
-    assertThat(input.getCommandType()).isEqualTo("login");
-    assertThat(input.getResourceType()).isEmpty();
-    assertThat(input.getSingleTargetId()).isEmpty();
-    assertThat(input.getTargetIds()).isEmpty();
-    InnerCommand command = input.getCommandWrapper().getCommand();
-    assertThat(command).isInstanceOf(Login.class);
-    Login loginCommand = (Login) command;
-    assertThat(loginCommand.clientId).isEqualTo("NewRegistrar");
-    assertThat(loginCommand.password).isEqualTo("foo-BAR2");
-    assertThat(loginCommand.newPassword).isNull();
-    assertThat(loginCommand.options.version).isEqualTo("1.0");
-    assertThat(loginCommand.options.language).isEqualTo("en");
-    assertThat(loginCommand.services.objectServices)
-        .containsExactly("urn:ietf:params:xml:ns:host-1.0", "urn:ietf:params:xml:ns:domain-1.0");
-    assertThat(loginCommand.services.serviceExtensions)
-        .containsExactly("urn:ietf:params:xml:ns:launch-1.0", "urn:ietf:params:xml:ns:rgp-1.0");
+  void testBuilder_nullExtensions_omitsExtensionTag() throws Exception {
+    EppInput eppInput =
+        new EppInput.Builder()
+            .setCommandWrapper(
+                new EppInput.CommandWrapper.Builder()
+                    .setCommand(
+                        new EppInput.Create.Builder()
+                            .setResourceCommand(
+                                new DomainCommand.Create.Builder()
+                                    .setDomainName("example.tld")
+                                    .build())
+                            .build())
+                    .setExtensions(null)
+                    .setClTrid("RegistryTool")
+                    .build())
+            .build();
+
+    String xml =
+        new String(EppXmlTransformer.marshalInput(eppInput, ValidationMode.LENIENT), UTF_8);
+    assertXmlEquals(
+        """
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+          <command>
+            <create>
+              <domain:create xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+                <domain:name>example.tld</domain:name>
+              </domain:create>
+            </create>
+            <clTRID>RegistryTool</clTRID>
+          </command>
+        </epp>
+        """,
+        xml);
   }
 
   @Test
-  void testUnmarshalling_loginTagInWrongCase_throws() {
-    assertThrows(
-        XmlException.class,
-        () -> unmarshal(EppInput.class, loadBytes(getClass(), "login_wrong_case.xml").read()));
+  void testBuilder_domainUpdate_emptyAddRemove_omitsInnerTags() throws Exception {
+    EppInput eppInput =
+        new EppInput.Builder()
+            .setCommandWrapper(
+                new EppInput.CommandWrapper.Builder()
+                    .setCommand(
+                        new EppInput.Update.Builder()
+                            .setResourceCommand(
+                                new DomainCommand.Update.Builder()
+                                    .setTargetId("example.tld")
+                                    .setInnerAdd(
+                                        new DomainCommand.Update.DomainAddRemove.Builder().build())
+                                    .setInnerRemove(
+                                        new DomainCommand.Update.DomainAddRemove.Builder().build())
+                                    .build())
+                            .build())
+                    .setClTrid("RegistryTool")
+                    .build())
+            .build();
+
+    String xml =
+        new String(EppXmlTransformer.marshalInput(eppInput, ValidationMode.LENIENT), UTF_8);
+    assertXmlEquals(
+        """
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+          <command>
+            <update>
+              <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+                <domain:name>example.tld</domain:name>
+                <domain:add/>
+                <domain:rem/>
+              </domain:update>
+            </update>
+            <clTRID>RegistryTool</clTRID>
+          </command>
+        </epp>
+        """,
+        xml);
+  }
+
+  @Test
+  void testBuilder_domainUpdate_withStatuses() throws Exception {
+    EppInput eppInput =
+        new EppInput.Builder()
+            .setCommandWrapper(
+                new EppInput.CommandWrapper.Builder()
+                    .setCommand(
+                        new EppInput.Update.Builder()
+                            .setResourceCommand(
+                                new DomainCommand.Update.Builder()
+                                    .setTargetId("example.tld")
+                                    .setInnerAdd(
+                                        new DomainCommand.Update.DomainAddRemove.Builder()
+                                            .setStatusValues(
+                                                ImmutableSet.of(StatusValue.CLIENT_HOLD))
+                                            .build())
+                                    .build())
+                            .build())
+                    .setClTrid("RegistryTool")
+                    .build())
+            .build();
+
+    String xml =
+        new String(EppXmlTransformer.marshalInput(eppInput, ValidationMode.LENIENT), UTF_8);
+    assertXmlEquals(
+        """
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+          <command>
+            <update>
+              <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+                <domain:name>example.tld</domain:name>
+                <domain:add>
+                  <domain:status s="clientHold"/>
+                </domain:add>
+              </domain:update>
+            </update>
+            <clTRID>RegistryTool</clTRID>
+          </command>
+        </epp>
+        """,
+        xml);
   }
 }

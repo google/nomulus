@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.IStringConverter;
@@ -23,9 +22,8 @@ import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.io.BaseEncoding;
-import com.google.template.soy.data.SoyListData;
-import com.google.template.soy.data.SoyMapData;
 import google.registry.flows.domain.DomainFlowUtils;
+import google.registry.model.domain.secdns.DomainDsData;
 import java.util.List;
 
 record DsRecord(int keyTag, int alg, int digestType, String digest) {
@@ -76,16 +74,8 @@ record DsRecord(int keyTag, int alg, int digestType, String digest) {
         elements.get(3));
   }
 
-  public SoyMapData toSoyData() {
-    return new SoyMapData(
-        "keyTag", keyTag(),
-        "alg", alg(),
-        "digestType", digestType(),
-        "digest", digest());
-  }
-
-  public static SoyListData convertToSoy(List<DsRecord> dsRecords) {
-    return new SoyListData(dsRecords.stream().map(DsRecord::toSoyData).collect(toImmutableList()));
+  public DomainDsData toDsData() {
+    return DomainDsData.create(keyTag(), alg(), digestType(), digest());
   }
 
   public static class Converter implements IStringConverter<DsRecord> {

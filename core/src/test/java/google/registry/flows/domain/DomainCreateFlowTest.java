@@ -58,6 +58,7 @@ import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
@@ -208,6 +209,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   // SMD itself has not expired yet. It will trigger a different exception than when the SMD itself
   // has expired.
   private static final Instant SMD_CERT_EXPIRED_TIME = Instant.parse("2027-11-02T12:34:56Z");
+  private static final Instant START_TIME = Instant.parse("1999-04-03T22:00:00.0Z");
+  private static final Instant EAP_FEE_EXPIRATION = Instant.parse("2022-03-01T00:00:00.000Z");
+  private static final String EAP_FEE_DESCRIPTION =
+      String.format("Early Access Period, fee expires: %s", formatInstant(EAP_FEE_EXPIRATION));
   private static final String SMD_ID = "000000851669081693741-65535";
   private static final String SMD_FILE_PATH = "smd/active.smd";
   private static final String ENCODED_SMD =
@@ -229,7 +234,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   DomainCreateFlowTest() {
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
-    clock.setTo(Instant.parse("1999-04-03T22:00:00.0Z").minusMillis(2));
+    clock.setTo(START_TIME.minusMillis(2));
   }
 
   @BeforeEach
@@ -1192,9 +1197,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "DOMAIN",
                 "test-validate.tld",
                 "CREATE_TIME",
-                SMD_VALID_TIME.toString(),
+                formatInstant(SMD_VALID_TIME),
                 "EXPIRATION_TIME",
-                plusYears(SMD_VALID_TIME, 2).toString())));
+                formatInstant(plusYears(SMD_VALID_TIME, 2)))));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT), 0);
   }
 
@@ -1224,9 +1229,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "DOMAIN",
                 "test-validate.tld",
                 "CREATE_TIME",
-                SMD_VALID_TIME.toString(),
+                formatInstant(SMD_VALID_TIME),
                 "EXPIRATION_TIME",
-                plusYears(SMD_VALID_TIME, 2).toString())));
+                formatInstant(plusYears(SMD_VALID_TIME, 2)))));
     assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT, SUNRISE), allocationToken, 0);
     assertDomainDnsRequests("test-validate.tld");
     assertSunriseLordn();
@@ -1384,8 +1389,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             "domain_create_response_wildcard.xml",
             new ImmutableMap.Builder<String, String>()
                 .put("DOMAIN", "example.tld")
-                .put("CRDATE", "1999-04-03T22:00:00.0Z")
-                .put("EXDATE", "2004-04-03T22:00:00.0Z")
+                .put("CRDATE", formatInstant(START_TIME))
+                .put("EXDATE", formatInstant(plusYears(START_TIME, 5)))
                 .build()));
     BillingEvent billingEvent =
         Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
@@ -1423,7 +1428,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "FEE_VERSION",
                 "epp:fee-1.0",
                 "EXDATE",
-                "2002-04-03T22:00:00.0Z",
+                formatInstant(plusYears(START_TIME, 3)),
                 "FEE",
                 "104.00")));
     BillingEvent billingEvent =
@@ -1462,7 +1467,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "FEE_VERSION",
                 "epp:fee-1.0",
                 "EXDATE",
-                "2002-04-03T22:00:00.0Z",
+                formatInstant(plusYears(START_TIME, 3)),
                 "FEE",
                 "204.44")));
     BillingEvent billingEvent =
@@ -1639,7 +1644,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "FEE_VERSION",
                 "epp:fee-1.0",
                 "EXDATE",
-                "2001-04-03T22:00:00.0Z",
+                formatInstant(plusYears(START_TIME, 2)),
                 "FEE",
                 "200.00")));
     assertSuccessfulCreate("example", ImmutableSet.of(), 200);
@@ -1652,8 +1657,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             "domain_create_response_wildcard.xml",
             new ImmutableMap.Builder<String, String>()
                 .put("DOMAIN", "example.tld")
-                .put("CRDATE", "1999-04-03T22:00:00.0Z")
-                .put("EXDATE", "2001-04-03T22:00:00.0Z")
+                .put("CRDATE", formatInstant(START_TIME))
+                .put("EXDATE", formatInstant(plusYears(START_TIME, 2)))
                 .build()));
     BillingEvent billingEvent =
         Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
@@ -1691,9 +1696,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "DOMAIN",
                 "test-and-validate.tld",
                 "CREATE_TIME",
-                SMD_VALID_TIME.toString(),
+                formatInstant(SMD_VALID_TIME),
                 "EXPIRATION_TIME",
-                plusYears(SMD_VALID_TIME, 2).toString())));
+                formatInstant(plusYears(SMD_VALID_TIME, 2)))));
 
     assertSunriseLordn();
 
@@ -1838,7 +1843,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "FEE_VERSION",
                 "epp:fee-1.0",
                 "EXDATE",
-                "2001-04-03T22:00:00.0Z",
+                formatInstant(plusYears(START_TIME, 2)),
                 "FEE",
                 "200.00")));
     assertSuccessfulCreate("example", ImmutableSet.of(), 200);
@@ -2300,9 +2305,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "DOMAIN",
                 "test-validate.tld",
                 "CREATE_TIME",
-                SMD_VALID_TIME.toString(),
+                formatInstant(SMD_VALID_TIME),
                 "EXPIRATION_TIME",
-                plusYears(SMD_VALID_TIME, 2).toString())));
+                formatInstant(plusYears(SMD_VALID_TIME, 2)))));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE), 20.40);
     assertSunriseLordn();
   }
@@ -2323,9 +2328,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 "DOMAIN",
                 "test-validate.tld",
                 "CREATE_TIME",
-                SMD_VALID_TIME.toString(),
+                formatInstant(SMD_VALID_TIME),
                 "EXPIRATION_TIME",
-                plusYears(SMD_VALID_TIME, 2).toString())));
+                formatInstant(plusYears(SMD_VALID_TIME, 2)))));
     assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE), 20.40);
     assertSunriseLordn();
   }
@@ -2580,7 +2585,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             "DESCRIPTION_1",
             "create",
             "DESCRIPTION_2",
-            "Early Access Period, fee expires: 2022-03-01T00:00:00.000Z"));
+            EAP_FEE_DESCRIPTION));
     persistHosts();
     setEapForTld("tld");
     doSuccessfulTest("tld", "domain_create_response_eap_fee.xml", FEE_STD_1_0_MAP);
@@ -3211,8 +3216,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             "domain_create_response_wildcard.xml",
             new ImmutableMap.Builder<String, String>()
                 .put("DOMAIN", "example.tld")
-                .put("CRDATE", "1999-04-03T22:00:00.0Z")
-                .put("EXDATE", "2000-04-03T22:00:00.0Z")
+                .put("CRDATE", formatInstant(START_TIME))
+                .put("EXDATE", formatInstant(plusYears(START_TIME, 1)))
                 .build()));
     Domain domain = reloadResourceByForeignKey();
     assertThat(domain.getCurrentBulkToken()).isPresent();
@@ -3798,7 +3803,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile(
             "domain_create_response_premium.xml",
             ImmutableMap.of(
-                "FEE_VERSION", "fee-0.12", "EXDATE", "2001-04-03T22:00:00.0Z", "FEE", "200.00")));
+                "FEE_VERSION", "fee-0.12",
+                "EXDATE", formatInstant(plusYears(START_TIME, 2)),
+                "FEE", "200.00")));
     assertSuccessfulCreate("example", ImmutableSet.of(), 200);
   }
 
@@ -3815,7 +3822,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile(
             "domain_create_response_premium.xml",
             ImmutableMap.of(
-                "FEE_VERSION", "fee-0.12", "EXDATE", "2001-04-03T22:00:00.0Z", "FEE", "200.00")));
+                "FEE_VERSION", "fee-0.12",
+                "EXDATE", formatInstant(plusYears(START_TIME, 2)),
+                "FEE", "200.00")));
     assertSuccessfulCreate("example", ImmutableSet.of(), 200);
   }
 
@@ -3856,7 +3865,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             "DESCRIPTION_1",
             "create",
             "DESCRIPTION_2",
-            "Early Access Period, fee expires: 2022-03-01T00:00:00.000Z"));
+            EAP_FEE_DESCRIPTION));
     persistHosts();
     setEapForTld("tld");
     doSuccessfulTest("tld", "domain_create_response_eap_fee.xml", FEE_06_MAP);
@@ -3889,7 +3898,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile(
             "domain_create_response_premium.xml",
             ImmutableMap.of(
-                "FEE_VERSION", "fee-0.6", "EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "104.00")));
+                "FEE_VERSION",
+                "fee-0.6",
+                "EXDATE",
+                formatInstant(plusYears(START_TIME, 3)),
+                "FEE",
+                "104.00")));
     BillingEvent billingEvent =
         Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");
@@ -3998,7 +4012,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile(
             "domain_create_response_premium.xml",
             ImmutableMap.of(
-                "FEE_VERSION", "fee-0.6", "EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "204.44")));
+                "FEE_VERSION",
+                "fee-0.6",
+                "EXDATE",
+                formatInstant(plusYears(START_TIME, 3)),
+                "FEE",
+                "204.44")));
     BillingEvent billingEvent =
         Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");

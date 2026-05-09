@@ -16,8 +16,8 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.template.soy.data.SoyMapData;
-import google.registry.tools.soy.DomainDeleteSoyInfo;
+import google.registry.model.eppinput.EppExtensions;
+import google.registry.model.eppinput.EppInputs;
 
 /** A command to delete a domain via EPP. */
 @Parameters(separators = " =", commandDescription = "Delete domain")
@@ -60,11 +60,14 @@ final class DeleteDomainCommand extends MutatingEppToolCommand {
       // Immediate deletion is accomplished using the superuser extension.
       superuser = true;
     }
-    setSoyTemplate(DomainDeleteSoyInfo.getInstance(), DomainDeleteSoyInfo.DELETEDOMAIN);
-    addSoyRecord(clientId, new SoyMapData(
-        "domainName", domainName,
-        "immediately", immediately,
-        "reason", reason,
-        "requestedByRegistrar", requestedByRegistrar));
+
+    addEppInput(
+        clientId,
+        EppInputs.deleteDomain(domainName)
+            .addExtension(
+                EppExtensions.toolMetadata(
+                    "Deleted by registry administrator: " + reason, requestedByRegistrar))
+            .addExtension(EppExtensions.deleteSuperuser(immediately))
+            .build());
   }
 }

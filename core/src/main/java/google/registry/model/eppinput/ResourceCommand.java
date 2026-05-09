@@ -15,7 +15,6 @@
 package google.registry.model.eppinput;
 
 import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
-import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -24,41 +23,50 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.eppinput.ResourceCommand.ResourceUpdate.AddRemove;
 import google.registry.util.TypeUtils.TypeInstantiator;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElements;
 import jakarta.xml.bind.annotation.XmlTransient;
 import java.util.List;
-import java.util.Set;
 
 /** Commands for EPP resources. */
 public interface ResourceCommand {
 
-  /**
-   * A command for a single {@link EppResource}.
-   *
-   * <p>In general commands should extend {@link AbstractSingleResourceCommand} instead of
-   * implementing this directly, but "Create" commands can't do that since they need to inherit from
-   * a base class that gives them all of the resource's fields. The domain "Info" command also can't
-   * do that since it's "name" field is overloaded with a "hosts" attribute.
-   */
+  /** Interface for EPP commands that operate on a single resource. */
   interface SingleResourceCommand extends ResourceCommand {
+    @Override
     String getTargetId();
 
+    @Override
     AuthInfo getAuthInfo();
+  }
+
+  /** Returns the target ID for single-resource commands, or null otherwise. */
+  default String getTargetId() {
+    return null;
+  }
+
+  /** Returns the auth info for single-resource commands, or null otherwise. */
+  default AuthInfo getAuthInfo() {
+    return null;
   }
 
   /** Abstract implementation of {@link ResourceCommand}. */
   @XmlTransient
-  abstract class AbstractSingleResourceCommand extends ImmutableObject
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public abstract class AbstractSingleResourceCommand extends ImmutableObject
       implements SingleResourceCommand {
-    @XmlElements({
-        @XmlElement(name = "id"),
-        @XmlElement(name = "name") })
-    String targetId;
+
+    @XmlTransient public String targetId;
+
+    public void setTargetId(String targetId) {
+      this.targetId = targetId;
+    }
 
     @Override
+    @XmlTransient
     public String getTargetId() {
       return targetId;
     }
@@ -71,11 +79,14 @@ public interface ResourceCommand {
 
   /** A check command for an {@link EppResource}. */
   @XmlTransient
-  class ResourceCheck extends ImmutableObject implements ResourceCommand {
-    @XmlElements({
-        @XmlElement(name = "id"),
-        @XmlElement(name = "name") })
-    List<String> targetUniqueIds;
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public class ResourceCheck extends ImmutableObject implements ResourceCommand {
+    @XmlElements({@XmlElement(name = "id"), @XmlElement(name = "name")})
+    public List<String> targetUniqueIds;
+
+    public void setTargetIds(ImmutableList<String> targetUniqueIds) {
+      this.targetUniqueIds = targetUniqueIds;
+    }
 
     public ImmutableList<String> getTargetIds() {
       return nullSafeImmutableCopy(targetUniqueIds);
@@ -83,7 +94,7 @@ public interface ResourceCommand {
   }
 
   /** A create command, or the inner change (as opposed to add or remove) part of an update. */
-  interface ResourceCreateOrChange<B extends Buildable.Builder<?>> {}
+  public interface ResourceCreateOrChange<B extends Buildable.Builder<?>> {}
 
   /**
    * An update command for an {@link EppResource}.
@@ -92,21 +103,19 @@ public interface ResourceCommand {
    * @param <C> the change type
    */
   @XmlTransient
-  abstract class ResourceUpdate<
-          A extends AddRemove,
+  public abstract class ResourceUpdate<
+          A extends ResourceUpdate.AddRemove,
           B extends EppResource.Builder<?, ?>,
           C extends ResourceCreateOrChange<B>>
       extends AbstractSingleResourceCommand {
 
     /** Part of an update command that specifies set values to add or remove. */
     @XmlTransient
+    @XmlAccessorType(XmlAccessType.FIELD)
     public abstract static class AddRemove extends ImmutableObject {
-      @XmlElement(name = "status")
-      Set<StatusValue> statusValues;
+      public abstract void setStatusValues(ImmutableSet<StatusValue> statusValues);
 
-      public ImmutableSet<StatusValue> getStatusValues() {
-        return nullToEmptyImmutableCopy(statusValues);
-      }
+      public abstract ImmutableSet<StatusValue> getStatusValues();
     }
 
     protected abstract C getNullableInnerChange();

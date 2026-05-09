@@ -20,7 +20,7 @@ import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * An XML data object that represents a fee extension that may be present on the response to EPP
- * domain create commands.
+ * domain delete commands.
  */
 @XmlRootElement(name = "delData")
 @XmlType(propOrder = {"currency", "fees", "credits"})

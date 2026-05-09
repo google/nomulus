@@ -15,7 +15,7 @@
 package google.registry.model.domain;
 
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.FlowUtils;
 import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;

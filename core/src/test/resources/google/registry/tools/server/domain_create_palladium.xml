@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
     <create>
-      <domain:create
-        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+      <domain:create xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>palladium.tld</domain:name>
         <domain:period unit="y">1</domain:period>
         <domain:authInfo>

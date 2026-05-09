@@ -94,7 +94,6 @@ processTestResources {
 
 configurations {
   jaxb
-  soy
   devtool
 
   nonprodImplementation.extendsFrom implementation
@@ -120,7 +119,7 @@ configurations {
   // For reasons we do not understand, marking the following dependencies as
   // compileOnly instead of compile does not exclude them from runtimeClasspath.
   all {
-    // servlet-api:3.1 pulled in but not used by soy compiler
+    // servlet-api:3.1 pulled in but not used
     exclude group: 'javax.servlet', module: 'javax.servlet-api'
   }
 }
@@ -181,7 +180,7 @@ dependencies {
   implementation deps['com.google.oauth-client:google-oauth-client-jetty']
   implementation deps['com.google.oauth-client:google-oauth-client-servlet']
   implementation deps['com.google.re2j:re2j']
-  implementation deps['com.google.template:soy']
+  implementation deps['org.freemarker:freemarker']
   implementation deps['com.googlecode.json-simple:json-simple']
   implementation deps['com.jcraft:jsch']
   implementation deps['com.zaxxer:HikariCP']
@@ -299,9 +298,6 @@ dependencies {
   jaxb deps['org.glassfish.jaxb:jaxb-runtime']
   jaxb deps['org.glassfish.jaxb:jaxb-xjc']
 
-  // Dependency needed for soy to java compilation.
-  soy deps['com.google.template:soy']
-
   // Flyway classes needed to generate the golden file.
   implementation deps['org.flywaydb:flyway-core']
   implementation deps['org.flywaydb:flyway-database-postgresql']
@@ -371,62 +367,7 @@ task jaxbToJava {
   }
 }
 
-task soyToJava {
-  // Relative paths of soy directories.
-  def spec11SoyDir = "google/registry/reporting/spec11/soy"
-  def toolsSoyDir = "google/registry/tools/soy"
-
-  def soyRelativeDirs = [spec11SoyDir, toolsSoyDir]
-  soyRelativeDirs.each {
-    inputs.dir "${resourcesSourceDir}/${it}"
-    outputs.dir "${generatedDir}/${it}"
-  }
-
-  ext.soyToJava = { javaPackage, outputDirectory, soyFiles ->
-    project.services.get(ExecOperations).javaexec {
-      mainClass = "com.google.template.soy.SoyParseInfoGenerator"
-      classpath = configurations.soy
-      jvmArgs = ["--sun-misc-unsafe-memory-access=allow", "--enable-native-access=ALL-UNNAMED"]
-      args = ["--javaPackage", "${javaPackage}",
-              "--outputDirectory", "${outputDirectory}",
-              "--javaClassNameSource", "filename",
-              "--srcs", "${soyFiles.join(',')}"]
-    }
-
-    // Replace the "@link" tags after the "@deprecated" tags in the generated
-    // files.  The soy compiler doesn't generate imports for these, causing
-    // us to get warnings when we generate javadocs.
-    // TODO(b/200296387): To be fair, the deprecations are accurate: we're
-    // using the old "SoyInfo" classes instead of the new "Templates" files.
-    // When we convert to the new classes, this hack can go away.
-    def outputs = fileTree(outputDirectory) {
-      include '**/*.java'
-    }
-
-    outputs.each { file ->
-      project.services.get(ExecOperations).exec {
-        commandLine = ['sed', '-i""', '-e', 's/@link/LINK/g', file.getCanonicalPath()]
-      }
-    }
-  }
-
-  doLast {
-    soyToJava('google.registry.tools.soy',
-            "${generatedDir}/${toolsSoyDir}",
-            fileTree(
-                    dir: "${resourcesSourceDir}/${toolsSoyDir}",
-                    include: ['**/*.soy']))
-
-    soyToJava('google.registry.reporting.spec11.soy',
-            "${generatedDir}/${spec11SoyDir}",
-            fileTree(
-                    dir: "${resourcesSourceDir}/${spec11SoyDir}",
-                    include: ['**/*.soy']))
-  }
-}
-
 compileJava.dependsOn jaxbToJava
-compileJava.dependsOn soyToJava
 
 // Make testing artifacts available to be depended up on by other projects.
 // TODO: factor out google.registry.testing to be a separate project.

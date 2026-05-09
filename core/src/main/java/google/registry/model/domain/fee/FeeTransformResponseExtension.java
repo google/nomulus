@@ -31,7 +31,7 @@ import org.joda.money.CurrencyUnit;
 public class FeeTransformResponseExtension extends ImmutableObject implements ResponseExtension {
 
   /** The currency of the fee. */
-  CurrencyUnit currency;
+  @XmlElement CurrencyUnit currency;
 
   /**
    * The magnitude of the fee, in the specified units, with an optional description.

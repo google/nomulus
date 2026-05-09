@@ -35,6 +35,12 @@ public class AllocationTokenExtension extends ImmutableObject implements Command
   @XmlJavaTypeAdapter(TrimWhitespaceAdapter.class)
   String allocationToken;
 
+  public static AllocationTokenExtension create(String allocationToken) {
+    AllocationTokenExtension instance = new AllocationTokenExtension();
+    instance.allocationToken = allocationToken;
+    return instance;
+  }
+
   public String getAllocationToken() {
     return allocationToken;
   }
