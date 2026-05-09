@@ -1,13 +1,13 @@
 // Copyright 2018 The Nomulus Authors. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 2.0 (the \"License\");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an \"AS IS\" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -18,18 +18,18 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.findDuplicates;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
+import static java.time.ZoneOffset.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
-import com.google.template.soy.data.SoyMapData;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.domain.Domain;
-import google.registry.tools.soy.DomainRenewSoyInfo;
+import google.registry.model.eppinput.EppExtensions;
+import google.registry.model.eppinput.EppInputs;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 
 /** A command to renew domain(s) via EPP. */
 @Parameters(separators = " =", commandDescription = "Renew domain(s) via EPP.")
@@ -61,35 +61,31 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
       arity = 1)
   Boolean requestedByRegistrar;
 
-  private static final DateTimeFormatter DATE_FORMATTER =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
-
   @Override
-  protected void initMutatingEppToolCommand()
-      throws ResourceFlowUtils.ResourceDoesNotExistException {
-    String duplicates = Joiner.on(", ").join(findDuplicates(mainParameters));
-    checkArgument(duplicates.isEmpty(), "Duplicate domain arguments found: '%s'", duplicates);
+  protected void initMutatingEppToolCommand() throws Exception {
+    Set<String> duplicates = findDuplicates(mainParameters);
+    checkArgument(
+        duplicates.isEmpty(),
+        "Duplicate domain arguments found: '%s'",
+        Joiner.on(", ").join(duplicates));
     checkArgument(period < 10, "Cannot renew domains for 10 or more years");
     Instant now = clock.now();
     for (String domainName : mainParameters) {
       Domain domain = ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, now);
-      setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
-      SoyMapData soyMapData =
-          new SoyMapData(
-              "domainName", domain.getDomainName(),
-              "expirationDate", DATE_FORMATTER.format(domain.getRegistrationExpirationTime()),
-              "period", String.valueOf(period));
 
-      if (requestedByRegistrar != null) {
-        soyMapData.put("requestedByRegistrar", requestedByRegistrar.toString());
-      }
       if (reason != null) {
         checkArgumentNotNull(
             requestedByRegistrar, "--registrar_request is required when --reason is specified");
-        soyMapData.put("reason", reason);
       }
-      addSoyRecord(
-          isNullOrEmpty(clientId) ? domain.getCurrentSponsorRegistrarId() : clientId, soyMapData);
+
+      addEppInput(
+          isNullOrEmpty(clientId) ? domain.getCurrentSponsorRegistrarId() : clientId,
+          EppInputs.renewDomain(
+                  domain.getDomainName(),
+                  period,
+                  domain.getRegistrationExpirationTime().atZone(UTC).toLocalDate())
+              .addExtension(EppExtensions.toolMetadata(reason, requestedByRegistrar))
+              .build());
     }
   }
 }

@@ -57,14 +57,14 @@ import google.registry.flows.custom.DomainUpdateFlowCustomLogic.AfterValidationP
 import google.registry.flows.custom.DomainUpdateFlowCustomLogic.BeforeSaveParameters;
 import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
-import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainCommand.RegistrantProhibitedException;
 import google.registry.model.domain.DomainCommand.Update;
-import google.registry.model.domain.DomainCommand.Update.AddRemove;
 import google.registry.model.domain.DomainCommand.Update.Change;
+import google.registry.model.domain.DomainCommand.Update.DomainAddRemove;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.FeeUpdateCommandExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
@@ -214,8 +214,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
   private void verifyUpdateAllowed(Update command, Domain existingDomain, Instant now)
       throws EppException {
     verifyOptionalAuthInfo(authInfo, existingDomain);
-    AddRemove add = command.getInnerAdd();
-    AddRemove remove = command.getInnerRemove();
+    DomainAddRemove add = command.getInnerAdd();
+    DomainAddRemove remove = command.getInnerRemove();
     String tldStr = existingDomain.getTld();
     if (!isSuperuser) {
       verifyNoDisallowedStatuses(existingDomain, UPDATE_DISALLOWED_STATUSES);
@@ -234,8 +234,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
   }
 
   private Domain performUpdate(Update command, Domain domain, Instant now) throws EppException {
-    AddRemove add = command.getInnerAdd();
-    AddRemove remove = command.getInnerRemove();
+    DomainAddRemove add = command.getInnerAdd();
+    DomainAddRemove remove = command.getInnerRemove();
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
     verifyAddsAndRemoves(domain.getNameservers(), add.getNameservers(), remove.getNameservers());

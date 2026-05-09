@@ -17,13 +17,16 @@ package google.registry.model.domain.fee12;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.model.Buildable;
 import google.registry.model.domain.fee.Credit;
+import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
+import org.joda.money.CurrencyUnit;
 
 /** A fee extension that may be present on domain transfer requests. */
 @XmlRootElement(name = "transfer")
@@ -41,5 +44,23 @@ public class FeeTransferCommandExtensionV12 extends FeeTransferCommandExtension 
   @Override
   public FeeTransformResponseExtension.Builder createResponseBuilder() {
     return new FeeTransformResponseExtension.Builder(new FeeTransferResponseExtensionV12());
+  }
+
+  /** Builder for {@link FeeTransferCommandExtensionV12}. */
+  public static class Builder extends Buildable.Builder<FeeTransferCommandExtensionV12> {
+    public Builder setCurrency(CurrencyUnit currency) {
+      getInstance().currency = currency;
+      return this;
+    }
+
+    public Builder setFees(ImmutableList<Fee> fees) {
+      getInstance().fees = fees;
+      return this;
+    }
+
+    public Builder setCredits(ImmutableList<Credit> credits) {
+      getInstance().credits = credits;
+      return this;
+    }
   }
 }

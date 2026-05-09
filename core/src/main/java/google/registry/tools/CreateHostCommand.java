@@ -18,13 +18,10 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.google.template.soy.data.SoyMapData;
-import google.registry.tools.soy.HostCreateSoyInfo;
+import google.registry.model.eppinput.EppInputs;
 import google.registry.util.DomainNameUtils;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.List;
 
@@ -52,25 +49,15 @@ final class CreateHostCommand extends MutatingEppToolCommand {
 
   @Override
   protected void initMutatingEppToolCommand() {
-    setSoyTemplate(HostCreateSoyInfo.getInstance(), HostCreateSoyInfo.HOSTCREATE);
-    ImmutableList.Builder<String> ipv4Addresses = new ImmutableList.Builder<>();
-    ImmutableList.Builder<String> ipv6Addresses = new ImmutableList.Builder<>();
+    ImmutableSet.Builder<InetAddress> inetAddresses = new ImmutableSet.Builder<>();
     for (String address : nullToEmpty(addresses)) {
-      InetAddress inetAddress = InetAddresses.forString(address);
-      if (inetAddress instanceof Inet4Address) {
-        ipv4Addresses.add(inetAddress.getHostAddress());
-      } else if (inetAddress instanceof Inet6Address) {
-        ipv6Addresses.add(inetAddress.getHostAddress());
-      } else {
-        throw new IllegalArgumentException(
-            String.format("IP address in unknown format: %s", address));
-      }
+      inetAddresses.add(InetAddresses.forString(address));
     }
-    addSoyRecord(
+
+    addEppInput(
         clientId,
-        new SoyMapData(
-            "hostname", DomainNameUtils.canonicalizeHostname(hostName),
-            "ipv4addresses", ipv4Addresses.build(),
-            "ipv6addresses", ipv6Addresses.build()));
+        EppInputs.createHost(DomainNameUtils.canonicalizeHostname(hostName))
+            .setInetAddresses(inetAddresses.build())
+            .build());
   }
 }

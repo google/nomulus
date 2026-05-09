@@ -43,8 +43,8 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
-import static java.time.ZoneOffset.UTC;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.CharMatcher;
@@ -848,7 +848,7 @@ public class DomainFlowUtils {
    */
   public static void validateRegistrationPeriod(Instant now, Instant newExpirationTime)
       throws EppException {
-    if (now.atZone(UTC).plusYears(MAX_REGISTRATION_YEARS).toInstant().isBefore(newExpirationTime)) {
+    if (plusYears(now, MAX_REGISTRATION_YEARS).isBefore(newExpirationTime)) {
       throw new ExceedsMaxRegistrationYearsException();
     }
   }
@@ -1222,13 +1222,6 @@ public class DomainFlowUtils {
   public static class InvalidIdnDomainLabelException extends ParameterValueRangeErrorException {
     public InvalidIdnDomainLabelException() {
       super("Domain label is not allowed by IDN table");
-    }
-  }
-
-  /** Having a registrant is prohibited by registry policy. */
-  public static class RegistrantProhibitedException extends ParameterValuePolicyErrorException {
-    public RegistrantProhibitedException() {
-      super("Having a registrant is prohibited by registry policy");
     }
   }
 

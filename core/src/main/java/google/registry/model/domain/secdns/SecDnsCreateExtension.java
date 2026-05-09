@@ -17,8 +17,10 @@ package google.registry.model.domain.secdns;
 import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
+import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 import java.util.Set;
@@ -36,6 +38,7 @@ public class SecDnsCreateExtension extends ImmutableObject implements CommandExt
   Long maxSigLife;
 
   /** Signatures for this domain. */
+  @XmlElement(name = "dsData")
   Set<DomainDsData> dsData;
 
   public Long getMaxSigLife() {
@@ -44,5 +47,18 @@ public class SecDnsCreateExtension extends ImmutableObject implements CommandExt
 
   public ImmutableSet<DomainDsData> getDsData() {
     return nullSafeImmutableCopy(dsData);
+  }
+
+  /** Builder for {@link SecDnsCreateExtension}. */
+  public static class Builder extends Buildable.Builder<SecDnsCreateExtension> {
+    public Builder setDsData(ImmutableSet<DomainDsData> dsData) {
+      getInstance().dsData = dsData;
+      return this;
+    }
+
+    public Builder setMaxSigLife(Long maxSigLife) {
+      getInstance().maxSigLife = maxSigLife;
+      return this;
+    }
   }
 }

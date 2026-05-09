@@ -85,10 +85,9 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     return refreshedResource;
   }
 
-  private ResourceCommand.SingleResourceCommand getResourceCommand() throws Exception {
-    return (ResourceCommand.SingleResourceCommand)
-        ((ResourceCommandWrapper) eppLoader.getEpp().getCommandWrapper().getCommand())
-            .getResourceCommand();
+  private ResourceCommand getResourceCommand() throws Exception {
+    return ((ResourceCommandWrapper) eppLoader.getEpp().getCommandWrapper().getCommand())
+        .getResourceCommand();
   }
 
   protected String getUniqueIdFromCommand() throws Exception {
