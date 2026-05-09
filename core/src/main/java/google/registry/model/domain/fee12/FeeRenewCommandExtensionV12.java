@@ -18,17 +18,19 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.fee.Credit;
+import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeRenewCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
+import org.joda.money.CurrencyUnit;
 
 /** A fee extension that may be present on domain renew commands. */
 @XmlRootElement(name = "renew")
 @XmlType(propOrder = {"currency", "fees", "credits"})
-public class FeeRenewCommandExtensionV12  extends FeeRenewCommandExtension {
+public class FeeRenewCommandExtensionV12 extends FeeRenewCommandExtension {
 
   @XmlElement(name = "credit")
   List<Credit> credits;
@@ -41,5 +43,29 @@ public class FeeRenewCommandExtensionV12  extends FeeRenewCommandExtension {
   @Override
   public FeeTransformResponseExtension.Builder createResponseBuilder() {
     return new FeeTransformResponseExtension.Builder(new FeeRenewResponseExtensionV12());
+  }
+
+  /** Builder for {@link FeeRenewCommandExtensionV12}. */
+  public static class Builder {
+    private final FeeRenewCommandExtensionV12 instance = new FeeRenewCommandExtensionV12();
+
+    public Builder setCurrency(CurrencyUnit currency) {
+      instance.currency = currency;
+      return this;
+    }
+
+    public Builder setFees(ImmutableList<Fee> fees) {
+      instance.fees = fees;
+      return this;
+    }
+
+    public Builder setCredits(ImmutableList<Credit> credits) {
+      instance.credits = credits;
+      return this;
+    }
+
+    public FeeRenewCommandExtensionV12 build() {
+      return instance;
+    }
   }
 }

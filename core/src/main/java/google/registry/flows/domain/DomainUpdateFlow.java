@@ -57,11 +57,11 @@ import google.registry.flows.custom.DomainUpdateFlowCustomLogic.AfterValidationP
 import google.registry.flows.custom.DomainUpdateFlowCustomLogic.BeforeSaveParameters;
 import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
-import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainCommand.RegistrantProhibitedException;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainCommand.Update.AddRemove;
 import google.registry.model.domain.DomainCommand.Update.Change;

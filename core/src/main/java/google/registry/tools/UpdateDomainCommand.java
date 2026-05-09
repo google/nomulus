@@ -26,13 +26,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
-import com.google.template.soy.data.SoyMapData;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriodBase;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.eppinput.EppExtensions;
+import google.registry.model.eppinput.EppInputs;
+import google.registry.model.eppinput.EppInputs.DomainUpdateBuilder;
 import google.registry.tools.params.NameserversParameter;
-import google.registry.tools.soy.DomainUpdateSoyInfo;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -167,11 +168,12 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       if (!nameservers.isEmpty() || !statuses.isEmpty()) {
         if (!nameservers.isEmpty()) {
           ImmutableSortedSet<String> existingNameservers = domain.loadNameserverHostNames();
-          populateAddRemoveLists(
-              ImmutableSet.copyOf(nameservers),
-              existingNameservers,
-              addNameserversThisDomain,
-              removeNameserversThisDomain);
+          ImmutableSet<String> targetNameservers = ImmutableSet.copyOf(nameservers);
+          addNameserversThisDomain =
+              new TreeSet<>(Sets.difference(targetNameservers, existingNameservers));
+          removeNameserversThisDomain =
+              new TreeSet<>(Sets.difference(existingNameservers, targetNameservers));
+
           int numNameservers =
               existingNameservers.size()
                   + addNameserversThisDomain.size()
@@ -183,15 +185,15 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
         }
 
         if (!statuses.isEmpty()) {
-          Set<String> currentStatusValues = new HashSet<>();
-          for (StatusValue statusValue : domain.getStatusValues()) {
-            currentStatusValues.add(statusValue.getXmlName());
-          }
-          populateAddRemoveLists(
-              ImmutableSet.copyOf(statuses),
-              currentStatusValues,
-              addStatusesThisDomain,
-              removeStatusesThisDomain);
+          ImmutableSet<String> currentStatusValues =
+              domain.getStatusValues().stream()
+                  .map(StatusValue::getXmlName)
+                  .collect(ImmutableSet.toImmutableSet());
+          ImmutableSet<String> targetStatuses = ImmutableSet.copyOf(statuses);
+          addStatusesThisDomain =
+              new TreeSet<>(Sets.difference(targetStatuses, currentStatusValues));
+          removeStatusesThisDomain =
+              new TreeSet<>(Sets.difference(currentStatusValues, targetStatuses));
         }
       }
 
@@ -225,30 +227,44 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
         }
       }
 
-      setSoyTemplate(DomainUpdateSoyInfo.getInstance(), DomainUpdateSoyInfo.DOMAINUPDATE);
-      SoyMapData soyMapData =
-          new SoyMapData(
-              "domain", domainName,
-              "add", add,
-              "addNameservers", addNameserversThisDomain,
-              "addStatuses", addStatusesThisDomain,
-              "remove", remove,
-              "removeNameservers", removeNameserversThisDomain,
-              "removeStatuses", removeStatusesThisDomain,
-              "change", change,
-              "password", password,
-              "secdns", secDns,
-              "addDsRecords", DsRecord.convertToSoy(addDsRecords),
-              "removeDsRecords", DsRecord.convertToSoy(removeDsRecords),
-              "removeAllDsRecords", clearDsRecords,
-              "reason", reason);
-      if (autorenews != null) {
-        soyMapData.put("autorenews", autorenews.toString());
+      DomainUpdateBuilder updateBuilder = EppInputs.updateDomain(domainName);
+
+      if (secDns) {
+        updateBuilder.setSecDnsUpdate(
+            EppExtensions.secDnsUpdate(
+                addDsRecords.stream()
+                    .map(DsRecord::toDsData)
+                    .collect(ImmutableSet.toImmutableSet()),
+                removeDsRecords.stream()
+                    .map(DsRecord::toDsData)
+                    .collect(ImmutableSet.toImmutableSet()),
+                clearDsRecords));
       }
-      if (requestedByRegistrar != null) {
-        soyMapData.put("requestedByRegistrar", requestedByRegistrar.toString());
+
+      updateBuilder.setAutorenews(autorenews);
+      updateBuilder.addExtension(EppExtensions.toolMetadata(reason, requestedByRegistrar));
+
+      if (add) {
+        updateBuilder.addNameservers(ImmutableSet.copyOf(addNameserversThisDomain));
+        updateBuilder.addStatuses(
+            addStatusesThisDomain.stream()
+                .map(StatusValue::fromXmlName)
+                .collect(ImmutableSet.toImmutableSet()));
       }
-      addSoyRecord(clientId, soyMapData);
+
+      if (remove) {
+        updateBuilder.removeNameservers(ImmutableSet.copyOf(removeNameserversThisDomain));
+        updateBuilder.removeStatuses(
+            removeStatusesThisDomain.stream()
+                .map(StatusValue::fromXmlName)
+                .collect(ImmutableSet.toImmutableSet()));
+      }
+
+      if (change) {
+        updateBuilder.setNewPassword(password);
+      }
+
+      addEppInput(clientId, updateBuilder.build());
     }
 
     ImmutableSet<String> domainsToWarn = autorenewGracePeriodWarningDomains.build();
@@ -259,11 +275,5 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
               + " rather than in one year, if desired:\n%s",
           String.join(", ", domainsToWarn));
     }
-  }
-
-  private void populateAddRemoveLists(
-      Set<String> targetSet, Set<String> oldSet, Set<String> addSet, Set<String> removeSet) {
-    addSet.addAll(Sets.difference(targetSet, oldSet));
-    removeSet.addAll(Sets.difference(oldSet, targetSet));
   }
 }

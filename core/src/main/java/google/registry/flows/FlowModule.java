@@ -30,7 +30,7 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.Poll;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppinput.ResourceCommand;
-import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
+import google.registry.model.eppinput.SingleResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.Result;
 import google.registry.model.host.HostHistory;

@@ -23,6 +23,7 @@ import com.google.common.collect.Range;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import java.math.BigDecimal;
 import java.time.Instant;
+import org.joda.time.Period;
 
 /**
  * A fee, in currency units specified elsewhere in the xml, with type of the fee an optional fee
@@ -68,4 +69,38 @@ public class Fee extends BaseFee {
           ServiceExtension.FEE_0_12.getUri(),
           ServiceExtension.FEE_0_11.getUri(),
           ServiceExtension.FEE_0_6.getUri());
+
+  /** Builder for {@link Fee}. */
+  public static class Builder {
+    private final Fee instance = new Fee();
+
+    public Builder setCost(BigDecimal cost) {
+      instance.cost = cost;
+      return this;
+    }
+
+    public Builder setDescription(String description) {
+      instance.description = description;
+      return this;
+    }
+
+    public Builder setRefundable(Boolean refundable) {
+      instance.refundable = refundable;
+      return this;
+    }
+
+    public Builder setGracePeriod(Period gracePeriod) {
+      instance.gracePeriod = gracePeriod;
+      return this;
+    }
+
+    public Builder setApplied(AppliedType applied) {
+      instance.applied = applied;
+      return this;
+    }
+
+    public Fee build() {
+      return instance;
+    }
+  }
 }

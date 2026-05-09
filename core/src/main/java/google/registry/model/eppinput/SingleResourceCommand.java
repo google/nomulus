@@ -1,4 +1,4 @@
-// Copyright 2018 The Nomulus Authors. All Rights Reserved.
+// Copyright 2026 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.reporting.spec11;
+package google.registry.model.eppinput;
 
-import com.google.common.collect.ImmutableList;
-import google.registry.beam.spec11.ThreatMatch;
+import google.registry.model.eppcommon.AuthInfo;
 
-/** Value record representing the registrar and list-of-threat-matches pair stored in GCS. */
-public record RegistrarThreatMatches(String clientId, ImmutableList<ThreatMatch> threatMatches) {
+/** Interface for EPP commands that operate on a single resource. */
+public interface SingleResourceCommand extends ResourceCommand {
+  @Override
+  String getTargetId();
 
-  static RegistrarThreatMatches create(String clientId, ImmutableList<ThreatMatch> threatMatches) {
-    return new RegistrarThreatMatches(clientId, threatMatches);
-  }
+  @Override
+  AuthInfo getAuthInfo();
 }

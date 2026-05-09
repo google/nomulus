@@ -23,12 +23,11 @@ import static com.google.common.collect.Sets.union;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSet;
-import com.google.template.soy.data.SoyMapData;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.tools.soy.UpdateServerLocksSoyInfo;
+import google.registry.model.eppinput.EppExtensions;
+import google.registry.model.eppinput.EppInputs;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /** A command to execute a domain check claims epp command. */
 @Parameters(separators = " =",
@@ -72,19 +71,21 @@ final class UpdateServerLocksCommand extends MutatingEppToolCommand {
       arity = 1)
   private boolean requestedByRegistrar;
 
-  private static final ImmutableSet<String> ALLOWED_VALUES = ImmutableSet.of(
-      StatusValue.SERVER_DELETE_PROHIBITED.getXmlName(),
-      StatusValue.SERVER_HOLD.getXmlName(),
-      StatusValue.SERVER_RENEW_PROHIBITED.getXmlName(),
-      StatusValue.SERVER_TRANSFER_PROHIBITED.getXmlName(),
-      StatusValue.SERVER_UPDATE_PROHIBITED.getXmlName());
+  private static final ImmutableSet<String> ALLOWED_VALUES =
+      ImmutableSet.of(
+          StatusValue.SERVER_HOLD.getXmlName(),
+          StatusValue.SERVER_RENEW_PROHIBITED.getXmlName(),
+          StatusValue.SERVER_TRANSFER_PROHIBITED.getXmlName(),
+          StatusValue.SERVER_DELETE_PROHIBITED.getXmlName(),
+          StatusValue.SERVER_UPDATE_PROHIBITED.getXmlName());
 
-  private static Set<String> getStatusValuesSet(List<String> statusValues) {
-    Set<String> statusValuesSet = ImmutableSet.copyOf(statusValues);
+  private static ImmutableSet<String> getStatusValuesSet(List<String> statusValues) {
+    ImmutableSet<String> statusValuesSet = ImmutableSet.copyOf(statusValues);
     if (statusValuesSet.contains("all")) {
       return ALLOWED_VALUES;
     }
-    Set<String> badValues = difference(statusValuesSet, ALLOWED_VALUES);
+    ImmutableSet<String> badValues =
+        ImmutableSet.copyOf(difference(statusValuesSet, ALLOWED_VALUES));
     checkArgument(badValues.isEmpty(), "Invalid status values: %s", badValues);
     return statusValuesSet;
   }
@@ -94,21 +95,27 @@ final class UpdateServerLocksCommand extends MutatingEppToolCommand {
     checkArgument(
         requestedByRegistrar || !isNullOrEmpty(reason),
         "A reason must be provided when a change is not requested by a registrar.");
-    Set<String> valuesToApply = getStatusValuesSet(locksToApply);
-    Set<String> valuesToRemove = getStatusValuesSet(locksToRemove);
+    ImmutableSet<String> valuesToApply = getStatusValuesSet(locksToApply);
+    ImmutableSet<String> valuesToRemove = getStatusValuesSet(locksToRemove);
     checkArgument(
         intersection(valuesToApply, valuesToRemove).isEmpty(),
         "Add and remove actions overlap");
     checkArgument(
         !union(valuesToApply, valuesToRemove).isEmpty(),
         "Add and remove actions are both empty");
-    setSoyTemplate(
-        UpdateServerLocksSoyInfo.getInstance(), UpdateServerLocksSoyInfo.UPDATESERVERLOCKS);
-    addSoyRecord(clientId, new SoyMapData(
-        "domainName", domainName,
-        "locksToApply", valuesToApply,
-        "locksToRemove", valuesToRemove,
-        "reason", reason,
-        "requestedByRegistrar", requestedByRegistrar));
+
+    addEppInput(
+        clientId,
+        EppInputs.updateDomain(domainName)
+            .addStatuses(
+                valuesToApply.stream()
+                    .map(StatusValue::fromXmlName)
+                    .collect(ImmutableSet.toImmutableSet()))
+            .removeStatuses(
+                valuesToRemove.stream()
+                    .map(StatusValue::fromXmlName)
+                    .collect(ImmutableSet.toImmutableSet()))
+            .addExtension(EppExtensions.toolMetadata(reason, requestedByRegistrar))
+            .build());
   }
 }

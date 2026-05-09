@@ -39,10 +39,11 @@ import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
+import google.registry.reporting.spec11.Spec11EmailUtils.Spec11EmailTemplate;
 import google.registry.testing.DatabaseHelper;
 import google.registry.util.EmailMessage;
 import google.registry.util.Sleeper;
+import google.registry.util.TemplateRenderer;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import java.time.Duration;
@@ -50,6 +51,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,42 +64,82 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class Spec11EmailUtilsTest {
 
+  private static final Logger logger = Logger.getLogger(Spec11EmailUtilsTest.class.getName());
+
   private static final ImmutableList<String> FAKE_RESOURCES = ImmutableList.of("foo");
   private static final String DAILY_EMAIL_FORMAT =
-      "Dear registrar partner,<p>Super Cool Registry conducts a daily analysis of all domains"
-          + " registered in its TLDs to identify potential security concerns. On 2018-07-15, the"
-          + " following domains that your registrar manages were flagged for potential security"
-          + " concerns:</p><table><tr><th>Domain Name</th><th>Threat Type</th></tr>%s"
-          + "</table><p><b>Please communicate these findings to the registrant and work with the"
-          + " registrant to mitigate any security issues and have the domains delisted.</b></p>"
-          + "Some helpful resources for getting off a blocked list include:"
-          + "<ul><li>foo</li></ul><p>If you believe that any of the domains were reported in"
-          + " error, or are still receiving reports for issues that have been remediated, please"
-          + " <a href=\"https://safebrowsing.google.com/safebrowsing/report_error/?hl=en\">submit"
-          + " a request</a> to have the site reviewed.</p><p>You will continue to receive daily"
-          + " notices when new domains managed by your registrar are flagged for abuse, as well as"
-          + " a monthly summary of all of your domains under management that remain flagged for"
-          + " abuse.</p><p>If you would like to change the email to which these notices are sent"
-          + " please update your abuse contact using your registrar portal account.</p><p>If you"
-          + " have any questions regarding this notice, please contact abuse@test.com.</p>";
+      """
+      Dear registrar partner,
+
+      <p>Super Cool Registry conducts a daily analysis of all domains registered in its TLDs to
+        identify potential security concerns. On 2018-07-15, the following domains that your
+        registrar manages were flagged for potential security concerns:</p>
+
+      <table>
+        <tr>
+          <th>Domain Name</th>
+          <th>Threat Type</th>
+        </tr>
+      %s</table>
+
+      <p><b>Please communicate these findings to the registrant and work with the
+        registrant to mitigate any security issues and have the domains delisted.</b></p>
+
+        Some helpful resources for getting off a blocked list include:
+        <ul>
+            <li>foo</li>
+        </ul>
+
+       <p>If you believe that any of the domains were reported in error, or are still receiving
+       reports for issues that have been remediated,
+       please <a href="https://safebrowsing.google.com/safebrowsing/report_error/?hl=en">submit
+       a request</a> to have the site reviewed.</p>
+
+      <p>You will continue to receive daily notices when new domains managed by your registrar
+        are flagged for abuse, as well as a monthly summary of all of your domains under management
+        that remain flagged for abuse.</p>
+
+      <p>If you would like to change the email to which these notices are sent please update your
+        abuse contact using your registrar portal account.</p>
+
+      <p>If you have any questions regarding this notice, please contact abuse@test.com.</p>
+      """;
   private static final String MONTHLY_EMAIL_FORMAT =
-      "Dear registrar partner,<p>Super Cool Registry previously notified you when the following"
-          + " domains managed by your registrar were flagged for potential security"
-          + " concerns.</p><p>The following domains that you manage continue to be flagged by our"
-          + " analysis for potential security concerns. This may be because the registrants have"
-          + " not completed the requisite steps to mitigate the potential security abuse and/or"
-          + " have it reviewed and delisted.</p><table><tr><th>Domain Name</th><th>Threat"
-          + " Type</th></tr>%s</table><p>Please work with the registrant to mitigate any security"
-          + " issues and have the domains delisted. If you believe that any of the domains were"
-          + " reported in error, or are still receiving reports for issues that have been"
-          + " remediated, please <a"
-          + " href=\"https://safebrowsing.google.com/safebrowsing/report_error/?hl=en\">submit a"
-          + " request</a> to have the site reviewed.</p>Some helpful resources for getting off a"
-          + " blocked list include:<ul><li>foo</li></ul><p>You will continue to receive a monthly"
-          + " summary of all domains managed by your registrar that remain on our lists of"
-          + " potential security threats. You will also receive a daily notice when any new"
-          + " domains are added to these lists.</p><p>If you have any questions regarding this"
-          + " notice, please contact abuse@test.com.</p>";
+      """
+      Dear registrar partner,
+
+      <p>Super Cool Registry previously notified you when the following domains managed by your
+        registrar were flagged for potential security concerns.</p>
+
+      <p>The following domains that you manage continue to be flagged by our analysis for
+        potential security concerns. This may be because the registrants have not completed the
+        requisite steps to mitigate the potential security abuse and/or have it reviewed and
+        delisted.</p>
+
+      <table>
+        <tr>
+          <th>Domain Name</th>
+          <th>Threat Type</th>
+        </tr>
+      %s</table>
+
+      <p>Please work with the registrant to mitigate any security issues and have the
+        domains delisted. If you believe that any of the domains were reported in error, or are
+        still receiving reports for issues that have been remediated,
+        please <a href="https://safebrowsing.google.com/safebrowsing/report_error/?hl=en">submit a
+        request</a> to have the site reviewed.</p>
+
+        Some helpful resources for getting off a blocked list include:
+        <ul>
+            <li>foo</li>
+        </ul>
+
+      <p>You will continue to receive a monthly summary of all domains managed by your registrar
+        that remain on our lists of potential security threats. You will also receive a daily
+        notice when any new domains are added to these lists.</p>
+
+      <p>If you have any questions regarding this notice, please contact abuse@test.com.</p>
+      """;
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -120,6 +162,7 @@ class Spec11EmailUtilsTest {
         new Spec11EmailUtils(
             gmailClient,
             sleeper,
+            new TemplateRenderer(),
             emailThrottleDuration,
             new InternetAddress("my-receiver@test.com"),
             new InternetAddress("abuse@test.com"),
@@ -139,7 +182,7 @@ class Spec11EmailUtilsTest {
   void testSuccess_sleepsBetweenSending() throws Exception {
     emailUtils.emailSpec11Reports(
         date,
-        Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+        Spec11EmailTemplate.MONTHLY,
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         sampleThreatMatches());
     // We inspect individual parameters because Message doesn't implement equals().
@@ -152,7 +195,7 @@ class Spec11EmailUtilsTest {
   void testSuccess_emailMonthlySpec11Reports() throws Exception {
     emailUtils.emailSpec11Reports(
         date,
-        Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+        Spec11EmailTemplate.MONTHLY,
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         sampleThreatMatches());
     // We inspect individual parameters because Message doesn't implement equals().
@@ -163,7 +206,14 @@ class Spec11EmailUtilsTest {
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
-        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a[.]com</td><td>MALWARE</td></tr>"),
+        String.format(
+            MONTHLY_EMAIL_FORMAT,
+            """
+                <tr>
+                  <td>a[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+            """),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
@@ -172,7 +222,16 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
-            "<tr><td>b[.]com</td><td>MALWARE</td></tr><tr><td>c[.]com</td><td>MALWARE</td></tr>"),
+            """
+                <tr>
+                  <td>b[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+                <tr>
+                  <td>c[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+            """),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(2),
@@ -187,7 +246,7 @@ class Spec11EmailUtilsTest {
   void testSuccess_emailDailySpec11Reports() throws Exception {
     emailUtils.emailSpec11Reports(
         date,
-        Spec11EmailSoyInfo.DAILY_SPEC_11_EMAIL,
+        Spec11EmailTemplate.DAILY,
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
         sampleThreatMatches());
     // We inspect individual parameters because Message doesn't implement equals().
@@ -198,7 +257,14 @@ class Spec11EmailUtilsTest {
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
-        String.format(DAILY_EMAIL_FORMAT, "<tr><td>a[.]com</td><td>MALWARE</td></tr>"),
+        String.format(
+            DAILY_EMAIL_FORMAT,
+            """
+                <tr>
+                  <td>a[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+            """),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(1),
@@ -207,7 +273,16 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
         String.format(
             DAILY_EMAIL_FORMAT,
-            "<tr><td>b[.]com</td><td>MALWARE</td></tr><tr><td>c[.]com</td><td>MALWARE</td></tr>"),
+            """
+                <tr>
+                  <td>b[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+                <tr>
+                  <td>c[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+            """),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(2),
@@ -225,7 +300,7 @@ class Spec11EmailUtilsTest {
     persistResource(loadByEntity(bDomain).asBuilder().addStatusValue(CLIENT_HOLD).build());
     emailUtils.emailSpec11Reports(
         date,
-        Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+        Spec11EmailTemplate.MONTHLY,
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         sampleThreatMatches());
     // We inspect individual parameters because Message doesn't implement equals().
@@ -236,7 +311,14 @@ class Spec11EmailUtilsTest {
         "new.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
-        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>c[.]com</td><td>MALWARE</td></tr>"),
+        String.format(
+            MONTHLY_EMAIL_FORMAT,
+            """
+                <tr>
+                  <td>c[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+            """),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
@@ -256,7 +338,7 @@ class Spec11EmailUtilsTest {
 
     emailUtils.emailSpec11Reports(
         date,
-        Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+        Spec11EmailTemplate.MONTHLY,
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         sampleThreatMatches());
     // We inspect individual parameters because Message doesn't implement equals().
@@ -267,7 +349,14 @@ class Spec11EmailUtilsTest {
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
-        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a[.]com</td><td>MALWARE</td></tr>"),
+        String.format(
+            MONTHLY_EMAIL_FORMAT,
+            """
+                <tr>
+                  <td>a[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+            """),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
@@ -276,7 +365,16 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
-            "<tr><td>b[.]com</td><td>MALWARE</td></tr><tr><td>c[.]com</td><td>MALWARE</td></tr>"),
+            """
+                <tr>
+                  <td>b[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+                <tr>
+                  <td>c[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+            """),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(2),
@@ -304,7 +402,7 @@ class Spec11EmailUtilsTest {
             () ->
                 emailUtils.emailSpec11Reports(
                     date,
-                    Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+                    Spec11EmailTemplate.MONTHLY,
                     "Super Cool Registry Monthly Threat Detector [2018-07-15]",
                     ImmutableSet.copyOf(matches)));
     assertThat(thrown)
@@ -319,7 +417,14 @@ class Spec11EmailUtilsTest {
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
-        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a[.]com</td><td>MALWARE</td></tr>"),
+        String.format(
+            MONTHLY_EMAIL_FORMAT,
+            """
+                <tr>
+                  <td>a[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+            """),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(1),
@@ -328,7 +433,16 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
-            "<tr><td>b[.]com</td><td>MALWARE</td></tr><tr><td>c[.]com</td><td>MALWARE</td></tr>"),
+            """
+                <tr>
+                  <td>b[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+                <tr>
+                  <td>c[.]com</td>
+                  <td>MALWARE</td>
+                </tr>
+            """),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(2),
@@ -363,7 +477,7 @@ class Spec11EmailUtilsTest {
             .build());
     emailUtils.emailSpec11Reports(
         date,
-        Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+        Spec11EmailTemplate.MONTHLY,
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         sampleThreatMatches());
     verify(gmailClient, times(3)).sendEmail(contentCaptor.capture());
@@ -379,7 +493,7 @@ class Spec11EmailUtilsTest {
             () ->
                 emailUtils.emailSpec11Reports(
                     date,
-                    Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+                    Spec11EmailTemplate.MONTHLY,
                     "Super Cool Registry Monthly Threat Detector [2018-07-15]",
                     ImmutableSet.of(
                         RegistrarThreatMatches.create(
@@ -409,6 +523,7 @@ class Spec11EmailUtilsTest {
       expectedContentBuilder.addBcc(new InternetAddress(bcc));
     }
     contentType.ifPresent(expectedContentBuilder::setContentType);
+    assertThat(message.body()).isEqualTo(body);
     assertThat(message).isEqualTo(expectedContentBuilder.build());
   }
 

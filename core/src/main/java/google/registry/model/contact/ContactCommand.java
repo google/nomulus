@@ -16,16 +16,19 @@ package google.registry.model.contact;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.CollectionUtils.nullToEmpty;
+import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.PostalInfo.Type;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceCommand;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
 import google.registry.model.eppinput.ResourceCommand.ResourceUpdate;
-import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
+import google.registry.model.eppinput.SingleResourceCommand;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
@@ -34,6 +37,7 @@ import jakarta.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** A collection of (vestigial) Contact commands. */
 public class ContactCommand {
@@ -46,7 +50,7 @@ public class ContactCommand {
     /** Postal info for the contact. */
     List<PostalInfo> postalInfo;
 
-     /** Contact’s voice number. */
+    /** Contact’s voice number. */
     ContactPhoneNumber voice;
 
     /** Contact’s fax number. */
@@ -189,7 +193,20 @@ public class ContactCommand {
     }
 
     /** The inner change type on a contact update command. */
-    public static class AddRemove extends ResourceUpdate.AddRemove {}
+    public static class AddRemove extends ResourceUpdate.AddRemove {
+      @XmlElement(name = "status")
+      Set<StatusValue> statusValues;
+
+      @Override
+      public void setStatusValues(ImmutableSet<StatusValue> statusValues) {
+        this.statusValues = statusValues;
+      }
+
+      @Override
+      public ImmutableSet<StatusValue> getStatusValues() {
+        return nullToEmptyImmutableCopy(statusValues);
+      }
+    }
 
     /** The inner change type on a contact update command. */
     @XmlType(propOrder = {"postalInfo", "voice", "fax", "email", "authInfo", "disclose"})

@@ -27,6 +27,14 @@ public class DomainDeleteSuperuserExtension extends SuperuserExtension {
   @XmlElement(name = "pendingDeleteDays")
   int pendingDeleteDays;
 
+  public static DomainDeleteSuperuserExtension create(
+      int redemptionGracePeriodDays, int pendingDeleteDays) {
+    DomainDeleteSuperuserExtension instance = new DomainDeleteSuperuserExtension();
+    instance.redemptionGracePeriodDays = redemptionGracePeriodDays;
+    instance.pendingDeleteDays = pendingDeleteDays;
+    return instance;
+  }
+
   public int getRedemptionGracePeriodDays() {
     return redemptionGracePeriodDays;
   }

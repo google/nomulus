@@ -1225,13 +1225,6 @@ public class DomainFlowUtils {
     }
   }
 
-  /** Having a registrant is prohibited by registry policy. */
-  public static class RegistrantProhibitedException extends ParameterValuePolicyErrorException {
-    public RegistrantProhibitedException() {
-      super("Having a registrant is prohibited by registry policy");
-    }
-  }
-
   /** Too many nameservers set on this domain. */
   static class TooManyNameserversException extends ParameterValuePolicyErrorException {
     public TooManyNameserversException(String message) {

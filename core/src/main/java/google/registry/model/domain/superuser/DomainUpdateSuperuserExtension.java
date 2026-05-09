@@ -29,6 +29,16 @@ public class DomainUpdateSuperuserExtension extends SuperuserExtension {
   @Nullable
   String autorenews;
 
+  public static DomainUpdateSuperuserExtension create(@Nullable Boolean autorenews) {
+    DomainUpdateSuperuserExtension instance = new DomainUpdateSuperuserExtension();
+    instance.autorenews = autorenews == null ? null : autorenews.toString();
+    return instance;
+  }
+
+  public void setAutorenews(@Nullable Boolean autorenews) {
+    this.autorenews = autorenews == null ? null : autorenews.toString();
+  }
+
   public Optional<Boolean> getAutorenews() {
     return Optional.ofNullable(isNullOrEmpty(autorenews) ? null : Boolean.valueOf(autorenews));
   }
