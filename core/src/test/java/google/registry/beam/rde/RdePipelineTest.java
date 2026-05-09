@@ -96,7 +96,6 @@ import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -113,9 +112,9 @@ public class RdePipelineTest {
   private static final String HOST_NAME_PATTERN = "<rdeHost:name>(.*)</rdeHost:name>";
 
   // This is the default creation time for test data.
-  private final FakeClock clock = new FakeClock(DateTime.parse("1999-12-31TZ"));
+  private final FakeClock clock = new FakeClock(Instant.parse("1999-12-31T00:00:00Z"));
 
-  // This is teh default as-of time the RDE/BRDA job.
+  // This is the default as-of time the RDE/BRDA job.
   private final Instant now = Instant.parse("2000-01-01T00:00:00.000Z");
 
   private final ImmutableSet<PendingDeposit> pendings =
@@ -352,8 +351,8 @@ public class RdePipelineTest {
                                   </rdeDomain:ns>
                                   <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
                                   <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
-                                  <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
-                                  <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
+                                  <rdeDomain:crDate>1970-01-01T00:00:00.000Z</rdeDomain:crDate>
+                                  <rdeDomain:exDate>294247-01-10T04:00:54.775Z</rdeDomain:exDate>
                               </rdeDomain:domain>\
                               """);
                     }
@@ -381,8 +380,8 @@ public class RdePipelineTest {
                                     </rdeDomain:ns>
                                     <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
                                     <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
-                                    <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
-                                    <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
+                                    <rdeDomain:crDate>1970-01-01T00:00:00.000Z</rdeDomain:crDate>
+                                    <rdeDomain:exDate>294247-01-10T04:00:54.775Z</rdeDomain:exDate>
                                 </rdeDomain:domain>\
                                 """);
                       } else {
@@ -415,8 +414,8 @@ public class RdePipelineTest {
                                   </rdeDomain:ns>
                                   <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
                                   <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
-                                  <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
-                                  <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
+                                  <rdeDomain:crDate>1970-01-01T00:00:00.000Z</rdeDomain:crDate>
+                                  <rdeDomain:exDate>294247-01-10T04:00:54.775Z</rdeDomain:exDate>
                               </rdeDomain:domain>\
                               """);
                     }

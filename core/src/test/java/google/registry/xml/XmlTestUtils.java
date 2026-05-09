@@ -17,7 +17,6 @@ package google.registry.xml;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.util.DiffUtils.prettyPrintXmlDeepDiff;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -26,6 +25,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.XML;
@@ -247,18 +248,12 @@ public class XmlTestUtils {
       }
       String string = obj.toString();
       // We use a slightly different datetime format (both legal) than the samples, so normalize
-      // both into Datetime objects.
+      // both into Instant objects.
       try {
         return new AbstractMap.SimpleEntry<>(
-            null, ISODateTimeFormat.dateTime().parseDateTime(string).toDateTime(UTC));
-      } catch (IllegalArgumentException e) {
-        // It wasn't a DateTime.
-      }
-      try {
-        return new AbstractMap.SimpleEntry<>(
-            null, ISODateTimeFormat.dateTimeNoMillis().parseDateTime(string).toDateTime(UTC));
-      } catch (IllegalArgumentException e) {
-        // It wasn't a DateTime.
+            null, Instant.parse(string).truncatedTo(ChronoUnit.SECONDS));
+      } catch (DateTimeParseException e) {
+        // It wasn't an Instant.
       }
       try {
         if (!InternetDomainName.isValid(string)) {
@@ -284,4 +279,3 @@ public class XmlTestUtils {
         ImmutableMap.of()).getValue();
   }
 }
-

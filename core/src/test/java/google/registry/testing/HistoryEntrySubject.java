@@ -16,7 +16,6 @@ package google.registry.testing;
 
 import static com.google.common.truth.Fact.simpleFact;
 import static com.google.common.truth.Truth.assertAbout;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
@@ -27,7 +26,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.TruthChainer.And;
 import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 
 /** Utility methods for asserting things about {@link HistoryEntry} instances. */
 public class HistoryEntrySubject extends Subject {
@@ -64,11 +62,6 @@ public class HistoryEntrySubject extends Subject {
     }
     return hasValue(
         otherRegistrarId, ((DomainHistory) actual).getOtherRegistrarId(), "getOtherRegistrarId()");
-  }
-
-  public And<HistoryEntrySubject> hasModificationTime(DateTime modificationTime) {
-    return hasValue(
-        toInstant(modificationTime), actual.getModificationTime(), "getModificationTime()");
   }
 
   public And<HistoryEntrySubject> hasModificationTime(Instant modificationTime) {
@@ -127,7 +120,7 @@ public class HistoryEntrySubject extends Subject {
     return assertAbout(historyEntries());
   }
 
-  public static Factory<HistoryEntrySubject, HistoryEntry> historyEntries() {
+  public static Subject.Factory<HistoryEntrySubject, HistoryEntry> historyEntries() {
     return HistoryEntrySubject::new;
   }
 }

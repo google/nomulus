@@ -71,6 +71,4 @@ public class StatelessRequestSessionMetadata extends SessionMetadata {
     throw new UnsupportedOperationException();
   }
 
-
 }
-

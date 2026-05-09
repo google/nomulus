@@ -126,7 +126,6 @@ final class SetupOteCommand extends ConfirmingCommand {
           String.format(
 """
 
-
 WARNING: Running against %s environment. Are \
 you sure you didn't mean to run this against sandbox (e.g. "-e SANDBOX")?\
 """,

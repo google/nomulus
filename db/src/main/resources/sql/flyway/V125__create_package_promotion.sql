@@ -25,4 +25,3 @@
     );
 
 create index IDXlg6a5tp70nch9cp0gc11brc5o on "PackagePromotion" (token);
-

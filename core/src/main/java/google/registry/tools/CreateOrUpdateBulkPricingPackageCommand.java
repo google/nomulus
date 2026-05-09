@@ -16,20 +16,18 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.beust.jcommander.Parameter;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.BulkPricingPackage;
 import google.registry.persistence.VKey;
-import google.registry.tools.params.DateTimeParameter;
+import google.registry.tools.params.InstantParameter;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /** Shared base class for commands to create or update a {@link BulkPricingPackage} object. */
 abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
@@ -58,10 +56,10 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
   @Nullable
   @Parameter(
       names = "--next_billing_date",
-      validateWith = DateTimeParameter.class,
+      validateWith = InstantParameter.class,
       description =
           "The next date that the bulk pricing package should be billed for its annual fee")
-  DateTime nextBillingDate;
+  Instant nextBillingDate;
 
   /** Returns the existing BulkPricingPackage or null if it does not exist. */
   @Nullable
@@ -108,8 +106,7 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
                 Optional.ofNullable(maxCreates).ifPresent(builder::setMaxCreates);
                 Optional.ofNullable(price).ifPresent(builder::setBulkPrice);
                 Optional.ofNullable(nextBillingDate)
-                    .ifPresent(
-                        nextBillingDate -> builder.setNextBillingDate(toInstant(nextBillingDate)));
+                    .ifPresent(nextBillingDate -> builder.setNextBillingDate(nextBillingDate));
                 if (clearLastNotificationSent()) {
                   builder.setLastNotificationSent((Instant) null);
                 }

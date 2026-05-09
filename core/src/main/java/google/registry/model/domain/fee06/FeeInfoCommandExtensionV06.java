@@ -69,4 +69,3 @@ public class FeeInfoCommandExtensionV06
     return Optional.empty();
   }
 }
-

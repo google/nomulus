@@ -19,4 +19,3 @@ ALTER TABLE "DomainHost"
   ADD CONSTRAINT FK_DomainHost_host_valid
   FOREIGN KEY (ns_hosts)
   REFERENCES "HostResource";
-

@@ -53,6 +53,7 @@ import google.registry.util.Retrier;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDate;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.SerializableCoder;
@@ -64,7 +65,6 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.checkerframework.checker.nullness.qual.Nullable;
-import org.joda.time.DateTime;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,7 +80,7 @@ import org.junit.jupiter.api.io.TempDir;
  */
 class Spec11PipelineTest {
 
-  private static final DateTime START_TIME = DateTime.parse("2020-01-27T00:00:00.0Z");
+  private static final Instant START_TIME = Instant.parse("2020-01-27T00:00:00.0Z");
   private final FakeClock fakeClock = new FakeClock(START_TIME);
 
   private static final String DATE = "2020-01-27";

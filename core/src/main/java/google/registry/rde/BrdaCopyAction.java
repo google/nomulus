@@ -14,7 +14,6 @@
 
 package google.registry.rde;
 
-
 import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.rde.RdeMode.THIN;

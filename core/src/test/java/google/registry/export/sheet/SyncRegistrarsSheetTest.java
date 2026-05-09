@@ -28,7 +28,6 @@ import static google.registry.util.DateTimeUtils.minusHours;
 import static google.registry.util.DateTimeUtils.plusHours;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.joda.time.Duration.standardMinutes;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
@@ -43,6 +42,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -182,7 +182,7 @@ public class SyncRegistrarsSheetTest {
     Instant registrarCreationTime = persistResource(registrar).getCreationTime();
     persistResources(contacts);
 
-    clock.advanceBy(standardMinutes(1));
+    clock.advanceBy(Duration.ofMinutes(1));
     newSyncRegistrarsSheet().run("foobar");
 
     verify(sheetSynchronizer).synchronize(eq("foobar"), rowsCaptor.capture());

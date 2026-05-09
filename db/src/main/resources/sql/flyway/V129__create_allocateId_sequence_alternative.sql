@@ -18,4 +18,3 @@ CREATE SEQUENCE public."project_wide_unique_id_seq"
     MINVALUE 59880480005
     NO MAXVALUE
     CACHE 10;
-

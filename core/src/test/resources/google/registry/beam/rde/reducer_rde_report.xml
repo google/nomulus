@@ -5,9 +5,9 @@
     <rdeReport:rydeSpecEscrow>draft-arias-noguchi-registry-data-escrow-06</rdeReport:rydeSpecEscrow>
     <rdeReport:rydeSpecMapping>draft-arias-noguchi-dnrd-objects-mapping-05</rdeReport:rydeSpecMapping>
     <rdeReport:resend>%RESEND%</rdeReport:resend>
-    <rdeReport:crDate>2000-01-01T00:00:00Z</rdeReport:crDate>
+    <rdeReport:crDate>2000-01-01T00:00:00.000Z</rdeReport:crDate>
     <rdeReport:kind>FULL</rdeReport:kind>
-    <rdeReport:watermark>2000-01-01T00:00:00Z</rdeReport:watermark>
+    <rdeReport:watermark>2000-01-01T00:00:00.000Z</rdeReport:watermark>
     <rdeHeader:header>
         <rdeHeader:tld>soy</rdeHeader:tld>
         <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">1</rdeHeader:count>

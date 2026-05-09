@@ -14,7 +14,6 @@
 
 package google.registry.ui.server.console;
 
-
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;

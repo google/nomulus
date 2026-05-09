@@ -13,4 +13,3 @@
 -- limitations under the License.
 
 ALTER TABLE "User" DROP COLUMN gaia_id;
-

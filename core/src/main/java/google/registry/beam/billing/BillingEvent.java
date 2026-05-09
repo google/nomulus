@@ -39,8 +39,8 @@ import org.jetbrains.annotations.NotNull;
  * A record representing a single billable event, parsed from a {@code SchemaAndRecord}.
  *
  * @param id The unique ID for the {@code BillingEvent} associated with this event.
- * @param billingTime The DateTime (in UTC) this event becomes billable.
- * @param eventTime The DateTime (in UTC) this event was generated.
+ * @param billingTime The Instant (in UTC) this event becomes billable.
+ * @param eventTime The Instant (in UTC) this event was generated.
  * @param registrarId The billed registrar's name.
  * @param billingId The billed registrar's billing account key.
  * @param poNumber The Purchase Order number.
@@ -224,7 +224,6 @@ public record BillingEvent(
             "UnitPrice",
             "UnitPriceCurrency",
             "PONumber");
-
 
     /** Generates the CSV header for the overall invoice. */
     static String invoiceHeader() {

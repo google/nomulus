@@ -20,14 +20,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import com.google.common.net.InternetDomainName;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.logging.Level;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.Interval;
-import org.joda.time.LocalDate;
-import org.joda.time.YearMonth;
 
 /** JCommander converter factory that works for non-internal converters. */
 public final class ParameterFactory implements IStringConverterFactory {
@@ -41,17 +40,14 @@ public final class ParameterFactory implements IStringConverterFactory {
 
   private static final ImmutableMap<Class<?>, Class<? extends IStringConverter<?>>> CONVERTERS =
       new ImmutableMap.Builder<Class<?>, Class<? extends IStringConverter<?>>>()
-          .put(DateTime.class, DateTimeParameter.class)
+          .put(Instant.class, InstantParameter.class)
           .put(Duration.class, DurationParameter.class)
           .put(HostAndPort.class, HostAndPortParameter.class)
           .put(InternetDomainName.class, InternetDomainNameParameter.class)
-          .put(Interval.class, IntervalParameter.class)
           .put(Level.class, LoggingLevelParameter.class)
           .put(LocalDate.class, LocalDateParameter.class)
           .put(Money.class, MoneyParameter.class)
           .put(Path.class, PathParameter.class)
           .put(YearMonth.class, YearMonthParameter.class)
           .build();
-
-
 }

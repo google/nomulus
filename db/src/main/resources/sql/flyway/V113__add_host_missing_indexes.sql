@@ -15,4 +15,3 @@
 CREATE INDEX IDXy98mebut8ix1v07fjxxdkqcx ON "Host" (creation_time);
 CREATE INDEX IDXovmntef6l45tw2bsfl56tcugx ON "Host" (deletion_time);
 CREATE INDEX IDXl49vydnq0h5j1piefwjy4i8er ON "Host" (current_sponsor_registrar_id);
-

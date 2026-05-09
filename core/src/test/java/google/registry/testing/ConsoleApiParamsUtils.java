@@ -27,7 +27,7 @@ import google.registry.ui.server.SendEmailUtils;
 import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 public final class ConsoleApiParamsUtils {
 
@@ -37,7 +37,7 @@ public final class ConsoleApiParamsUtils {
     SendEmailUtils sendEmailUtils =
         new SendEmailUtils(ImmutableList.of("notification@test.example"), gmailClient);
     XsrfTokenManager xsrfTokenManager =
-        new XsrfTokenManager(new FakeClock(DateTime.parse("2020-02-02T01:23:45Z")));
+        new XsrfTokenManager(new FakeClock(Instant.parse("2020-02-02T01:23:45Z")));
     when(request.getCookies())
         .thenReturn(
             new Cookie[] {

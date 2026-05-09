@@ -29,7 +29,7 @@ import org.joda.money.Money;
 // TODO(b/19031334): Investigate making this complex generic type work with the factory.
 public abstract class TransitionListParameter<V> extends KeyValueMapParameter<Instant, V> {
 
-  private static final InstantParameter DATE_TIME_CONVERTER = new InstantParameter();
+  private static final InstantParameter INSTANT_CONVERTER = new InstantParameter();
 
   public TransitionListParameter() {
     // This is not sentence-capitalized like most exception messages because it is appended to the
@@ -39,7 +39,7 @@ public abstract class TransitionListParameter<V> extends KeyValueMapParameter<In
 
   @Override
   protected final Instant parseKey(String rawKey) {
-    return DATE_TIME_CONVERTER.convert(rawKey);
+    return INSTANT_CONVERTER.convert(rawKey);
   }
 
   @Override

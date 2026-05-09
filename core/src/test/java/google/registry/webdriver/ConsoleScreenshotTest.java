@@ -97,7 +97,6 @@ public class ConsoleScreenshotTest {
     assertThat(driver.getCurrentUrl()).endsWith("?registrarId=TheRegistrar");
   }
 
-
   @RetryingTest(3)
   void dums_mainPage() throws Exception {
     server.setGlobalRole(GlobalRole.FTE);

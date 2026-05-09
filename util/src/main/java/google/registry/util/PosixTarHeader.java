@@ -19,13 +19,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeConstants.MILLIS_PER_SECOND;
-import static org.joda.time.DateTimeZone.UTC;
 
+import java.time.Instant;
 import java.util.Arrays;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import org.joda.time.DateTime;
 
 /**
  * POSIX Tar Header.
@@ -171,10 +169,14 @@ public final class PosixTarHeader {
     return Integer.parseInt(extractField(124, 12).trim(), 8);
   }
 
-  /** Returns the modified time as a UTC {@link DateTime} object. */
+  /** Returns the modified time as a UTC {@link Instant} object. */
   @SuppressWarnings("JodaDateTimeConstants")
-  public DateTime getMtime() {
-    return new DateTime(Long.parseLong(extractField(136, 12).trim(), 8) * MILLIS_PER_SECOND, UTC);
+  public Instant getMtime() {
+    try {
+      return Instant.ofEpochMilli(Long.parseLong(extractField(136, 12).trim(), 8) * 1000L);
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException(e);
+    }
   }
 
   /** Returns the checksum value stored in the . */
@@ -411,13 +413,13 @@ public final class PosixTarHeader {
      * constructed.
      *
      * <p>The modified time is always stored as a UNIX timestamp which is seconds since the UNIX
-     * epoch in UTC time. Because {@link DateTime} has millisecond precision, it gets rounded down
+     * epoch in UTC time. Because {@link Instant} has millisecond precision, it gets rounded down
      * (floor) to the second.
      */
     @SuppressWarnings("JodaDateTimeConstants")
-    public Builder setMtime(DateTime mtime) {
+    public Builder setMtime(Instant mtime) {
       checkNotNull(mtime, "mtime");
-      setField("mtime", 136, 12, String.format("%011o", mtime.getMillis() / MILLIS_PER_SECOND));
+      setField("mtime", 136, 12, String.format("%011o", mtime.getEpochSecond()));
       hasMtime = true;
       return this;
     }
