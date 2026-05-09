@@ -17,7 +17,6 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Fact.simpleFact;
 import static com.google.common.truth.Truth.assertAbout;
-import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
@@ -32,7 +31,6 @@ import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import java.time.Instant;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /** Truth subject for asserting things about {@link Domain} instances. */
 public final class DomainSubject extends AbstractEppResourceSubject<Domain, DomainSubject> {
@@ -78,25 +76,13 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
         registrarId, actual.getCurrentSponsorRegistrarId(), "currentSponsorRegistrarId");
   }
 
-  public And<DomainSubject> hasRegistrationExpirationTime(DateTime expiration) {
-    return hasRegistrationExpirationTime(toInstant(expiration));
-  }
-
   public And<DomainSubject> hasRegistrationExpirationTime(Instant expiration) {
     return hasValue(
         expiration, actual.getRegistrationExpirationTime(), "getRegistrationExpirationTime()");
   }
 
-  public And<DomainSubject> hasLastTransferTime(DateTime lastTransferTime) {
-    return hasLastTransferTime(toInstant(lastTransferTime));
-  }
-
   public And<DomainSubject> hasLastTransferTime(Instant lastTransferTime) {
     return hasValue(lastTransferTime, actual.getLastTransferTime(), "getLastTransferTime()");
-  }
-
-  public And<DomainSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
-    return hasLastTransferTimeNotEqualTo(toInstant(lastTransferTime));
   }
 
   public And<DomainSubject> hasLastTransferTimeNotEqualTo(Instant lastTransferTime) {
@@ -120,10 +106,6 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
 
   public And<DomainSubject> hasSmdId(String smdId) {
     return hasValue(smdId, actual.getSmdId(), "getSmdId()");
-  }
-
-  public And<DomainSubject> hasAutorenewEndTime(DateTime autorenewEndTime) {
-    return hasAutorenewEndTime(toInstant(autorenewEndTime));
   }
 
   public And<DomainSubject> hasAutorenewEndTime(Instant autorenewEndTime) {

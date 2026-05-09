@@ -14,7 +14,6 @@
 
 package google.registry.model.domain;
 
-
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.billing.BillingEvent;

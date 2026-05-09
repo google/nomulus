@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;

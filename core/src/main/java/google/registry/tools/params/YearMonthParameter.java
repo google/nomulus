@@ -14,8 +14,7 @@
 
 package google.registry.tools.params;
 
-import org.joda.time.YearMonth;
-import org.joda.time.format.ISODateTimeFormat;
+import java.time.YearMonth;
 
 /** {@linkplain YearMonth} CLI parameter converter/validator (e.g. 1984-12) */
 public final class YearMonthParameter extends ParameterConverterValidator<YearMonth> {
@@ -26,6 +25,6 @@ public final class YearMonthParameter extends ParameterConverterValidator<YearMo
 
   @Override
   public YearMonth convert(String value) {
-    return YearMonth.parse(value, ISODateTimeFormat.yearMonth());
+    return YearMonth.parse(value);
   }
 }

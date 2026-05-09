@@ -33,6 +33,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,8 +43,6 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.impl.DumbTerminal;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ class ShellCommandTest {
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   CommandRunner cli = mock(CommandRunner.class);
-  private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  private final FakeClock clock = new FakeClock(Instant.parse("2000-01-01T00:00:00Z"));
   private final DelayingByteArrayInputStream input = new DelayingByteArrayInputStream(clock);
 
   private PrintStream orgStdout;
@@ -112,7 +112,7 @@ class ShellCommandTest {
     RegistryToolEnvironment.ALPHA.setup(systemPropertyExtension);
     FakeCli cli = new FakeCli();
     ShellCommand shellCommand =
-        createShellCommand(cli, Duration.standardDays(1), "test1 foo bar", "test2 foo bar");
+        createShellCommand(cli, Duration.ofDays(1), "test1 foo bar", "test2 foo bar");
     shellCommand.run();
   }
 
@@ -121,7 +121,7 @@ class ShellCommandTest {
     RegistryToolEnvironment.SANDBOX.setup(systemPropertyExtension);
     FakeCli cli = new FakeCli();
     ShellCommand shellCommand =
-        createShellCommand(cli, Duration.standardDays(1), "test1 foo bar", "test2 foo bar");
+        createShellCommand(cli, Duration.ofDays(1), "test1 foo bar", "test2 foo bar");
     shellCommand.run();
   }
 
@@ -130,7 +130,7 @@ class ShellCommandTest {
     RegistryToolEnvironment.PRODUCTION.setup(systemPropertyExtension);
     FakeCli cli = new FakeCli();
     ShellCommand shellCommand =
-        createShellCommand(cli, Duration.standardMinutes(61), "test1 foo bar", "test2 foo bar");
+        createShellCommand(cli, Duration.ofMinutes(61), "test1 foo bar", "test2 foo bar");
     RuntimeException exception = assertThrows(RuntimeException.class, shellCommand::run);
     assertThat(exception).hasMessageThat().contains("Been idle for too long");
   }
@@ -140,7 +140,7 @@ class ShellCommandTest {
     RegistryToolEnvironment.PRODUCTION.setup(systemPropertyExtension);
     FakeCli cli = new FakeCli();
     ShellCommand shellCommand =
-        createShellCommand(cli, Duration.standardMinutes(59), "test1 foo bar", "test2 foo bar");
+        createShellCommand(cli, Duration.ofMinutes(59), "test1 foo bar", "test2 foo bar");
     shellCommand.run();
   }
 
@@ -276,13 +276,13 @@ class ShellCommandTest {
     assertThat(stdout.toString(US_ASCII))
         .isEqualTo(
             """
-                RUNNING "command1"
-                out: first line
-                err: second line
-                err: surprise!
-                out: fragmented line
-                SUCCESS
-                """);
+            RUNNING "command1"
+            out: first line
+            err: second line
+            err: surprise!
+            out: fragmented line
+            SUCCESS
+            """);
   }
 
   @Test
@@ -302,10 +302,10 @@ class ShellCommandTest {
     assertThat(stdout.toString(US_ASCII))
         .isEqualTo(
             """
-                RUNNING "command1"
-                out: first line
-                FAILURE java.lang.Exception some error!
-                """);
+            RUNNING "command1"
+            out: first line
+            FAILURE java.lang.Exception some error!
+            """);
   }
 
   @Test

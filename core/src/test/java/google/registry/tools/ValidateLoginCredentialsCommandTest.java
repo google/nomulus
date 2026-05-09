@@ -37,7 +37,6 @@ import google.registry.util.CidrAddressBlock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +60,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
             .setState(ACTIVE)
             .setAllowedTlds(ImmutableSet.of("tld"))
             .build());
-    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
     command.certificateChecker =
         new CertificateChecker(
             ImmutableSortedMap.of(START_INSTANT, 825, Instant.parse("2020-09-01T00:00:00Z"), 398),

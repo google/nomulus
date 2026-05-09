@@ -17,7 +17,8 @@ package google.registry.tools.params;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DateParameter}. */
@@ -28,23 +29,22 @@ class DateParameterTest {
   @Test
   void testConvert_onlyDate() {
     String exampleDate = "2014-01-01";
-    assertThat(instance.convert(exampleDate)).isEqualTo(DateTime.parse("2014-01-01T00:00:00Z"));
+    assertThat(instance.convert(exampleDate)).isEqualTo(Instant.parse("2014-01-01T00:00:00Z"));
   }
 
   @Test
   void testConvert_numeric_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("1234"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("1234"));
   }
 
   @Test
   void testConvert_validDateAndTime_throwsException() {
-    assertThrows(
-        IllegalArgumentException.class, () -> instance.convert("2014-01-01T01:02:03.004Z"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("2014-01-01T01:02:03.004Z"));
   }
 
   @Test
   void testConvert_invalidDate_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("2014-13-33"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("2014-13-33"));
   }
 
   @Test
@@ -54,31 +54,31 @@ class DateParameterTest {
 
   @Test
   void testConvert_empty_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert(""));
+    assertThrows(DateTimeParseException.class, () -> instance.convert(""));
   }
 
   @Test
   void testConvert_sillyString_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("foo"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("foo"));
   }
 
   @Test
   void testConvert_partialDate_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("2014-01"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("2014-01"));
   }
 
   @Test
   void testConvert_onlyTime_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("T01:02:03"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("T01:02:03"));
   }
 
   @Test
   void testConvert_partialDateAndPartialTime_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("9T9"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("9T9"));
   }
 
   @Test
   void testConvert_dateAndPartialTime_throwsException() {
-    assertThrows(IllegalArgumentException.class, () -> instance.convert("2014-01-01T01:02"));
+    assertThrows(DateTimeParseException.class, () -> instance.convert("2014-01-01T01:02"));
   }
 }

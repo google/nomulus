@@ -24,4 +24,3 @@ ALTER TABLE if exists "Domain"
    FOREIGN KEY (transfer_billing_event_id)
    REFERENCES "BillingEvent"
    DEFERRABLE INITIALLY DEFERRED;
-

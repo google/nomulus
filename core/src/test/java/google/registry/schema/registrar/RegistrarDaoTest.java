@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.existsInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registrar.Registrar;
@@ -27,7 +26,7 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -35,7 +34,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for persisting {@link Registrar} entities. */
 public class RegistrarDaoTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  protected FakeClock fakeClock = new FakeClock(Instant.now());
 
   @RegisterExtension
   JpaIntegrationWithCoverageExtension jpa =

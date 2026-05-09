@@ -88,4 +88,3 @@ public class CreateRegistrarGroupsCommand extends ConfirmingCommand
     return "Success!";
   }
 }
-

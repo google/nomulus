@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.keyring.api.KeySerializer;

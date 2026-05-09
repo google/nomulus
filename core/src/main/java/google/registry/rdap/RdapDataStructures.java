@@ -244,7 +244,6 @@ final class RdapDataStructures {
 
     @JsonableElement abstract ImmutableList<Link> links();
 
-
     abstract static class Builder<B extends Builder<?>> {
       abstract B setEventAction(EventAction eventAction);
 
@@ -304,7 +303,6 @@ final class RdapDataStructures {
       return new AutoValue_RdapDataStructures_EventWithoutActor.Builder();
     }
 
-
     @AutoValue.Builder
     abstract static class Builder extends EventBase.Builder<Builder> {
       abstract EventWithoutActor build();
@@ -320,7 +318,6 @@ final class RdapDataStructures {
     static Builder builder() {
       return new AutoValue_RdapDataStructures_Event.Builder();
     }
-
 
     @AutoValue.Builder
     abstract static class Builder extends EventBase.Builder<Builder> {

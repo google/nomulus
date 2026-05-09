@@ -17,7 +17,7 @@ package google.registry.util;
 import java.io.IOException;
 import java.time.Duration;
 
-/** GSON type adapter for {@link java.time.Duration} objects. */
+/** GSON type adapter for {@link Duration} objects. */
 public class DurationTypeAdapter extends StringBaseTypeAdapter<Duration> {
 
   @Override

@@ -14,7 +14,6 @@
 
 package google.registry.model.transfer;
 
-
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;

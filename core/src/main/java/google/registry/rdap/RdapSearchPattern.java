@@ -14,7 +14,6 @@
 
 package google.registry.rdap;
 
-
 import com.google.common.base.Strings;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.UnprocessableEntityException;

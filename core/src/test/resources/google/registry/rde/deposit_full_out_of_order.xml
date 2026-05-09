@@ -77,8 +77,6 @@
       <rdeDom:exDate>2015-04-03T22:00:00.0Z</rdeDom:exDate>
     </rdeDom:domain>
 
-
-
     <!-- Host: ns1.example.com -->
     <rdeHost:host>
       <rdeHost:name>ns1.example.com</rdeHost:name>

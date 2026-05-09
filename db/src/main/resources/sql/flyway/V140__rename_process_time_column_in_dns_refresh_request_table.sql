@@ -15,6 +15,3 @@
 ALTER TABLE "DnsRefreshRequest" RENAME COLUMN process_time TO last_process_time;
 CREATE INDEX IDXfdk2xpil2x1gh0omt84k2y3o1 ON "DnsRefreshRequest" (last_process_time);
 DROP INDEX IDX3i7i2ktts9d7lcjbs34h0pvwo;
-
-
-

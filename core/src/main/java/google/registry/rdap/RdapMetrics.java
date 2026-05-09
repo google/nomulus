@@ -272,7 +272,6 @@ public class RdapMetrics {
       RdapMetricInformation build();
     }
 
-
     static Builder builder() {
       return new AutoBuilder_RdapMetrics_RdapMetricInformation_Builder()
           .setSearchType(SearchType.NONE)

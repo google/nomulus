@@ -22,4 +22,3 @@ ALTER TABLE "HostHistory" ADD CONSTRAINT fk_hosthistory_host
     FOREIGN KEY (host_repo_id)
     REFERENCES "Host"(repo_id)
     DEFERRABLE INITIALLY DEFERRED;
-

@@ -36,7 +36,6 @@ public class FeeInfoResponseExtensionV06
   /** The command that was checked. */
   FeeExtensionCommandDescriptor command;
 
-
   /** Builder for {@link FeeInfoResponseExtensionV06}. */
   public static class Builder
       extends FeeQueryResponseExtensionItem.Builder<FeeInfoResponseExtensionV06, Builder> {

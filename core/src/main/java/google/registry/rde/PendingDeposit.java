@@ -14,7 +14,6 @@
 
 package google.registry.rde;
 
-
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeMode;
 import java.io.IOException;

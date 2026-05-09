@@ -198,7 +198,6 @@ dependencies {
   implementation deps['jakarta.persistence:jakarta.persistence-api']
   implementation deps['jakarta.servlet:jakarta.servlet-api']
   implementation deps['jakarta.xml.bind:jakarta.xml.bind-api']
-  implementation deps['joda-time:joda-time']
   implementation deps['org.antlr:antlr4']
   implementation deps['org.antlr:antlr4-runtime']
   implementation deps['org.apache.avro:avro']
@@ -478,7 +477,6 @@ Optional<List<String>> getToolArgsList() {
   }
   return Optional.empty()
 }
-
 
 // To run the nomulus tools with these command line tokens:
 // "--foo", "bar baz", "--qux=quz"
@@ -818,7 +816,6 @@ test {
   exclude "**"
   // TODO(weiminyu): Remove dependency on sqlIntegrationTest
 }.dependsOn(fragileTest, standardTest, registryToolIntegrationTest, sqlIntegrationTest)
-
 
 // When we override tests, we also break the cleanTest command.
 cleanTest.dependsOn(cleanFragileTest, cleanStandardTest,
