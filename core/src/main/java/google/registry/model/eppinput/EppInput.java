@@ -14,12 +14,14 @@
 
 package google.registry.model.eppinput;
 
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactCommand;
 import google.registry.model.domain.DomainCommand;
@@ -59,7 +61,6 @@ import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExte
 import google.registry.model.domain.superuser.DomainUpdateSuperuserExtension;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
-import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
 import google.registry.model.host.HostCommand;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -83,12 +84,31 @@ import javax.annotation.Nullable;
 public class EppInput extends ImmutableObject {
 
   @XmlElements({
-      @XmlElement(name = "command", type = CommandWrapper.class),
-      @XmlElement(name = "hello", type = Hello.class) })
+    @XmlElement(name = "command", type = CommandWrapper.class),
+    @XmlElement(name = "hello", type = Hello.class)
+  })
   CommandWrapper commandWrapper;
 
   public CommandWrapper getCommandWrapper() {
     return commandWrapper;
+  }
+
+  /** Base class for EPP object builders. */
+  public abstract static class GenericBuilder<
+          T extends ImmutableObject, B extends GenericBuilder<T, B>>
+      extends Buildable.Builder<T> {
+    @SuppressWarnings("unchecked")
+    protected B thisCastToDerived() {
+      return (B) this;
+    }
+  }
+
+  /** Builder for {@link EppInput}. */
+  public static class Builder extends GenericBuilder<EppInput, Builder> {
+    public Builder setCommandWrapper(CommandWrapper commandWrapper) {
+      getInstance().commandWrapper = commandWrapper;
+      return this;
+    }
   }
 
   /**
@@ -96,9 +116,10 @@ public class EppInput extends ImmutableObject {
    * the {@code <command>} element (e.g. "create" or "poll"), or "hello" for the hello command.
    */
   public String getCommandType() {
-    return Ascii.toLowerCase((commandWrapper instanceof Hello)
-        ? Hello.class.getSimpleName()
-        : commandWrapper.getCommand().getClass().getSimpleName());
+    return Ascii.toLowerCase(
+        (getCommandWrapper() instanceof Hello)
+            ? Hello.class.getSimpleName()
+            : getCommandWrapper().getCommand().getClass().getSimpleName());
   }
 
   /**
@@ -108,11 +129,11 @@ public class EppInput extends ImmutableObject {
   public Optional<String> getResourceType() {
     ResourceCommand resourceCommand = getResourceCommand();
     if (resourceCommand != null) {
-       XmlSchema xmlSchemaAnnotation =
-           resourceCommand.getClass().getPackage().getAnnotation(XmlSchema.class);
-       if (xmlSchemaAnnotation != null && xmlSchemaAnnotation.xmlns().length > 0) {
-         return Optional.of(xmlSchemaAnnotation.xmlns()[0].prefix());
-       }
+      XmlSchema xmlSchemaAnnotation =
+          resourceCommand.getClass().getPackage().getAnnotation(XmlSchema.class);
+      if (xmlSchemaAnnotation != null && xmlSchemaAnnotation.xmlns().length > 0) {
+        return Optional.of(xmlSchemaAnnotation.xmlns()[0].prefix());
+      }
     }
     return Optional.empty();
   }
@@ -123,8 +144,8 @@ public class EppInput extends ImmutableObject {
   }
 
   @Nullable
-  private ResourceCommand getResourceCommand() {
-    InnerCommand innerCommand = commandWrapper.getCommand();
+  public ResourceCommand getResourceCommand() {
+    InnerCommand innerCommand = getCommandWrapper().getCommand();
     return innerCommand instanceof ResourceCommandWrapper resourceCommandWrapper
         ? resourceCommandWrapper.getResourceCommand()
         : null;
@@ -170,45 +191,65 @@ public class EppInput extends ImmutableObject {
   /** A command that has an extension inside of it. */
   public static class ResourceCommandWrapper extends InnerCommand {
     @XmlElementRefs({
-        @XmlElementRef(type = ContactCommand.Check.class),
-        @XmlElementRef(type = ContactCommand.Create.class),
-        @XmlElementRef(type = ContactCommand.Delete.class),
-        @XmlElementRef(type = ContactCommand.Info.class),
-        @XmlElementRef(type = ContactCommand.Transfer.class),
-        @XmlElementRef(type = ContactCommand.Update.class),
-        @XmlElementRef(type = DomainCommand.Check.class),
-        @XmlElementRef(type = DomainCommand.Create.class),
-        @XmlElementRef(type = DomainCommand.Delete.class),
-        @XmlElementRef(type = DomainCommand.Info.class),
-        @XmlElementRef(type = DomainCommand.Renew.class),
-        @XmlElementRef(type = DomainCommand.Transfer.class),
-        @XmlElementRef(type = DomainCommand.Update.class),
-        @XmlElementRef(type = HostCommand.Check.class),
-        @XmlElementRef(type = HostCommand.Create.class),
-        @XmlElementRef(type = HostCommand.Delete.class),
-        @XmlElementRef(type = HostCommand.Info.class),
-        @XmlElementRef(type = HostCommand.Update.class)})
+      @XmlElementRef(type = ContactCommand.Check.class),
+      @XmlElementRef(type = ContactCommand.Create.class),
+      @XmlElementRef(type = ContactCommand.Delete.class),
+      @XmlElementRef(type = ContactCommand.Info.class),
+      @XmlElementRef(type = ContactCommand.Transfer.class),
+      @XmlElementRef(type = ContactCommand.Update.class),
+      @XmlElementRef(type = DomainCommand.Check.class),
+      @XmlElementRef(type = DomainCommand.Create.class),
+      @XmlElementRef(type = DomainCommand.Delete.class),
+      @XmlElementRef(type = DomainCommand.Info.class),
+      @XmlElementRef(type = DomainCommand.Renew.class),
+      @XmlElementRef(type = DomainCommand.Transfer.class),
+      @XmlElementRef(type = DomainCommand.Update.class),
+      @XmlElementRef(type = HostCommand.Check.class),
+      @XmlElementRef(type = HostCommand.Create.class),
+      @XmlElementRef(type = HostCommand.Delete.class),
+      @XmlElementRef(type = HostCommand.Info.class),
+      @XmlElementRef(type = HostCommand.Update.class)
+    })
     ResourceCommand resourceCommand;
 
     public ResourceCommand getResourceCommand() {
       return resourceCommand;
     }
+
+    /** Builder for {@link ResourceCommandWrapper}. */
+    public abstract static class Builder<T extends ResourceCommandWrapper, B extends Builder<T, B>>
+        extends GenericBuilder<T, B> {
+      public B setResourceCommand(ResourceCommand resourceCommand) {
+        getInstance().resourceCommand = resourceCommand;
+        return thisCastToDerived();
+      }
+    }
   }
 
   /** Epp envelope wrapper for check on some objects. */
-  public static class Check extends ResourceCommandWrapper {}
+  public static class Check extends ResourceCommandWrapper {
+    public static class Builder extends ResourceCommandWrapper.Builder<Check, Builder> {}
+  }
 
   /** Epp envelope wrapper for create of some object. */
-  public static class Create extends ResourceCommandWrapper {}
+  public static class Create extends ResourceCommandWrapper {
+    public static class Builder extends ResourceCommandWrapper.Builder<Create, Builder> {}
+  }
 
   /** Epp envelope wrapper for delete of some object. */
-  public static class Delete extends ResourceCommandWrapper {}
+  public static class Delete extends ResourceCommandWrapper {
+    public static class Builder extends ResourceCommandWrapper.Builder<Delete, Builder> {}
+  }
 
   /** Epp envelope wrapper for info on some object. */
-  public static class Info extends ResourceCommandWrapper {}
+  public static class Info extends ResourceCommandWrapper {
+    public static class Builder extends ResourceCommandWrapper.Builder<Info, Builder> {}
+  }
 
   /** Epp envelope wrapper for renewing some object. */
-  public static class Renew extends ResourceCommandWrapper {}
+  public static class Renew extends ResourceCommandWrapper {
+    public static class Builder extends ResourceCommandWrapper.Builder<Renew, Builder> {}
+  }
 
   /** Epp envelope wrapper for transferring some object. */
   public static class Transfer extends ResourceCommandWrapper {
@@ -237,10 +278,20 @@ public class EppInput extends ImmutableObject {
     public TransferOp getTransferOp() {
       return transferOp;
     }
+
+    /** Builder for {@link Transfer}. */
+    public static class Builder extends ResourceCommandWrapper.Builder<Transfer, Builder> {
+      public Builder setTransferOp(TransferOp transferOp) {
+        getInstance().transferOp = transferOp;
+        return this;
+      }
+    }
   }
 
   /** Epp envelope wrapper for update of some object. */
-  public static class Update extends ResourceCommandWrapper {}
+  public static class Update extends ResourceCommandWrapper {
+    public static class Builder extends ResourceCommandWrapper.Builder<Update, Builder> {}
+  }
 
   /** Poll command. */
   public static class Poll extends InnerCommand {
@@ -257,11 +308,9 @@ public class EppInput extends ImmutableObject {
       REQUEST
     }
 
-    @XmlAttribute
-    PollOp op;
+    @XmlAttribute public PollOp op;
 
-    @XmlAttribute
-    String msgID;
+    @XmlAttribute public String msgID;
 
     public PollOp getPollOp() {
       return op;
@@ -307,6 +356,40 @@ public class EppInput extends ImmutableObject {
     public Services getServices() {
       return services;
     }
+
+    /** Builder for {@link Login}. */
+    public static class Builder extends GenericBuilder<Login, Builder> {
+
+      /** Sets the client identifier. */
+      public Builder setClientId(String clientId) {
+        getInstance().clientId = clientId;
+        return this;
+      }
+
+      /** Sets the password. */
+      public Builder setPassword(String password) {
+        getInstance().password = password;
+        return this;
+      }
+
+      /** Sets the new password. */
+      public Builder setNewPassword(String newPassword) {
+        getInstance().newPassword = newPassword;
+        return this;
+      }
+
+      /** Sets the login options. */
+      public Builder setOptions(Options options) {
+        getInstance().options = options;
+        return this;
+      }
+
+      /** Sets the object and extension services. */
+      public Builder setServices(Services services) {
+        getInstance().services = services;
+        return this;
+      }
+    }
   }
 
   /** Logout command. */
@@ -327,7 +410,7 @@ public class EppInput extends ImmutableObject {
       @XmlElement(name = "transfer", type = Transfer.class),
       @XmlElement(name = "update", type = Update.class)
     })
-    InnerCommand command;
+    public InnerCommand command;
 
     /** Zero or more command extensions. */
     @XmlElementRefs({
@@ -367,23 +450,21 @@ public class EppInput extends ImmutableObject {
       @XmlElementRef(type = LaunchInfoExtension.class),
       @XmlElementRef(type = LaunchUpdateExtension.class),
 
-      // Superuser extensions
+      // Other extensions
+      @XmlElementRef(type = SecDnsCreateExtension.class),
+      @XmlElementRef(type = SecDnsUpdateExtension.class),
       @XmlElementRef(type = DomainDeleteSuperuserExtension.class),
       @XmlElementRef(type = DomainTransferRequestSuperuserExtension.class),
       @XmlElementRef(type = DomainUpdateSuperuserExtension.class),
-
-      // Other extensions
       @XmlElementRef(type = AllocationTokenExtension.class),
       @XmlElementRef(type = BulkTokenExtension.class),
       @XmlElementRef(type = MetadataExtension.class),
-      @XmlElementRef(type = RgpUpdateExtension.class),
-      @XmlElementRef(type = SecDnsCreateExtension.class),
-      @XmlElementRef(type = SecDnsUpdateExtension.class)
+      @XmlElementRef(type = RgpUpdateExtension.class)
     })
     @XmlElementWrapper
-    List<CommandExtension> extension;
+    public List<CommandExtension> extension;
 
-    @Nullable String clTRID;
+    @Nullable public String clTRID;
 
     /**
      * Returns the client transaction ID.
@@ -401,6 +482,24 @@ public class EppInput extends ImmutableObject {
     public ImmutableList<CommandExtension> getExtensions() {
       return nullToEmptyImmutableCopy(extension);
     }
+
+    /** Builder for {@link CommandWrapper}. */
+    public static class Builder extends GenericBuilder<CommandWrapper, Builder> {
+      public Builder setCommand(InnerCommand command) {
+        getInstance().command = command;
+        return this;
+      }
+
+      public Builder setExtensions(ImmutableList<CommandExtension> extension) {
+        getInstance().extension = isNullOrEmpty(extension) ? null : extension;
+        return this;
+      }
+
+      public Builder setClTrid(String clTRID) {
+        getInstance().clTRID = clTRID;
+        return this;
+      }
+    }
   }
 
   /** Empty type to represent the empty "hello" command. */
@@ -416,6 +515,22 @@ public class EppInput extends ImmutableObject {
 
     public String getLanguage() {
       return language;
+    }
+
+    /** Builder for {@link Options}. */
+    public static class Builder extends Buildable.Builder<Options> {
+
+      /** Sets the EPP version. */
+      public Builder setVersion(String version) {
+        getInstance().version = version;
+        return this;
+      }
+
+      /** Sets the language. */
+      public Builder setLanguage(String language) {
+        getInstance().language = language;
+        return this;
+      }
     }
   }
 
@@ -434,6 +549,22 @@ public class EppInput extends ImmutableObject {
 
     public ImmutableSet<String> getServiceExtensions() {
       return nullSafeImmutableCopy(serviceExtensions);
+    }
+
+    /** Builder for {@link Services}. */
+    public static class Builder extends Buildable.Builder<Services> {
+
+      /** Sets the set of object services (e.g. domain, host, contact). */
+      public Builder setObjectServices(ImmutableSet<String> objectServices) {
+        getInstance().objectServices = objectServices;
+        return this;
+      }
+
+      /** Sets the set of service extensions (e.g. fee, launch). */
+      public Builder setServiceExtensions(ImmutableSet<String> serviceExtensions) {
+        getInstance().serviceExtensions = serviceExtensions;
+        return this;
+      }
     }
   }
 

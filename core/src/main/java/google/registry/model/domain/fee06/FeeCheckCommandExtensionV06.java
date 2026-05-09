@@ -35,6 +35,10 @@ public class FeeCheckCommandExtensionV06 extends ImmutableObject
   @XmlElement(name = "domain")
   List<FeeCheckCommandExtensionItemV06> items;
 
+  public void setItems(ImmutableList<FeeCheckCommandExtensionItemV06> items) {
+    this.items = items;
+  }
+
   @Override
   public CurrencyUnit getCurrency() {
     return null;  // This version of the fee extension doesn't specify a top-level currency.

@@ -4,13 +4,12 @@
     <update>
       <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>example.tld</domain:name>
-        <domain:add></domain:add>
         <domain:rem>
-          <domain:status s="serverHold" lang="en"></domain:status>
-          <domain:status s="serverRenewProhibited" lang="en"></domain:status>
-          <domain:status s="serverTransferProhibited" lang="en"></domain:status>
-          <domain:status s="serverDeleteProhibited" lang="en"></domain:status>
-          <domain:status s="serverUpdateProhibited" lang="en"></domain:status>
+          <domain:status s="serverHold"></domain:status>
+          <domain:status s="serverRenewProhibited"></domain:status>
+          <domain:status s="serverTransferProhibited"></domain:status>
+          <domain:status s="serverDeleteProhibited"></domain:status>
+          <domain:status s="serverUpdateProhibited"></domain:status>
         </domain:rem>
       </domain:update>
     </update>

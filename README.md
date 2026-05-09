@@ -19,7 +19,7 @@ domain name registrar acting on their behalf to interact with the registry.
 Nomulus runs on [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine)
 and is written primarily in Java. It is the software that
 [Google Registry](https://www.registry.google/) uses to operate TLDs such as .google,
-.app, .how, .soy, and .みんな. It can run any number of TLDs in a single shared registry
+.app, .how, and .みんな. It can run any number of TLDs in a single shared registry
 system using horizontal scaling. Its source code is publicly available in this
 repository under the [Apache 2.0 free and open source license](https://www.apache.org/licenses/LICENSE-2.0).
 

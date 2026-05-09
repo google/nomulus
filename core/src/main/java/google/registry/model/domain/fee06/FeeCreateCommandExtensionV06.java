@@ -15,11 +15,14 @@
 package google.registry.model.domain.fee06;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.model.Buildable;
 import google.registry.model.domain.fee.Credit;
+import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeCreateCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import org.joda.money.CurrencyUnit;
 
 /** A fee extension that may be present on domain create commands. */
 @XmlRootElement(name = "create")
@@ -29,6 +32,19 @@ public class FeeCreateCommandExtensionV06 extends FeeCreateCommandExtension {
   @Override
   public FeeTransformResponseExtension.Builder createResponseBuilder() {
     return new FeeTransformResponseExtension.Builder(new FeeCreateResponseExtensionV06());
+  }
+
+  /** Builder for {@link FeeCreateCommandExtensionV06}. */
+  public static class Builder extends Buildable.Builder<FeeCreateCommandExtensionV06> {
+    public Builder setCurrency(CurrencyUnit currency) {
+      getInstance().currency = currency;
+      return this;
+    }
+
+    public Builder setFees(ImmutableList<Fee> fees) {
+      getInstance().fees = fees;
+      return this;
+    }
   }
 
   /**

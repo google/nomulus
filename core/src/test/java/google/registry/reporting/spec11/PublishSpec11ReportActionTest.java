@@ -37,7 +37,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import google.registry.beam.spec11.ThreatMatch;
-import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
+import google.registry.reporting.spec11.Spec11EmailUtils.Spec11EmailTemplate;
 import google.registry.testing.FakeResponse;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -113,7 +113,7 @@ class PublishSpec11ReportActionTest {
     verify(emailUtils)
         .emailSpec11Reports(
             secondOfMonth,
-            Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+            Spec11EmailTemplate.MONTHLY,
             "Super Cool Registry Monthly Threat Detector [2018-06-02]",
             sampleThreatMatches());
     verifyNoMoreInteractions(emailUtils);
@@ -163,7 +163,7 @@ class PublishSpec11ReportActionTest {
     verify(emailUtils)
         .emailSpec11Reports(
             date,
-            Spec11EmailSoyInfo.DAILY_SPEC_11_EMAIL,
+            Spec11EmailTemplate.DAILY,
             "Super Cool Registry Daily Threat Detector [2018-06-05]",
             sampleThreatMatches());
     verifyNoMoreInteractions(emailUtils);
@@ -196,7 +196,7 @@ class PublishSpec11ReportActionTest {
     verify(emailUtils)
         .emailSpec11Reports(
             date,
-            Spec11EmailSoyInfo.DAILY_SPEC_11_EMAIL,
+            Spec11EmailTemplate.DAILY,
             "Super Cool Registry Daily Threat Detector [2018-06-05]",
             expectedMatchSet);
     verifyNoMoreInteractions(emailUtils);
@@ -214,7 +214,7 @@ class PublishSpec11ReportActionTest {
     verify(emailUtils)
         .emailSpec11Reports(
             date,
-            Spec11EmailSoyInfo.DAILY_SPEC_11_EMAIL,
+            Spec11EmailTemplate.DAILY,
             "Super Cool Registry Daily Threat Detector [2018-06-05]",
             ImmutableSet.of());
     verifyNoMoreInteractions(emailUtils);

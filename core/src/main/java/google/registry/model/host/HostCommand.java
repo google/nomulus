@@ -14,10 +14,13 @@
 
 package google.registry.model.host;
 
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.Buildable;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceCommand;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
@@ -55,6 +58,19 @@ public class HostCommand {
 
     public ImmutableSet<InetAddress> getInetAddresses() {
       return nullSafeImmutableCopy(inetAddresses);
+    }
+
+    /** Builder for {@link Create}. */
+    public static class Builder extends Buildable.Builder<Create> {
+      public Builder setTargetId(String targetId) {
+        getInstance().setTargetId(targetId);
+        return this;
+      }
+
+      public Builder setInetAddresses(ImmutableSet<InetAddress> inetAddresses) {
+        getInstance().inetAddresses = inetAddresses;
+        return this;
+      }
     }
   }
 
@@ -100,14 +116,40 @@ public class HostCommand {
     }
 
     /** The add/remove type on a host update command. */
-    @XmlType(propOrder = { "inetAddresses", "statusValues" })
+    @XmlType(propOrder = {"inetAddresses", "statusValues"})
     public static class AddRemove extends ResourceUpdate.AddRemove {
       /** IP Addresses for this host. Can be null if this is an external host. */
       @XmlElement(name = "addr")
       Set<InetAddress> inetAddresses;
 
+      @XmlElement(name = "status")
+      Set<StatusValue> statusValues;
+
+      @Override
+      public void setStatusValues(ImmutableSet<StatusValue> statusValues) {
+        this.statusValues = statusValues;
+      }
+
+      @Override
+      public ImmutableSet<StatusValue> getStatusValues() {
+        return nullToEmptyImmutableCopy(statusValues);
+      }
+
       public ImmutableSet<InetAddress> getInetAddresses() {
         return nullToEmptyImmutableCopy(inetAddresses);
+      }
+
+      /** Builder for {@link AddRemove}. */
+      public static class Builder extends Buildable.Builder<AddRemove> {
+        public Builder setInetAddresses(ImmutableSet<InetAddress> inetAddresses) {
+          getInstance().inetAddresses = isNullOrEmpty(inetAddresses) ? null : inetAddresses;
+          return this;
+        }
+
+        public Builder setStatusValues(ImmutableSet<StatusValue> statusValues) {
+          getInstance().statusValues = isNullOrEmpty(statusValues) ? null : statusValues;
+          return this;
+        }
       }
     }
 

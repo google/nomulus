@@ -17,9 +17,9 @@ package google.registry.model.domain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static org.junit.Assert.assertThrows;
 
-import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
 import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.ResourceCommandTestCase;
+import google.registry.model.domain.DomainCommand.RegistrantProhibitedException;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppinput.ResourceCommand;
