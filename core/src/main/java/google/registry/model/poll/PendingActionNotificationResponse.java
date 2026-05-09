@@ -19,7 +19,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
-import google.registry.xml.UtcInstantAdapter;
+import google.registry.xml.UtcDateTimeAdapter;
 import jakarta.persistence.Embeddable;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -53,7 +53,7 @@ public class PendingActionNotificationResponse extends ImmutableObject
   Trid trid;
 
   @XmlElement(name = "paDate")
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
+  @XmlJavaTypeAdapter(UtcDateTimeAdapter.class)
   Instant processedDate;
 
   public String getNameAsString() {

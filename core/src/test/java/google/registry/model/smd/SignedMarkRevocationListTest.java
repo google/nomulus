@@ -16,13 +16,13 @@ package google.registry.model.smd;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
-import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -77,7 +77,7 @@ public class SignedMarkRevocationListTest {
     createSaveGetHelper(5);
     assertThat(SignedMarkRevocationList.get().getCreationTime())
         .isEqualTo(Instant.parse("2000-01-01T00:00:00Z"));
-    clock.advanceBy(standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
     assertThat(SignedMarkRevocationList.get().getCreationTime())
         .isEqualTo(Instant.parse("2000-01-01T00:00:00Z"));
   }

@@ -38,7 +38,7 @@ import google.registry.testing.FakeResponse;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.StringGenerator;
 import jakarta.servlet.http.HttpServletResponse;
-import org.joda.time.Duration;
+import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -150,7 +150,7 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
   @Test
   void testFailure_expiredLock() {
     saveRegistryLock(createDefaultLockBuilder().build());
-    clock.advanceBy(Duration.standardDays(1));
+    clock.advanceBy(Duration.ofDays(1));
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
     assertThat(response.getPayload()).isEqualTo("The pending lock has expired; please try again");

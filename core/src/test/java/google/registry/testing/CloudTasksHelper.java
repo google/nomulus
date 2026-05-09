@@ -70,7 +70,6 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
-import org.joda.time.DateTime;
 
 /**
  * Static utility functions for testing task queues.
@@ -359,10 +358,6 @@ public class CloudTasksHelper implements Serializable {
 
     public TaskMatcher scheduleTime(Instant scheduleTime) {
       return scheduleTime(Timestamps.fromMillis(scheduleTime.toEpochMilli()));
-    }
-
-    public TaskMatcher scheduleTime(DateTime scheduleTime) {
-      return scheduleTime(Timestamps.fromMillis(scheduleTime.getMillis()));
     }
 
     public TaskMatcher param(String key, String value) {

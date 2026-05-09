@@ -31,7 +31,7 @@ public class SystemClock implements Clock {
 
   @Override
   public Instant now() {
-    // Truncate to milliseconds to match the precision of Joda DateTime and our database schema
+    // Truncate to milliseconds to match the precision of Joda Instant and our database schema
     // (which uses millisecond precision via DateTimeConverter). This prevents subtle comparison
     // bugs where a high-precision Instant would be considered "after" a truncated database
     // timestamp.

@@ -22,7 +22,7 @@ import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.message.OutboundMessageType;
 import google.registry.monitoring.blackbox.token.Token;
 import io.netty.bootstrap.Bootstrap;
-import org.joda.time.Duration;
+import java.time.Duration;
 
 /**
  * {@link AutoValue} class that represents generator of actions performed at each step in {@link
@@ -75,9 +75,9 @@ public record ProbingStep(
   public String toString() {
     return String.format(
         """
-            ProbingStep with Protocol: %s
-            OutboundMessage: %s
-            """,
+        ProbingStep with Protocol: %s
+        OutboundMessage: %s
+        """,
         protocol(), messageTemplate().getClass().getName());
   }
 
