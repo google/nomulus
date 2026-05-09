@@ -72,6 +72,13 @@ public class LaunchCheckExtension extends ImmutableObject implements CommandExte
   @XmlAttribute
   CheckType type;
 
+  public static LaunchCheckExtension create(CheckType type, LaunchPhase phase) {
+    LaunchCheckExtension instance = new LaunchCheckExtension();
+    instance.type = type;
+    instance.phase = phase;
+    return instance;
+  }
+
   public CheckType getCheckType() {
     return firstNonNull(type, DEFAULT_CHECK_TYPE);
   }

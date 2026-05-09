@@ -20,9 +20,11 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
+import google.registry.model.Buildable;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import java.math.BigDecimal;
 import java.time.Instant;
+import org.joda.time.Period;
 
 /**
  * A fee, in currency units specified elsewhere in the xml, with type of the fee an optional fee
@@ -68,4 +70,38 @@ public class Fee extends BaseFee {
           ServiceExtension.FEE_0_12.getUri(),
           ServiceExtension.FEE_0_11.getUri(),
           ServiceExtension.FEE_0_6.getUri());
+
+  /** Builder for {@link Fee}. */
+  public static class Builder extends Buildable.Builder<Fee> {
+
+    /** Sets the cost of the fee. */
+    public Builder setCost(BigDecimal cost) {
+      getInstance().cost = cost;
+      return this;
+    }
+
+    /** Sets the description of the fee. */
+    public Builder setDescription(String description) {
+      getInstance().description = description;
+      return this;
+    }
+
+    /** Sets whether the fee is refundable. */
+    public Builder setRefundable(Boolean refundable) {
+      getInstance().refundable = refundable;
+      return this;
+    }
+
+    /** Sets the grace period of the fee. */
+    public Builder setGracePeriod(Period gracePeriod) {
+      getInstance().gracePeriod = gracePeriod;
+      return this;
+    }
+
+    /** Sets when the fee is applied. */
+    public Builder setApplied(AppliedType applied) {
+      getInstance().applied = applied;
+      return this;
+    }
+  }
 }

@@ -59,8 +59,8 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.Host;
 import google.registry.model.host.HostCommand.Update;
-import google.registry.model.host.HostCommand.Update.AddRemove;
 import google.registry.model.host.HostCommand.Update.Change;
+import google.registry.model.host.HostCommand.Update.HostAddRemove;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
@@ -157,8 +157,8 @@ public final class HostUpdateFlow implements MutatingFlow {
     if (isHostRename && ForeignKeyUtils.loadKey(Host.class, newHostName, now).isPresent()) {
       throw new HostAlreadyExistsException(newHostName);
     }
-    AddRemove add = command.getInnerAdd();
-    AddRemove remove = command.getInnerRemove();
+    HostAddRemove add = command.getInnerAdd();
+    HostAddRemove remove = command.getInnerRemove();
     verifyAddsAndRemoves(
         existingHost.getStatusValues(), add.getStatusValues(), remove.getStatusValues());
     verifyAddsAndRemoves(

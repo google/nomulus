@@ -16,10 +16,11 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
-import com.google.template.soy.data.SoyMapData;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.tools.soy.DomainCheckClaimsSoyInfo;
+import google.registry.model.eppinput.EppExtensions;
+import google.registry.model.eppinput.EppInputs;
 import jakarta.inject.Inject;
 import java.util.Collection;
 import java.util.List;
@@ -50,11 +51,14 @@ final class CheckDomainClaimsCommand extends NonMutatingEppToolCommand {
       clientId = registryAdminClientId;
     }
 
-    Multimap<String, String> domainNameMap = validateAndGroupDomainNamesByTld(mainParameters);
+    Multimap<String, String> domainNameMap =
+        validateAndGroupDomainNamesByTld(ImmutableList.copyOf(mainParameters));
     for (Collection<String> values : domainNameMap.asMap().values()) {
-      setSoyTemplate(
-          DomainCheckClaimsSoyInfo.getInstance(), DomainCheckClaimsSoyInfo.DOMAINCHECKCLAIMS);
-      addSoyRecord(clientId, new SoyMapData("domainNames", values));
+      addEppInput(
+          clientId,
+          EppInputs.checkDomain(ImmutableList.copyOf(values))
+              .addExtension(EppExtensions.launchCheckClaims())
+              .build());
     }
   }
 }
