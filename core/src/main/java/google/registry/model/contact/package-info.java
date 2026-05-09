@@ -17,9 +17,7 @@
     xmlns = @XmlNs(prefix = "contact", namespaceURI = "urn:ietf:params:xml:ns:contact-1.0"),
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlJavaTypeAdapters({
-  @XmlJavaTypeAdapter(UtcInstantAdapter.class)
-})
+@XmlJavaTypeAdapters({@XmlJavaTypeAdapter(UtcInstantAdapter.class)})
 package google.registry.model.contact;
 
 import google.registry.xml.UtcInstantAdapter;

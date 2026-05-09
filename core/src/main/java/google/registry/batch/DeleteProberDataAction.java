@@ -92,7 +92,7 @@ public class DeleteProberDataAction implements Runnable {
   //    prevents accidental double-map with the same key from immediately deleting active domains)
   //
   // Note: creationTime must be compared to a Java object (CreateAutoTimestamp) but deletionTime can
-  // be compared directly to the SQL timestamp (it's a DateTime)
+  // be compared directly to the SQL timestamp (it's an Instant)
   private static final String DOMAIN_QUERY_STRING =
       "FROM Domain d WHERE d.tld IN :tlds AND d.domainName NOT LIKE 'nic.%%' AND"
           + " (d.subordinateHosts IS NULL OR array_length(d.subordinateHosts) = 0) AND"

@@ -13,32 +13,32 @@
 // limitations under the License.
 
 package google.registry.tools.params;
-import static org.joda.time.DateTimeZone.UTC;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
+import static java.time.ZoneOffset.UTC;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 /**
- * {@link DateTime} CLI parameter converter/validator restricted to dates. The {@link DateTime}s
- * produced by this class will always have a time zone of {@link DateTimeZone#UTC}.
+ * {@link Instant} CLI parameter converter/validator restricted to dates. The {@link Instant}s
+ * produced by this class will always have a time zone of {@link ZoneOffset#UTC}.
  */
-public final class DateParameter extends ParameterConverterValidator<DateTime> {
+public final class DateParameter extends ParameterConverterValidator<Instant> {
 
   public DateParameter() {
     super("not an ISO-8601 date");
   }
 
   /**
-   * Parser for DateTimes that permits only a restricted subset of ISO 8601 datetime syntax.
-   * The supported format is "YYYY-MM-DD", i.e. there must only be a complete date.
+   * Parser for Instants that permits only a restricted subset of ISO 8601 datetime syntax. The
+   * supported format is "YYYY-MM-DD", i.e. there must only be a complete date.
    */
-  private static final DateTimeFormatter STRICT_DATE_PARSER =
-      new DateTimeFormatter(null, ISODateTimeFormat.date().getParser());
+  private static final DateTimeFormatter STRICT_DATE_PARSER = DateTimeFormatter.ISO_LOCAL_DATE;
 
   @Override
-  public DateTime convert(String value) {
-    return DateTime.parse(value, STRICT_DATE_PARSER).withZoneRetainFields(UTC);
+  public Instant convert(String value) {
+    return LocalDate.parse(value, STRICT_DATE_PARSER).atStartOfDay(UTC).toInstant();
   }
 }

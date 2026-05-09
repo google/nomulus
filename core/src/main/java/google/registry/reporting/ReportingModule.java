@@ -17,7 +17,6 @@ package google.registry.reporting;
 import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
-import static java.time.ZoneOffset.UTC;
 
 import com.google.api.services.dataflow.Dataflow;
 import dagger.Module;
@@ -129,7 +128,7 @@ public class ReportingModule {
   @Provides
   @Parameter(PARAM_DATE)
   static LocalDate provideDate(HttpServletRequest req, Clock clock) {
-    return provideDateOptional(req).orElseGet(() -> LocalDate.ofInstant(clock.now(), UTC));
+    return provideDateOptional(req).orElseGet(() -> clock.nowDate());
   }
 
   /** Constructs a {@link Dataflow} API client with default settings. */

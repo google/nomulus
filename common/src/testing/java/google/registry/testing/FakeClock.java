@@ -21,8 +21,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.concurrent.ThreadSafe;
-import org.joda.time.ReadableDuration;
-import org.joda.time.ReadableInstant;
 
 /** A mock clock for testing purposes that supports telling, setting, and advancing the time. */
 @ThreadSafe
@@ -39,12 +37,6 @@ public final class FakeClock implements Clock {
   /** Creates a FakeClock that starts at START_INSTANT. */
   public FakeClock() {
     this(START_INSTANT);
-  }
-
-  /** Creates a FakeClock initialized to a specific time. */
-  @Deprecated
-  public FakeClock(ReadableInstant startTime) {
-    setTo(startTime);
   }
 
   /** Creates a FakeClock initialized to a specific time. */
@@ -66,12 +58,6 @@ public final class FakeClock implements Clock {
    * @param autoIncrementStep the new auto increment duration
    * @return this
    */
-  @Deprecated
-  public FakeClock setAutoIncrementStep(ReadableDuration autoIncrementStep) {
-    this.autoIncrementStepMs = autoIncrementStep.getMillis();
-    return this;
-  }
-
   /**
    * Sets the increment applied to the clock whenever it is queried. The increment is zero by
    * default: the clock is left unchanged when queried.
@@ -92,20 +78,8 @@ public final class FakeClock implements Clock {
   }
 
   /** Advances clock by some duration. */
-  @Deprecated
-  public void advanceBy(ReadableDuration duration) {
-    currentTimeMillis.addAndGet(duration.getMillis());
-  }
-
-  /** Advances clock by some duration. */
   public void advanceBy(Duration duration) {
     currentTimeMillis.addAndGet(duration.toMillis());
-  }
-
-  /** Sets the time to the specified instant. */
-  @Deprecated
-  public void setTo(ReadableInstant time) {
-    currentTimeMillis.set(time.getMillis());
   }
 
   /** Sets the time to the specified instant. */

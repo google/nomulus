@@ -44,10 +44,10 @@ import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.values.PCollection;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -55,7 +55,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link RegistryJpaIO.Read}. */
 public class RegistryJpaReadTest {
 
-  private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
+  private static final Instant START_TIME = Instant.parse("2000-01-01T00:00:00.0Z");
 
   private final FakeClock fakeClock = new FakeClock(START_TIME);
 

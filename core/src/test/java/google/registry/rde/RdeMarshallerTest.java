@@ -15,20 +15,22 @@
 package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.xml.ValidationMode.STRICT;
 
+import google.registry.model.domain.Domain;
+import google.registry.model.rde.RdeMode;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.xml.XmlTestUtils;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeMarshaller}. */
 public class RdeMarshallerTest {
-
-  private static final String DECLARATION =
-      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -40,9 +42,10 @@ public class RdeMarshallerTest {
         new RdeMarshaller(STRICT).marshalRegistrar(loadRegistrar("TheRegistrar"));
     assertThat(fragment.type()).isEqualTo(RdeResourceType.REGISTRAR);
     assertThat(fragment.error()).isEmpty();
+    String declaration = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";
     String expected =
         """
-        <rdeRegistrar:registrar>
+        <rdeRegistrar:registrar xmlns:rdeRegistrar="urn:ietf:params:xml:ns:rdeRegistrar-1.0">
             <rdeRegistrar:id>TheRegistrar</rdeRegistrar:id>
             <rdeRegistrar:name>The Registrar</rdeRegistrar:name>
             <rdeRegistrar:gurid>1</rdeRegistrar:gurid>
@@ -56,26 +59,19 @@ public class RdeMarshallerTest {
                     <rdeRegistrar:cc>US</rdeRegistrar:cc>
                 </rdeRegistrar:addr>
             </rdeRegistrar:postalInfo>
-            <rdeRegistrar:postalInfo type="int">
-                <rdeRegistrar:addr>
-                    <rdeRegistrar:street>123 Example Boulevard</rdeRegistrar:street>
-                    <rdeRegistrar:city>Williamsburg</rdeRegistrar:city>
-                    <rdeRegistrar:sp>NY</rdeRegistrar:sp>
-                    <rdeRegistrar:pc>11211</rdeRegistrar:pc>
-                    <rdeRegistrar:cc>US</rdeRegistrar:cc>
-                </rdeRegistrar:addr>
-            </rdeRegistrar:postalInfo>
             <rdeRegistrar:voice>+1.2223334444</rdeRegistrar:voice>
-            <rdeRegistrar:email>the.registrar@example.com</rdeRegistrar:email>
-            <rdeRegistrar:url>http://my.fake.url</rdeRegistrar:url>
+            <rdeRegistrar:email>jdoe@theregistrar.com</rdeRegistrar:email>
+            <rdeRegistrar:url>http://theregistrar.com</rdeRegistrar:url>
             <rdeRegistrar:whoisInfo>
-                <rdeRegistrar:name>whois.nic.fakewhois.example</rdeRegistrar:name>
+                <rdeRegistrar:name>whois.theregistrar.com</rdeRegistrar:name>
             </rdeRegistrar:whoisInfo>
-            <rdeRegistrar:crDate>mine eyes have seen the glory</rdeRegistrar:crDate>
+            <rdeRegistrar:crDate>2000-01-01T00:00:00.000Z</rdeRegistrar:crDate>
             <rdeRegistrar:upDate>of the coming of the borg</rdeRegistrar:upDate>
         </rdeRegistrar:registrar>
         """;
-    XmlTestUtils.assertXmlEquals(DECLARATION + expected, DECLARATION + fragment.xml(),
+    XmlTestUtils.assertXmlEquals(
+        declaration + expected,
+        declaration + fragment.xml(),
         "registrar.crDate",
         "registrar.upDate");
   }
@@ -85,5 +81,21 @@ public class RdeMarshallerTest {
     DepositFragment fragment =
         new RdeMarshaller(STRICT).marshalRegistrar(loadRegistrar("TheRegistrar"));
     assertThat(fragment.xml()).contains("123 Example Bőulevard");
+  }
+
+  @Test
+  void testMarshalDomain_largeYear_validatesAgainstXsd() throws Exception {
+    createTld("tld");
+    Domain initialDomain = newDomain("example.tld");
+    Domain domain =
+        initialDomain
+            .asBuilder()
+            .setRegistrationExpirationTime(Instant.parse("+294247-01-10T04:00:54Z"))
+            .build();
+
+    DepositFragment fragment = new RdeMarshaller(STRICT).marshalDomain(domain, RdeMode.FULL);
+    assertThat(fragment.error()).isEmpty();
+    assertThat(fragment.xml())
+        .contains("<rdeDomain:exDate>294247-01-10T04:00:54.000Z</rdeDomain:exDate>");
   }
 }

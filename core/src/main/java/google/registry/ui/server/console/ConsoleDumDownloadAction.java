@@ -16,7 +16,6 @@ package google.registry.ui.server.console;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
-import static google.registry.util.DateTimeUtils.toLocalDate;
 import static java.time.ZoneOffset.UTC;
 
 import com.google.common.collect.ImmutableList;
@@ -86,8 +85,7 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
         .setHeader("Cache-Control", "max-age=86400"); // 86400 seconds = 1 day
     consoleApiParams
         .response()
-        .setDateHeader(
-            "Expires", toLocalDate(clock.now()).atStartOfDay(UTC).plusDays(1).toInstant());
+        .setDateHeader("Expires", clock.nowDate().atStartOfDay(UTC).plusDays(1).toInstant());
 
     try (var writer = consoleApiParams.response().getWriter()) {
       CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);

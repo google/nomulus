@@ -246,7 +246,7 @@ public class DomainBase extends EppResource {
    *
    * <p>When a domain is scheduled to not autorenew, this field is set to the current value of its
    * {@link #registrationExpirationTime}, after which point the next invocation of a periodic
-   * cronjob will explicitly delete the domain. This field is a DateTime and not a boolean because
+   * cronjob will explicitly delete the domain. This field is an Instant and not a boolean because
    * of edge cases that occur during the autorenew grace period. We need to be able to tell the
    * difference domains that have reached their life and must be deleted now, and domains that
    * happen to be in the autorenew grace period now but should be deleted in roughly a year.

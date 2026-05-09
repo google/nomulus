@@ -31,8 +31,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
 import jakarta.inject.Singleton;
+import java.time.Duration;
 import java.util.Set;
-import org.joda.time.Duration;
 
 /**
  * Dagger main module, which {@link Provides} all objects that are shared between sequences and
@@ -43,7 +43,7 @@ import org.joda.time.Duration;
 public class ProberModule {
 
   /** Default {@link Duration} chosen to be time between each {@link ProbingAction} call. */
-  private static final Duration DEFAULT_PROBER_INTERVAL = Duration.standardSeconds(4);
+  private static final Duration DEFAULT_PROBER_INTERVAL = Duration.ofSeconds(4);
 
   /** {@link Provides} the {@link SslProvider} used by instances of {@link SslClientInitializer} */
   @Provides

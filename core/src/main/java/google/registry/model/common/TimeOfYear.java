@@ -33,7 +33,7 @@ import jakarta.persistence.Embeddable;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -63,7 +63,7 @@ public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
    * February 28. It is impossible to construct a {@link TimeOfYear} for February 29th.
    */
   public static TimeOfYear fromInstant(Instant instant) {
-    ZonedDateTime zdt = ZonedDateTime.ofInstant(instant, UTC);
+    OffsetDateTime zdt = OffsetDateTime.ofInstant(instant, UTC);
     int month = zdt.getMonthValue();
     int day = zdt.getDayOfMonth();
     if (month == 2 && day == 29) {
@@ -88,8 +88,8 @@ public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
     Range<Instant> normalizedRange = range.intersection(Range.closed(START_INSTANT, END_INSTANT));
     Range<Integer> yearRange =
         Range.closed(
-            ZonedDateTime.ofInstant(normalizedRange.lowerEndpoint(), UTC).getYear(),
-            ZonedDateTime.ofInstant(normalizedRange.upperEndpoint(), UTC).getYear());
+            OffsetDateTime.ofInstant(normalizedRange.lowerEndpoint(), UTC).getYear(),
+            OffsetDateTime.ofInstant(normalizedRange.upperEndpoint(), UTC).getYear());
     return ContiguousSet.create(yearRange, integers()).stream()
         .map(this::toInstantWithYear)
         .filter(normalizedRange)
@@ -112,13 +112,13 @@ public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
 
   /** Get the first {@link Instant} with this month/day/millis that is at or after the start. */
   public Instant getNextInstanceAtOrAfter(Instant start) {
-    Instant withSameYear = toInstantWithYear(ZonedDateTime.ofInstant(start, UTC).getYear());
+    Instant withSameYear = toInstantWithYear(OffsetDateTime.ofInstant(start, UTC).getYear());
     return isAtOrAfter(withSameYear, start) ? withSameYear : plusYears(withSameYear, 1);
   }
 
   /** Get the first {@link Instant} with this month/day/millis that is at or before the end. */
   public Instant getLastInstanceBeforeOrAt(Instant end) {
-    Instant withSameYear = toInstantWithYear(ZonedDateTime.ofInstant(end, UTC).getYear());
+    Instant withSameYear = toInstantWithYear(OffsetDateTime.ofInstant(end, UTC).getYear());
     return isBeforeOrAt(withSameYear, end) ? withSameYear : minusYears(withSameYear, 1);
   }
 

@@ -24,8 +24,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import google.registry.rdap.AbstractJsonableObject.JsonableException;
 import google.registry.rdap.AbstractJsonableObject.RestrictJsonNames;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link AbstractJsonableObject}. */
@@ -53,9 +53,10 @@ final class AbstractJsonableObjectTest {
 
   @Test
   void testDateTime() {
-    Jsonable jsonable = new AbstractJsonableObject() {
-      @JsonableElement DateTime dateTime = DateTime.parse("2019-01-02T13:53Z");
-    };
+    Jsonable jsonable =
+        new AbstractJsonableObject() {
+          @JsonableElement Instant dateTime = Instant.parse("2019-01-02T13:53:00Z");
+        };
     assertThat(jsonable.toJson()).isEqualTo(createJson("{'dateTime':'2019-01-02T13:53:00.000Z'}"));
   }
 
