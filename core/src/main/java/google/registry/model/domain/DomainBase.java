@@ -358,13 +358,7 @@ public class DomainBase extends EppResource {
     return nullToEmptyImmutableCopy(nsHosts);
   }
 
-  // Hibernate needs this in order to populate nsHosts but no one else should ever use it
-  @SuppressWarnings("unused")
-  private void setNsHosts(Set<VKey<Host>> nsHosts) {
-    this.nsHosts = forceEmptyToNull(nsHosts);
-  }
-
-  // Note: for the two methods below, how we wish to treat the Hibernate setters depends on the
+  // Note: for the three methods below, how we wish to treat the Hibernate setters depends on the
   // current state of the object and what's passed in. The key principle is that we wish to maintain
   // the link between parent and child objects, meaning that we should keep around whichever of the
   // two sets (the parameter vs the class variable and clear/populate that as appropriate).
@@ -372,6 +366,20 @@ public class DomainBase extends EppResource {
   // If the class variable is a PersistentSet, and we overwrite it here, Hibernate will throw
   // an exception "A collection with cascade=”all-delete-orphan” was no longer referenced by the
   // owning entity instance". See https://stackoverflow.com/questions/5587482 for more details.
+
+  // Hibernate needs this in order to populate nsHosts but no one else should ever use it
+  @SuppressWarnings("unused")
+  private void setNsHosts(Set<VKey<Host>> nsHosts) {
+    if (this.nsHosts instanceof PersistentSet) {
+      Set<VKey<Host>> nonNullNsHosts = nullToEmpty(nsHosts);
+      this.nsHosts.retainAll(nonNullNsHosts);
+      this.nsHosts.addAll(nonNullNsHosts);
+    } else if (nsHosts instanceof PersistentSet) {
+      this.nsHosts = nsHosts;
+    } else {
+      this.nsHosts = forceEmptyToNull(nsHosts);
+    }
+  }
 
   // Hibernate needs this in order to populate gracePeriods but no one else should ever use it
   @SuppressWarnings("unused")
@@ -642,6 +650,7 @@ public class DomainBase extends EppResource {
       // cascadable operations and orphan removal.
       newDomain.gracePeriods =
           newDomain.gracePeriods == null ? ImmutableSet.of() : newDomain.gracePeriods;
+      newDomain.nsHosts = newDomain.nsHosts == null ? ImmutableSet.of() : newDomain.nsHosts;
       newDomain.dsData =
           newDomain.dsData == null
               ? ImmutableSet.of()

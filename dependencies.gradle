@@ -35,10 +35,10 @@ ext {
 
       // CAPPED VERSIONS START HERE.
 
-      'org.hibernate.orm:hibernate-core:7.2.7.Final',
-      'org.hibernate.orm:hibernate-hikaricp:7.2.7.Final',
+      'org.hibernate.orm:hibernate-core:7.3.4.Final',
+      'org.hibernate.orm:hibernate-hikaricp:7.3.4.Final',
       // For SchemaExport
-      'org.hibernate.orm:hibernate-ant:7.2.7.Final',
+      'org.hibernate.orm:hibernate-ant:7.3.4.Final',
 
       // Netty 4.2 is in alpha and causes runtime error. Also note that v5.0
       // seems abandoned (last updated on Maven in 2015).
