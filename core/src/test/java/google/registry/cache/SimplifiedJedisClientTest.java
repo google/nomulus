@@ -62,7 +62,7 @@ public class SimplifiedJedisClientTest {
     // dsData and gracePeriods get serialized as null instead of the empty set, which is fine
     assertAboutImmutableObjects()
         .that(client.get(Domain.class, "example.tld").get())
-        .isEqualExceptFields(domain, "dsData", "gracePeriods");
+        .isEqualExceptFields(domain, "dsData", "gracePeriods", "nsHosts");
   }
 
   @Test
@@ -97,13 +97,13 @@ public class SimplifiedJedisClientTest {
 
     assertAboutImmutableObjects()
         .that(client.get(Domain.class, "example1.tld").get())
-        .isEqualExceptFields(domain1, "dsData", "gracePeriods");
+        .isEqualExceptFields(domain1, "dsData", "gracePeriods", "nsHosts");
     assertAboutImmutableObjects()
         .that(client.get(Domain.class, "example2.tld").get())
-        .isEqualExceptFields(domain2, "dsData", "gracePeriods");
+        .isEqualExceptFields(domain2, "dsData", "gracePeriods", "nsHosts");
     assertAboutImmutableObjects()
         .that(client.get(Domain.class, "example3.tld").get())
-        .isEqualExceptFields(domain3, "dsData", "gracePeriods");
+        .isEqualExceptFields(domain3, "dsData", "gracePeriods", "nsHosts");
   }
 
   @Test

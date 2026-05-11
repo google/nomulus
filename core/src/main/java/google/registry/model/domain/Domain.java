@@ -145,6 +145,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
     // TODO(b/188044616): Determine why Eager loading doesn't work here.
     Hibernate.initialize(dsData);
     Hibernate.initialize(gracePeriods);
+    Hibernate.initialize(nsHosts);
   }
 
   @Override
