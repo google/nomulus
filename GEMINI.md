@@ -57,6 +57,7 @@ This document outlines foundational mandates, architectural patterns, and projec
 - **FakeClock and Sleeper:** Use `FakeClock` and `Sleeper` for any logic involving timeouts, delays, or expiration.
 - **Empirical Reproduction:** Before fixing a bug, always create a test case that reproduces the failure.
 - **Base Classes:** Leverage `CommandTestCase`, `EppToolCommandTestCase`, etc., to reduce boilerplate and ensure consistent setup (e.g., clock initialization).
+- **Gradle Test Patterns:** Whenever running tests in the "core" directory, try to use the "standardTest" Gradle task instead of "test". Just "test" includes the "fragileTest" task which can add a lot of time.
 
 ### 6. Project Dependencies
 - **Common Module:** When using `Clock` or other core utilities in a new or separate module (like `load-testing`), ensure `implementation project(':common')` is added to the module's `build.gradle`.

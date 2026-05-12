@@ -220,6 +220,9 @@ public class RdeIO {
           }
         }
 
+        output.write(marshaller.marshalRdeEppParams());
+        counter.increment(RdeResourceType.EPP_PARAMS);
+
         // Output XML that says how many resources were emitted.
         header = counter.makeHeader(tld, mode);
         output.write(marshaller.marshalOrDie(new XjcRdeHeaderElement(header)));

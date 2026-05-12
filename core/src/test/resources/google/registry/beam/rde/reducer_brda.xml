@@ -4,6 +4,7 @@
     <rde:rdeMenu>
         <rde:version>1.0</rde:version>
         <rde:objURI>urn:ietf:params:xml:ns:rdeDomain-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeEppParams-1.0</rde:objURI>
         <rde:objURI>urn:ietf:params:xml:ns:rdeHeader-1.0</rde:objURI>
         <rde:objURI>urn:ietf:params:xml:ns:rdeRegistrar-1.0</rde:objURI>
     </rde:rdeMenu>
@@ -11,10 +12,45 @@
 <rdeDomain:domain/>
 <rdeRegistrar:registrar/>
 
+<rdeEppParams:eppParams>
+    <rdeEppParams:version>1.0</rdeEppParams:version>
+    <rdeEppParams:lang>en</rdeEppParams:lang>
+    <rdeEppParams:objURI>urn:ietf:params:xml:ns:rdeDomain-1.0</rdeEppParams:objURI>
+    <rdeEppParams:objURI>urn:ietf:params:xml:ns:rdeHost-1.0</rdeEppParams:objURI>
+    <rdeEppParams:svcExtension>
+        <epp:extURI>urn:ietf:params:xml:ns:launch-1.0</epp:extURI>
+        <epp:extURI>urn:ietf:params:xml:ns:rgp-1.0</epp:extURI>
+        <epp:extURI>urn:ietf:params:xml:ns:secDNS-1.1</epp:extURI>
+        <epp:extURI>urn:ietf:params:xml:ns:fee-0.6</epp:extURI>
+        <epp:extURI>urn:ietf:params:xml:ns:fee-0.11</epp:extURI>
+        <epp:extURI>urn:ietf:params:xml:ns:fee-0.12</epp:extURI>
+        <epp:extURI>urn:ietf:params:xml:ns:epp:fee-1.0</epp:extURI>
+    </rdeEppParams:svcExtension>
+    <rdeEppParams:dcp>
+        <epp:access>
+            <epp:all/>
+        </epp:access>
+        <epp:statement>
+            <epp:purpose>
+                <epp:admin/>
+                <epp:prov/>
+            </epp:purpose>
+            <epp:recipient>
+                <epp:ours/>
+                <epp:public/>
+            </epp:recipient>
+            <epp:retention>
+                <epp:stated/>
+            </epp:retention>
+        </epp:statement>
+    </rdeEppParams:dcp>
+</rdeEppParams:eppParams>
+
 <rdeHeader:header>
     <rdeHeader:tld>soy</rdeHeader:tld>
     <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">1</rdeHeader:count>
     <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">1</rdeHeader:count>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeEppParams-1.0">1</rdeHeader:count>
 </rdeHeader:header>
 
 </rde:contents>
