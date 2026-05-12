@@ -20,15 +20,26 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Domain;
+import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.host.Host;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
 import google.registry.tldconfig.idn.IdnTable;
 import google.registry.xjc.XjcXmlTransformer;
+import google.registry.xjc.epp.XjcEppDcpAccessType;
+import google.registry.xjc.epp.XjcEppDcpOursType;
+import google.registry.xjc.epp.XjcEppDcpPurposeType;
+import google.registry.xjc.epp.XjcEppDcpRecipientType;
+import google.registry.xjc.epp.XjcEppDcpRetentionType;
+import google.registry.xjc.epp.XjcEppDcpStatementType;
+import google.registry.xjc.epp.XjcEppDcpType;
+import google.registry.xjc.epp.XjcEppExtURIType;
 import google.registry.xjc.rde.XjcRdeContentsType;
 import google.registry.xjc.rde.XjcRdeDeposit;
 import google.registry.xjc.rde.XjcRdeDepositTypeType;
 import google.registry.xjc.rde.XjcRdeMenuType;
+import google.registry.xjc.rdeeppparams.XjcRdeEppParams;
+import google.registry.xjc.rdeeppparams.XjcRdeEppParamsElement;
 import google.registry.xjc.rdeidn.XjcRdeIdn;
 import google.registry.xjc.rdeidn.XjcRdeIdnElement;
 import google.registry.xjc.rdepolicy.XjcRdePolicy;
@@ -149,6 +160,43 @@ public final class RdeMarshaller implements Serializable {
     bean.setUrl(idn.getUrl().toString());
     bean.setUrlPolicy(idn.getPolicy().toString());
     return marshalOrDie(new XjcRdeIdnElement(bean));
+  }
+
+  public String marshalRdeEppParams() {
+    XjcRdeEppParams bean = new XjcRdeEppParams();
+    bean.getVersions().add("1.0");
+    bean.getLangs().add("en");
+    bean.getObjURIs().add(RdeResourceType.DOMAIN.getUri());
+    bean.getObjURIs().add(RdeResourceType.HOST.getUri());
+
+    XjcEppExtURIType serviceExtensions = new XjcEppExtURIType();
+    serviceExtensions.getExtURIs().addAll(ProtocolDefinition.getVisibleServiceExtensionUris());
+    bean.setSvcExtension(serviceExtensions);
+
+    XjcEppDcpType dcpType = new XjcEppDcpType();
+    XjcEppDcpAccessType accessType = new XjcEppDcpAccessType();
+    accessType.setAll(new XjcEppDcpAccessType.All());
+    dcpType.setAccess(accessType);
+
+    XjcEppDcpStatementType statementType = new XjcEppDcpStatementType();
+
+    XjcEppDcpPurposeType purposeType = new XjcEppDcpPurposeType();
+    purposeType.setAdmin(new XjcEppDcpPurposeType.Admin());
+    purposeType.setProv(new XjcEppDcpPurposeType.Prov());
+    statementType.setPurpose(purposeType);
+
+    XjcEppDcpRecipientType recipientType = new XjcEppDcpRecipientType();
+    recipientType.getOurs().add(new XjcEppDcpOursType());
+    recipientType.setPublic(new XjcEppDcpRecipientType.Public());
+    statementType.setRecipient(recipientType);
+
+    XjcEppDcpRetentionType retentionType = new XjcEppDcpRetentionType();
+    retentionType.setStated(new XjcEppDcpRetentionType.Stated());
+    statementType.setRetention(retentionType);
+
+    dcpType.getStatements().add(statementType);
+    bean.setDcp(dcpType);
+    return marshalOrDie(new XjcRdeEppParamsElement(bean));
   }
 
   private DepositFragment marshalResource(
