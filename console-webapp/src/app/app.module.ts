@@ -23,7 +23,11 @@ import { MaterialModule } from './material.module';
 
 import { BackendService } from './shared/services/backend.service';
 
-import { provideHttpClient } from '@angular/common/http';
+import {
+  HttpClientXsrfModule,
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { BillingInfoComponent } from './billingInfo/billingInfo.component';
 import {
@@ -118,6 +122,10 @@ export class SelectedRegistrarModule {}
     MaterialModule,
     SelectedRegistrarModule,
     SnackBarModule,
+    HttpClientXsrfModule.withOptions({
+      cookieName: 'X-CSRF-Token',
+      headerName: 'X-CSRF-Token',
+    }),
   ],
   providers: [
     BackendService,
@@ -130,7 +138,7 @@ export class SelectedRegistrarModule {}
         subscriptSizing: 'dynamic',
       },
     },
-    provideHttpClient(),
+    provideHttpClient(withInterceptorsFromDi()),
   ],
 })
 export class AppModule {}
