@@ -45,5 +45,5 @@ reason why all test tasks in the :core project contain the exclude pattern
 Some Nomulus tests are not hermetic: they modify global state, but do not clean
 up on completion. This becomes a problem with Gradle. In the beginning we forced
 Gradle to run every test class in a new process, and incurred heavy overheads.
-Since then, we have fixed some tests, and manged to divide all tests into two
+Since then, we have fixed some tests, and managed to divide all tests into two
 suites that do not have intra-suite conflicts (`fragileTest` and `standardTest`)
