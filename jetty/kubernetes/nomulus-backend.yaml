@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         service: backend
+        traffic: backend-all
     spec:
       serviceAccountName: nomulus
       nodeSelector:

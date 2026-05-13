@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         service: console
+        traffic: console-all
     spec:
       serviceAccountName: nomulus
       containers:
