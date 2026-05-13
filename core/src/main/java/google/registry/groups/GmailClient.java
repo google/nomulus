@@ -56,8 +56,9 @@ public final class GmailClient {
   private final InternetAddress outgoingEmailAddressWithUsername;
   private final InternetAddress replyToEmailAddress;
 
+  // TODO(b/510340944): make package private after feature is rolled out
   @Inject
-  GmailClient(
+  public GmailClient(
       Lazy<Gmail> gmail,
       Retrier retrier,
       @Config("isEmailSendingEnabled") boolean isEmailSendingEnabled,
