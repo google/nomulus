@@ -5,10 +5,10 @@ This directory contains the Google Cloud Deploy configuration files for the Nomu
 ## Files
 
 ### `delivery-pipeline.yaml`
-Defines the `DeliveryPipeline` resource named `deploy-nomulus`. It sets up the serial pipeline for rolling out changes to different targets, including automated post-deployment analysis steps.
+Defines the `DeliveryPipeline` resource named `deploy-nomulus`. It sets up the serial pipeline for rolling out changes to different targets.
 
 ### Target Configurations (e.g., `crash-target.yaml`)
-Files matching this format define the `Target` resources for Cloud Deploy. They specify the GKE cluster, service account, artifact storage, and other environment-specific settings for deployment.
+Files matching this format define the `Target` resources for Cloud Deploy. They specify the GKE cluster and other environment-specific settings for deployment.
 
 ### Environment Configurations (e.g., `crash-config.yaml`)
 Configuration files containing environment-specific parameters and SLA-based alert policy checks (such as EPP and RDAP success metrics) used for automated analysis and target population.
@@ -18,7 +18,7 @@ Defines the Skaffold configuration used by Cloud Deploy to render and deploy the
 
 ## Automated Configuration and Deployment Process
 
-The preparation and application of Cloud Deploy configurations is automated via Cloud Build using [`release/cloudbuild-clouddeploy.yaml`](file:///usr/local/google/home/jicelhay/nomulus/release/cloudbuild-clouddeploy.yaml).
+The preparation and application of Cloud Deploy configurations is automated via Cloud Build using `release/cloudbuild-clouddeploy.yaml`.
 
 When executed, the Cloud Build job performs the following workflow:
 1. **Repository Merge**: Clones the internal repository (`nomulus-internal`) and merges internal configurations into the workspace.

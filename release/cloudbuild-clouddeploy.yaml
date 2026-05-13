@@ -42,8 +42,7 @@ steps:
       config_file="release/clouddeploy/${env}-config.yaml"
       if [ -f "$config_file" ]; then
         echo "Extracting checks from $config_file..."
-        # Extract only the indented block under stableDeploymentAlertPolicyChecks:
-        # stopping if another top-level key is encountered.
+        # Extract only the indented block under stableDeploymentAlertPolicyChecks.
         awk '
         /^stableDeploymentAlertPolicyChecks:/ { capture = 1; next }
         capture {
