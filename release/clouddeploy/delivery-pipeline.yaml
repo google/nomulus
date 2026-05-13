@@ -9,3 +9,11 @@ serialPipeline:
   - targetId: crash
     profiles:
     - crash
+    strategy:
+      standard:
+        analysis:
+          # 10 minutes.
+          duration: 600s
+          googleCloud:
+            alertPolicyChecks:
+                stableDeploymentAlertPolicyChecks
