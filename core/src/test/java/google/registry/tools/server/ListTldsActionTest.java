@@ -17,8 +17,8 @@ package google.registry.tools.server;
 import static google.registry.testing.DatabaseHelper.createTld;
 
 import google.registry.testing.FakeClock;
+import java.time.Instant;
 import java.util.Optional;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +31,7 @@ class ListTldsActionTest extends ListActionTestCase {
   void beforeEach() {
     createTld("xn--q9jyb4c");
     action = new ListTldsAction();
-    action.clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+    action.clock = new FakeClock(Instant.parse("2000-01-01T00:00:00Z"));
   }
 
   @Test

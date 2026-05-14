@@ -83,7 +83,6 @@
     <!-- Customized type converters -->
     <class>google.registry.persistence.converter.BloomFilterConverter</class>
     <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
-    <class>google.registry.persistence.converter.DateTimeConverter</class>
 
     <!-- Generated converters for VKey -->
     <class>google.registry.model.billing.VKeyConverter_BillingCancellation</class>

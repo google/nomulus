@@ -52,8 +52,8 @@ import jakarta.inject.Qualifier;
 import jakarta.inject.Singleton;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.function.Supplier;
-import org.joda.time.Duration;
 
 /**
  * A module that provides the components necessary for and the overall {@link ProbingSequence} to

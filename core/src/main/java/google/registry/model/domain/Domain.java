@@ -14,7 +14,6 @@
 
 package google.registry.model.domain;
 
-
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;

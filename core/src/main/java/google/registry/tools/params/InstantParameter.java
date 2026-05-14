@@ -14,26 +14,23 @@
 
 package google.registry.tools.params;
 
-import static google.registry.util.DateTimeUtils.toInstant;
-
+import com.google.common.primitives.Longs;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 
 /** {@linkplain Instant} CLI parameter converter/validator. Can be ISO or millis from epoch. */
 public final class InstantParameter extends ParameterConverterValidator<Instant> {
-
-  private static final DateTimeParameter DATE_TIME_CONVERTER = new DateTimeParameter();
 
   public InstantParameter() {
     super("not an ISO-8601 timestamp (or millis from epoch)");
   }
 
-  /**
-   * Converts the given string to an {@link Instant}.
-   *
-   * <p>Delegates to {@link DateTimeParameter} for parsing, then converts to {@link Instant}.
-   */
   @Override
   public Instant convert(String value) {
-    return toInstant(DATE_TIME_CONVERTER.convert(value));
+    Long millis = Longs.tryParse(value);
+    if (millis != null) {
+      return Instant.ofEpochMilli(millis);
+    }
+    return OffsetDateTime.parse(value).toInstant();
   }
 }

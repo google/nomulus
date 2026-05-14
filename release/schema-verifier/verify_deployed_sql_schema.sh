@@ -76,7 +76,6 @@ else
   echo "Schema dumped."
 fi
 
-
 raw_diff=$(diff /schema/nomulus.golden.sql /schema/nomulus.actual.sql)
 # Clean up the raw_diff:
 # - Remove diff locations (e.g. "5,6c5,6): grep "^[<>]"

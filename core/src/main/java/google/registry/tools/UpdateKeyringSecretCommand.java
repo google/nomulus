@@ -107,4 +107,3 @@ final class UpdateKeyringSecretCommand implements Command {
     secretManagerKeyringUpdater.update();
   }
 }
-

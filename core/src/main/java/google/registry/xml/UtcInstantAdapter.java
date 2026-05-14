@@ -1,4 +1,4 @@
-// Copyright 2026 The Nomulus Authors. All Rights Reserved.
+// Copyright 2017 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,41 +15,34 @@
 package google.registry.xml;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static google.registry.util.DateTimeUtils.formatInstant;
 import static google.registry.util.DateTimeUtils.parseInstant;
-import static java.time.ZoneOffset.UTC;
 
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
 /**
- * Adapter to use java.time {@link Instant} when marshalling XML timestamps.
+ * Adapter to use an {@link Instant} when marshalling XML timestamps.
  *
  * <p>These fields shall contain timestamps indicating the date and time in UTC as specified in
- * RFC3339, with no offset from the zero meridian. For example: {@code 2010-10-17T00:00:00Z}.
+ * RFC3339.
+ *
+ * @see <a href="http://tools.ietf.org/html/rfc3339">RFC3339</a>
  */
 public class UtcInstantAdapter extends XmlAdapter<String, Instant> {
 
-  private static final DateTimeFormatter MARSHAL_FORMAT =
-      DateTimeFormatter.ofPattern("u-MM-dd'T'HH:mm:ss'Z'").withZone(UTC);
-
-  /** Same as {@link #marshal(Instant)}, but in a convenient static format. */
   public static String getFormattedString(@Nullable Instant timestamp) {
-    if (timestamp == null) {
-      return "";
-    }
-    return MARSHAL_FORMAT.format(timestamp);
+    return (timestamp == null) ? "" : formatInstant(timestamp);
   }
 
   /**
-   * Parses an ISO timestamp string into a UTC {@link Instant} object. If {@code timestamp} is empty
-   * or {@code null} then {@code null} is returned.
+   * Parses an ISO timestamp string into a UTC {@link Instant} object, converting timezones if
+   * necessary. If {@code timestamp} is empty or {@code null} then {@code null} is returned.
    */
-  @Nullable
-  @CheckForNull
   @Override
+  @CheckForNull
   public Instant unmarshal(@Nullable String timestamp) {
     if (isNullOrEmpty(timestamp)) {
       return null;

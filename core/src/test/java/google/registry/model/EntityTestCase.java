@@ -13,13 +13,12 @@
 // limitations under the License.
 
 package google.registry.model;
-import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.persistence.transaction.JpaEntityCoverageExtension;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -37,7 +36,7 @@ public abstract class EntityTestCase {
     DISABLED
   }
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  protected FakeClock fakeClock = new FakeClock(Instant.now());
 
   @Order(Order.DEFAULT)
   @RegisterExtension

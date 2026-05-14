@@ -31,8 +31,8 @@ import jakarta.xml.bind.annotation.XmlValue;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.Period;
 import java.util.stream.Stream;
-import org.joda.time.Period;
 
 /** Base class for the fee and credit types. */
 @XmlTransient

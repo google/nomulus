@@ -14,7 +14,6 @@
 
 package google.registry.flows.contact;
 
-
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;

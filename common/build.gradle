@@ -58,7 +58,6 @@ dependencies {
   implementation deps['com.google.code.findbugs:jsr305']
   implementation deps['com.google.guava:guava']
   implementation deps['jakarta.inject:jakarta.inject-api']
-  implementation deps['joda-time:joda-time']
   implementation deps['com.google.flogger:flogger']
   implementation deps['io.github.java-diff-utils:java-diff-utils']
   implementation deps['com.google.truth:truth']

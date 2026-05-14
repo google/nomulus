@@ -14,7 +14,6 @@
 
 package google.registry.request;
 
-
 import google.registry.config.RegistryConfig;
 import google.registry.request.auth.Auth;
 import java.lang.annotation.ElementType;

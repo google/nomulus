@@ -34,4 +34,3 @@ public abstract class FeeCheckResponseExtensionItem extends FeeQueryResponseExte
     }
   }
 }
-

@@ -14,7 +14,6 @@
 
 package google.registry.model.domain;
 
-
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import google.registry.xml.UtcInstantAdapter;
 import jakarta.xml.bind.annotation.XmlElement;

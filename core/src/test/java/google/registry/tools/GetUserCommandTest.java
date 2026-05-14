@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;

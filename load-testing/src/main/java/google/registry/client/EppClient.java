@@ -15,7 +15,6 @@ package google.registry.client;
 
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.time.ZoneOffset.UTC;
 
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
@@ -54,7 +53,7 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -69,8 +68,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 /** A simple EPP client that can be used for load testing. */
 @Parameters(separators = " =")
@@ -90,9 +87,8 @@ public class EppClient implements Runnable {
 
   private static final String DOMAIN_CREATE_FILE = "domain_create.xml";
 
-  static final AttributeKey<ArrayList<ZonedDateTime>> REQUEST_SENT =
-      AttributeKey.valueOf("REQUEST_SENT");
-  static final AttributeKey<ArrayList<ZonedDateTime>> RESPONSE_RECEIVED =
+  static final AttributeKey<ArrayList<Instant>> REQUEST_SENT = AttributeKey.valueOf("REQUEST_SENT");
+  static final AttributeKey<ArrayList<Instant>> RESPONSE_RECEIVED =
       AttributeKey.valueOf("RESPONSE_RECEIVED");
   static final AttributeKey<Integer> CHANNEL_NUMBER = AttributeKey.valueOf("CHANNEL_NUMBER");
   static final AttributeKey<Path> LOGGING_LOCATION = AttributeKey.valueOf("LOGGING_LOCATION");
@@ -192,7 +188,7 @@ public class EppClient implements Runnable {
     return BaseEncoding.base32().encode(buffer).toLowerCase(Locale.US);
   }
 
-  private ImmutableList<String> makeInputList(ZonedDateTime now) {
+  private ImmutableList<String> makeInputList(Instant now) {
     ImmutableList.Builder<String> templatesList = ImmutableList.builder();
     ImmutableList.Builder<String> inputList = ImmutableList.builder();
     templatesList.add(readStringFromFile(LOGIN_FILE));
@@ -261,7 +257,7 @@ public class EppClient implements Runnable {
       String outputFolder, ImmutableList<ExecutorService> loggingExecutors) throws IOException {
     return new ChannelInitializer<>() {
 
-      private final ImmutableList<String> inputList = makeInputList(ZonedDateTime.now(UTC));
+      private final ImmutableList<String> inputList = makeInputList(Instant.now());
       private final KeyPair key = getKeyPair(keyFileName);
       private final X509Certificate cert = getCertificate(certFileName);
       private final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
@@ -316,8 +312,7 @@ public class EppClient implements Runnable {
 
   @Override
   public void run() {
-    String outputFolder =
-        createOutputFolder(String.format("load-tests/%s", DateTime.now(DateTimeZone.UTC)));
+    String outputFolder = createOutputFolder(String.format("load-tests/%s", Instant.now()));
     ImmutableList.Builder<ExecutorService> builder = ImmutableList.builderWithExpectedSize(5);
     for (int i = 0; i < 5; ++i) {
       builder.add(Executors.newSingleThreadExecutor());
@@ -360,8 +355,8 @@ public class EppClient implements Runnable {
       LinkedHashSet<Integer> killedConnections = new LinkedHashSet<>();
       LinkedHashSet<Integer> incompleteConnections = new LinkedHashSet<>();
       List<Long> requestDurations = new ArrayList<>();
-      ZonedDateTime startTime = null;
-      ZonedDateTime endTime = null;
+      Instant startTime = null;
+      Instant endTime = null;
       int failedRequests = 0;
 
       // Wait for all channels to close.
@@ -372,8 +367,7 @@ public class EppClient implements Runnable {
             .closeFuture()
             .awaitUninterruptibly(
                 TIMEOUT_SECONDS * 1000
-                    - Duration.between(
-                            channel.attr(REQUEST_SENT).get().getFirst(), ZonedDateTime.now(UTC))
+                    - Duration.between(channel.attr(REQUEST_SENT).get().getFirst(), Instant.now())
                         .toMillis())) {
           channel.close().syncUninterruptibly();
           killedConnections.add(channelNumber);
@@ -442,9 +436,9 @@ public class EppClient implements Runnable {
     }
   }
 
-  private ZonedDateTime updateStartTime(
-      List<ChannelFuture> channelFutures, int channelNumber, ZonedDateTime startTime) {
-    ZonedDateTime channelStartTime =
+  private Instant updateStartTime(
+      List<ChannelFuture> channelFutures, int channelNumber, Instant startTime) {
+    Instant channelStartTime =
         channelFutures.get(channelNumber).channel().attr(REQUEST_SENT).get().getFirst();
     if (startTime == null || startTime.isAfter(channelStartTime)) {
       return channelStartTime;
@@ -452,9 +446,9 @@ public class EppClient implements Runnable {
     return startTime;
   }
 
-  private ZonedDateTime updateEndTime(
-      List<ChannelFuture> channelFutures, int channelNumber, ZonedDateTime endTime) {
-    ZonedDateTime channelEndTime =
+  private Instant updateEndTime(
+      List<ChannelFuture> channelFutures, int channelNumber, Instant endTime) {
+    Instant channelEndTime =
         channelFutures.get(channelNumber).channel().attr(RESPONSE_RECEIVED).get().getLast();
 
     if (endTime == null || endTime.isBefore(channelEndTime)) {

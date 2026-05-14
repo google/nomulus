@@ -32,7 +32,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.testing.DatabaseHelper;
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +43,7 @@ class HistoryEntryDaoTest extends EntityTestCase {
 
   @BeforeEach
   void beforeEach() {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    fakeClock.setTo(Instant.parse("2020-10-01T00:00:00Z"));
     createTld("foobar");
     domain = persistActiveDomain("foo.foobar");
     DomainTransactionRecord transactionRecord =

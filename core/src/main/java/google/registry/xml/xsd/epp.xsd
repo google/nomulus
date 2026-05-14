@@ -91,12 +91,12 @@ Data Collection Policy types.
 
   <complexType name="dcpAccessType">
     <choice>
-      <element name="all"/>
-      <element name="none"/>
-      <element name="null"/>
-      <element name="other"/>
-      <element name="personal"/>
-      <element name="personalAndOther"/>
+      <element name="all"><complexType/></element>
+      <element name="none"><complexType/></element>
+      <element name="null"><complexType/></element>
+      <element name="other"><complexType/></element>
+      <element name="personal"><complexType/></element>
+      <element name="personalAndOther"><complexType/></element>
     </choice>
   </complexType>
 
@@ -111,28 +111,29 @@ Data Collection Policy types.
   <complexType name="dcpPurposeType">
     <sequence>
       <element name="admin"
-       minOccurs="0"/>
+               minOccurs="0"><complexType/></element>
       <element name="contact"
-       minOccurs="0"/>
+               minOccurs="0"><complexType/></element>
       <element name="other"
-       minOccurs="0"/>
+               minOccurs="0"><complexType/></element>
       <element name="prov"
-       minOccurs="0"/>
+               minOccurs="0"><complexType/></element>
     </sequence>
   </complexType>
 
   <complexType name="dcpRecipientType">
     <sequence>
       <element name="other"
-       minOccurs="0"/>
+               minOccurs="0"><complexType/></element>
       <element name="ours" type="epp:dcpOursType"
-       minOccurs="0" maxOccurs="unbounded"/>
+               minOccurs="0" maxOccurs="unbounded"/>
       <element name="public"
-       minOccurs="0"/>
+               minOccurs="0"><complexType/></element>
       <element name="same"
-       minOccurs="0"/>
+               minOccurs="0"><complexType/></element>
       <element name="unrelated"
-       minOccurs="0"/>
+               minOccurs="0"><complexType/></element>
+
     </sequence>
   </complexType>
 
@@ -152,11 +153,11 @@ Data Collection Policy types.
 
   <complexType name="dcpRetentionType">
     <choice>
-      <element name="business"/>
-      <element name="indefinite"/>
-      <element name="legal"/>
-      <element name="none"/>
-      <element name="stated"/>
+      <element name="business"><complexType/></element>
+      <element name="indefinite"><complexType/></element>
+      <element name="legal"><complexType/></element>
+      <element name="none"><complexType/></element>
+      <element name="stated"><complexType/></element>
     </choice>
   </complexType>
 

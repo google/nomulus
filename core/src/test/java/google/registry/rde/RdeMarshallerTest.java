@@ -15,12 +15,17 @@
 package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.xml.ValidationMode.STRICT;
 
+import google.registry.model.domain.Domain;
+import google.registry.model.rde.RdeMode;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.xml.XmlTestUtils;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -85,5 +90,21 @@ public class RdeMarshallerTest {
     DepositFragment fragment =
         new RdeMarshaller(STRICT).marshalRegistrar(loadRegistrar("TheRegistrar"));
     assertThat(fragment.xml()).contains("123 Example Bőulevard");
+  }
+
+  @Test
+  void testMarshalDomain_largeYear_validatesAgainstXsd() throws Exception {
+    createTld("tld");
+    Domain initialDomain = newDomain("example.tld");
+    Domain domain =
+        initialDomain
+            .asBuilder()
+            .setRegistrationExpirationTime(Instant.parse("+294247-01-10T04:00:54Z"))
+            .build();
+
+    DepositFragment fragment = new RdeMarshaller(STRICT).marshalDomain(domain, RdeMode.FULL);
+    assertThat(fragment.error()).isEmpty();
+    assertThat(fragment.xml())
+        .contains("<rdeDomain:exDate>294247-01-10T04:00:54.000Z</rdeDomain:exDate>");
   }
 }

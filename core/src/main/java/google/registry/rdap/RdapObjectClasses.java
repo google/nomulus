@@ -235,7 +235,6 @@ final class RdapObjectClasses {
       this.objectClassName = objectClassName;
     }
 
-
     abstract static class Builder<B extends Builder<?>> {
       abstract B setHandle(String handle);
       abstract ImmutableList.Builder<PublicId> publicIdsBuilder();

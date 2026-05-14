@@ -14,7 +14,6 @@
 
 package google.registry.proxy;
 
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.proxy.ProxyConfig.getProxyConfig;
 

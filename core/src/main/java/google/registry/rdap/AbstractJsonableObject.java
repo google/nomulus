@@ -40,7 +40,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 
 /**
  * An Jsonable that can turn itself into a JSON object using reflection.
@@ -53,16 +52,12 @@ import org.joda.time.DateTime;
  * will be "JSONified" and added to the generated JSON object.
  *
  * <p>This implementation is geared towards RDAP replies, and hence has RDAP-specific quirks.
- * Specifically:
- * - Fields with empty arrays are not shown at all
- * - VCards are a built-in special case (Not implemented yet)
- * - DateTime conversion is specifically supported as if it were a primitive
- * - Arrays are considered to be SETS rather than lists, meaning repeated values are removed and the
- *   order isn't guaranteed
+ * Specifically: - Fields with empty arrays are not shown at all - VCards are a built-in special
+ * case (Not implemented yet) - Instant conversion is specifically supported as if it were a
+ * primitive - Arrays are considered to be SETS rather than lists, meaning repeated values are
+ * removed and the order isn't guaranteed
  *
- * Usage:
- * {@link JsonableElement}
- * -----------------------
+ * <p>Usage: {@link JsonableElement} -----------------------
  *
  * <pre>
  * - JsonableElement annotates Members that become JSON object fields:
@@ -90,7 +85,7 @@ import org.joda.time.DateTime;
  *   "b": "value1"
  * }
  *
- * - the supported object types are String, Boolean, Number, DateTime, Jsonable. In addition,
+ * - the supported object types are String, Boolean, Number, Instant, Jsonable. In addition,
  *   Iterable and Optional are respected.
  *
  * - An Optional that's empty is skipped, while a present Optional acts exactly like the object it
@@ -134,8 +129,7 @@ import org.joda.time.DateTime;
  * }
  * </pre>
  *
- * {@link RestrictJsonNames}
- * -------------------------
+ * {@link RestrictJsonNames} -------------------------
  *
  * <pre>
  * - RestrictJsonNames is a way to prevent typos in the JsonableElement names.
@@ -333,12 +327,6 @@ abstract class AbstractJsonableObject implements Jsonable {
     }
     if (object instanceof Boolean b) {
       return new JsonPrimitive(b);
-    }
-    if (object instanceof DateTime) {
-      // According to RFC 9083 section 3, the syntax of dates and times is defined in RFC3339.
-      //
-      // According to RFC3339, we should use ISO8601, which is what DateTime.toString does!
-      return new JsonPrimitive(object.toString());
     }
     if (object instanceof Instant instant) {
       // According to RFC 9083 section 3, the syntax of dates and times is defined in RFC3339.

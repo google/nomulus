@@ -84,7 +84,6 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
       AuthenticatedRegistrarAccessor.createForTesting(
           ImmutableSetMultimap.of("registrarId", AuthenticatedRegistrarAccessor.Role.ADMIN));
 
-
   @BeforeEach
   void beforeEach() {
     testRegistrar = saveRegistrar("registrarId");

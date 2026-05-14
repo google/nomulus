@@ -113,7 +113,6 @@ jakarta.mail:jakarta.mail-api:2.2.0-M1=deploy_jar,runtimeClasspath,testRuntimeCl
 jakarta.xml.bind:jakarta.xml.bind-api:4.1.0-M1=deploy_jar,runtimeClasspath,testRuntimeClasspath
 javax.annotation:javax.annotation-api:1.3.2=deploy_jar,runtimeClasspath,testRuntimeClasspath
 javax.inject:javax.inject:1=annotationProcessor,compileClasspath,deploy_jar,runtimeClasspath,testAnnotationProcessor,testCompileClasspath,testRuntimeClasspath
-joda-time:joda-time:2.14.2=compileClasspath,deploy_jar,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 junit:junit:4.13.2=testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy-agent:1.17.7=testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy:1.17.7=testCompileClasspath,testRuntimeClasspath

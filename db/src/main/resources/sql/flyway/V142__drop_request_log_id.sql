@@ -13,4 +13,3 @@
 -- limitations under the License.
 
 ALTER TABLE "Lock" DROP COLUMN request_log_id;
-
