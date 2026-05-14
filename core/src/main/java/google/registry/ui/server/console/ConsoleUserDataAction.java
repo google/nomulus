@@ -65,6 +65,7 @@ public class ConsoleUserDataAction extends ConsoleApiAction {
             XsrfTokenManager.X_CSRF_TOKEN,
             consoleApiParams.xsrfTokenManager().generateToken(user.getEmailAddress()));
     xsrfCookie.setSecure(true);
+    xsrfCookie.setPath("/");
     consoleApiParams.response().addCookie(xsrfCookie);
 
     JSONObject json =
