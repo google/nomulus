@@ -233,6 +233,17 @@ steps:
           sed -i s/${PROJECT_ID}.iam.gserviceaccount.com/${project}.iam.gserviceaccount.com/g \
             ./jetty/kubernetes/nomulus-${env}-${service}-canary.yaml
         fi
+        # partial phase manifests
+        for stage in 1 5
+        do
+          cp ./jetty/kubernetes/nomulus-${env}-${service}.yaml ./jetty/kubernetes/nomulus-${env}-${service}-partial-phase-${stage}.yaml
+          echo "---" >> ./jetty/kubernetes/nomulus-${env}-${service}-partial-phase-${stage}.yaml
+          awk 'NR==1,/^---$/ {if ($0 != "---") print}' ./jetty/kubernetes/nomulus-${env}-${service}.yaml | \
+            sed s/name:\ ${service}/name:\ ${service}-canary-phase-${stage}/g | \
+            sed s/service:\ ${service}/deployment:\ ${service}-canary-phase-${stage}/g | \
+            sed "/^spec:$/a\  replicas: ${stage}" \
+            >> ./jetty/kubernetes/nomulus-${env}-${service}-partial-phase-${stage}.yaml
+        done
         # gateway
         sed s/BASE_DOMAIN/${base_domain}/g \
           ./jetty/kubernetes/gateway/nomulus-route-${service}.yaml \
