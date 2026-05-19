@@ -18,7 +18,9 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.api.services.gmail.Gmail;
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.MediaType;
 import dagger.Lazy;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GmailClient;
@@ -31,6 +33,7 @@ import google.registry.util.Retrier;
 import jakarta.inject.Inject;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
+import java.util.Optional;
 
 /**
  * Action that executes a canned script specified by the caller.
@@ -62,12 +65,15 @@ public class CannedScriptExecutionAction implements Runnable {
   @Inject Response response;
 
   @Inject
-  @Parameter("sender")
-  String sender;
+  @Parameter("replyTo")
+  String replyTo;
 
   @Inject
   @Parameter("receiver")
   String receiver;
+
+  @Config("invoiceReplyToEmailAddress")
+  Optional<InternetAddress> replyToEmailAddressFromConfig;
 
   @Inject
   CannedScriptExecutionAction() {}
@@ -77,20 +83,36 @@ public class CannedScriptExecutionAction implements Runnable {
     // For b/510340944, validating a new G Workspace user can send email. Code below can be
     // removed or changed afterward.
     try {
-      logger.atInfo().log("Sending email from %s to %s", sender, receiver);
+      logger.atInfo().log("Sending email to %s with replyTo %s", receiver, replyTo);
       GmailClient gmailClient =
-          new GmailClient(
-              gmail, retrier, isEmailSendingEnabled, sender, sender, new InternetAddress(sender));
+          new GmailClient(gmail, retrier, isEmailSendingEnabled, new InternetAddress(replyTo));
       gmailClient.sendEmail(
           EmailMessage.newBuilder()
               .addRecipient(new InternetAddress(receiver))
-              .setSubject(String.format("Email send test from %s", sender))
-              .setBody(String.format("This is a test email sent from %s to %s.", sender, receiver))
+              .setSubject(String.format("Email with manually set replyTo header %s", replyTo))
+              .setBody("See subject")
               .build());
-      response.setPayload("Email sent successfully.");
+
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+
+      gmailClient.sendEmail(
+          EmailMessage.newBuilder()
+              .setSubject(
+                  String.format(
+                      "Email with injected replyTo header %s", replyToEmailAddressFromConfig))
+              .setBody("See header")
+              .setRecipients(ImmutableList.of(new InternetAddress(receiver)))
+              .setReplyToEmailAddress(replyToEmailAddressFromConfig)
+              .setContentType(MediaType.HTML_UTF_8)
+              .build());
+      response.setPayload("Emails sent successfully.");
     } catch (AddressException e) {
       logger.atWarning().withCause(e).log(
-          "Invalid email address: sender=%s, receiver=%s", sender, receiver);
+          "Invalid email address: sender=%s, receiver=%s", replyTo, receiver);
       response.setStatus(400);
       response.setPayload("Invalid email address provided.");
     } catch (Exception e) {

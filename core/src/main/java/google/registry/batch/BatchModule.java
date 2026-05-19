@@ -54,9 +54,9 @@ public class BatchModule {
   static final int DEFAULT_MAX_QPS = 10;
 
   @Provides
-  @Parameter("sender")
-  static String provideSender(HttpServletRequest req) {
-    return extractRequiredParameter(req, "sender");
+  @Parameter("replyTo")
+  static String provideReplyTo(HttpServletRequest req) {
+    return extractRequiredParameter(req, "replyTo");
   }
 
   @Provides

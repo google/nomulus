@@ -56,9 +56,9 @@ public final class GmailClient {
   private final InternetAddress outgoingEmailAddressWithUsername;
   private final InternetAddress replyToEmailAddress;
 
-  // TODO(b/510340944): make package private after feature is rolled out
+  // TODO(b/510340944): drop sender info. Sender is determined by the Gmail credential owner.
   @Inject
-  public GmailClient(
+  GmailClient(
       Lazy<Gmail> gmail,
       Retrier retrier,
       @Config("isEmailSendingEnabled") boolean isEmailSendingEnabled,
@@ -76,6 +76,20 @@ public final class GmailClient {
     } catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  // TODO(b/510340944): Remove this experiment method
+  public GmailClient(
+      Lazy<Gmail> gmail,
+      Retrier retrier,
+      @Config("isEmailSendingEnabled") boolean isEmailSendingEnabled,
+      @Config("replyToEmailAddress") InternetAddress replyToEmailAddress) {
+
+    this.gmail = gmail;
+    this.retrier = retrier;
+    this.isEmailSendingEnabled = isEmailSendingEnabled;
+    this.replyToEmailAddress = replyToEmailAddress;
+    this.outgoingEmailAddressWithUsername = null;
   }
 
   /**
@@ -117,7 +131,9 @@ public final class GmailClient {
     try {
       MimeMessage msg =
           new MimeMessage(Session.getDefaultInstance(new Properties(), /* authenticator= */ null));
-      msg.setFrom(this.outgoingEmailAddressWithUsername);
+      if (this.outgoingEmailAddressWithUsername != null) {
+        msg.setFrom(this.outgoingEmailAddressWithUsername);
+      }
       msg.setReplyTo(
           new InternetAddress[] {emailMessage.replyToEmailAddress().orElse(replyToEmailAddress)});
       msg.addRecipients(
