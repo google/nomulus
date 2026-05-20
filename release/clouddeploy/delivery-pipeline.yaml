@@ -19,7 +19,7 @@ serialPipeline:
               duration: 600s
               googleCloud:
                 alertPolicyChecks:
-                    canaryDeploymentAlertPolicyChecks
+                    partialDeploymentAlertPolicyChecks
           - phaseId: "canary-5"
             profiles: ["crash-partial-phase-5"]
             percentage: 50
@@ -28,7 +28,7 @@ serialPipeline:
               duration: 600s
               googleCloud:
                 alertPolicyChecks:
-                    canaryDeploymentAlertPolicyChecks
+                    partialDeploymentAlertPolicyChecks
           - phaseId: "stable"
             profiles: ["crash"]
             percentage: 100

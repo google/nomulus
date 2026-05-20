@@ -56,21 +56,21 @@ steps:
         sed -i '/stableDeploymentAlertPolicyChecks/d' release/clouddeploy/delivery-pipeline.yaml
         rm -f checks.tmp
 
-        # Extract only the indented block under canaryDeploymentAlertPolicyChecks.
-        if grep -q "^canaryDeploymentAlertPolicyChecks:" "$config_file"; then
-          echo "Extracting canary checks from $config_file..."
+        # Extract only the indented block under partialDeploymentAlertPolicyChecks.
+        if grep -q "^partialDeploymentAlertPolicyChecks:" "$config_file"; then
+          echo "Extracting partial checks from $config_file..."
           awk '
-          /^canaryDeploymentAlertPolicyChecks:/ { capture = 1; next }
+          /^partialDeploymentAlertPolicyChecks:/ { capture = 1; next }
           capture {
             if ($0 ~ /^[^[:space:]]/ && $0 != "") { capture = 0; exit }
             print "            " $0
           }
-          ' "$config_file" > canary_checks.tmp
+          ' "$config_file" > partial_checks.tmp
           
           # Insert the checks where the placeholder is located and remove the placeholder
-          sed -i '/canaryDeploymentAlertPolicyChecks/r canary_checks.tmp' release/clouddeploy/delivery-pipeline.yaml
-          sed -i '/canaryDeploymentAlertPolicyChecks/d' release/clouddeploy/delivery-pipeline.yaml
-          rm -f canary_checks.tmp
+          sed -i '/partialDeploymentAlertPolicyChecks/r partial_checks.tmp' release/clouddeploy/delivery-pipeline.yaml
+          sed -i '/partialDeploymentAlertPolicyChecks/d' release/clouddeploy/delivery-pipeline.yaml
+          rm -f partial_checks.tmp
         fi
         
         # Populate variables in target file
