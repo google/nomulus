@@ -112,7 +112,6 @@ ext {
       'com.google.flogger:flogger:[0.7.4,)',
       'com.google.guava:guava-testlib:[33.0.0-jre,)',
       'com.google.guava:guava:[33.0.0-jre,)',
-      'com.google.gwt:gwt-user:[2.9.0,)',
       'com.google.http-client:google-http-client-jackson2:[1.39.0,)',
       'com.google.http-client:google-http-client:[1.39.0,)',
       'com.google.monitoring-client:contrib:[1.0.7,)',
