@@ -15,6 +15,7 @@
 package google.registry.testing;
 
 import google.registry.request.JsonResponse;
+import google.registry.tools.GsonUtils;
 import java.util.Map;
 
 /** Fake implementation of {@link JsonResponse} for testing. */
@@ -23,7 +24,7 @@ public final class FakeJsonResponse extends JsonResponse {
   private Map<String, ?> responseMap;
 
   public FakeJsonResponse() {
-    super(new FakeResponse());
+    super(new FakeResponse(), GsonUtils.provideGson());
   }
 
   @Override

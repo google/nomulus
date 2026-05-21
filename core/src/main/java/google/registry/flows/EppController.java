@@ -24,6 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
+import com.google.gson.Gson;
 import google.registry.flows.FlowModule.EppExceptionInProviderException;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput;
@@ -34,7 +35,6 @@ import google.registry.model.eppoutput.Result.Code;
 import google.registry.monitoring.whitebox.EppMetric;
 import jakarta.inject.Inject;
 import java.util.Optional;
-import org.json.simple.JSONValue;
 
 /**
  * An implementation of the EPP command/response protocol.
@@ -50,6 +50,8 @@ public final class EppController {
   @Inject EppMetric.Builder eppMetricBuilder;
   @Inject EppMetrics eppMetrics;
   @Inject ServerTridProvider serverTridProvider;
+  @Inject Gson gson;
+
   @Inject EppController() {}
 
   /** Reads EPP XML, executes the matching flow, and returns an {@link EppOutput}. */
@@ -72,7 +74,7 @@ public final class EppController {
             e.getMessage(),
             lazy(
                 () ->
-                    JSONValue.toJSONString(
+                    gson.toJson(
                         ImmutableMap.<String, Object>of(
                             "clientId",
                             nullToEmpty(sessionMetadata.getRegistrarId()),

@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
+import com.google.gson.Gson;
 import google.registry.flows.FlowModule.InputXml;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.annotations.ReportingSpec;
@@ -30,7 +31,6 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput;
 import jakarta.inject.Inject;
 import java.util.Optional;
-import org.json.simple.JSONValue;
 
 /** Reporter used by {@link FlowRunner} to record flow execution data for reporting. */
 public class FlowReporter {
@@ -49,6 +49,8 @@ public class FlowReporter {
   @Inject @InputXml byte[] inputXmlBytes;
   @Inject EppInput eppInput;
   @Inject Class<? extends Flow> flowClass;
+  @Inject Gson gson;
+
   @Inject FlowReporter() {}
 
   /** Records information about the current flow execution in the request logs. */
@@ -61,7 +63,7 @@ public class FlowReporter {
     logger.atInfo().log(
         "%s: %s",
         METADATA_LOG_SIGNATURE,
-        JSONValue.toJSONString(
+        gson.toJson(
             new ImmutableMap.Builder<String, Object>()
                 .put("serverTrid", trid.getServerTransactionId())
                 .put("clientId", registrarId)

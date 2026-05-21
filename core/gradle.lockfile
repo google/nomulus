@@ -192,7 +192,6 @@ com.google.protobuf:protobuf-java:4.33.2=annotationProcessor,nonprodAnnotationPr
 com.google.protobuf:protobuf-java:4.35.0=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.re2j:re2j:1.8=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.truth:truth:1.4.5=deploy_jar,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-com.googlecode.json-simple:json-simple:1.1.1=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.ibm.icu:icu4j:73.2=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.lmax:disruptor:3.4.2=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.puppycrawl.tools:checkstyle:10.24.0=checkstyle

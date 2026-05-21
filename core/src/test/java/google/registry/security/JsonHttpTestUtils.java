@@ -20,21 +20,25 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.security.JsonHttp.JSON_SAFETY_PREFIX;
 
 import com.google.common.base.Supplier;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
+import google.registry.tools.GsonUtils;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Map;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 
 /**
  * Helper class for testing JSON RPC servlets.
  */
 public final class JsonHttpTestUtils {
 
+  private static final Gson GSON = GsonUtils.provideGson();
+
   /** Returns JSON payload for mocked result of {@code rsp.getReader()}. */
   public static BufferedReader createJsonPayload(Map<String, ?> object) {
-    return createJsonPayload(JSONValue.toJSONString(object));
+    return createJsonPayload(GSON.toJson(object));
   }
 
   /** @see #createJsonPayload(Map) */
@@ -58,10 +62,8 @@ public final class JsonHttpTestUtils {
     assertThat(jsonText).startsWith(JSON_SAFETY_PREFIX);
     jsonText = jsonText.substring(JSON_SAFETY_PREFIX.length());
     try {
-      @SuppressWarnings("unchecked")
-      Map<String, Object> json = (Map<String, Object>) JSONValue.parseWithException(jsonText);
-      return json;
-    } catch (ClassCastException | ParseException e) {
+      return GSON.fromJson(jsonText, new TypeToken<>() {});
+    } catch (ClassCastException | JsonSyntaxException e) {
       assertWithMessage("Bad JSON: %s\n%s", e.getMessage(), jsonText).fail();
       throw new AssertionError();
     }

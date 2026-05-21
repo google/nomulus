@@ -170,7 +170,6 @@ dependencies {
   implementation deps['com.google.oauth-client:google-oauth-client-servlet']
   implementation deps['com.google.re2j:re2j']
   implementation deps['org.freemarker:freemarker']
-  implementation deps['com.googlecode.json-simple:json-simple']
   implementation deps['com.github.mwiede:jsch']
   implementation deps['com.zaxxer:HikariCP']
   implementation deps['com.squareup.okhttp3:okhttp']

@@ -14,6 +14,7 @@
 
 package google.registry.request;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static google.registry.dns.PublishDnsUpdatesAction.CLOUD_TASKS_RETRY_HEADER;
 import static google.registry.model.tld.Tlds.assertTldExists;
@@ -28,7 +29,6 @@ import static google.registry.request.RequestParameters.extractSetOfParameters;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteStreams;
@@ -36,6 +36,8 @@ import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 import com.google.protobuf.ByteString;
 import dagger.Module;
 import dagger.Provides;
@@ -50,8 +52,6 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 
 /** Dagger module for servlets. */
 @Module
@@ -202,18 +202,16 @@ public final class RequestModule {
 
   @Provides
   @JsonPayload
-  @SuppressWarnings("unchecked")
   static Map<String, Object> provideJsonPayload(
-      @Header("Content-Type") MediaType contentType, @Payload String payload) {
+      @Header("Content-Type") MediaType contentType, @Payload String payload, Gson gson) {
     if (!JSON_UTF_8.is(contentType.withCharset(UTF_8))) {
       throw new UnsupportedMediaTypeException(
           String.format("Expected %s Content-Type", JSON_UTF_8.withoutParameters()));
     }
     try {
-      return (Map<String, Object>) JSONValue.parseWithException(payload);
-    } catch (ParseException e) {
-      throw new BadRequestException(
-          "Malformed JSON", new VerifyException("Malformed JSON:\n" + payload, e));
+      return checkNotNull(gson.fromJson(payload, new TypeToken<>() {}));
+    } catch (JsonSyntaxException | NullPointerException e) {
+      throw new BadRequestException("Malformed JSON:\n" + payload);
     }
   }
 

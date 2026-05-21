@@ -19,21 +19,26 @@ import static google.registry.request.RequestModule.provideJsonPayload;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.net.MediaType;
+import com.google.gson.Gson;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.UnsupportedMediaTypeException;
+import google.registry.tools.GsonUtils;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RequestModule}. */
 final class RequestModuleTest {
 
+  private static final Gson GSON = GsonUtils.provideGson();
+
   @Test
   void testProvideJsonPayload() {
-    assertThat(provideJsonPayload(MediaType.JSON_UTF_8, "{\"k\":\"v\"}")).containsExactly("k", "v");
+    assertThat(provideJsonPayload(MediaType.JSON_UTF_8, "{\"k\":\"v\"}", GSON))
+        .containsExactly("k", "v");
   }
 
   @Test
   void testProvideJsonPayload_contentTypeWithoutCharsetAllowed() {
-    assertThat(provideJsonPayload(MediaType.JSON_UTF_8.withoutParameters(), "{\"k\":\"v\"}"))
+    assertThat(provideJsonPayload(MediaType.JSON_UTF_8.withoutParameters(), "{\"k\":\"v\"}", GSON))
         .containsExactly("k", "v");
   }
 
@@ -41,14 +46,16 @@ final class RequestModuleTest {
   void testProvideJsonPayload_malformedInput_throws500() {
     BadRequestException thrown =
         assertThrows(
-            BadRequestException.class, () -> provideJsonPayload(MediaType.JSON_UTF_8, "{\"k\":"));
+            BadRequestException.class,
+            () -> provideJsonPayload(MediaType.JSON_UTF_8, "{\"k\":", GSON));
     assertThat(thrown).hasMessageThat().contains("Malformed JSON");
   }
 
   @Test
   void testProvideJsonPayload_emptyInput_throws500() {
     BadRequestException thrown =
-        assertThrows(BadRequestException.class, () -> provideJsonPayload(MediaType.JSON_UTF_8, ""));
+        assertThrows(
+            BadRequestException.class, () -> provideJsonPayload(MediaType.JSON_UTF_8, "", GSON));
     assertThat(thrown).hasMessageThat().contains("Malformed JSON");
   }
 
@@ -56,13 +63,13 @@ final class RequestModuleTest {
   void testProvideJsonPayload_nonJsonContentType_throws415() {
     assertThrows(
         UnsupportedMediaTypeException.class,
-        () -> provideJsonPayload(MediaType.PLAIN_TEXT_UTF_8, "{}"));
+        () -> provideJsonPayload(MediaType.PLAIN_TEXT_UTF_8, "{}", GSON));
   }
 
   @Test
   void testProvideJsonPayload_contentTypeWithWeirdParam_throws415() {
     assertThrows(
         UnsupportedMediaTypeException.class,
-        () -> provideJsonPayload(MediaType.JSON_UTF_8.withParameter("omg", "handel"), "{}"));
+        () -> provideJsonPayload(MediaType.JSON_UTF_8.withParameter("omg", "handel"), "{}", GSON));
   }
 }

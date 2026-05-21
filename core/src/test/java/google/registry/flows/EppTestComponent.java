@@ -28,6 +28,7 @@ import google.registry.flows.custom.TestCustomLogicFactory;
 import google.registry.flows.domain.DomainDeletionTimeCache;
 import google.registry.flows.domain.DomainFlowTmchUtils;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.request.Modules.GsonModule;
 import google.registry.request.RequestScope;
 import google.registry.request.lock.LockHandler;
 import google.registry.testing.CloudTasksHelper;
@@ -42,7 +43,8 @@ import jakarta.inject.Singleton;
 
 /** Dagger component for running EPP tests. */
 @Singleton
-@Component(modules = {ConfigModule.class, EppTestComponent.FakesAndMocksModule.class})
+@Component(
+    modules = {ConfigModule.class, GsonModule.class, EppTestComponent.FakesAndMocksModule.class})
 public interface EppTestComponent {
 
   RequestComponent startRequest();

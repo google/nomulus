@@ -25,6 +25,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
@@ -38,7 +39,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import org.json.simple.JSONValue;
 
 /** Command to generate a report of all DNS data. */
 @Parameters(separators = " =", commandDescription = "Generate report of all DNS data in a TLD.")
@@ -57,6 +57,7 @@ final class GenerateDnsReportCommand implements Command {
   private Path output = Paths.get("/dev/stdout");
 
   @Inject Clock clock;
+  @Inject Gson gson;
 
   @Override
   public void run() throws Exception {
@@ -144,7 +145,7 @@ final class GenerateDnsReportCommand implements Command {
       } else {
         result.append(",\n");
       }
-      result.append(JSONValue.toJSONString(map));
+      result.append(gson.toJson(map));
     }
   }
 }

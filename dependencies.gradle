@@ -116,7 +116,6 @@ ext {
       'com.google.oauth-client:google-oauth-client:[1.31.4,)',
       'com.google.re2j:re2j:[1.6,)',
       'com.google.truth:truth:[1.1.2,)',
-      'com.googlecode.json-simple:json-simple:[1.1.1,)',
       'com.squareup.okhttp3:okhttp:[4.10.0,)',
       'org.freemarker:freemarker:[2.3.32,)',
       'com.ibm.icu:icu4j:[68.2,)',
