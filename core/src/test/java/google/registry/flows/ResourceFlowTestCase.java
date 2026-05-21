@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.testing.TestLogHandler;
+import com.google.gson.Gson;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.DomainBase;
@@ -34,13 +35,13 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TestCacheExtension;
+import google.registry.tools.GsonUtils;
 import google.registry.util.JdkLoggerConfig;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.logging.Level;
 import javax.annotation.Nullable;
-import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -52,6 +53,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  */
 public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource>
     extends FlowTestCase<F> {
+
+  private static final Gson GSON = GsonUtils.provideGson();
 
   protected final TestLogHandler logHandler = new TestLogHandler();
 
@@ -108,21 +111,23 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
         .that(logHandler)
         .hasLogAtLevelWithMessage(Level.INFO, "FLOW-LOG-SIGNATURE-METADATA")
         .which()
-        .contains("\"clientId\":" + JSONValue.toJSONString(registrarId));
+        .contains("\"clientId\":" + GSON.toJson(registrarId));
   }
 
   protected void assertTldsFieldLogged(String... tlds) {
-    assertAboutLogs().that(logHandler)
+    assertAboutLogs()
+        .that(logHandler)
         .hasLogAtLevelWithMessage(Level.INFO, "FLOW-LOG-SIGNATURE-METADATA")
         .which()
-        .contains("\"tlds\":" + JSONValue.toJSONString(ImmutableList.copyOf(tlds)));
+        .contains("\"tlds\":" + GSON.toJson(ImmutableList.copyOf(tlds)));
   }
 
   protected void assertIcannReportingActivityFieldLogged(String fieldName) {
-    assertAboutLogs().that(logHandler)
+    assertAboutLogs()
+        .that(logHandler)
         .hasLogAtLevelWithMessage(Level.INFO, "FLOW-LOG-SIGNATURE-METADATA")
         .which()
-        .contains("\"icannActivityReportField\":" + JSONValue.toJSONString(fieldName));
+        .contains("\"icannActivityReportField\":" + GSON.toJson(fieldName));
   }
 
   protected void assertLastHistoryContainsResource(EppResource resource) {

@@ -31,6 +31,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.base.Splitter;
 import com.google.common.testing.TestLogHandler;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppTestComponent.FakeServerTridProvider;
 import google.registry.flows.FlowModule.EppExceptionInProviderException;
@@ -43,6 +45,7 @@ import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
+import google.registry.tools.GsonUtils;
 import google.registry.util.Clock;
 import google.registry.xml.ValidationMode;
 import java.time.Instant;
@@ -50,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import org.json.simple.JSONValue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,6 +84,7 @@ class EppControllerTest {
   @Mock Result result;
 
   private static final Instant START_TIME = Instant.parse("2016-09-01T00:00:00Z");
+  private static final Gson GSON = GsonUtils.provideGson();
 
   private final Clock clock = new FakeClock(START_TIME);
   private final TestLogHandler logHandler = new TestLogHandler();
@@ -110,6 +113,7 @@ class EppControllerTest {
     when(result.getCode()).thenReturn(Code.SUCCESS_WITH_NO_MESSAGES);
 
     eppController = new EppController();
+    eppController.gson = GSON;
     eppController.eppMetricBuilder = EppMetric.builderForRequest(clock);
     when(flowRunner.run(eppController.eppMetricBuilder)).thenReturn(eppOutput);
     eppController.flowComponentBuilder = flowComponentBuilder;
@@ -247,8 +251,7 @@ class EppControllerTest {
     assertThat(logRecord.getThrown()).isInstanceOf(IllegalStateException.class);
   }
 
-  @SuppressWarnings("unchecked")
   private static Map<String, Object> parseJsonMap(String json) throws Exception {
-    return (Map<String, Object>) JSONValue.parseWithException(json);
+    return GSON.fromJson(json, new TypeToken<>() {});
   }
 }

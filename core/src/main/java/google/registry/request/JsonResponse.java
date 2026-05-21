@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.CONTENT_DISPOSITION;
 import static com.google.common.net.HttpHeaders.X_CONTENT_TYPE_OPTIONS;
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static org.json.simple.JSONValue.toJSONString;
 
+import com.google.gson.Gson;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.Map;
@@ -31,10 +31,12 @@ public class JsonResponse {
   public static final String JSON_SAFETY_PREFIX = ")]}'\n";
 
   protected final Response response;
+  protected final Gson gson;
 
   @Inject
-  public JsonResponse(Response rsp) {
+  public JsonResponse(Response rsp, Gson gson) {
     this.response = rsp;
+    this.gson = gson;
   }
 
   /**
@@ -55,7 +57,7 @@ public class JsonResponse {
     // response, even if all else fails. It's basically another anti-sniffing mechanism in the sense
     // that if you hit this url directly, it would try to download the file instead of showing it.
     response.setHeader(CONTENT_DISPOSITION, "attachment");
-    response.setPayload(JSON_SAFETY_PREFIX + toJSONString(checkNotNull(responseMap)));
+    response.setPayload(JSON_SAFETY_PREFIX + gson.toJson(checkNotNull(responseMap)));
   }
 
   /**

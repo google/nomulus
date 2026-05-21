@@ -26,6 +26,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
 import google.registry.request.Action.Service;
 import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
@@ -33,10 +34,12 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link google.registry.tools.ServiceConnection}. */
 public class ServiceConnectionTest {
 
+  private static final Gson GSON = GsonUtils.provideGson();
+
   @Test
   void testSuccess_serverUrl_notCanary() {
     ServiceConnection connection =
-        new ServiceConnection(false, null).withService(Service.FRONTEND, false);
+        new ServiceConnection(false, null, GSON).withService(Service.FRONTEND, false);
     String serverUrl = connection.getServer().toString();
     assertThat(serverUrl).isEqualTo("https://frontend.registry.test"); // See default-config.yaml
   }
@@ -52,7 +55,7 @@ public class ServiceConnectionTest {
     when(request.execute()).thenReturn(response);
     when(response.getContent()).thenReturn(ByteArrayInputStream.nullInputStream());
     ServiceConnection connection =
-        new ServiceConnection(false, factory).withService(Service.PUBAPI, true);
+        new ServiceConnection(false, factory, GSON).withService(Service.PUBAPI, true);
     String serverUrl = connection.getServer().toString();
     assertThat(serverUrl).isEqualTo("https://pubapi.registry.test");
     connection.sendGetRequest("/path", ImmutableMap.of());

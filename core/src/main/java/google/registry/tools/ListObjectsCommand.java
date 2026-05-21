@@ -23,10 +23,13 @@ import com.beust.jcommander.Parameter;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.json.simple.JSONValue;
 
 /**
  * Abstract base class for commands that list objects by calling a server task.
@@ -34,6 +37,8 @@ import org.json.simple.JSONValue;
  * <p>The formatting is done on the server side; this class just dumps the results to the screen.
  */
 abstract class ListObjectsCommand implements CommandWithConnection {
+
+  private static final Gson GSON = GsonUtils.provideGson();
 
   @Nullable
   @Parameter(
@@ -87,14 +92,13 @@ abstract class ListObjectsCommand implements CommandWithConnection {
         connection.sendPostRequest(
             getCommandPath(), params.build(), MediaType.PLAIN_TEXT_UTF_8, new byte[0]);
     // Parse the returned JSON and make sure it's a map.
-    Object obj = JSONValue.parse(response.substring(JSON_SAFETY_PREFIX.length()));
-    if (!(obj instanceof Map<?, ?>)) {
+    JsonElement element = JsonParser.parseString(response.substring(JSON_SAFETY_PREFIX.length()));
+    if (!element.isJsonObject()) {
       throw new VerifyException("Server returned unexpected JSON: " + response);
     }
-    @SuppressWarnings("unchecked")
-    Map<String, Object> responseMap = (Map<String, Object>) obj;
+    Map<String, Object> responseMap = GSON.fromJson(element, new TypeToken<>() {});
     // Get the status.
-    obj = responseMap.get("status");
+    Object obj = responseMap.get("status");
     if (obj == null) {
       throw new VerifyException("Server returned no status");
     }

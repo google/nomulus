@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
@@ -82,6 +83,7 @@ public class GsonUtils {
         .registerTypeAdapter(Serializable.class, new SerializableJsonTypeAdapter())
         .registerTypeAdapterFactory(new ClassProcessingTypeAdapterFactory())
         .registerTypeAdapterFactory(new GsonPostProcessableTypeAdapterFactory())
+        .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
         .excludeFieldsWithoutExposeAnnotation()
         .create();
   }

@@ -34,6 +34,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action.Service;
 import jakarta.inject.Inject;
@@ -42,7 +44,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.json.simple.JSONValue;
 
 /**
  * An HTTP connection to a service.
@@ -55,23 +56,25 @@ public class ServiceConnection {
   private final Service service;
   private final boolean useCanary;
   private final HttpRequestFactory requestFactory;
+  private final Gson gson;
 
   @Inject
   ServiceConnection(
-      @Config("useCanary") boolean useCanary,
-      HttpRequestFactory requestFactory) {
-    this(Service.BACKEND, requestFactory, useCanary);
+      @Config("useCanary") boolean useCanary, HttpRequestFactory requestFactory, Gson gson) {
+    this(Service.BACKEND, requestFactory, useCanary, gson);
   }
 
-  private ServiceConnection(Service service, HttpRequestFactory requestFactory, boolean useCanary) {
+  private ServiceConnection(
+      Service service, HttpRequestFactory requestFactory, boolean useCanary, Gson gson) {
     this.service = service;
     this.requestFactory = requestFactory;
     this.useCanary = useCanary;
+    this.gson = gson;
   }
 
   /** Returns a copy of this connection that talks to a different service endpoint. */
   public ServiceConnection withService(Service service, boolean useCanary) {
-    return new ServiceConnection(service, requestFactory, useCanary);
+    return new ServiceConnection(service, requestFactory, useCanary, gson);
   }
 
   /** Returns the HTML from the connection error stream, if any, otherwise the empty string. */
@@ -99,7 +102,7 @@ public class ServiceConnection {
     request.setFollowRedirects(false);
     request.setThrowExceptionOnExecuteError(false);
     request.setUnsuccessfulResponseHandler(
-        (request1, response, supportsRetry) -> {
+        (request1, response, _) -> {
           String error = getErrorHtmlAsString(response);
           throw new IOException(
               String.format(
@@ -137,14 +140,10 @@ public class ServiceConnection {
     return internalSend(endpoint, params, MediaType.PLAIN_TEXT_UTF_8, null);
   }
 
-  @SuppressWarnings("unchecked")
   public Map<String, Object> sendJson(String endpoint, Map<String, ?> object) throws IOException {
     String response =
         sendPostRequest(
-            endpoint,
-            ImmutableMap.of(),
-            JSON_UTF_8,
-            JSONValue.toJSONString(object).getBytes(UTF_8));
-    return (Map<String, Object>) JSONValue.parse(response.substring(JSON_SAFETY_PREFIX.length()));
+            endpoint, ImmutableMap.of(), JSON_UTF_8, gson.toJson(object).getBytes(UTF_8));
+    return gson.fromJson(response.substring(JSON_SAFETY_PREFIX.length()), new TypeToken<>() {});
   }
 }

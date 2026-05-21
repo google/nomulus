@@ -22,21 +22,25 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.TestLogHandler;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
+import google.registry.tools.GsonUtils;
 import google.registry.util.JdkLoggerConfig;
 import java.util.Map;
 import java.util.Optional;
-import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link FlowReporter}. */
 class FlowReporterTest {
+
+  private static final Gson GSON = GsonUtils.provideGson();
 
   static class TestCommandFlow implements Flow {
     @Override
@@ -60,6 +64,7 @@ class FlowReporterTest {
   void beforeEach() {
     JdkLoggerConfig.getConfig(FlowReporter.class).addHandler(handler);
     flowReporter.trid = Trid.create("client-123", "server-456");
+    flowReporter.gson = GSON;
     flowReporter.registrarId = "TheRegistrar";
     flowReporter.inputXmlBytes = "<xml/>".getBytes(UTF_8);
     flowReporter.flowClass = TestCommandFlow.class;
@@ -205,8 +210,7 @@ class FlowReporterTest {
     assertThat(json).containsEntry("tlds", ImmutableList.of());
   }
 
-  @SuppressWarnings("unchecked")
   private static Map<String, Object> parseJsonMap(String json) throws Exception {
-    return (Map<String, Object>) JSONValue.parseWithException(json);
+    return GSON.fromJson(json, new TypeToken<>() {});
   }
 }

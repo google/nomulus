@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.net.InetAddresses;
+import com.google.gson.Gson;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
@@ -41,19 +42,19 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GenerateDnsReportCommand}. */
 class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportCommand> {
 
+  private static final Gson GSON = GsonUtils.provideGson();
+
   private Path output;
 
-  private Object getOutputAsJson() throws IOException, ParseException {
+  private Object getOutputAsJson() throws IOException {
     try (Reader reader = Files.newBufferedReader(output, UTF_8)) {
-      return JSONValue.parseWithException(reader);
+      return GSON.fromJson(reader, Object.class);
     }
   }
 
@@ -114,6 +115,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
   void beforeEach() {
     output = tmpDir.resolve("out.dat");
     command.clock = fakeClock;
+    command.gson = GSON;
 
     createTlds("xn--q9jyb4c", "example");
     nameserver1 =
