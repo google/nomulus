@@ -47,7 +47,7 @@ steps:
         /^stableDeploymentAlertPolicyChecks:/ { capture = 1; next }
         capture {
           if ($0 ~ /^[^[:space:]]/ && $0 != "") { capture = 0; exit }
-          print "            " $0
+          print "                " $0
         }
         ' "$config_file" > checks.tmp
         
@@ -63,7 +63,7 @@ steps:
           /^partialDeploymentAlertPolicyChecks:/ { capture = 1; next }
           capture {
             if ($0 ~ /^[^[:space:]]/ && $0 != "") { capture = 0; exit }
-            print "            " $0
+            print "                " $0
           }
           ' "$config_file" > partial_checks.tmp
           
