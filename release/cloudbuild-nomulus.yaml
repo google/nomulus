@@ -73,6 +73,7 @@ steps:
   - |
     nomulus_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/nomulus \
     --format="get(digest)" --filter="tags = ${TAG_NAME}")
+    echo "$nomulus_digest" > /workspace/nomulus_digest
     proxy_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/proxy \
     --format="get(digest)" --filter="tags = ${TAG_NAME}")
     gcloud --project=${PROJECT_ID} beta container binauthz attestations \
@@ -196,11 +197,14 @@ steps:
     echo "Release Name: $release_name"
     echo "============================================="
     
+    # Read the pre-fetched image digest from the workspace file
+    nomulus_digest=$(cat /workspace/nomulus_digest)
+    
     gcloud deploy releases create "$release_name" \
       --delivery-pipeline="$pipeline" \
       --region="$region" \
       --project=${PROJECT_ID} \
-      --images=nomulus=gcr.io/${PROJECT_ID}/nomulus:${TAG_NAME}
+      --images="nomulus=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest}"
 # The tarballs and jars to upload to GCS.
 artifacts:
   objects:
