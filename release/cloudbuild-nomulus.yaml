@@ -204,7 +204,9 @@ steps:
       --delivery-pipeline="$pipeline" \
       --region="$region" \
       --project=${PROJECT_ID} \
-      --images="nomulus=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest}"
+      --images="nomulus=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest}" \
+      --source=. \
+      --skaffold-file=release/clouddeploy/skaffold.yaml
 # The tarballs and jars to upload to GCS.
 artifacts:
   objects:
