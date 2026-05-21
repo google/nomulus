@@ -68,6 +68,8 @@ public class BsaCredential {
 
   private final Keyring keyring;
 
+  private final Gson gson;
+
   private final Clock clock;
 
   @Nullable private String authToken;
@@ -79,11 +81,13 @@ public class BsaCredential {
       @Config("bsaAuthUrl") String authUrl,
       @Config("bsaAuthTokenExpiry") Duration authTokenExpiry,
       Keyring keyring,
+      Gson gson,
       Clock clock) {
     this.urlConnectionService = urlConnectionService;
     this.authUrl = authUrl;
     this.authTokenExpiry = authTokenExpiry;
     this.keyring = keyring;
+    this.gson = gson;
     this.clock = clock;
   }
 
@@ -143,8 +147,7 @@ public class BsaCredential {
       // TODO: catch json syntax exception
       @SuppressWarnings("unchecked")
       String idToken =
-          new Gson()
-              .fromJson(new String(getResponseBytes(connection), UTF_8), Map.class)
+          gson.fromJson(new String(getResponseBytes(connection), UTF_8), Map.class)
               .getOrDefault(ID_TOKEN, "")
               .toString();
       if (idToken.isEmpty()) {

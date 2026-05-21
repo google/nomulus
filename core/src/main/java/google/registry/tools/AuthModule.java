@@ -146,20 +146,20 @@ public class AuthModule {
   @LocalCredentialJson
   public static String provideLocalCredentialJson(
       Lazy<GoogleClientSecrets> clientSecrets,
+      Gson gson,
       @StoredCredential Lazy<Credential> credential,
       @Nullable @Config("credentialFilePath") String credentialFilePath) {
     try {
       if (credentialFilePath != null) {
         return Files.readString(Paths.get(credentialFilePath));
       } else {
-        return new Gson()
-            .toJson(
-                ImmutableMap.<String, String>builder()
-                    .put("type", "authorized_user")
-                    .put("client_id", clientSecrets.get().getDetails().getClientId())
-                    .put("client_secret", clientSecrets.get().getDetails().getClientSecret())
-                    .put("refresh_token", credential.get().getRefreshToken())
-                    .build());
+        return gson.toJson(
+            ImmutableMap.<String, String>builder()
+                .put("type", "authorized_user")
+                .put("client_id", clientSecrets.get().getDetails().getClientId())
+                .put("client_secret", clientSecrets.get().getDetails().getClientSecret())
+                .put("refresh_token", credential.get().getRefreshToken())
+                .build());
       }
     } catch (IOException e) {
       throw new RuntimeException(e);

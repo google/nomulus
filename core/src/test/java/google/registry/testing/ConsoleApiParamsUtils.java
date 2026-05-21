@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import google.registry.groups.GmailClient;
 import google.registry.model.console.User;
-import google.registry.request.RequestModule;
+import google.registry.request.Modules;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.SendEmailUtils;
@@ -50,6 +50,6 @@ public final class ConsoleApiParamsUtils {
         authResult,
         sendEmailUtils,
         xsrfTokenManager,
-        RequestModule.provideGson());
+        Modules.GsonModule.provideGson());
   }
 }

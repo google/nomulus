@@ -28,9 +28,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.gson.Gson;
 import google.registry.keyring.api.Keyring;
 import google.registry.request.UrlConnectionService;
 import google.registry.testing.FakeClock;
+import google.registry.tools.GsonUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -49,6 +51,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class BsaCredentialTest {
 
   private static final Duration AUTH_TOKEN_EXPIRY = Duration.ofMinutes(30);
+  private static final Gson GSON = GsonUtils.provideGson();
 
   @Mock OutputStream connectionOutputStream;
   @Mock HttpsURLConnection connection;
@@ -60,7 +63,8 @@ class BsaCredentialTest {
   @BeforeEach
   void setup() throws Exception {
     credential =
-        new BsaCredential(connectionService, "https://authUrl", AUTH_TOKEN_EXPIRY, keyring, clock);
+        new BsaCredential(
+            connectionService, "https://authUrl", AUTH_TOKEN_EXPIRY, keyring, GSON, clock);
   }
 
   void setupHttp() throws Exception {

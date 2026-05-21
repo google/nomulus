@@ -18,8 +18,10 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
+import com.google.gson.Gson;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.tools.GsonUtils;
 import jakarta.inject.Singleton;
 import java.net.HttpURLConnection;
 import javax.net.ssl.HttpsURLConnection;
@@ -49,8 +51,15 @@ public final class Modules {
   @Module
   public static final class GsonModule {
     @Provides
+    @Singleton
     static JsonFactory provideJsonFactory() {
       return GsonFactory.getDefaultInstance();
+    }
+
+    @Provides
+    @Singleton
+    public static Gson provideGson() {
+      return GsonUtils.provideGson();
     }
   }
 
