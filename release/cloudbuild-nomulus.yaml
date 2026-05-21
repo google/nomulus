@@ -192,6 +192,7 @@ steps:
     region="us-central1"
     # Release names must consist of lowercase letters, numbers, and hyphens.
     release_name=$(echo "${TAG_NAME}" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+    
     echo "Release Name: $release_name"
     echo "============================================="
     # Read the pre-fetched image digest from the workspace file
