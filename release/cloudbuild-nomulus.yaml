@@ -188,14 +188,17 @@ steps:
     echo "Tag Name: ${TAG_NAME}"
     echo "Project ID: ${PROJECT_ID}"
     
+    pipeline="deploy-nomulus"
+    region="us-central1"
     # Release names must consist of lowercase letters, numbers, and hyphens.
     release_name=$(echo "${TAG_NAME}" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+    
     echo "Release Name: $release_name"
     echo "============================================="
     
     gcloud deploy releases create "$release_name" \
-      --delivery-pipeline=deploy-nomulus \
-      --region=us-central1 \
+      --delivery-pipeline="$pipeline" \
+      --region="$region" \
       --project=${PROJECT_ID} \
       --images=nomulus=gcr.io/${PROJECT_ID}/nomulus:${TAG_NAME}
 # The tarballs and jars to upload to GCS.
