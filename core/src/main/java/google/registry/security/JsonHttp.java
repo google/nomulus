@@ -18,10 +18,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.CONTENT_DISPOSITION;
 import static com.google.common.net.HttpHeaders.X_CONTENT_TYPE_OPTIONS;
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static org.json.simple.JSONValue.writeJSONString;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
+import google.registry.tools.GsonUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -29,8 +32,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 
 /**
  * Helper class for servlets that read or write JSON.
@@ -40,6 +41,8 @@ import org.json.simple.parser.ParseException;
 public final class JsonHttp {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static final Gson GSON = GsonUtils.provideGson();
 
   /** String prefixed to all JSON-like responses. */
   public static final String JSON_SAFETY_PREFIX = ")]}'\n";
@@ -51,7 +54,6 @@ public final class JsonHttp {
    * @throws IOException if we failed to read from {@code req}.
    */
   @Nullable
-  @SuppressWarnings("unchecked")
   public static Map<String, ?> read(HttpServletRequest req) throws IOException {
     if (!"POST".equals(req.getMethod())
         && !"PUT".equals(req.getMethod())) {
@@ -64,8 +66,8 @@ public final class JsonHttp {
     }
     try (Reader jsonReader = req.getReader()) {
       try {
-        return checkNotNull((Map<String, ?>) JSONValue.parseWithException(jsonReader));
-      } catch (ParseException | NullPointerException | ClassCastException e) {
+        return checkNotNull(GSON.fromJson(jsonReader, new TypeToken<>() {}));
+      } catch (JsonSyntaxException | NullPointerException | ClassCastException e) {
         logger.atWarning().withCause(e).log("Malformed JSON.");
         return null;
       }
@@ -88,7 +90,7 @@ public final class JsonHttp {
     rsp.setHeader(CONTENT_DISPOSITION, "attachment");
     try (Writer writer = rsp.getWriter()) {
       writer.write(JSON_SAFETY_PREFIX);
-      writeJSONString(jsonObject, writer);
+      GSON.toJson(jsonObject, writer);
     }
   }
 }

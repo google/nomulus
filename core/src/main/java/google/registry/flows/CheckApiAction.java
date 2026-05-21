@@ -36,13 +36,13 @@ import static google.registry.persistence.PersistenceModule.TransactionIsolation
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
-import static org.json.simple.JSONValue.toJSONString;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import com.google.common.net.MediaType;
+import com.google.gson.Gson;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.flows.domain.DomainFlowUtils.BadCommandForRegistryPhaseException;
@@ -83,6 +83,7 @@ public class CheckApiAction implements Runnable {
   @Inject Response response;
   @Inject CheckApiMetric.Builder metricBuilder;
   @Inject CheckApiMetrics checkApiMetrics;
+  @Inject Gson gson;
 
   @Inject
   CheckApiAction() {}
@@ -94,7 +95,7 @@ public class CheckApiAction implements Runnable {
       response.setHeader("X-Content-Type-Options", "nosniff");
       response.setHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
       response.setContentType(MediaType.JSON_UTF_8);
-      response.setPayload(toJSONString(doCheck()));
+      response.setPayload(gson.toJson(doCheck()));
     } finally {
       CheckApiMetric metric = metricBuilder.build();
       checkApiMetrics.incrementCheckApiRequest(metric);

@@ -29,6 +29,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.mockito.Mockito.verify;
 
+import com.google.gson.reflect.TypeToken;
 import google.registry.bsa.persistence.BsaTestingUtils;
 import google.registry.model.tld.Tld;
 import google.registry.monitoring.whitebox.CheckApiMetric;
@@ -39,10 +40,10 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import google.registry.tools.GsonUtils;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -83,9 +84,9 @@ class CheckApiActionTest {
             .build());
   }
 
-  @SuppressWarnings("unchecked")
   private Map<String, Object> getCheckResponse(String domain) {
     CheckApiAction action = new CheckApiAction();
+    action.gson = GsonUtils.provideGson();
     action.domain = domain;
     action.response = new FakeResponse();
     action.metricBuilder = CheckApiMetric.builder(fakeClock);
@@ -94,7 +95,8 @@ class CheckApiActionTest {
     endTime = fakeClock.now();
 
     action.run();
-    return (Map<String, Object>) JSONValue.parse(((FakeResponse) action.response).getPayload());
+    return action.gson.fromJson(
+        ((FakeResponse) action.response).getPayload(), new TypeToken<>() {});
   }
 
   @Test

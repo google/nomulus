@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.reflect.TypeToken;
 import google.registry.model.OteStatsTestHelper;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
@@ -44,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.json.simple.JSONArray;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -131,7 +131,7 @@ class ConsoleOteActionTest extends ConsoleActionBaseTestCase {
             Optional.of(new OteCreateData("theregistrar", "contact@registry.example")));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     action.run();
-    var obsResponse = GSON.fromJson(response.getPayload(), Map.class);
+    Map<String, Object> obsResponse = GSON.fromJson(response.getPayload(), new TypeToken<>() {});
     assertThat(
             ImmutableMap.of(
                 "theregistrar-1", "theregistrar-sunrise",
@@ -175,7 +175,7 @@ class ConsoleOteActionTest extends ConsoleActionBaseTestCase {
             Action.Method.GET, authResult, "theregistrar-1", Optional.empty(), Optional.empty());
     action.run();
 
-    List<Map<String, ?>> responseMaps = GSON.fromJson(response.getPayload(), JSONArray.class);
+    List<Map<String, ?>> responseMaps = GSON.fromJson(response.getPayload(), new TypeToken<>() {});
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertTrue(
         responseMaps.stream().allMatch(status -> Boolean.TRUE.equals(status.get("completed"))));
@@ -191,7 +191,7 @@ class ConsoleOteActionTest extends ConsoleActionBaseTestCase {
             Action.Method.GET, authResult, "theregistrar-1", Optional.empty(), Optional.empty());
     action.run();
 
-    List<Map<String, ?>> responseMaps = GSON.fromJson(response.getPayload(), JSONArray.class);
+    List<Map<String, ?>> responseMaps = GSON.fromJson(response.getPayload(), new TypeToken<>() {});
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(
             responseMaps.stream()

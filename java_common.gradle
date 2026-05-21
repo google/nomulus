@@ -55,8 +55,7 @@ configurations {
   matching {
     it.name in ['runtimeClasspath', 'compileClasspath']
   }.all {
-    // JUnit is from org.apache.beam:beam-runners-google-cloud-dataflow-java,
-    // and json-simple.
+    // JUnit is from org.apache.beam:beam-runners-google-cloud-dataflow-java
     exclude group: 'junit'
     // Mockito is from org.apache.beam:beam-runners-google-cloud-dataflow-java
     // See https://issues.apache.org/jira/browse/BEAM-8862

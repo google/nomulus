@@ -125,7 +125,6 @@ ext {
       'com.google.re2j:re2j:[1.6,)',
       'com.google.template:soy:[2024-02-26,)',
       'com.google.truth:truth:[1.1.2,)',
-      'com.googlecode.json-simple:json-simple:[1.1.1,)',
       'com.ibm.icu:icu4j:[68.2,)',
       'com.jcraft:jsch:[0.1.55,)',
       'com.squareup:javapoet:[1.13.0,)',

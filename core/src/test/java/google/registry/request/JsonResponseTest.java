@@ -18,17 +18,21 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.JsonResponse.JSON_SAFETY_PREFIX;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import google.registry.testing.FakeResponse;
+import google.registry.tools.GsonUtils;
 import java.time.Instant;
 import java.util.Map;
-import org.json.simple.JSONValue;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link JsonResponse}. */
 class JsonResponseTest {
 
+  private static final Gson GSON = GsonUtils.provideGson();
+
   private FakeResponse fakeResponse = new FakeResponse();
-  private JsonResponse jsonResponse = new JsonResponse(fakeResponse);
+  private JsonResponse jsonResponse = new JsonResponse(fakeResponse, GSON);
 
   @Test
   void testSetStatus() {
@@ -44,9 +48,8 @@ class JsonResponseTest {
     jsonResponse.setPayload(responseValues);
     String payload = fakeResponse.getPayload();
     assertThat(payload).startsWith(JSON_SAFETY_PREFIX);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> responseMap = (Map<String, Object>)
-        JSONValue.parse(payload.substring(JSON_SAFETY_PREFIX.length()));
+    Map<String, Object> responseMap =
+        GSON.fromJson(payload.substring(JSON_SAFETY_PREFIX.length()), new TypeToken<>() {});
     assertThat(responseMap).containsExactlyEntriesIn(responseValues);
   }
 
