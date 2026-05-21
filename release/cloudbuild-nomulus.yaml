@@ -175,6 +175,29 @@ steps:
     cp db/build/libs/schema.jar output/
     cp core/build/libs/nomulus-public.jar output/
     cp core/build/libs/nomulus-tests-alldeps.jar output/
+# Create a release in Cloud Deploy to trigger the deployment pipeline
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    echo "============================================="
+    echo "Triggering Google Cloud Deploy Release"
+    echo "============================================="
+    echo "Tag Name: ${TAG_NAME}"
+    echo "Project ID: ${PROJECT_ID}"
+    
+    # Release names must consist of lowercase letters, numbers, and hyphens.
+    release_name=$(echo "${TAG_NAME}" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+    echo "Release Name: $release_name"
+    echo "============================================="
+    
+    gcloud deploy releases create "$release_name" \
+      --delivery-pipeline=deploy-nomulus \
+      --region=us-central1 \
+      --project=${PROJECT_ID} \
+      --images=nomulus=gcr.io/${PROJECT_ID}/nomulus:${TAG_NAME}
 # The tarballs and jars to upload to GCS.
 artifacts:
   objects:
