@@ -32,6 +32,20 @@ serialPipeline:
           - phaseId: "stable"
             profiles: ["crash"]
             percentage: 100
+            postdeploy:
+              tasks:
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
+                  DEPLOYED_IMAGE: ${{ deploy_params['deployed_image'] }}
+                  BASE_IMAGE: ${{ deploy_params['base_image'] }}
+                  TARGET_ID: ${{ target.id }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud artifacts docker tags add $DEPLOYED_IMAGE \
+                    ${BASE_IMAGE}:live-cd-${TARGET_ID}
             analysis:
               # 10 minutes.
               duration: 600s
