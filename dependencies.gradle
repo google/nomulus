@@ -127,7 +127,7 @@ ext {
       'com.googlecode.json-simple:json-simple:[1.1.1,)',
       'org.freemarker:freemarker:[2.3.32,)',
       'com.ibm.icu:icu4j:[68.2,)',
-      'com.jcraft:jsch:[0.1.55,)',
+      'com.github.mwiede:jsch:[2.28.2,)',
       'com.squareup:javapoet:[1.13.0,)',
       'com.zaxxer:HikariCP:[3.4.5,)',
       'commons-codec:commons-codec:[1.15,)',
