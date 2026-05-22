@@ -7,13 +7,34 @@ description: deploy-nomulus is a Cloud native replacement for Spinnaker that ena
 serialPipeline:
   stages:
   - targetId: crash
-    profiles:
-    - crash
     strategy:
-      standard:
-        analysis:
-          # 10 minutes.
-          duration: 600s
-          googleCloud:
-            alertPolicyChecks:
-                stableDeploymentAlertPolicyChecks
+      canary:
+        customCanaryDeployment:
+          phaseConfigs:
+          - phaseId: "canary-1"
+            profiles: ["crash-partial-phase-1"]
+            percentage: 10
+            analysis:
+              # 10 minutes.
+              duration: 600s
+              googleCloud:
+                alertPolicyChecks:
+                    partialDeploymentAlertPolicyChecks
+          - phaseId: "canary-5"
+            profiles: ["crash-partial-phase-5"]
+            percentage: 50
+            analysis:
+              # 10 minutes.
+              duration: 600s
+              googleCloud:
+                alertPolicyChecks:
+                    partialDeploymentAlertPolicyChecks
+          - phaseId: "stable"
+            profiles: ["crash"]
+            percentage: 100
+            analysis:
+              # 10 minutes.
+              duration: 600s
+              googleCloud:
+                alertPolicyChecks:
+                    stableDeploymentAlertPolicyChecks
