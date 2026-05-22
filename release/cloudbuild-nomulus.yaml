@@ -188,18 +188,14 @@ steps:
     echo "============================================="
     echo "Tag Name: ${TAG_NAME}"
     echo "Project ID: ${PROJECT_ID}"
-    
     pipeline="deploy-nomulus"
     region="us-central1"
     # Release names must consist of lowercase letters, numbers, and hyphens.
     release_name=$(echo "${TAG_NAME}" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
-    
     echo "Release Name: $release_name"
     echo "============================================="
-    
     # Read the pre-fetched image digest from the workspace file
     nomulus_digest=$(cat /workspace/nomulus_digest)
-    
     gcloud deploy releases create "$release_name" \
       --delivery-pipeline="$pipeline" \
       --region="$region" \
