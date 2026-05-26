@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.time.ZoneOffset.UTC;
@@ -27,36 +27,38 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
-import com.google.template.soy.data.SoyListData;
-import com.google.template.soy.data.SoyMapData;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainCommand;
+import google.registry.model.domain.Period;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.eppinput.EppExtensions;
+import google.registry.model.eppinput.EppInput;
 import google.registry.model.host.Host;
 import google.registry.tools.params.NameserversParameter;
-import google.registry.tools.soy.DomainRenewSoyInfo;
-import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
 import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 /** A command to suspend a domain for the Uniform Rapid Suspension process. */
-@Parameters(separators = " =",
+@Parameters(
+    separators = " =",
     commandDescription = "Suspend a domain for Uniform Rapid Suspension.")
 final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
-  private static final ImmutableSet<String> URS_LOCKS = ImmutableSet.of(
-      StatusValue.SERVER_DELETE_PROHIBITED.getXmlName(),
-      StatusValue.SERVER_TRANSFER_PROHIBITED.getXmlName(),
-      StatusValue.SERVER_UPDATE_PROHIBITED.getXmlName());
+  private static final ImmutableSet<String> URS_LOCKS =
+      ImmutableSet.of(
+          StatusValue.SERVER_DELETE_PROHIBITED.getXmlName(),
+          StatusValue.SERVER_TRANSFER_PROHIBITED.getXmlName(),
+          StatusValue.SERVER_UPDATE_PROHIBITED.getXmlName());
 
-  /** Client id that made this change. Only recorded in the history entry. **/
+  /** Client id that made this change. Only recorded in the history entry. * */
   private static final String CLIENT_ID = "CharlestonRoad";
 
   @Parameter(
@@ -127,12 +129,12 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     superuser = true;
     Instant now = clock.now();
     Domain domain = ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, now);
-    Set<String> missingHosts =
-        difference(newHosts, ForeignKeyUtils.loadKeys(Host.class, newHosts, now).keySet());
+    ImmutableSet<String> missingHosts =
+        ImmutableSet.copyOf(
+            difference(newHosts, ForeignKeyUtils.loadKeys(Host.class, newHosts, now).keySet()));
     checkArgument(missingHosts.isEmpty(), "Hosts do not exist: %s", missingHosts);
     checkArgument(
-        locksToPreserve.isEmpty() || undo,
-        "Locks can only be preserved when running with --undo");
+        locksToPreserve.isEmpty() || undo, "Locks can only be preserved when running with --undo");
     existingNameservers = getExistingNameservers(domain);
     existingLocks = getExistingLocks(domain);
     existingDsData = getExistingDsData(domain);
@@ -152,54 +154,92 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
     // trigger renew flow
     if (renewOneYear) {
-      setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
-      addSoyRecord(
+      DomainCommand.Renew.Builder renewBuilder =
+          new DomainCommand.Renew.Builder()
+              .setTargetId(domain.getDomainName())
+              .setPeriod(Period.create(1, Period.Unit.YEARS))
+              .setCurrentExpirationDate(
+                  domain.getRegistrationExpirationTime().atZone(UTC).toLocalDate());
+
+      addEppInput(
           CLIENT_ID,
-          new SoyMapData(
-              "domainName",
-              domain.getDomainName(),
-              "expirationDate",
-              DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                  .withZone(UTC)
-                  .format(domain.getRegistrationExpirationTime()),
-              // period is the number of years to renew the registration for
-              "period",
-              String.valueOf(1),
-              // use the same values for reason and requestedByRegistrar from update flow
-              "reason",
-              (undo ? "Undo " : "") + "Uniform Rapid Suspension",
-              "requestedByRegistrar",
-              Boolean.toString(false)));
+          EppInput.create(
+                  EppInput.Renew.create(renewBuilder.build()),
+                  EppExtensions.toolMetadata(
+                      (undo ? "Undo " : "") + "Uniform Rapid Suspension", false))
+              .withClTrid("RegistryTool"));
     }
 
     // trigger update flow
-    setSoyTemplate(
-        UniformRapidSuspensionSoyInfo.getInstance(),
-        UniformRapidSuspensionSoyInfo.UNIFORMRAPIDSUSPENSION);
-    addSoyRecord(
+    DomainCommand.Update.Builder updateBuilder =
+        new DomainCommand.Update.Builder().setTargetId(domainName);
+
+    DomainCommand.Update.DomainAddRemove.Builder addBuilder =
+        new DomainCommand.Update.DomainAddRemove.Builder();
+    DomainCommand.Update.DomainAddRemove.Builder removeBuilder =
+        new DomainCommand.Update.DomainAddRemove.Builder();
+    boolean hasAdd = false;
+    boolean hasRemove = false;
+
+    if (!statusesToApply.isEmpty()) {
+      addBuilder.setStatusValues(
+          statusesToApply.stream()
+              .map(StatusValue::fromXmlName)
+              .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder())));
+      hasAdd = true;
+    }
+
+    ImmutableSet<String> statusesToRemove =
+        undo
+            ? ImmutableSet.copyOf(difference(URS_LOCKS, ImmutableSet.copyOf(locksToPreserve)))
+            : removeStatuses;
+
+    if (!statusesToRemove.isEmpty()) {
+      removeBuilder.setStatusValues(
+          statusesToRemove.stream()
+              .map(StatusValue::fromXmlName)
+              .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder())));
+      hasRemove = true;
+    }
+
+    ImmutableSet<String> addNameservers =
+        ImmutableSet.copyOf(difference(newHosts, existingNameservers));
+    if (!addNameservers.isEmpty()) {
+      addBuilder.setNameserverHostNames(ImmutableSortedSet.copyOf(addNameservers));
+      hasAdd = true;
+    }
+
+    ImmutableSet<String> removeNameservers =
+        ImmutableSet.copyOf(difference(existingNameservers, newHosts));
+    if (!removeNameservers.isEmpty()) {
+      removeBuilder.setNameserverHostNames(ImmutableSortedSet.copyOf(removeNameservers));
+      hasRemove = true;
+    }
+
+    if (hasAdd) {
+      updateBuilder.setInnerAdd(addBuilder.build());
+    }
+    if (hasRemove) {
+      updateBuilder.setInnerRemove(removeBuilder.build());
+    }
+
+    addEppInput(
         CLIENT_ID,
-        new SoyMapData(
-            "domainName",
-            domainName,
-            "hostsToAdd",
-            difference(newHosts, existingNameservers),
-            "hostsToRemove",
-            difference(existingNameservers, newHosts),
-            "statusesToApply",
-            statusesToApply,
-            "statusesToRemove",
-            undo ? difference(URS_LOCKS, ImmutableSet.copyOf(locksToPreserve)) : removeStatuses,
-            "newDsData",
-            newDsData != null ? DsRecord.convertToSoy(newDsData) : new SoyListData(),
-            "reason",
-            (undo ? "Undo " : "") + "Uniform Rapid Suspension",
-            // Domain auto-renewal is disabled as part of URS, and it's re-enabled if URS is undone.
-            // Therefore, autorenews is set to false by default and it's set to true only if the
-            // command is run in --undo mode.
-            "autorenews",
-            Boolean.toString(undo)));
+        EppInput.create(
+                EppInput.Update.create(updateBuilder.build()),
+                EppExtensions.secDnsUpdate(
+                    newDsData == null
+                        ? ImmutableSet.of()
+                        : newDsData.stream().map(DsRecord::toDsData).collect(toImmutableSet()),
+                    ImmutableSet.of(),
+                    true),
+                EppExtensions.updateSuperuser(undo),
+                EppExtensions.toolMetadata(
+                    (undo ? "Undo " : "") + "Uniform Rapid Suspension", false))
+            .withClTrid("RegistryTool"));
   }
 
+  /** Returns the set of existing nameservers for the specified domain. */
   private ImmutableSortedSet<String> getExistingNameservers(Domain domain) {
     ImmutableSortedSet.Builder<String> nameservers = ImmutableSortedSet.naturalOrder();
     for (Host host : tm().transact(() -> tm().loadByKeys(domain.getNameservers()).values())) {
@@ -208,6 +248,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     return nameservers.build();
   }
 
+  /** Returns the set of existing URS-related locks for the specified domain. */
   private ImmutableSortedSet<String> getExistingLocks(Domain domain) {
     ImmutableSortedSet.Builder<String> locks = ImmutableSortedSet.naturalOrder();
     for (StatusValue lock : domain.getStatusValues()) {
@@ -218,6 +259,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     return locks.build();
   }
 
+  /** Returns whether the specified domain has a CLIENT_HOLD status. */
   private boolean hasClientHold(Domain domain) {
     for (StatusValue status : domain.getStatusValues()) {
       if (status == StatusValue.CLIENT_HOLD) {
@@ -227,6 +269,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     return false;
   }
 
+  /** Returns a list of the existing DS records for the specified domain as JSON-like maps. */
   private ImmutableList<ImmutableMap<String, Object>> getExistingDsData(Domain domain) {
     ImmutableList.Builder<ImmutableMap<String, Object>> dsDataJsons = new ImmutableList.Builder();
     HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();
@@ -273,7 +316,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
                           rec.get("digestType"),
                           rec.get("digest")))
               .sorted()
-              .collect(toImmutableList());
+              .collect(ImmutableList.toImmutableList());
       undoBuilder.append(" --dsdata ").append(Joiner.on(',').join(formattedDsRecords));
     }
     return undoBuilder.toString();

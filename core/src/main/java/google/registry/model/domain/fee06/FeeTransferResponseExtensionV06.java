@@ -14,23 +14,14 @@
 
 package google.registry.model.domain.fee06;
 
-import com.google.common.collect.ImmutableList;
-import google.registry.model.domain.fee.Credit;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * An XML data object that represents a fee extension that may be present on the response to EPP
- * domain transfer requests.
+ * domain transfer commands.
  */
 @XmlRootElement(name = "trnData")
-@XmlType(propOrder = {"currency", "fees"})
-public class FeeTransferResponseExtensionV06 extends FeeTransformResponseExtension {
-
-  /** This version of the extension doesn't support the "credit" field. */
-  @Override
-  public ImmutableList<Credit> getCredits() {
-    return super.getCredits();
-  }
-}
+@XmlType(propOrder = {"currency", "fees", "credits"})
+public class FeeTransferResponseExtensionV06 extends FeeTransformResponseExtension {}

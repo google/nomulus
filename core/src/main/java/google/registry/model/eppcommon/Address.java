@@ -49,7 +49,6 @@ import java.util.stream.Stream;
  * also matches the "addrType" type from <a
  * href="http://tools.ietf.org/html/draft-lozano-tmch-smd">Mark and Signed Mark Objects Mapping</a>.
  *
- * @see google.registry.model.contact.ContactAddress
  * @see google.registry.model.mark.MarkAddress
  * @see google.registry.model.registrar.RegistrarAddress
  */

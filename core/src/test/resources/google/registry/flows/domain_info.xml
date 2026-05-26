@@ -2,7 +2,7 @@
   <command>
     <info>
       <domain:info
-       xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+              xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name hosts="all">%DOMAIN%</domain:name>
       </domain:info>
     </info>

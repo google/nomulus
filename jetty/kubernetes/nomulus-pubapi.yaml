@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         service: pubapi
+        traffic: pubapi-all
     spec:
       serviceAccountName: nomulus
       containers:

@@ -14,22 +14,28 @@
 
 package google.registry.model.domain.superuser;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
 /** A superuser extension that may be present on domain update commands. */
 @XmlRootElement(name = "domainUpdate")
+@XmlType(propOrder = "autorenews")
 public class DomainUpdateSuperuserExtension extends SuperuserExtension {
 
   @XmlElement(name = "autorenews")
   @Nullable
-  String autorenews;
+  Boolean autorenews;
+
+  public static DomainUpdateSuperuserExtension create(@Nullable Boolean autorenews) {
+    DomainUpdateSuperuserExtension instance = new DomainUpdateSuperuserExtension();
+    instance.autorenews = autorenews;
+    return instance;
+  }
 
   public Optional<Boolean> getAutorenews() {
-    return Optional.ofNullable(isNullOrEmpty(autorenews) ? null : Boolean.valueOf(autorenews));
+    return Optional.ofNullable(autorenews);
   }
 }

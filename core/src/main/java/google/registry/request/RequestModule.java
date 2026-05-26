@@ -44,7 +44,6 @@ import google.registry.request.HttpException.UnsupportedMediaTypeException;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.lock.LockHandler;
 import google.registry.request.lock.LockHandlerImpl;
-import google.registry.tools.GsonUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -72,13 +71,6 @@ public final class RequestModule {
     this.req = req;
     this.rsp = rsp;
     this.authResult = authResult;
-  }
-
-  @RequestScope
-  @VisibleForTesting
-  @Provides
-  public static Gson provideGson() {
-    return GsonUtils.provideGson();
   }
 
   @Provides

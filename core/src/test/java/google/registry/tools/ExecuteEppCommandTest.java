@@ -32,33 +32,33 @@ class ExecuteEppCommandTest extends EppToolCommandTestCase<ExecuteEppCommand> {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    xmlInput = ToolsTestData.loadFile("contact_create.xml");
+    xmlInput = ToolsTestData.loadFile("domain_create_minimal.xml");
     eppFile = writeToNamedTmpFile("eppFile", xmlInput);
   }
 
   @Test
   void testSuccess() throws Exception {
     runCommand("--client=NewRegistrar", "--force", eppFile);
-    eppVerifier.verifySent("contact_create.xml");
+    eppVerifier.verifySent("domain_create_minimal.xml");
   }
 
   @Test
   void testSuccess_dryRun() throws Exception {
     runCommand("--client=NewRegistrar", "--dry_run", eppFile);
-    eppVerifier.expectDryRun().verifySent("contact_create.xml");
+    eppVerifier.expectDryRun().verifySent("domain_create_minimal.xml");
   }
 
   @Test
   void testSuccess_withSuperuser() throws Exception {
     runCommand("--client=NewRegistrar", "--superuser", "--force", eppFile);
-    eppVerifier.expectSuperuser().verifySent("contact_create.xml");
+    eppVerifier.expectSuperuser().verifySent("domain_create_minimal.xml");
   }
 
   @Test
   void testSuccess_fromStdin() throws Exception {
     System.setIn(new ByteArrayInputStream(xmlInput.getBytes(UTF_8)));
     runCommand("--client=NewRegistrar", "--force");
-    eppVerifier.verifySent("contact_create.xml");
+    eppVerifier.verifySent("domain_create_minimal.xml");
   }
 
   @Test
@@ -66,9 +66,7 @@ class ExecuteEppCommandTest extends EppToolCommandTestCase<ExecuteEppCommand> {
     String xmlInput2 = ToolsTestData.loadFile("domain_check.xml");
     String eppFile2 = writeToNamedTmpFile("eppFile2", xmlInput2);
     runCommand("--client=NewRegistrar", "--force", eppFile, eppFile2);
-    eppVerifier
-        .verifySent("contact_create.xml")
-        .verifySent("domain_check.xml");
+    eppVerifier.verifySent("domain_create_minimal.xml").verifySent("domain_check.xml");
   }
 
   @Test

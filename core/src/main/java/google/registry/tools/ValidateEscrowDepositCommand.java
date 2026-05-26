@@ -26,10 +26,8 @@ import google.registry.keyring.api.Keyring;
 import google.registry.rde.Ghostryde;
 import google.registry.tools.params.PathParameter;
 import google.registry.xjc.XjcXmlTransformer;
-import google.registry.xjc.domain.XjcDomainContactType;
 import google.registry.xjc.domain.XjcDomainHostAttrType;
 import google.registry.xjc.rde.XjcRdeDeposit;
-import google.registry.xjc.rdecontact.XjcRdeContact;
 import google.registry.xjc.rdedomain.XjcRdeDomain;
 import google.registry.xjc.rdehost.XjcRdeHost;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrar;
@@ -103,13 +101,6 @@ final class ValidateEscrowDepositCommand implements Command {
         if (host.getUpRr() != null) {
           addIfNotNull(registrarRefs, host.getUpRr().getValue());
         }
-      } else if (XjcRdeContact.class.isAssignableFrom(item.getDeclaredType())) {
-        XjcRdeContact contact = (XjcRdeContact) item.getValue();
-        contacts.add(checkNotNull(contact.getId()));
-        addIfNotNull(registrarRefs, contact.getClID());
-        if (contact.getUpRr() != null) {
-          addIfNotNull(registrarRefs, contact.getUpRr().getValue());
-        }
       } else if (XjcRdeDomain.class.isAssignableFrom(item.getDeclaredType())) {
         XjcRdeDomain domain = (XjcRdeDomain) item.getValue();
         addIfNotNull(registrarRefs, domain.getClID());
@@ -121,9 +112,6 @@ final class ValidateEscrowDepositCommand implements Command {
           for (XjcDomainHostAttrType hostAttr : domain.getNs().getHostAttrs()) {
             addIfNotNull(hostnameRefs, hostAttr.getHostName());
           }
-        }
-        for (XjcDomainContactType contact : domain.getContacts()) {
-          contactRefs.add(contact.getValue());
         }
       } else if (XjcRdeRegistrar.class.isAssignableFrom(item.getDeclaredType())) {
         XjcRdeRegistrar registrar = (XjcRdeRegistrar) item.getValue();

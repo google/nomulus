@@ -97,11 +97,6 @@ public class DomainToXjcConverterTest {
 
     assertThat(bean.getClID()).isEqualTo("TheRegistrar");
 
-    assertThat(
-            bean.getContacts().stream()
-                .map(input -> String.format("%s %s", input.getType().toString(), input.getValue())))
-        .isEmpty();
-
     assertThat(bean.getCrDate()).isEqualTo(Instant.parse("1900-01-01T00:00:00Z"));
 
     // o  A <crRr> element that contains the identifier of the registrar
@@ -176,7 +171,6 @@ public class DomainToXjcConverterTest {
   void testConvertThin() {
     XjcRdeDomain bean = DomainToXjcConverter.convertDomain(makeDomain(clock), RdeMode.THIN);
     assertThat(bean.getRegistrant()).isNull();
-    assertThat(bean.getContacts()).isEmpty();
     assertThat(bean.getSecDNS()).isNull();
   }
 
@@ -197,7 +191,6 @@ public class DomainToXjcConverterTest {
     Domain domain = makeDomain(clock);
     XjcRdeDomain bean = DomainToXjcConverter.convertDomain(domain, RdeMode.FULL);
     assertThat(bean.getRegistrant()).isNull();
-    assertThat(bean.getContacts()).isEmpty();
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 

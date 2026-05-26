@@ -16,30 +16,35 @@ package google.registry.batch;
 
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.api.services.gmail.Gmail;
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.MediaType;
+import dagger.Lazy;
+import google.registry.config.RegistryConfig.Config;
+import google.registry.groups.GmailClient;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
-import google.registry.request.UrlConnectionService;
-import google.registry.request.UrlConnectionUtils;
 import google.registry.request.auth.Auth;
+import google.registry.util.EmailMessage;
+import google.registry.util.Retrier;
 import jakarta.inject.Inject;
-import java.net.URL;
-import javax.net.ssl.HttpsURLConnection;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import java.util.Optional;
 
 /**
  * Action that executes a canned script specified by the caller.
  *
  * <p>This class provides a hook for invoking hard-coded methods. The main use case is to verify in
  * Sandbox and Production environments new features that depend on environment-specific
- * configurations. For example, the {@code DelegatedCredential}, which requires correct GWorkspace
- * configuration, has been tested this way. Since it is a hassle to add or remove endpoints, we keep
- * this class all the time.
+ * configurations.
  *
  * <p>This action can be invoked using the Nomulus CLI command: {@code nomulus -e ${env} curl
- * --service BACKEND -X POST -u '/_dr/task/executeCannedScript}'}
+ * --service BACKEND -X POST -d 'sender=sender@example.com' -d 'receiver=receiver@example.com' -u
+ * '/_dr/task/executeCannedScript'}
  */
 @Action(
     service = Action.Service.BACKEND,
@@ -50,39 +55,69 @@ import javax.net.ssl.HttpsURLConnection;
 public class CannedScriptExecutionAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject UrlConnectionService urlConnectionService;
+  @Inject Lazy<Gmail> gmail;
+  @Inject Retrier retrier;
+
+  @Inject
+  @Config("isEmailSendingEnabled")
+  boolean isEmailSendingEnabled;
+
   @Inject Response response;
 
   @Inject
-  @Parameter("url")
-  String url;
+  @Parameter("replyTo")
+  String replyTo;
+
+  @Inject
+  @Parameter("receiver")
+  String receiver;
+
+  @Config("invoiceReplyToEmailAddress")
+  Optional<InternetAddress> replyToEmailAddressFromConfig;
 
   @Inject
   CannedScriptExecutionAction() {}
 
   @Override
   public void run() {
-    Integer responseCode = null;
-    String responseContent = null;
+    // For b/510340944, validating a new G Workspace user can send email. Code below can be
+    // removed or changed afterward.
     try {
-      logger.atInfo().log("Connecting to: %s", url);
-      HttpsURLConnection connection =
-          (HttpsURLConnection) urlConnectionService.createConnection(new URL(url));
-      responseCode = connection.getResponseCode();
-      logger.atInfo().log("Code: %d", responseCode);
-      logger.atInfo().log("Headers: %s", connection.getHeaderFields());
-      responseContent = new String(UrlConnectionUtils.getResponseBytes(connection), UTF_8);
-      logger.atInfo().log("Response: %s", responseContent);
+      logger.atInfo().log("Sending email to %s with replyTo %s", receiver, replyTo);
+      GmailClient gmailClient =
+          new GmailClient(gmail, retrier, isEmailSendingEnabled, new InternetAddress(replyTo));
+      gmailClient.sendEmail(
+          EmailMessage.newBuilder()
+              .addRecipient(new InternetAddress(receiver))
+              .setSubject(String.format("Email with manually set replyTo header %s", replyTo))
+              .setBody("See subject")
+              .build());
+
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+
+      gmailClient.sendEmail(
+          EmailMessage.newBuilder()
+              .setSubject(
+                  String.format(
+                      "Email with injected replyTo header %s", replyToEmailAddressFromConfig))
+              .setBody("See header")
+              .setRecipients(ImmutableList.of(new InternetAddress(receiver)))
+              .setReplyToEmailAddress(replyToEmailAddressFromConfig)
+              .setContentType(MediaType.HTML_UTF_8)
+              .build());
+      response.setPayload("Emails sent successfully.");
+    } catch (AddressException e) {
+      logger.atWarning().withCause(e).log(
+          "Invalid email address: sender=%s, receiver=%s", replyTo, receiver);
+      response.setStatus(400);
+      response.setPayload("Invalid email address provided.");
     } catch (Exception e) {
-      logger.atWarning().withCause(e).log("Connection to %s failed", url);
+      logger.atSevere().withCause(e).log("Failed to send email");
       throw new RuntimeException(e);
-    } finally {
-      if (responseCode != null) {
-        response.setStatus(responseCode);
-      }
-      if (responseContent != null) {
-        response.setPayload(responseContent);
-      }
     }
   }
 }

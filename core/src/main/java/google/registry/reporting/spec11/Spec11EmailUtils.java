@@ -16,7 +16,6 @@ package google.registry.reporting.spec11;
 
 import static com.google.common.base.Throwables.getRootCause;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.io.Resources.getResource;
 import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -25,41 +24,46 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
-import com.google.template.soy.SoyFileSet;
-import com.google.template.soy.parseinfo.SoyTemplateInfo;
-import com.google.template.soy.tofu.SoyTofu;
-import com.google.template.soy.tofu.SoyTofu.Renderer;
 import google.registry.beam.spec11.ThreatMatch;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.util.EmailMessage;
 import google.registry.util.Sleeper;
+import google.registry.util.TemplateRenderer;
 import jakarta.inject.Inject;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 
 /** Provides e-mail functionality for Spec11 tasks, such as sending Spec11 reports to registrars. */
 public class Spec11EmailUtils {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final SoyTofu SOY_SAUCE =
-      SoyFileSet.builder()
-          .add(
-              getResource(
-                  Spec11EmailSoyInfo.getInstance().getClass(),
-                  Spec11EmailSoyInfo.getInstance().getFileName()))
-          .build()
-          .compileToTofu();
+
+  /** Enum of Spec11 email templates. */
+  public enum Spec11EmailTemplate {
+    DAILY("daily_spec11_email.ftl"),
+    MONTHLY("monthly_spec11_email.ftl");
+
+    private final String ftlPath;
+
+    Spec11EmailTemplate(String ftlPath) {
+      this.ftlPath = "google/registry/reporting/spec11/ftl/" + ftlPath;
+    }
+
+    public String getFtlPath() {
+      return ftlPath;
+    }
+  }
+
   private final GmailClient gmailClient;
   private final Sleeper sleeper;
+  private final TemplateRenderer templateRenderer;
   private final Duration emailThrottleDuration;
   private final InternetAddress outgoingEmailAddress;
   private final ImmutableList<InternetAddress> spec11BccEmailAddresses;
@@ -71,6 +75,7 @@ public class Spec11EmailUtils {
   Spec11EmailUtils(
       GmailClient gmailClient,
       Sleeper sleeper,
+      TemplateRenderer templateRenderer,
       @Config("emailThrottleDuration") Duration emailThrottleDuration,
       @Config("newAlertRecipientEmailAddress") InternetAddress alertRecipientAddress,
       @Config("spec11OutgoingEmailAddress") InternetAddress spec11OutgoingEmailAddress,
@@ -79,6 +84,7 @@ public class Spec11EmailUtils {
       @Config("registryName") String registryName) {
     this.gmailClient = gmailClient;
     this.sleeper = sleeper;
+    this.templateRenderer = templateRenderer;
     this.emailThrottleDuration = emailThrottleDuration;
     this.outgoingEmailAddress = spec11OutgoingEmailAddress;
     this.spec11BccEmailAddresses = spec11BccEmailAddresses;
@@ -88,12 +94,18 @@ public class Spec11EmailUtils {
   }
 
   /**
-   * Processes a list of registrar/list-of-threat pairings and sends a notification email to the
-   * appropriate address.
+   * Processes a list of registrar/list-of-threat pairings and sends notification emails to the
+   * appropriate addresses.
+   *
+   * @param date the date the report was generated
+   * @param template the email template to use
+   * @param subject the subject line for the emails
+   * @param registrarThreatMatchesSet a set of {@link RegistrarThreatMatches} to be emailed
+   * @throws RuntimeException if emailing fails for one or more registrars
    */
   void emailSpec11Reports(
       LocalDate date,
-      SoyTemplateInfo soyTemplateInfo,
+      Spec11EmailTemplate template,
       String subject,
       ImmutableSet<RegistrarThreatMatches> registrarThreatMatchesSet) {
     ImmutableMap.Builder<RegistrarThreatMatches, Throwable> failedMatchesBuilder =
@@ -108,14 +120,15 @@ public class Spec11EmailUtils {
         try {
           // Handle exceptions individually per registrar so that one failed email doesn't prevent
           // the rest from being sent.
-          emailRegistrar(date, soyTemplateInfo, subject, filteredMatches);
+          emailRegistrar(date, template, subject, filteredMatches);
           numRegistrarsEmailed++;
         } catch (Throwable e) {
           failedMatchesBuilder.put(registrarThreatMatches, getRootCause(e));
         }
       }
     }
-    logger.atInfo().log("Emailed daily diffs to %s registrars.", numRegistrarsEmailed);
+    logger.atInfo().log("Emailed Spec11 reports to %s registrars.", numRegistrarsEmailed);
+
     ImmutableMap<RegistrarThreatMatches, Throwable> failedMatches = failedMatchesBuilder.build();
     if (!failedMatches.isEmpty()) {
       ImmutableList<Map.Entry<RegistrarThreatMatches, Throwable>> failedMatchesList =
@@ -130,7 +143,7 @@ public class Spec11EmailUtils {
         logger.atSevere().withCause(failedMatchesList.get(i).getValue()).log(
             "Additional exception thrown when sending email to registrar %s, in addition to the"
                 + " re-thrown exception.",
-            failedMatchesList.get(i).getKey().clientId());
+            failedMatchesList.get(i).getKey().registrarId());
       }
       throw new RuntimeException(
           "Emailing Spec11 reports failed, first exception:", firstThrowable);
@@ -144,43 +157,49 @@ public class Spec11EmailUtils {
       RegistrarThreatMatches registrarThreatMatches) {
     ImmutableList<ThreatMatch> filteredMatches =
         tm().transact(
-                () -> {
-                  return registrarThreatMatches.threatMatches().stream()
-                      .filter(
-                          threatMatch ->
-                              tm()
-                                  .createQueryComposer(Domain.class)
-                                  .where("domainName", Comparator.EQ, threatMatch.domainName())
-                                  .stream()
-                                  .anyMatch(Domain::shouldPublishToDns))
-                      .collect(toImmutableList());
-                });
-    return RegistrarThreatMatches.create(registrarThreatMatches.clientId(), filteredMatches);
+                () ->
+                    registrarThreatMatches.threatMatches().stream()
+                        .filter(
+                            threatMatch ->
+                                tm()
+                                    .createQueryComposer(Domain.class)
+                                    .where("domainName", Comparator.EQ, threatMatch.domainName())
+                                    .stream()
+                                    .anyMatch(Domain::shouldPublishToDns))
+                        .collect(toImmutableList()));
+    return RegistrarThreatMatches.create(registrarThreatMatches.registrarId(), filteredMatches);
   }
 
   private void emailRegistrar(
       LocalDate date,
-      SoyTemplateInfo soyTemplateInfo,
+      Spec11EmailTemplate template,
       String subject,
       RegistrarThreatMatches registrarThreatMatches)
       throws MessagingException {
     gmailClient.sendEmail(
         EmailMessage.newBuilder()
             .setSubject(subject)
-            .setBody(getEmailBody(date, soyTemplateInfo, registrarThreatMatches))
+            .setBody(getEmailBody(date, template, registrarThreatMatches))
             .setContentType(MediaType.HTML_UTF_8)
-            .addRecipient(getEmailAddressForRegistrar(registrarThreatMatches.clientId()))
+            .addRecipient(getEmailAddressForRegistrar(registrarThreatMatches.registrarId()))
             .setBccs(spec11BccEmailAddresses)
             .build());
   }
 
+  /**
+   * Renders the email body using the specified template and registrar threat matches.
+   *
+   * @param date the date the report was generated
+   * @param template the email template to use
+   * @param registrarThreatMatches the matches for a specific registrar
+   * @return the rendered email body as an HTML string
+   */
   private String getEmailBody(
-      LocalDate date,
-      SoyTemplateInfo soyTemplateInfo,
-      RegistrarThreatMatches registrarThreatMatches) {
-    Renderer renderer = SOY_SAUCE.newRenderer(soyTemplateInfo);
-    // Soy templates require that data be in raw map/list form.
-    List<Map<String, String>> threatMatchMap =
+      LocalDate date, Spec11EmailTemplate template, RegistrarThreatMatches registrarThreatMatches) {
+    // FreeMarker templates require that data be in raw map/list form or bean-style POJOs.
+    // We convert the ThreatMatch records to maps here to ensure compatibility and to
+    // apply email-safe domain name transformations.
+    ImmutableList<ImmutableMap<String, String>> threatMatchMap =
         registrarThreatMatches.threatMatches().stream()
             .map(
                 threatMatch ->
@@ -189,15 +208,14 @@ public class Spec11EmailUtils {
                         "threatType", threatMatch.threatType()))
             .collect(toImmutableList());
 
-    Map<String, Object> data =
+    ImmutableMap<String, Object> data =
         ImmutableMap.of(
             "date", date.toString(),
             "registry", registryName,
             "replyToEmail", outgoingEmailAddress.getAddress(),
             "threats", threatMatchMap,
             "resources", spec11WebResources);
-    renderer.setData(data);
-    return renderer.render();
+    return templateRenderer.render(template.getFtlPath(), data);
   }
 
   // Mutates a known bad domain to pass spam checks by Email sender and clients, as suggested by

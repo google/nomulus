@@ -25,15 +25,21 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 import org.joda.money.CurrencyUnit;
 
-/** Version 0.6 of the fee extension that may be present on domain check commands. */
+/**
+ * An XML data object that represents version 0.6 of the fee extension that may be present on EPP
+ * domain check commands.
+ */
 @XmlRootElement(name = "check")
 public class FeeCheckCommandExtensionV06 extends ImmutableObject
     implements FeeCheckCommandExtension<
-        FeeCheckCommandExtensionItemV06,
-        FeeCheckResponseExtensionV06> {
+        FeeCheckCommandExtensionItemV06, FeeCheckResponseExtensionV06> {
 
   @XmlElement(name = "domain")
   List<FeeCheckCommandExtensionItemV06> items;
+
+  public void setItems(ImmutableList<FeeCheckCommandExtensionItemV06> items) {
+    this.items = items;
+  }
 
   @Override
   public CurrencyUnit getCurrency() {

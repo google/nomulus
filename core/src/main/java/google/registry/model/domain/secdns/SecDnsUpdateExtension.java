@@ -17,6 +17,7 @@ package google.registry.model.domain.secdns;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import jakarta.xml.bind.annotation.XmlAttribute;
@@ -46,7 +47,7 @@ public class SecDnsUpdateExtension extends ImmutableObject implements CommandExt
   Remove remove;
 
   /** Allows adding new delegations. */
-  Add add;
+  @XmlElement Add add;
 
   /** Would allow changing maxSigLife except that we don't support it. */
   @XmlElement(name = "chg")
@@ -68,31 +69,88 @@ public class SecDnsUpdateExtension extends ImmutableObject implements CommandExt
     return Optional.ofNullable(change);
   }
 
+  /** Builder for {@link SecDnsUpdateExtension}. */
+  public static class Builder extends Buildable.Builder<SecDnsUpdateExtension> {
+    public Builder setUrgent(Boolean urgent) {
+      getInstance().urgent = urgent;
+      return this;
+    }
+
+    public Builder setRemove(Remove remove) {
+      getInstance().remove = remove;
+      return this;
+    }
+
+    public Builder setAdd(Add add) {
+      getInstance().add = add;
+      return this;
+    }
+  }
+
   @XmlTransient
   abstract static class AddRemoveBase extends ImmutableObject {
-    /** Delegations to add or remove. */
+    abstract static class Builder<T extends AddRemoveBase, B extends Builder<T, B>>
+        extends Buildable.Builder<T> {
+      public abstract B setDsData(ImmutableSet<DomainDsData> dsData);
+    }
+  }
+
+  /** The inner add type on the update extension. */
+  @XmlType(propOrder = "dsData")
+  public static class Add extends AddRemoveBase {
+    /** Delegations to add. */
+    @XmlElement(name = "dsData")
     Set<DomainDsData> dsData;
 
     public ImmutableSet<DomainDsData> getDsData() {
       return nullToEmptyImmutableCopy(dsData);
     }
-  }
 
-  /** The inner add type on the update extension. */
-  public static class Add extends AddRemoveBase {}
+    /** Builder for {@link Add}. */
+    public static class Builder extends AddRemoveBase.Builder<Add, Builder> {
+      @Override
+      public Builder setDsData(ImmutableSet<DomainDsData> dsData) {
+        getInstance().dsData = dsData;
+        return this;
+      }
+    }
+  }
 
   /** The inner remove type on the update extension. */
   @XmlType(propOrder = {"all", "dsData"})
   public static class Remove extends AddRemoveBase {
     /** Whether to remove all delegations. */
-    Boolean all;
+    @XmlElement Boolean all;
+
+    /** Delegations to remove. */
+    @XmlElement(name = "dsData")
+    Set<DomainDsData> dsData;
 
     public Boolean getAll() {
       return all;
     }
+
+    public ImmutableSet<DomainDsData> getDsData() {
+      return nullToEmptyImmutableCopy(dsData);
+    }
+
+    /** Builder for {@link Remove}. */
+    public static class Builder extends AddRemoveBase.Builder<Remove, Builder> {
+      public Builder setAll(Boolean all) {
+        getInstance().all = all;
+        return this;
+      }
+
+      @Override
+      public Builder setDsData(ImmutableSet<DomainDsData> dsData) {
+        getInstance().dsData = dsData;
+        return this;
+      }
+    }
   }
 
   /** The inner change type on the update extension, though we don't actually support changes. */
+  @XmlType(propOrder = "maxSigLife")
   public static class Change extends ImmutableObject {
     /**
      * Time in seconds until the signature should expire.
@@ -100,6 +158,7 @@ public class SecDnsUpdateExtension extends ImmutableObject implements CommandExt
      * <p>We do not support expirations, but we need this field to be able to return appropriate
      * errors.
      */
+    @XmlElement(name = "maxSigLife")
     Long maxSigLife;
   }
 }

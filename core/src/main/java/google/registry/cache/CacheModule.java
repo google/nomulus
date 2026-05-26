@@ -60,12 +60,15 @@ public final class CacheModule {
   public static Optional<UnifiedJedis> provideJedis(
       @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("valkeyHostsAndPorts") Optional<ImmutableList<String>> valkeyHostsAndPorts,
-      @Config("valkeySslSocketFactory") SSLSocketFactory valkeySslSocketFactory) {
-    if (valkeyHostsAndPorts.map(ImmutableList::isEmpty).orElse(true)) {
+      @Config("valkeyCertificateAuthority") Optional<String> valkeyCertificateAuthority) {
+    if (valkeyHostsAndPorts.map(ImmutableList::isEmpty).orElse(true)
+        || valkeyCertificateAuthority.isEmpty()) {
       return Optional.empty();
     }
     ImmutableSet<HostAndPort> hostsAndPorts =
         valkeyHostsAndPorts.get().stream().map(HostAndPort::from).collect(toImmutableSet());
+    SSLSocketFactory valkeySslSocketFactory =
+        createValkeySslSocketFactory(valkeyCertificateAuthority.get());
     JedisClientConfig clientConfig =
         DefaultJedisClientConfig.builder()
             .ssl(true)
@@ -111,11 +114,7 @@ public final class CacheModule {
     return new MultilayerHostCache(jedisClient.get(), cacheMetrics);
   }
 
-  @Provides
-  @Singleton
-  @Config("valkeySslSocketFactory")
-  static SSLSocketFactory provideValkeySslSocketFactory(
-      @Config("valkeyCertificateAuthority") String valkeyCertificateAuthority) {
+  private static SSLSocketFactory createValkeySslSocketFactory(String valkeyCertificateAuthority) {
     try {
       ImmutableList<X509Certificate> trustedCerts =
           CertificateFactory.getInstance("X.509")

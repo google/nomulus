@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import google.registry.groups.GmailClient;
 import google.registry.model.console.User;
-import google.registry.request.RequestModule;
+import google.registry.request.Modules;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.SendEmailUtils;
@@ -38,14 +38,11 @@ public final class ConsoleApiParamsUtils {
         new SendEmailUtils(ImmutableList.of("notification@test.example"), gmailClient);
     XsrfTokenManager xsrfTokenManager =
         new XsrfTokenManager(new FakeClock(Instant.parse("2020-02-02T01:23:45Z")));
+    String token =
+        xsrfTokenManager.generateToken(authResult.user().map(User::getEmailAddress).orElse(""));
     when(request.getCookies())
-        .thenReturn(
-            new Cookie[] {
-              new Cookie(
-                  XsrfTokenManager.X_CSRF_TOKEN,
-                  xsrfTokenManager.generateToken(
-                      authResult.user().map(User::getEmailAddress).orElse("")))
-            });
+        .thenReturn(new Cookie[] {new Cookie(XsrfTokenManager.X_CSRF_TOKEN, token)});
+    when(request.getHeader(XsrfTokenManager.X_CSRF_TOKEN)).thenReturn(token);
     when(request.getRequestURI()).thenReturn("/console/fake-url");
     return ConsoleApiParams.create(
         request,
@@ -53,6 +50,6 @@ public final class ConsoleApiParamsUtils {
         authResult,
         sendEmailUtils,
         xsrfTokenManager,
-        RequestModule.provideGson());
+        Modules.GsonModule.provideGson());
   }
 }

@@ -10,8 +10,6 @@
         <domain:roid>EXAMPLE1-REP</domain:roid>
         <domain:status s="ok"/>
         <domain:registrant>jd1234</domain:registrant>
-        <domain:contact type="admin">sh8013</domain:contact>
-        <domain:contact type="tech">sh8013</domain:contact>
         <domain:ns>
           <domain:hostObj>ns1.example.com</domain:hostObj>
           <domain:hostObj>ns1.example.net</domain:hostObj>

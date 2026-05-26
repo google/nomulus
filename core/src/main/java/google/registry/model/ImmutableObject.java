@@ -106,17 +106,22 @@ public abstract class ImmutableObject implements Cloneable {
     return hashCode;
   }
 
-  /** Returns a clone of the given object. */
-  @SuppressWarnings("unchecked")
-  protected static <T extends ImmutableObject> T clone(T t) {
+  @Override
+  @SuppressWarnings("AmbiguousMethodReference")
+  public ImmutableObject clone() {
     try {
-      T clone = (T) t.clone();
-      // Clear the hashCode since we often mutate clones before handing them out.
+      ImmutableObject clone = (ImmutableObject) super.clone();
       clone.hashCode = null;
       return clone;
-    } catch (CloneNotSupportedException e) {  // Yes it is.
-      throw new IllegalStateException();
+    } catch (CloneNotSupportedException e) {
+      throw new AssertionError();
     }
+  }
+
+  /** Returns a clone of the given object. */
+  @SuppressWarnings({"unchecked", "AmbiguousMethodReference"})
+  protected static <T extends ImmutableObject> T clone(T t) {
+    return (T) t.clone();
   }
 
   /** Returns a clone of the given object with empty fields set to null. */
@@ -233,7 +238,7 @@ public abstract class ImmutableObject implements Cloneable {
     }
   }
 
-  /** Marker to indicate that this filed should be ignored by {@link #toDiffableFieldMap}. */
+  /** Marker to indicate that this field should be ignored by {@link #toDiffableFieldMap}. */
   @Documented
   @Retention(RUNTIME)
   @Target(FIELD)

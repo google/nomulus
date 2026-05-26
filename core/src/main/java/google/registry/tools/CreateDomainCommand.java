@@ -20,12 +20,20 @@ import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.template.soy.data.SoyMapData;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
+import google.registry.model.domain.DomainAuthInfo;
+import google.registry.model.domain.DomainCommand;
+import google.registry.model.domain.Period;
+import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
+import google.registry.model.eppinput.EppExtensions;
+import google.registry.model.eppinput.EppInput;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
-import google.registry.tools.soy.DomainCreateSoyInfo;
 import google.registry.util.StringGenerator;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.math.BigDecimal;
+import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 
 /** A command to create a new domain via EPP. */
@@ -60,8 +68,8 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand {
     }
 
     for (String domain : domains) {
-      String currency = null;
-      String cost = null;
+      CurrencyUnit currency = null;
+      BigDecimal cost = null;
       DomainPrices prices = getPricesForDomainName(domain, clock.now());
 
       // Check if the domain is premium and set the fee on the create command if so.
@@ -70,29 +78,32 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand {
             !force || forcePremiums,
             "Forced creates on premium domain(s) require --force_premiums");
         Money createCost = prices.getCreateCost();
-        currency = createCost.getCurrencyUnit().getCode();
-        cost = createCost.multipliedBy(period).getAmount().toString();
+        currency = createCost.getCurrencyUnit();
+        cost = createCost.multipliedBy(period).getAmount();
         printStream.printf(
             "NOTE: %s is premium at %s per year; sending total cost for %d year(s) of %s %s.\n",
             domain, createCost, period, currency, cost);
       }
 
-      setSoyTemplate(DomainCreateSoyInfo.getInstance(), DomainCreateSoyInfo.DOMAINCREATE);
-      SoyMapData soyMapData =
-          new SoyMapData(
-              "domain", domain,
-              "period", period,
-              "nameservers", nameservers,
-              "password", password,
-              "currency", currency,
-              "price", cost,
-              "dsRecords", DsRecord.convertToSoy(dsRecords),
-              "reason", reason,
-              "allocationToken", allocationToken);
-      if (requestedByRegistrar != null) {
-        soyMapData.put("requestedByRegistrar", requestedByRegistrar.toString());
-      }
-      addSoyRecord(clientId, soyMapData);
+      DomainCommand.Create.Builder createBuilder =
+          new DomainCommand.Create.Builder()
+              .setDomainName(domain)
+              .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create(password)))
+              .setPeriod(Period.create(period, Period.Unit.YEARS))
+              .setNameserverHostNames(ImmutableSortedSet.copyOf(nameservers));
+
+      addEppInput(
+          clientId,
+          EppInput.create(
+                  EppInput.Create.create(createBuilder.build()),
+                  EppExtensions.feeCreate(currency, cost),
+                  EppExtensions.secDnsCreate(
+                      dsRecords.stream()
+                          .map(DsRecord::toDsData)
+                          .collect(ImmutableSet.toImmutableSet())),
+                  EppExtensions.toolMetadata(reason, requestedByRegistrar),
+                  EppExtensions.allocationToken(allocationToken))
+              .withClTrid("RegistryTool"));
     }
   }
 }

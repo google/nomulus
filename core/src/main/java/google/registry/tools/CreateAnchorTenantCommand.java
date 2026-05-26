@@ -23,8 +23,12 @@ import static google.registry.util.StringGenerator.DEFAULT_PASSWORD_LENGTH;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.net.InternetDomainName;
-import com.google.template.soy.data.SoyMapData;
-import google.registry.tools.soy.CreateAnchorTenantSoyInfo;
+import google.registry.model.domain.DomainAuthInfo;
+import google.registry.model.domain.DomainCommand;
+import google.registry.model.domain.Period;
+import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
+import google.registry.model.eppinput.EppExtensions;
+import google.registry.model.eppinput.EppInput;
 import google.registry.util.StringGenerator;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -48,10 +52,12 @@ final class CreateAnchorTenantCommand extends MutatingEppToolCommand {
       required = true)
   private String domainName;
 
+  @SuppressWarnings("UnusedVariable")
   @Parameter(
       names = {"--contact"},
-      description = "Contact ID for the request. This will be used for registrant, admin contact, "
-          + "and tech contact.",
+      description =
+          "Contact ID for the request. This will be used for registrant, admin contact, "
+              + "and tech contact.",
       required = true)
   private String contact;
 
@@ -87,15 +93,18 @@ final class CreateAnchorTenantCommand extends MutatingEppToolCommand {
       cost = getDomainCreateCost(domainName, clock.now(), DEFAULT_ANCHOR_TENANT_PERIOD_YEARS);
     }
 
-    setSoyTemplate(CreateAnchorTenantSoyInfo.getInstance(),
-        CreateAnchorTenantSoyInfo.CREATEANCHORTENANT);
-    addSoyRecord(clientId, new SoyMapData(
-        "domainName", domainName,
-        "contactId", contact,
-        "reason", reason,
-        "password", password,
-        "period", DEFAULT_ANCHOR_TENANT_PERIOD_YEARS,
-        "feeCurrency", cost != null ? cost.getCurrencyUnit().toString() : null,
-        "fee", cost != null ? cost.getAmount().toString() : null));
+    DomainCommand.Create.Builder createBuilder =
+        new DomainCommand.Create.Builder()
+            .setDomainName(domainName)
+            .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create(password)))
+            .setPeriod(Period.create(DEFAULT_ANCHOR_TENANT_PERIOD_YEARS, Period.Unit.YEARS));
+
+    addEppInput(
+        clientId,
+        EppInput.create(
+                EppInput.Create.create(createBuilder.build()),
+                EppExtensions.metadata(reason, false, true),
+                EppExtensions.feeCreateV06(cost))
+            .withClTrid("RegistryTool"));
   }
 }

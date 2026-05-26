@@ -40,7 +40,6 @@ public class EppXmlTransformer  {
       ImmutableList.of(
           "eppcom.xsd",
           "epp.xsd",
-          "contact.xsd",
           "host.xsd",
           "domain.xsd",
           "rgp.xsd",

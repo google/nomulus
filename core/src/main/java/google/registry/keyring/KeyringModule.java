@@ -22,6 +22,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.secretmanager.SecretManagerKeyring;
 import jakarta.inject.Singleton;
+import java.util.Optional;
 
 /** Dagger module for {@link Keyring} */
 @Module
@@ -55,7 +56,7 @@ public abstract class KeyringModule {
 
   @Provides
   @Config("valkeyCertificateAuthority")
-  public static String provideValkeyCertificateAuthority(Keyring keyring) {
-    return keyring.getValkeyCertificateAuthority();
+  public static Optional<String> provideValkeyCertificateAuthority(Keyring keyring) {
+    return Optional.ofNullable(keyring.getValkeyCertificateAuthority());
   }
 }

@@ -39,15 +39,13 @@ public class PendingActionNotificationResponse extends ImmutableObject
   /** The inner name type that contains a name and the result boolean. */
   @Embeddable
   static class NameOrId extends ImmutableObject implements UnsafeSerializable {
-    @XmlValue
-    String value;
+    @XmlValue String value;
 
     @XmlAttribute(name = "paResult")
     boolean actionResult;
   }
 
-  @XmlTransient
-  NameOrId nameOrId;
+  @XmlTransient NameOrId nameOrId;
 
   @XmlElement(name = "paTRID")
   Trid trid;
@@ -104,36 +102,11 @@ public class PendingActionNotificationResponse extends ImmutableObject
     }
   }
 
-  /** An adapter to output the XML in response to resolving a pending command on a contact. */
-  @XmlRootElement(name = "panData", namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  @XmlType(
-      propOrder = {"id", "trid", "processedDate"},
-      namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  public static class ContactPendingActionNotificationResponse
-      extends PendingActionNotificationResponse {
-
-    @XmlElement
-    NameOrId getId() {
-      return nameOrId;
-    }
-
-    public static ContactPendingActionNotificationResponse create(
-        String contactId, boolean actionResult, Trid trid, Instant processedDate) {
-      return init(
-          new ContactPendingActionNotificationResponse(),
-          contactId,
-          actionResult,
-          trid,
-          processedDate);
-    }
-  }
-
   /** An adapter to output the XML in response to resolving a pending command on a host. */
   @XmlRootElement(name = "panData", namespace = "urn:ietf:params:xml:ns:domain-1.0")
   @XmlType(
-    propOrder = {"name", "trid", "processedDate"},
-    namespace = "urn:ietf:params:xml:ns:domain-1.0"
-  )
+      propOrder = {"name", "trid", "processedDate"},
+      namespace = "urn:ietf:params:xml:ns:domain-1.0")
   public static class HostPendingActionNotificationResponse
       extends PendingActionNotificationResponse {
 

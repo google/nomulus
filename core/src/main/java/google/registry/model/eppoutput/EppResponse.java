@@ -20,7 +20,6 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
-import google.registry.model.contact.ContactInfoData;
 import google.registry.model.domain.DomainInfoData;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.domain.bulktoken.BulkTokenResponseExtension;
@@ -53,19 +52,15 @@ import google.registry.model.domain.launch.LaunchCheckResponseExtension;
 import google.registry.model.domain.rgp.RgpInfoExtension;
 import google.registry.model.domain.secdns.SecDnsInfoExtension;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.eppoutput.CheckData.ContactCheckData;
 import google.registry.model.eppoutput.CheckData.DomainCheckData;
 import google.registry.model.eppoutput.CheckData.HostCheckData;
-import google.registry.model.eppoutput.CreateData.ContactCreateData;
 import google.registry.model.eppoutput.CreateData.DomainCreateData;
 import google.registry.model.eppoutput.CreateData.HostCreateData;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import google.registry.model.host.HostInfoData;
 import google.registry.model.poll.MessageQueueInfo;
-import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
-import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementRef;
@@ -107,11 +102,6 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
 
   /** Zero or more response "resData" results. */
   @XmlElementRefs({
-    @XmlElementRef(type = ContactCheckData.class),
-    @XmlElementRef(type = ContactCreateData.class),
-    @XmlElementRef(type = ContactInfoData.class),
-    @XmlElementRef(type = ContactPendingActionNotificationResponse.class),
-    @XmlElementRef(type = ContactTransferResponse.class),
     @XmlElementRef(type = DomainCheckData.class),
     @XmlElementRef(type = DomainCreateData.class),
     @XmlElementRef(type = DomainInfoData.class),

@@ -55,6 +55,8 @@ class AuthModuleTest {
   private static final String ACCESS_TOKEN = "FakeAccessToken";
   private static final String REFRESH_TOKEN = "FakeReFreshToken";
 
+  private static final Gson GSON = GsonUtils.provideGson();
+
   @SuppressWarnings("WeakerAccess")
   @TempDir
   Path folder;
@@ -166,7 +168,7 @@ class AuthModuleTest {
   void test_provideLocalCredentialJson() {
     String credentialJson =
         AuthModule.provideLocalCredentialJson(
-            AuthModuleTest::getSecrets, this::getCredential, null);
+            AuthModuleTest::getSecrets, GSON, this::getCredential, null);
     Map<String, String> jsonMap =
         new Gson().fromJson(credentialJson, new TypeToken<Map<String, String>>() {}.getType());
     assertThat(jsonMap.get("type")).isEqualTo("authorized_user");
@@ -182,7 +184,10 @@ class AuthModuleTest {
     Files.writeString(credentialFile.toPath(), "{some_field: some_value}");
     String credentialJson =
         AuthModule.provideLocalCredentialJson(
-            AuthModuleTest::getSecrets, this::getCredential, credentialFile.getCanonicalPath());
+            AuthModuleTest::getSecrets,
+            GSON,
+            this::getCredential,
+            credentialFile.getCanonicalPath());
     assertThat(credentialJson).isEqualTo("{some_field: some_value}");
   }
 

@@ -49,16 +49,17 @@ SELECT
   SUM(IF(metricName = 'srs-host-delete', count, 0)) AS srs_host_delete,
   SUM(IF(metricName = 'srs-host-info', count, 0)) AS srs_host_info,
   SUM(IF(metricName = 'srs-host-update', count, 0)) AS srs_host_update,
-  SUM(IF(metricName = 'srs-cont-check', count, 0)) AS srs_cont_check,
-  SUM(IF(metricName = 'srs-cont-create', count, 0)) AS srs_cont_create,
-  SUM(IF(metricName = 'srs-cont-delete', count, 0)) AS srs_cont_delete,
-  SUM(IF(metricName = 'srs-cont-info', count, 0)) AS srs_cont_info,
-  SUM(IF(metricName = 'srs-cont-transfer-approve', count, 0)) AS srs_cont_transfer_approve,
-  SUM(IF(metricName = 'srs-cont-transfer-cancel', count, 0)) AS srs_cont_transfer_cancel,
-  SUM(IF(metricName = 'srs-cont-transfer-query', count, 0)) AS srs_cont_transfer_query,
-  SUM(IF(metricName = 'srs-cont-transfer-reject', count, 0)) AS srs_cont_transfer_reject,
-  SUM(IF(metricName = 'srs-cont-transfer-request', count, 0)) AS srs_cont_transfer_request,
-  SUM(IF(metricName = 'srs-cont-update', count, 0)) AS srs_cont_update,
+  -- Contacts are no longer supported
+  0 AS srs_cont_check,
+  0 AS srs_cont_create,
+  0 AS srs_cont_delete,
+  0 AS srs_cont_info,
+  0 AS srs_cont_transfer_approve,
+  0 AS srs_cont_transfer_cancel,
+  0 AS srs_cont_transfer_query,
+  0 AS srs_cont_transfer_reject,
+  0 AS srs_cont_transfer_request,
+  0 AS srs_cont_update,
   SUM(IF(metricName = 'rdap-queries', count, 0)) AS rdap_queries
   -- Cross join a list of all TLDs against TLD-specific metrics and then
   -- filter so that only metrics with that TLD or a NULL TLD are counted

@@ -1,0 +1,110 @@
+# This Cloud Build job prepares and applies Google Cloud Deploy configurations.
+# It merges the internal repository and populates stableDeploymentAlertPolicyChecks
+# in delivery-pipeline.yaml based on environment-specific configuration files.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config release/cloudbuild-clouddeploy.yaml --substitutions \
+#   _INTERNAL_REPO_URL=[URL],PROJECT_ID=[PROJECT_ID] ..
+
+steps:
+# Check the out internal repo.
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    git clone https://gerrit.googlesource.com/gcompute-tools
+    sed -i s@/usr/bin/python@/usr/bin/python3@g ./gcompute-tools/git-cookie-authdaemon
+    ./gcompute-tools/git-cookie-authdaemon
+    git clone ${_INTERNAL_REPO_URL} nomulus-internal
+
+# Merge the repos.
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    shopt -s dotglob
+    rm -rf .git && rm -rf nomulus-internal/.git
+    cp -rf nomulus-internal/* .
+    rm -rf nomulus-internal
+
+# Populate stableDeploymentAlertPolicyChecks in delivery-pipeline.yaml and variables in targets
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    for env in crash; do
+      config_file="release/clouddeploy/${env}-config.yaml"
+      if [ -f "$config_file" ]; then
+        echo "Extracting checks from $config_file..."
+        # Extract only the indented block under stableDeploymentAlertPolicyChecks.
+        awk '
+        /^stableDeploymentAlertPolicyChecks:/ { capture = 1; next }
+        capture {
+          if ($0 ~ /^[^[:space:]]/ && $0 != "") { capture = 0; exit }
+          print "                " $0
+        }
+        ' "$config_file" > checks.tmp
+        
+        # Insert the checks where the placeholder is located and remove the placeholder
+        sed -i '/stableDeploymentAlertPolicyChecks/r checks.tmp' release/clouddeploy/delivery-pipeline.yaml
+        sed -i '/stableDeploymentAlertPolicyChecks/d' release/clouddeploy/delivery-pipeline.yaml
+        rm -f checks.tmp
+
+        # Extract only the indented block under partialDeploymentAlertPolicyChecks.
+        if grep -q "^partialDeploymentAlertPolicyChecks:" "$config_file"; then
+          echo "Extracting partial checks from $config_file..."
+          awk '
+          /^partialDeploymentAlertPolicyChecks:/ { capture = 1; next }
+          capture {
+            if ($0 ~ /^[^[:space:]]/ && $0 != "") { capture = 0; exit }
+            print "                " $0
+          }
+          ' "$config_file" > partial_checks.tmp
+          
+          # Insert the checks where the placeholder is located and remove the placeholder
+          sed -i '/partialDeploymentAlertPolicyChecks/r partial_checks.tmp' release/clouddeploy/delivery-pipeline.yaml
+          sed -i '/partialDeploymentAlertPolicyChecks/d' release/clouddeploy/delivery-pipeline.yaml
+          rm -f partial_checks.tmp
+        fi
+        
+        # Populate variables in target file
+        target_file="release/clouddeploy/${env}-target.yaml"
+        if [ -f "$target_file" ]; then
+          echo "Populating variables in $target_file..."
+          artifact_storage=$(sed -n 's/^artifactStorage: //p' "$config_file")
+          service_account=$(sed -n 's/^serviceAccount: //p' "$config_file")
+          cluster_val=$(sed -n 's/^cluster: //p' "$config_file")
+          
+          sed -i "s|artifactStorage: artifactStorage|artifactStorage: $artifact_storage|" "$target_file"
+          sed -i "s|serviceAccount: serviceAccount|serviceAccount: $service_account|" "$target_file"
+          sed -i "s|cluster: cluster|cluster: $cluster_val|" "$target_file"
+        fi
+      fi
+    done
+
+# Apply Cloud Deploy configuration
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    for env in crash; do
+      target_file="release/clouddeploy/${env}-target.yaml"
+      if [ -f "$target_file" ]; then
+        echo "Applying target $target_file..."
+        gcloud deploy apply --file="$target_file" --region=us-central1 --project=${PROJECT_ID}
+      fi
+    done
+    echo 'Applying delivery-pipeline.yaml...'
+    gcloud deploy apply --file=release/clouddeploy/delivery-pipeline.yaml --region=us-central1 --project=${PROJECT_ID}
+
+timeout: 3600s
+options:
+  machineType: 'E2_HIGHCPU_32'

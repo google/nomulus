@@ -15,13 +15,20 @@
 package google.registry.model.domain.fee06;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.model.Buildable;
 import google.registry.model.domain.fee.Credit;
+import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeCreateCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
+import org.joda.money.CurrencyUnit;
 
-/** A fee extension that may be present on domain create commands. */
+/**
+ * An XML data object that represents a fee extension that may be present on EPP domain create
+ * commands.
+ */
 @XmlRootElement(name = "create")
 @XmlType(propOrder = {"currency", "fees"})
 public class FeeCreateCommandExtensionV06 extends FeeCreateCommandExtension {
@@ -31,12 +38,23 @@ public class FeeCreateCommandExtensionV06 extends FeeCreateCommandExtension {
     return new FeeTransformResponseExtension.Builder(new FeeCreateResponseExtensionV06());
   }
 
-  /**
-   * This method is overridden and not annotated for JAXB because this version of the extension
-   * doesn't support the "credit" field.
-   */
+  /** This version of the extension doesn't support the "credit" field. */
   @Override
+  @XmlTransient
   public ImmutableList<Credit> getCredits() {
     return ImmutableList.of();
+  }
+
+  /** Builder for {@link FeeCreateCommandExtensionV06}. */
+  public static class Builder extends Buildable.Builder<FeeCreateCommandExtensionV06> {
+    public Builder setCurrency(CurrencyUnit currency) {
+      getInstance().currency = currency;
+      return this;
+    }
+
+    public Builder setFees(ImmutableList<Fee> fees) {
+      getInstance().fees = fees;
+      return this;
+    }
   }
 }

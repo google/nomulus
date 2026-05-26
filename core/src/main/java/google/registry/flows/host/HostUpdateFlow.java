@@ -36,7 +36,6 @@ import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.dns.RefreshDnsOnHostRenameAction;
 import google.registry.flows.EppException;
@@ -59,8 +58,8 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.Host;
 import google.registry.model.host.HostCommand.Update;
-import google.registry.model.host.HostCommand.Update.AddRemove;
 import google.registry.model.host.HostCommand.Update.Change;
+import google.registry.model.host.HostCommand.Update.HostAddRemove;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
@@ -122,7 +121,6 @@ public final class HostUpdateFlow implements MutatingFlow {
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject HostHistory.Builder historyBuilder;
-  @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
   @Inject CloudTasksUtils cloudTasksUtils;
 
@@ -148,6 +146,7 @@ public final class HostUpdateFlow implements MutatingFlow {
             ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
             : null;
     // Note that lookupSuperordinateDomain calls cloneProjectedAtTime on the domain for us.
+
     Optional<Domain> newSuperordinateDomain =
         lookupSuperordinateDomain(validateHostName(newHostName), now);
     verifySuperordinateDomainNotInPendingDelete(newSuperordinateDomain.orElse(null));
@@ -157,8 +156,8 @@ public final class HostUpdateFlow implements MutatingFlow {
     if (isHostRename && ForeignKeyUtils.loadKey(Host.class, newHostName, now).isPresent()) {
       throw new HostAlreadyExistsException(newHostName);
     }
-    AddRemove add = command.getInnerAdd();
-    AddRemove remove = command.getInnerRemove();
+    HostAddRemove add = command.getInnerAdd();
+    HostAddRemove remove = command.getInnerRemove();
     verifyAddsAndRemoves(
         existingHost.getStatusValues(), add.getStatusValues(), remove.getStatusValues());
     verifyAddsAndRemoves(

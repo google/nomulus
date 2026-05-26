@@ -90,15 +90,15 @@ PRESUBMITS = {
     # License check
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
-        ("java", "js", "soy", "sql", "py", "sh", "gradle", "ts"), {
+        ("java", "js", "sql", "py", "sh", "gradle", "ts", "ftl"), {
             ".git", "/build/", "node_modules/", "LoggerConfig.java", "registrar_bin.",
             "registrar_dbg.", "google-java-format-diff.py",
-            "nomulus.golden.sql", "soyutils_usegoog.js", "javascript/checks.js"
+            "nomulus.golden.sql", "javascript/checks.js"
         }, REQUIRED):
         "File did not include the license header.",
 
     # Files must end in a newline
-    PresubmitCheck(r".*\n$", ("java", "js", "soy", "sql", "py", "sh", "gradle", "ts", "xml"),
+    PresubmitCheck(r".*\n$", ("java", "js", "sql", "py", "sh", "gradle", "ts", "xml", "ftl"),
                    {"node_modules/", ".idea"}, REQUIRED):
         "Source files must end in a newline.",
 
@@ -127,33 +127,6 @@ PRESUBMITS = {
         "System.(out|err).println is only allowed in tools/ packages. Please "
         "use a logger instead.",
 
-    # Various Soy linting checks
-    PresubmitCheck(
-        r".* (/\*)?\* {?@param ",
-        "soy",
-        {},
-    ):
-        "In SOY please use the ({@param name: string} /** User name. */) style"
-        " parameter passing instead of the ( * @param name User name.) style "
-        "parameter passing.",
-    PresubmitCheck(
-        r'.*\{[^}]+\w+:\s+"',
-        "soy",
-        {},
-    ):
-        "Please don't use double-quoted string literals in Soy parameters",
-    PresubmitCheck(
-        r'.*autoescape\s*=\s*"[^s]',
-        "soy",
-        {},
-    ):
-        "All soy templates must use strict autoescaping",
-    PresubmitCheck(
-        r".*noAutoescape",
-        "soy",
-        {},
-    ):
-        "All soy templates must use strict autoescaping",
     PresubmitCheck(
         r".*\nimport\s+(?:static\s+)?.*\.shaded\..*",
         "java",

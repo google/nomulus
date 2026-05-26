@@ -19,34 +19,37 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlEnumValue;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * An XML data object that represents a launch extension that may be present on EPP domain check
  * commands.
  *
  * <p>This object holds XML data which JAXB will unmarshal from an EPP domain check command
- * extension.  The XML will have the following enclosing structure:
+ * extension. The XML will have the following enclosing structure:
  *
- * <pre> {@code
- *   <epp>
- *     <command>
- *       <create>
- *         <!-- domain check XML data -->
- *       </create>
- *       <extension>
- *         <launch:check>
- *           <!-- launch check XML payload data -->
- *         </launch:check>
- *       </extension>
- *     </command>
- *   </epp>
- * } </pre>
+ * <pre>{@code
+ * <epp>
+ *   <command>
+ *     <create>
+ *       <!-- domain check XML data -->
+ *     </create>
+ *     <extension>
+ *       <launch:check>
+ *         <!-- launch check XML payload data -->
+ *       </launch:check>
+ *     </extension>
+ *   </command>
+ * </epp>
+ * }</pre>
  *
  * @see CommandExtension
  */
 @XmlRootElement(name = "check")
+@XmlType(propOrder = "phase")
 public class LaunchCheckExtension extends ImmutableObject implements CommandExtension {
 
   /** The default check type is "claims" if not specified. */
@@ -67,10 +70,17 @@ public class LaunchCheckExtension extends ImmutableObject implements CommandExte
    * The launch phase this command is intended to run against. If it does not match the server's
    * current launch phase, the command will be rejected.
    */
-  LaunchPhase phase;
+  @XmlElement LaunchPhase phase;
 
   @XmlAttribute
   CheckType type;
+
+  public static LaunchCheckExtension create(CheckType type, LaunchPhase phase) {
+    LaunchCheckExtension instance = new LaunchCheckExtension();
+    instance.type = type;
+    instance.phase = phase;
+    return instance;
+  }
 
   public CheckType getCheckType() {
     return firstNonNull(type, DEFAULT_CHECK_TYPE);

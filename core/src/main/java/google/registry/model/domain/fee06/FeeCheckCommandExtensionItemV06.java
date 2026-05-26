@@ -14,6 +14,7 @@
 
 package google.registry.model.domain.fee06;
 
+import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCheckCommandExtensionItem;
 import google.registry.model.domain.fee.FeeExtensionCommandDescriptor;
 import jakarta.xml.bind.annotation.XmlType;
@@ -32,6 +33,16 @@ public class FeeCheckCommandExtensionItemV06 extends FeeCheckCommandExtensionIte
 
   /** The command being checked.  */
   FeeExtensionCommandDescriptor command;
+
+  public static FeeCheckCommandExtensionItemV06 create(
+      String name, CurrencyUnit currency, FeeExtensionCommandDescriptor command, Period period) {
+    FeeCheckCommandExtensionItemV06 instance = new FeeCheckCommandExtensionItemV06();
+    instance.name = name;
+    instance.currency = currency;
+    instance.command = command;
+    instance.setPeriod(period);
+    return instance;
+  }
 
   /** The name of the command being checked. */
   @Override

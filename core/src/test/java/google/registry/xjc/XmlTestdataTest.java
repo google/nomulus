@@ -54,21 +54,6 @@ class XmlTestdataTest {
   @SuppressWarnings("unused")
   static Stream<Arguments> provideTestCombinations() {
     return Stream.of(
-        Arguments.of("contact_check_response.xml", XjcEpp.class),
-        Arguments.of("contact_check.xml", XjcEpp.class),
-        Arguments.of("contact_create_response_offline_review_completed.xml", XjcEpp.class),
-        Arguments.of("contact_create_response_offline_review.xml", XjcEpp.class),
-        Arguments.of("contact_create_response.xml", XjcEpp.class),
-        Arguments.of("contact_create.xml", XjcEpp.class),
-        Arguments.of("contact_delete_response.xml", XjcEpp.class),
-        Arguments.of("contact_delete.xml", XjcEpp.class),
-        Arguments.of("contact_info_response.xml", XjcEpp.class),
-        Arguments.of("contact_info.xml", XjcEpp.class),
-        Arguments.of("contact_transfer_query_response.xml", XjcEpp.class),
-        Arguments.of("contact_transfer_query.xml", XjcEpp.class),
-        Arguments.of("contact_transfer_request_response.xml", XjcEpp.class),
-        Arguments.of("contact_transfer_request.xml", XjcEpp.class),
-        Arguments.of("contact_update.xml", XjcEpp.class),
         Arguments.of("domain_check_response.xml", XjcEpp.class),
         Arguments.of("domain_check.xml", XjcEpp.class),
         Arguments.of("domain_create_response_offline_review_completed.xml", XjcEpp.class),

@@ -13,3 +13,21 @@ profiles:
     - ../jetty/kubernetes/nomulus-crash-pubapi.yaml
   deploy:
     kubectl: { }
+- name: crash-partial-phase-1
+  manifests:
+    rawYaml:
+    - ../jetty/kubernetes/nomulus-crash-backend-partial-phase-1.yaml
+    - ../jetty/kubernetes/nomulus-crash-console-partial-phase-1.yaml
+    - ../jetty/kubernetes/nomulus-crash-frontend-partial-phase-1.yaml
+    - ../jetty/kubernetes/nomulus-crash-pubapi-partial-phase-1.yaml
+  deploy:
+    kubectl: { }
+- name: crash-partial-phase-5
+  manifests:
+    rawYaml:
+    - ../jetty/kubernetes/nomulus-crash-backend-partial-phase-5.yaml
+    - ../jetty/kubernetes/nomulus-crash-console-partial-phase-5.yaml
+    - ../jetty/kubernetes/nomulus-crash-frontend-partial-phase-5.yaml
+    - ../jetty/kubernetes/nomulus-crash-pubapi-partial-phase-5.yaml
+  deploy:
+    kubectl: { }

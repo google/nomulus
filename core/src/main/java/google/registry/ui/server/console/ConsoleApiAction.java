@@ -46,11 +46,8 @@ import google.registry.security.XsrfTokenManager;
 import google.registry.util.DiffUtils;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
-import jakarta.servlet.http.Cookie;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -143,14 +140,10 @@ public abstract class ConsoleApiAction implements Runnable {
   }
 
   private boolean verifyXSRF(User user) {
-    Optional<Cookie> maybeCookie =
-        Arrays.stream(consoleApiParams.request().getCookies())
-            .filter(c -> XsrfTokenManager.X_CSRF_TOKEN.equals(c.getName()))
-            .findFirst();
-    if (maybeCookie.isEmpty()
-        || !consoleApiParams
-            .xsrfTokenManager()
-            .validateToken(user.getEmailAddress(), maybeCookie.get().getValue())) {
+    String xsrfToken = consoleApiParams.request().getHeader(XsrfTokenManager.X_CSRF_TOKEN);
+    if (xsrfToken == null
+        || xsrfToken.isEmpty()
+        || !consoleApiParams.xsrfTokenManager().validateToken(user.getEmailAddress(), xsrfToken)) {
       consoleApiParams.response().setStatus(SC_UNAUTHORIZED);
       return false;
     }
