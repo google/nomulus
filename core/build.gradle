@@ -53,14 +53,7 @@ def dockerIncompatibleTestPatterns = [
 // affected by global states outside of Nomulus classes, e.g., threads and
 // objects retained by frameworks.
 // TODO(weiminyu): identify cause and fix offending tests.
-def fragileTestPatterns = [
-    // Breaks random other tests when running with standardTests.
-    "google/registry/bsa/UploadBsaUnavailableDomainsActionTest.*",
-    // Currently changes a global configuration parameter that for some reason
-    // results in timestamp inversions for other tests.  TODO(mmuller): fix.
-    "google/registry/flows/host/HostInfoFlowTest.*",
-    "google/registry/beam/common/RegistryPipelineWorkerInitializerTest.*",
-] + dockerIncompatibleTestPatterns
+def fragileTestPatterns = dockerIncompatibleTestPatterns
 
 sourceSets {
   main {
@@ -751,13 +744,9 @@ test {
   // Don't run any tests from this task, all testing gets done in the
   // FilteringTest tasks.
   exclude "**"
-  // TODO(weiminyu): Remove dependency on sqlIntegrationTest
-}.dependsOn(fragileTest, standardTest, registryToolIntegrationTest, sqlIntegrationTest)
+}.dependsOn(standardTest, registryToolIntegrationTest)
 
 // When we override tests, we also break the cleanTest command.
-cleanTest.dependsOn(cleanFragileTest, cleanStandardTest,
-                    cleanRegistryToolIntegrationTest, cleanSqlIntegrationTest)
+cleanTest.dependsOn(cleanStandardTest, cleanRegistryToolIntegrationTest)
 
 project.build.dependsOn devtool
-project.build.dependsOn buildToolImage
-project.build.dependsOn ':stage'
