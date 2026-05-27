@@ -40,17 +40,13 @@ ext {
       // For SchemaExport
       'org.hibernate.orm:hibernate-ant:7.3.4.Final',
 
-      // Netty 4.2 is in alpha and causes runtime error. Also note that v5.0
-      // seems abandoned (last updated on Maven in 2015).
-      'io.netty:netty-codec-http:[4.1.59.Final, 4.2.0)!!',
-      'io.netty:netty-codec:[4.1.59.Final, 4.2.0)!!',
-      'io.netty:netty-common:[4.1.59.Final, 4.2.0)!!',
-      'io.netty:netty-handler:[4.1.59.Final, 4.2.0)!!',
-      'io.netty:netty-transport:[4.1.59.Final, 4.2.0)!!',
-      'io.netty:netty-buffer:[4.1.59.Final, 4.2.0)!!',
-
-      // OkHttp 5.0 is in alpha.
-      'com.squareup.okhttp3:okhttp:[4.10.0, 5.0.0)!!',
+      // Netty v5.0 seems abandoned (last updated on Maven in 2015).
+      'io.netty:netty-codec-http:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-codec:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-common:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-handler:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-transport:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-buffer:[4.1.59.Final, 5.0.0)!!',
 
       // This packages has a broken versioning scheme. There are v1beta3-* and
       // v1b4-* packages that are way older than v1b3-rev2024MMDD-* that need to
@@ -67,17 +63,18 @@ ext {
       'com.google.cloud:google-cloud-tasks:[1.33.2,2.52.0)!!',
       'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2,2.52.0)!!',
 
-      // DYNAMIC VERSIONS START HERE.
-
       'com.fasterxml.jackson.core:jackson-databind:[2.11.2,2.21.0)',
       'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:[2.17.2,2.21.0)',
+      'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,2.52.0)!!',
+      'com.google.api.grpc:proto-google-common-protos:[2.1.0,2.61.0)!!',
+      'com.google.api:gax:[1.66.0,2.75.0)!!',
+
+      // DYNAMIC VERSIONS START HERE.
+
       'com.github.ben-manes.caffeine:caffeine:[3.0.0,)',
       'com.google.api-client:google-api-client-java6:[1.31.3,)',
       'com.google.api-client:google-api-client-servlet:[1.31.3,)',
       'com.google.api-client:google-api-client:[1.31.3,)',
-      'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,2.52.0)!!',
-      'com.google.api.grpc:proto-google-common-protos:[2.1.0,2.61.0)!!',
-      'com.google.api:gax:[1.66.0,2.75.0)!!',
       'com.google.apis:google-api-services-admin-directory:[directory_v1-rev20240102-2.0.0,)',
       'com.google.apis:google-api-services-bigquery:[v2-rev20240423-2.0.0,)',
       'com.google.apis:google-api-services-cloudkms:[v1-rev20240513-2.0.0,)',
@@ -124,6 +121,7 @@ ext {
       'com.google.re2j:re2j:[1.6,)',
       'com.google.truth:truth:[1.1.2,)',
       'com.googlecode.json-simple:json-simple:[1.1.1,)',
+      'com.squareup.okhttp3:okhttp:[4.10.0,)',
       'org.freemarker:freemarker:[2.3.32,)',
       'com.ibm.icu:icu4j:[68.2,)',
       'com.github.mwiede:jsch:[2.28.2,)',

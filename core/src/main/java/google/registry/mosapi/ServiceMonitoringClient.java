@@ -49,10 +49,10 @@ public class ServiceMonitoringClient {
             tld, MONITORING_STATE_ENDPOINT, Collections.emptyMap(), Collections.emptyMap())) {
 
       ResponseBody responseBody = response.body();
-      if (responseBody == null) {
+      if (responseBody == null || responseBody.contentLength() == 0) {
         throw new MosApiException(
             String.format(
-                "MoSAPI Service Monitoring API " + "returned an empty body with status: %d",
+                "MoSAPI Service Monitoring API returned an empty body with status: %d",
                 response.code()));
       }
       String bodyString = responseBody.string();

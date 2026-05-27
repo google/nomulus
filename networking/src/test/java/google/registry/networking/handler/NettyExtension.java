@@ -32,11 +32,11 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ReferenceCountUtil;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -54,7 +54,7 @@ public final class NettyExtension implements AfterEachCallback {
   // All I/O operations are done inside the single thread within this event loop group, which is
   // different from the main test thread. Therefore synchronizations are required to make sure that
   // certain I/O activities are finished when assertions are performed.
-  private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+  private final EventLoopGroup eventLoopGroup = new DefaultEventLoopGroup(1);
 
   // Handler attached to server's channel to record the request received.
   private EchoHandler echoHandler;

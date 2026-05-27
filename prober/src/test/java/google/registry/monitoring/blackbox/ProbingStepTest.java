@@ -34,11 +34,11 @@ import google.registry.networking.handler.NettyExtension;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -58,7 +58,7 @@ class ProbingStepTest {
   private static final String TEST_MESSAGE = "TEST_MESSAGE";
   private static final String SECONDARY_TEST_MESSAGE = "SECONDARY_TEST_MESSAGE";
   private static final LocalAddress address = new LocalAddress(ADDRESS_NAME);
-  private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+  private final EventLoopGroup eventLoopGroup = new DefaultEventLoopGroup(1);
   private final Bootstrap bootstrap =
       new Bootstrap().group(eventLoopGroup).channel(LocalChannel.class);
 
