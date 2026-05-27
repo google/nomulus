@@ -165,10 +165,6 @@ dependencies {
   implementation deps['com.google.flogger:flogger']
   implementation deps['com.google.guava:guava']
   implementation deps['com.google.protobuf:protobuf-java']
-  // Might need to add this back if we re-add nebula-lint
-  // gradleLint.ignore('unused-dependency') {
-  implementation deps['com.google.gwt:gwt-user']
-  // }
   implementation deps['com.google.cloud:google-cloud-compute']
   implementation deps['com.google.cloud:google-cloud-core']
   implementation deps['com.google.cloud:google-cloud-storage']

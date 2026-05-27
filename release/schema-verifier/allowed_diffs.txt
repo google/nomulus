@@ -8,3 +8,7 @@ SET default_table_access_method = heap;
 SET default_with_oids = false;
 ^\\restrict
 ^\\unrestrict
+CREATE SCHEMA google_vacuum_mgmt;
+CREATE EXTENSION IF NOT EXISTS google_vacuum_mgmt WITH SCHEMA google_vacuum_mgmt;
+COMMENT ON EXTENSION google_vacuum_mgmt IS 'extension for assistive operational tooling';
+-- \*not\* creating schema, since initdb creates it

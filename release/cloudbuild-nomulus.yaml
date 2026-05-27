@@ -202,7 +202,8 @@ steps:
       --project=${PROJECT_ID} \
       --images="nomulus=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest}" \
       --source=. \
-      --skaffold-file=release/clouddeploy/skaffold.yaml
+      --skaffold-file=release/clouddeploy/skaffold.yaml \
+      --deploy-parameters="deployed_image=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest},base_image=us-docker.pkg.dev/${PROJECT_ID}/gcr.io/nomulus"
 # The tarballs and jars to upload to GCS.
 artifacts:
   objects:
