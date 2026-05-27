@@ -63,12 +63,12 @@ public class FeeTransformResponseExtension extends ImmutableObject implements Re
     }
 
     public Builder setFees(List<Fee> fees) {
-      getInstance().fees = fees;
+      getInstance().fees = forceEmptyToNull(nullToEmptyImmutableCopy(fees));
       return this;
     }
 
     public Builder setCredits(List<Credit> credits) {
-      getInstance().credits = forceEmptyToNull(credits);
+      getInstance().credits = forceEmptyToNull(nullToEmptyImmutableCopy(credits));
       return this;
     }
   }

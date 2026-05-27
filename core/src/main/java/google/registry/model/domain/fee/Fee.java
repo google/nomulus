@@ -15,7 +15,6 @@
 package google.registry.model.domain.fee;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
@@ -30,6 +29,13 @@ import java.time.Period;
  * A fee, in currency units specified elsewhere in the XML, with a type and an optional description.
  */
 public class Fee extends BaseFee {
+
+  public static final ImmutableSet<String> FEE_EXTENSION_URIS =
+      ImmutableSet.of(
+          ServiceExtension.FEE_1_00.getUri(),
+          ServiceExtension.FEE_0_12.getUri(),
+          ServiceExtension.FEE_0_11.getUri(),
+          ServiceExtension.FEE_0_6.getUri());
 
   @Override
   public Fee clone() {
@@ -60,20 +66,14 @@ public class Fee extends BaseFee {
   private static Fee createWithCustomDescription(
       BigDecimal cost, FeeType type, boolean isPremium, String description) {
     Fee instance = new Fee();
-    instance.cost = checkNotNull(cost);
-    checkArgument(instance.cost.signum() >= 0, "Cost must be a non-negative number");
-    instance.type = checkNotNull(type);
+    checkArgumentNotNull(cost, "Cost cannot be null");
+    checkArgument(cost.signum() >= 0, "Cost must be a non-negative number");
+    instance.cost = cost;
+    instance.type = type;
     instance.isPremium = isPremium;
     instance.description = description;
     return instance;
   }
-
-  public static final ImmutableSet<String> FEE_EXTENSION_URIS =
-      ImmutableSet.of(
-          ServiceExtension.FEE_1_00.getUri(),
-          ServiceExtension.FEE_0_12.getUri(),
-          ServiceExtension.FEE_0_11.getUri(),
-          ServiceExtension.FEE_0_6.getUri());
 
   /** Builder for {@link Fee}. */
   public static class Builder extends Buildable.Builder<Fee> {
