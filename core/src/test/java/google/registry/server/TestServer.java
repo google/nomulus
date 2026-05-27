@@ -31,6 +31,8 @@ import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -156,12 +158,20 @@ public final class TestServer {
     }
   }
 
+  public int getPort() {
+    return ((ServerConnector) server.getConnectors()[0]).getLocalPort();
+  }
+
   /** Returns a URL that can be used to communicate with this server. */
   public URL getUrl(String path) {
     checkArgument(path.startsWith("/"), "Path must start with a slash: %s", path);
     try {
-      return new URL(String.format("http://%s%s", urlAddress, path));
-    } catch (MalformedURLException e) {
+      int port = getPort();
+      if (port <= 0) {
+        port = urlAddress.getPortOrDefault(DEFAULT_PORT);
+      }
+      return new URI(String.format("http://%s:%d%s", urlAddress.getHost(), port, path)).toURL();
+    } catch (MalformedURLException | URISyntaxException e) {
       throw new RuntimeException(e);
     }
   }
