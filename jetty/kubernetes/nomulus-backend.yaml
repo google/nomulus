@@ -78,7 +78,7 @@ metadata:
   name: backend
 spec:
   selector:
-    service: backend
+    traffic: backend-all
   ports:
     - port: 80
       targetPort: http

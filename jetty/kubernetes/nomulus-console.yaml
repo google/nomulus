@@ -85,7 +85,7 @@ metadata:
   name: console
 spec:
   selector:
-    service: console
+    traffic: console-all
   ports:
     - port: 80
       targetPort: http

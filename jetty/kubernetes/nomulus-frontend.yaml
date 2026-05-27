@@ -116,7 +116,7 @@ metadata:
   name: frontend
 spec:
   selector:
-    service: frontend
+    traffic: frontend-all
   ports:
     - port: 80
       targetPort: http
@@ -137,7 +137,7 @@ spec:
   ipFamilies: [IPv4, IPv6]
   ipFamilyPolicy: RequireDualStack
   selector:
-    service: frontend
+    traffic: frontend-all
   ports:
   - port: 700
     targetPort: epp

@@ -85,7 +85,7 @@ metadata:
   name: pubapi
 spec:
   selector:
-    service: pubapi
+    traffic: pubapi-all
   ports:
   - port: 80
     targetPort: http
