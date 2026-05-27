@@ -23,7 +23,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
-import static google.registry.util.NetworkUtils.pickUnusedPort;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.mockito.Mockito.times;
@@ -168,7 +167,7 @@ public class UploadBsaUnavailableDomainsActionTest {
   private TestServer startTestServer() throws Exception {
     TestServer testServer =
         new TestServer(
-            HostAndPort.fromParts(InetAddress.getLocalHost().getHostAddress(), pickUnusedPort()),
+            HostAndPort.fromParts(InetAddress.getLocalHost().getHostAddress(), 0),
             ImmutableMap.of(),
             ImmutableList.of(Route.route("/upload", Servlet.class)));
     testServer.start();

@@ -156,11 +156,19 @@ public final class TestServer {
     }
   }
 
+  public int getPort() {
+    return ((ServerConnector) server.getConnectors()[0]).getLocalPort();
+  }
+
   /** Returns a URL that can be used to communicate with this server. */
   public URL getUrl(String path) {
     checkArgument(path.startsWith("/"), "Path must start with a slash: %s", path);
     try {
-      return new URL(String.format("http://%s%s", urlAddress, path));
+      int port = getPort();
+      if (port <= 0) {
+        port = urlAddress.getPortOrDefault(DEFAULT_PORT);
+      }
+      return new URL(String.format("http://%s:%d%s", urlAddress.getHost(), port, path));
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
     }
