@@ -43,8 +43,7 @@ class DomainFlowTmchUtilsTest {
     assertThrows(
         TooManySignedMarksException.class,
         () ->
-            tmchUtils.verifySignedMarks(
-                ImmutableList.of(mark1, mark2), "example", Instant.now()));
+            tmchUtils.verifySignedMarks(ImmutableList.of(mark1, mark2), "example", Instant.now()));
   }
 
   @Test

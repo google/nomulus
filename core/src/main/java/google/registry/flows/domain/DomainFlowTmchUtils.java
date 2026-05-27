@@ -184,6 +184,7 @@ public final class DomainFlowTmchUtils {
     public SignedMarkCertificateRevokedException() {
       super("Signed mark certificate was revoked");
     }
+
     public SignedMarkCertificateRevokedException(Throwable cause) {
       this();
       initCause(cause);
@@ -196,6 +197,7 @@ public final class DomainFlowTmchUtils {
     public SignedMarkCertificateNotYetValidException() {
       super("Signed mark certificate not yet valid");
     }
+
     public SignedMarkCertificateNotYetValidException(Throwable cause) {
       this();
       initCause(cause);
@@ -207,6 +209,7 @@ public final class DomainFlowTmchUtils {
     public SignedMarkCertificateExpiredException() {
       super("Signed mark certificate has expired");
     }
+
     public SignedMarkCertificateExpiredException(Throwable cause) {
       this();
       initCause(cause);
@@ -218,6 +221,7 @@ public final class DomainFlowTmchUtils {
     public SignedMarkCertificateInvalidException() {
       super("Signed mark certificate is invalid");
     }
+
     public SignedMarkCertificateInvalidException(Throwable cause) {
       this();
       initCause(cause);
@@ -229,6 +233,7 @@ public final class DomainFlowTmchUtils {
     public SignedMarkCertificateSignatureException() {
       super("Signed mark certificate not signed by ICANN");
     }
+
     public SignedMarkCertificateSignatureException(Throwable cause) {
       this();
       initCause(cause);
@@ -240,6 +245,7 @@ public final class DomainFlowTmchUtils {
     public SignedMarkSignatureException() {
       super("Signed mark signature is invalid");
     }
+
     public SignedMarkSignatureException(Throwable cause) {
       this();
       initCause(cause);
@@ -279,6 +285,7 @@ public final class DomainFlowTmchUtils {
     public SignedMarkParsingErrorException() {
       super("Error while parsing encoded signed mark data");
     }
+
     public SignedMarkParsingErrorException(Throwable cause) {
       this();
       initCause(cause);
@@ -290,6 +297,7 @@ public final class DomainFlowTmchUtils {
     public SignedMarkEncodingErrorException() {
       super("Signed mark data is improperly encoded");
     }
+
     public SignedMarkEncodingErrorException(Throwable cause) {
       this();
       initCause(cause);

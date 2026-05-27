@@ -94,6 +94,10 @@ def check_diff_anti_patterns():
     is_equal_optional_pattern = re.compile(r'\.isEqualTo\(Optional\.of\(')
     sleep_pattern = re.compile(r'Thread\.sleep\(')
     suppress_pattern = re.compile(r'@SuppressWarnings\(')
+    wrong_nullable_pattern = re.compile(r'import\s+(?!javax\.annotation\.Nullable;)[a-zA-Z0-9_.]+\.Nullable;')
+    utility_class_pattern = re.compile(r'\b(DateTimeUtils|CacheUtils)\.[a-z]')
+    redundant_tx_pattern = re.compile(r'tm\(\)\.transact\(\s*\(\)\s*->\s*tm\(\)\.reTransact')
+    mutable_collection_pattern = re.compile(r'new\s+(ArrayList|HashMap|HashSet)\s*[<()]')
 
     suppress_count = 0
 
@@ -144,6 +148,23 @@ def check_diff_anti_patterns():
                     log_error(f"[{current_file}] Multiple @SuppressWarnings detected. They must be merged (e.g. {{\"unchecked\", \"foo\"}}).")
             else:
                 suppress_count = 0
+
+            # Wrong Nullable
+            if wrong_nullable_pattern.search(code_line):
+                log_error(f"[{current_file}] Found incorrect Nullable import. Always use javax.annotation.Nullable.")
+
+            # Missing static imports for utilities
+            if utility_class_pattern.search(code_line):
+                if not code_line.strip().startswith('import'):
+                    log_warning(f"[{current_file}] Found un-statically imported method from DateTimeUtils/CacheUtils. Use static imports.")
+
+            # Redundant transaction wrapping
+            if redundant_tx_pattern.search(code_line):
+                log_error(f"[{current_file}] Found redundant transaction wrapping (tm().transact(() -> tm().reTransact(...))).")
+
+            # Mutable collection instantiation
+            if mutable_collection_pattern.search(code_line):
+                log_warning(f"[{current_file}] Found mutable collection instantiation (ArrayList/HashMap/HashSet). Prefer Guava Immutable collections.")
 
 def main():
     print("========================================")
