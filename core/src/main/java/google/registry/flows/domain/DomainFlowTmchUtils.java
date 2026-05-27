@@ -57,6 +57,9 @@ public final class DomainFlowTmchUtils {
   public SignedMark verifySignedMarks(
       ImmutableList<AbstractSignedMark> signedMarks, String domainLabel, Instant now)
       throws EppException {
+    if (signedMarks.isEmpty()) {
+      throw new SignedMarksListEmptyException();
+    }
     if (signedMarks.size() > 1) {
       throw new TooManySignedMarksException();
     }
@@ -77,21 +80,21 @@ public final class DomainFlowTmchUtils {
 
   public SignedMark verifyEncodedSignedMark(EncodedSignedMark encodedSignedMark, Instant now)
       throws EppException {
-    if (!encodedSignedMark.getEncoding().equals("base64")) {
+    if (!"base64".equals(encodedSignedMark.getEncoding())) {
       throw new Base64RequiredForEncodedSignedMarksException();
     }
     byte[] signedMarkData;
     try {
       signedMarkData = encodedSignedMark.getBytes();
     } catch (IllegalStateException e) {
-      throw new SignedMarkEncodingErrorException();
+      throw new SignedMarkEncodingErrorException(e);
     }
 
     SignedMark signedMark;
     try {
       signedMark = unmarshalEpp(SignedMark.class, signedMarkData);
     } catch (EppException e) {
-      throw new SignedMarkParsingErrorException();
+      throw new SignedMarkParsingErrorException(e);
     }
 
     if (SignedMarkRevocationList.get().isSmdRevoked(signedMark.getId(), now)) {
@@ -101,22 +104,22 @@ public final class DomainFlowTmchUtils {
     try {
       tmchXmlSignature.verify(signedMarkData);
     } catch (CertificateExpiredException e) {
-      throw new SignedMarkCertificateExpiredException();
+      throw new SignedMarkCertificateExpiredException(e);
     } catch (CertificateNotYetValidException e) {
-      throw new SignedMarkCertificateNotYetValidException();
+      throw new SignedMarkCertificateNotYetValidException(e);
     } catch (CertificateRevokedException e) {
-      throw new SignedMarkCertificateRevokedException();
+      throw new SignedMarkCertificateRevokedException(e);
     } catch (CertificateSignatureException e) {
-      throw new SignedMarkCertificateSignatureException();
+      throw new SignedMarkCertificateSignatureException(e);
     } catch (SignatureException | XMLSignatureException e) {
-      throw new SignedMarkSignatureException();
+      throw new SignedMarkSignatureException(e);
     } catch (GeneralSecurityException e) {
-      throw new SignedMarkCertificateInvalidException();
+      throw new SignedMarkCertificateInvalidException(e);
     } catch (IOException
         | MarshalException
         | SAXException
         | ParserConfigurationException e) {
-      throw new SignedMarkParsingErrorException();
+      throw new SignedMarkParsingErrorException(e);
     }
 
     if (now.isBefore(signedMark.getCreationTime())) {
@@ -181,6 +184,10 @@ public final class DomainFlowTmchUtils {
     public SignedMarkCertificateRevokedException() {
       super("Signed mark certificate was revoked");
     }
+    public SignedMarkCertificateRevokedException(Throwable cause) {
+      this();
+      initCause(cause);
+    }
   }
 
   /** Certificate used in signed mark signature has expired. */
@@ -189,12 +196,20 @@ public final class DomainFlowTmchUtils {
     public SignedMarkCertificateNotYetValidException() {
       super("Signed mark certificate not yet valid");
     }
+    public SignedMarkCertificateNotYetValidException(Throwable cause) {
+      this();
+      initCause(cause);
+    }
   }
 
   /** Certificate used in signed mark signature has expired. */
   static class SignedMarkCertificateExpiredException extends ParameterValuePolicyErrorException {
     public SignedMarkCertificateExpiredException() {
       super("Signed mark certificate has expired");
+    }
+    public SignedMarkCertificateExpiredException(Throwable cause) {
+      this();
+      initCause(cause);
     }
   }
 
@@ -203,12 +218,20 @@ public final class DomainFlowTmchUtils {
     public SignedMarkCertificateInvalidException() {
       super("Signed mark certificate is invalid");
     }
+    public SignedMarkCertificateInvalidException(Throwable cause) {
+      this();
+      initCause(cause);
+    }
   }
 
   /** Invalid signature on a signed mark. */
   static class SignedMarkCertificateSignatureException extends ParameterValuePolicyErrorException {
     public SignedMarkCertificateSignatureException() {
       super("Signed mark certificate not signed by ICANN");
+    }
+    public SignedMarkCertificateSignatureException(Throwable cause) {
+      this();
+      initCause(cause);
     }
   }
 
@@ -217,12 +240,23 @@ public final class DomainFlowTmchUtils {
     public SignedMarkSignatureException() {
       super("Signed mark signature is invalid");
     }
+    public SignedMarkSignatureException(Throwable cause) {
+      this();
+      initCause(cause);
+    }
   }
 
   /** Signed marks must be encoded. */
   static class SignedMarksMustBeEncodedException extends ParameterValuePolicyErrorException {
     public SignedMarksMustBeEncodedException() {
       super("Signed marks must be encoded");
+    }
+  }
+
+  /** Signed marks list cannot be empty. */
+  static class SignedMarksListEmptyException extends RequiredParameterMissingException {
+    public SignedMarksListEmptyException() {
+      super("Signed marks list cannot be empty");
     }
   }
 
@@ -245,12 +279,20 @@ public final class DomainFlowTmchUtils {
     public SignedMarkParsingErrorException() {
       super("Error while parsing encoded signed mark data");
     }
+    public SignedMarkParsingErrorException(Throwable cause) {
+      this();
+      initCause(cause);
+    }
   }
 
   /** Signed mark data is improperly encoded. */
   static class SignedMarkEncodingErrorException extends ParameterValueSyntaxErrorException {
     public SignedMarkEncodingErrorException() {
       super("Signed mark data is improperly encoded");
+    }
+    public SignedMarkEncodingErrorException(Throwable cause) {
+      this();
+      initCause(cause);
     }
   }
 

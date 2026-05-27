@@ -20,6 +20,7 @@ import google.registry.model.ImmutableObject;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlValue;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 /**
  * The launch phase of the TLD being addressed by this command.
@@ -46,7 +47,7 @@ import java.util.Objects;
  * sets it is the one that needs to make sure the domain isn't a trademark and that the fields are
  * correct.
  */
-public class LaunchPhase extends ImmutableObject {
+public final class LaunchPhase extends ImmutableObject {
 
   /**
    * The phase during which trademark holders can submit domain registrations with trademark
@@ -70,6 +71,9 @@ public class LaunchPhase extends ImmutableObject {
     return instance;
   }
 
+  /** Private no-arg constructor required for JAXB and to enforce immutability elsewhere. */
+  private LaunchPhase() {}
+
   @XmlValue String phase;
 
   /**
@@ -79,6 +83,7 @@ public class LaunchPhase extends ImmutableObject {
    * <p>This is currently unused, but is retained so that incoming XMLs that include a subphase can
    * have it be reflected back.
    */
+  @Nullable
   @XmlAttribute(name = "name")
   String subphase;
 

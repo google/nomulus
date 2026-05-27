@@ -14,13 +14,12 @@
 
 package google.registry.model.domain.feestdv1;
 
-import static google.registry.util.CollectionUtils.forceEmptyToNull;
-
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
+import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 
 /** The version 1.0 response for a domain check on a single resource. */
@@ -38,6 +37,7 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
    * doesn't support "period".
    */
   @Override
+  @XmlTransient
   public Period getPeriod() {
     return super.getPeriod();
   }
@@ -47,6 +47,7 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
    * doesn't support "fee".
    */
   @Override
+  @XmlTransient
   public ImmutableList<Fee> getFees() {
     return super.getFees();
   }
@@ -74,7 +75,7 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
 
     @Override
     public Builder setFees(ImmutableList<Fee> fees) {
-      commandBuilder.setFee(forceEmptyToNull(ImmutableList.copyOf(fees)));
+      commandBuilder.setFee(fees);
       return this;
     }
 
