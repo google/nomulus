@@ -68,6 +68,7 @@ public class Fee extends BaseFee {
     Fee instance = new Fee();
     checkArgumentNotNull(cost, "Cost cannot be null");
     checkArgument(cost.signum() >= 0, "Cost must be a non-negative number");
+    checkArgumentNotNull(type, "Type cannot be null");
     instance.cost = cost;
     instance.type = type;
     instance.isPremium = isPremium;
