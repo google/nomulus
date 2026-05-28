@@ -46,8 +46,14 @@ public class Fee extends BaseFee {
   public static Fee create(
       BigDecimal cost, FeeType type, boolean isPremium, Object... descriptionArgs) {
     checkArgumentNotNull(type, "Must specify the type of the fee");
-    return createWithCustomDescription(
-        cost, type, isPremium, type.renderDescription(descriptionArgs));
+    checkArgumentNotNull(cost, "Cost cannot be null");
+    checkArgument(cost.signum() >= 0, "Cost must be a non-negative number");
+    Fee instance = new Fee();
+    instance.cost = cost;
+    instance.type = type;
+    instance.isPremium = isPremium;
+    instance.description = type.renderDescription(descriptionArgs);
+    return instance;
   }
 
   /** Creates a Fee for the given cost, type, and valid date range with the default description. */
@@ -59,19 +65,6 @@ public class Fee extends BaseFee {
       Object... descriptionArgs) {
     Fee instance = create(cost, type, isPremium, descriptionArgs);
     instance.validDateRange = validDateRange;
-    return instance;
-  }
-
-  /** Creates a Fee for the given cost and type with a custom description. */
-  private static Fee createWithCustomDescription(
-      BigDecimal cost, FeeType type, boolean isPremium, String description) {
-    Fee instance = new Fee();
-    checkArgumentNotNull(cost, "Cost cannot be null");
-    checkArgument(cost.signum() >= 0, "Cost must be a non-negative number");
-    instance.cost = cost;
-    instance.type = type;
-    instance.isPremium = isPremium;
-    instance.description = description;
     return instance;
   }
 
