@@ -46,7 +46,7 @@ record DsRecord(int keyTag, int alg, int digestType, String digest) {
           String.format("DS record has an invalid digest length: %s", digest));
     }
 
-    if (!DomainFlowUtils.validateAlgorithm(alg)) {
+    if (DomainFlowUtils.algorithmIsInvalid(alg)) {
       throw new IllegalArgumentException(
           String.format("DS record uses an unrecognized algorithm: %d", alg));
     }

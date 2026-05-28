@@ -794,7 +794,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .that(domain)
         .hasExactlyDsData(
             DomainDsData.create(
-                    12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))
+                    12345,
+                    3,
+                    2,
+                    base16()
+                        .decode("D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A"))
                 .cloneWithDomainRepoId(domain.getRepoId()));
   }
 
@@ -952,6 +956,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testFailure_secDnsInvalidDigestType() throws Exception {
     setEppInput("domain_create_dsdata_bad_digest_types.xml");
+    persistHosts();
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_secDnsSha1DigestType() throws Exception {
+    setEppInput("domain_create_dsdata_sha1.xml");
     persistHosts();
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();

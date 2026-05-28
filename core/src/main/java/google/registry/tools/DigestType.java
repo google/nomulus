@@ -29,7 +29,8 @@ import java.util.Optional;
  * https://www.iana.org/assignments/ds-rr-types/ds-rr-types.xhtml
  */
 public enum DigestType {
-  SHA1(1, 20),
+  // Algorithm number 1 is SHA-1 and is deliberately NOT SUPPORTED.
+  // RFC 9904 specifies that this algorithm MUST NOT be used for DNSSEC delegations.
   SHA256(2, 32),
   // Algorithm number 3 is GOST R 34.11-94 and is deliberately NOT SUPPORTED.
   // This algorithm was reviewed by ise-crypto and deemed academically broken (b/207029800).

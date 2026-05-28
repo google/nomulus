@@ -115,6 +115,9 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link DomainUpdateFlow}. */
 class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain> {
 
+  private static final String SHA_256_DIGEST =
+      "D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A";
+
   private static final DomainDsData SOME_DSDATA =
       DomainDsData.create(
           1,
@@ -125,8 +128,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
       ImmutableMap.of(
           "KEY_TAG", "12346",
           "ALG", "3",
-          "DIGEST_TYPE", "1",
-          "DIGEST", "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3");
+          "DIGEST_TYPE", "2",
+          "DIGEST", SHA_256_DIGEST);
 
   @BeforeEach
   void beforeEach() {
@@ -453,18 +456,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_add.xml",
         null,
-        ImmutableSet.of(
-            DomainDsData.create(
-                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+        ImmutableSet.of(DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableMap.of(
-            "KEY_TAG",
-            "12346",
-            "ALG",
-            "3",
-            "DIGEST_TYPE",
-            "1",
-            "DIGEST",
-            "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"),
+            "KEY_TAG", "12346", "ALG", "3", "DIGEST_TYPE", "2", "DIGEST", SHA_256_DIGEST),
         true);
   }
 
@@ -474,18 +468,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add.xml",
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
-            SOME_DSDATA,
-            DomainDsData.create(
-                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+            SOME_DSDATA, DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableMap.of(
-            "KEY_TAG",
-            "12346",
-            "ALG",
-            "3",
-            "DIGEST_TYPE",
-            "1",
-            "DIGEST",
-            "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"),
+            "KEY_TAG", "12346", "ALG", "3", "DIGEST_TYPE", "2", "DIGEST", SHA_256_DIGEST),
         true);
   }
 
@@ -660,11 +645,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             union(
                 commonDsData,
                 ImmutableSet.of(
-                    DomainDsData.create(
-                        12346,
-                        3,
-                        1,
-                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))),
+                    DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))))),
         true);
   }
 
@@ -673,9 +654,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_rem.xml",
         ImmutableSet.of(
-            SOME_DSDATA,
-            DomainDsData.create(
-                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+            SOME_DSDATA, DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableSet.of(SOME_DSDATA),
         true);
   }
@@ -686,9 +665,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_rem_all.xml",
         ImmutableSet.of(
-            SOME_DSDATA,
-            DomainDsData.create(
-                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+            SOME_DSDATA, DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableSet.of(),
         true);
   }
@@ -698,13 +675,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_add_rem.xml",
         ImmutableSet.of(
-            SOME_DSDATA,
-            DomainDsData.create(
-                12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+            SOME_DSDATA, DomainDsData.create(12345, 3, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableSet.of(
-            SOME_DSDATA,
-            DomainDsData.create(
-                12346, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+            SOME_DSDATA, DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
         true);
   }
 
@@ -727,20 +700,12 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             union(
                 commonDsData,
                 ImmutableSet.of(
-                    DomainDsData.create(
-                        12345,
-                        3,
-                        1,
-                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))),
+                    DomainDsData.create(12345, 3, 2, base16().decode(SHA_256_DIGEST))))),
         ImmutableSet.copyOf(
             union(
                 commonDsData,
                 ImmutableSet.of(
-                    DomainDsData.create(
-                        12346,
-                        3,
-                        1,
-                        base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))))),
+                    DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))))),
         true);
   }
 
@@ -916,6 +881,20 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
+  void testFailure_secDnsSha1DigestType() throws Exception {
+    setEppInput(
+        "domain_update_dsdata_add.xml",
+        ImmutableMap.of(
+            "KEY_TAG", "12346",
+            "ALG", "3",
+            "DIGEST_TYPE", "1",
+            "DIGEST", "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"));
+    persistResource(DatabaseHelper.newDomain(getUniqueIdFromCommand()));
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
   void testFailure_secDnsMultipleInvalidDigestTypes() throws Exception {
     setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
     persistResource(
@@ -938,7 +917,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
-            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 1, new byte[] {0, 1, 2})))
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 2, new byte[] {0, 1, 2})))
             .build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -955,7 +934,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .asBuilder()
             .setDsData(
                 ImmutableSet.of(
-                    DomainDsData.create(1, 2, 1, new byte[] {0, 1, 2, 3, 4}),
+                    DomainDsData.create(1, 2, 2, new byte[] {0, 1, 2, 3, 4}),
                     DomainDsData.create(2, 2, 2, new byte[] {5, 6, 7})))
             .build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);

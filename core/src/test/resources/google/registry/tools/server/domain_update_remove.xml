@@ -19,8 +19,8 @@
           <secDNS:dsData>
             <secDNS:keyTag>7</secDNS:keyTag>
             <secDNS:alg>8</secDNS:alg>
-            <secDNS:digestType>1</secDNS:digestType>
-            <secDNS:digest>A94A8FE5CCB19BA61C4C0873D391E987982FBBD3</secDNS:digest>
+            <secDNS:digestType>2</secDNS:digestType>
+            <secDNS:digest>D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A</secDNS:digest>
           </secDNS:dsData>
           <secDNS:dsData>
             <secDNS:keyTag>6</secDNS:keyTag>

@@ -341,7 +341,7 @@ public class DomainFlowUtils {
       }
       ImmutableList<DomainDsData> invalidAlgorithms =
           dsData.stream()
-              .filter(ds -> !validateAlgorithm(ds.getAlgorithm()))
+              .filter(ds -> algorithmIsInvalid(ds.getAlgorithm()))
               .collect(toImmutableList());
       if (!invalidAlgorithms.isEmpty()) {
         throw new InvalidDsRecordException(
@@ -376,14 +376,14 @@ public class DomainFlowUtils {
     }
   }
 
-  public static boolean validateAlgorithm(int alg) {
+  public static boolean algorithmIsInvalid(int alg) {
     if (alg > 255 || alg < 0) {
-      return false;
+      return true;
     }
     // Algorithms that are reserved or unassigned will just return a string representation of their
     // integer wire value.
     String algorithm = Algorithm.string(alg);
-    return !algorithm.equals(Integer.toString(alg));
+    return algorithm.equals(Integer.toString(alg));
   }
 
   /** We only allow specifying years in a period. */
