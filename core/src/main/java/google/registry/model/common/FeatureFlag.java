@@ -84,7 +84,10 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS(FeatureStatus.INACTIVE),
 
     /** If we're prohibiting the inclusion of the contact object URI on login. */
-    PROHIBIT_CONTACT_OBJECTS_ON_LOGIN(FeatureStatus.INACTIVE);
+    PROHIBIT_CONTACT_OBJECTS_ON_LOGIN(FeatureStatus.INACTIVE),
+
+    /** If we're prohibiting insecure algorithms as detailed by RFC 9904. */
+    FORBID_INSECURE_ALGORITHMS_RFC_9904(FeatureStatus.INACTIVE);
 
     private final FeatureStatus defaultStatus;
 

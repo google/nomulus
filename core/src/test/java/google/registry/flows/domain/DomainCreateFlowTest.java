@@ -24,6 +24,7 @@ import static google.registry.model.billing.BillingBase.Flag.RESERVED;
 import static google.registry.model.billing.BillingBase.Flag.SUNRISE;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.common.FeatureFlag.FeatureName.FORBID_INSECURE_ALGORITHMS_RFC_9904;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
@@ -150,6 +151,8 @@ import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
+import google.registry.model.common.FeatureFlag;
+import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -794,7 +797,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .that(domain)
         .hasExactlyDsData(
             DomainDsData.create(
-                    12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))
+                    12345,
+                    3,
+                    2,
+                    base16()
+                        .decode("D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A"))
                 .cloneWithDomainRepoId(domain.getRepoId()));
   }
 
@@ -955,6 +962,38 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistHosts();
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_secDnsSha1DigestType() throws Exception {
+    setEppInput("domain_create_dsdata_sha1.xml");
+    persistHosts();
+    DatabaseHelper.persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
+            .build());
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_secDnsSha1_flagInactive() throws Exception {
+    setEppInput("domain_create_dsdata_sha1.xml");
+    persistHosts();
+    DatabaseHelper.persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.INACTIVE))
+            .build());
+    doSuccessfulTest("tld");
+    Domain domain = reloadResourceByForeignKey();
+    assertAboutDomains()
+        .that(domain)
+        .hasExactlyDsData(
+            DomainDsData.create(
+                    12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC49FD46E6C4B45C55D4AC"))
+                .cloneWithDomainRepoId(domain.getRepoId()));
   }
 
   @Test

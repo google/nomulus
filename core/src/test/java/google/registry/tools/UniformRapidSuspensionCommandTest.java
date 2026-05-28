@@ -79,7 +79,7 @@ class UniformRapidSuspensionCommandTest
     runCommandForced(
         "--domain_name=evil.tld",
         "--hosts=urs1.example.com,urs2.example.com",
-        "--dsdata=1 1 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--dsdata=1 1 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
@@ -107,7 +107,7 @@ class UniformRapidSuspensionCommandTest
     runCommandForced(
         "--domain_name=evil.tld",
         "--hosts=urs1.example.com,urs2.example.com",
-        "--dsdata=1 1 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--dsdata=1 1 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
@@ -179,7 +179,7 @@ class UniformRapidSuspensionCommandTest
     runCommandForced(
         "--domain_name=evil.tld",
         "--hosts=urs1.example.com,urs2.example.com",
-        "--dsdata=1 1 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--dsdata=1 1 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
@@ -198,7 +198,7 @@ class UniformRapidSuspensionCommandTest
     runCommandForced(
         "--domain_name=evil.tld",
         "--hosts=URS[1-2].example.com",
-        "--dsdata=1 1 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--dsdata=1 1 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
