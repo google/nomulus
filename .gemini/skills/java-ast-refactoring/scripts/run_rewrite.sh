@@ -73,14 +73,7 @@ echo "Executing OpenRewrite recipe: $RECIPE_NAME"
 ./gradlew --init-script "$INIT_SCRIPT" rewriteRun --no-parallel --no-configuration-cache
 
 echo "Running code formatters to fix Checkstyle line-length and import ordering..."
-./gradlew spotlessApply
-
-# Automatically handle line-wrapping and formatting for all files modified by OpenRewrite
-MODIFIED_JAVA_FILES=$(git diff --name-only --diff-filter=d | grep "\.java$" || true)
-if [ -n "$MODIFIED_JAVA_FILES" ]; then
-  echo "Applying google-java-format to all modified Java files to enforce LineLength..."
-  echo "$MODIFIED_JAVA_FILES" | xargs -r google-java-format --replace
-fi
+./gradlew spotlessApply javaIncrementalFormatApply
 
 # Clean up temporary files
 rm "$INIT_SCRIPT"

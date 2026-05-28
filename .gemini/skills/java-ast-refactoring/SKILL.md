@@ -22,7 +22,7 @@ python3 .gemini/skills/java-ast-refactoring/scripts/safe_rename.py <filepath> <o
 ```bash
 ./.gemini/skills/java-ast-refactoring/scripts/run_rewrite.sh rewrite.yml
 ```
-3. The script will safely apply the AST transformations and then automatically run `./gradlew spotlessApply` and `google-java-format --replace` on the modified files to automatically fix any Checkstyle line-length and import ordering issues caused by longer/shorter identifiers. Verify the output using `git diff`.
+3. The script will safely apply the AST transformations and then automatically run `./gradlew spotlessApply` and `./gradlew javaIncrementalFormatApply` on the modified files to automatically fix any Checkstyle line-length and import ordering issues caused by longer/shorter identifiers. Verify the output using `git diff`.
 4. **MANDATORY:** Always run `./gradlew build -x test` (or the equivalent compile task) after running OpenRewrite to ensure no compilation errors were introduced.
 
 ## Known Limitations & Troubleshooting
