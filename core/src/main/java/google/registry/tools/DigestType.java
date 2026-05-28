@@ -29,21 +29,26 @@ import java.util.Optional;
  * https://www.iana.org/assignments/ds-rr-types/ds-rr-types.xhtml
  */
 public enum DigestType {
-  SHA1(1, 20),
-  SHA256(2, 32),
+  // Algorithm number 1 is SHA-1 and will be is deliberately NOT SUPPORTED.
+  // RFC 9904 specifies that this algorithm MUST NOT be used for DNSSEC delegations.
+  // This prohibition is gated behind a feature flag.
+  SHA1(1, 20, false),
+  SHA256(2, 32, true),
   // Algorithm number 3 is GOST R 34.11-94 and is deliberately NOT SUPPORTED.
   // This algorithm was reviewed by ise-crypto and deemed academically broken (b/207029800).
   // In addition, RFC 8624 specifies that this algorithm MUST NOT be used for DNSSEC delegations.
   // TODO(sarhabot@): Add note in Cloud DNS code to notify the Registry of any new changes to
   // supported digest types.
-  SHA384(4, 48);
+  SHA384(4, 48, true);
 
   private final int wireValue;
   private final int bytes;
+  private final boolean allowedInRfc9904;
 
-  DigestType(int wireValue, int bytes) {
+  DigestType(int wireValue, int bytes, boolean allowedInRfc9904) {
     this.wireValue = wireValue;
     this.bytes = bytes;
+    this.allowedInRfc9904 = allowedInRfc9904;
   }
 
   private static final ImmutableMap<Integer, DigestType> WIRE_VALUE_TO_DIGEST_TYPE =
@@ -62,5 +67,10 @@ public enum DigestType {
   /** Returns the expected length in bytes of the signature. */
   public int getBytes() {
     return bytes;
+  }
+
+  /** Whether this digest type is supported as of RFC 9904. */
+  public boolean isAllowedInRfc9904() {
+    return allowedInRfc9904;
   }
 }

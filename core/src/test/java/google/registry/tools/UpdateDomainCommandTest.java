@@ -76,10 +76,11 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_nameservers=ns1.zdns.google,ns2.zdns.google",
         "--add_statuses=serverDeleteProhibited",
         "--add_ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4"
-            + " 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+            + " 5 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "--remove_nameservers=ns3.zdns.google,ns4.zdns.google",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3,6 5 4"
+        "--remove_ds_records=7 8 2"
+            + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,6 5 4"
             + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
         "--password=2fooBAR",
         "example.tld");
@@ -93,10 +94,11 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_nameservers=NS[1-2].zdns.google",
         "--add_statuses=serverDeleteProhibited",
         "--add_ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4"
-            + " 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+            + " 5 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "--remove_nameservers=ns[3-4].zdns.google",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3,6 5 4"
+        "--remove_ds_records=7 8 2"
+            + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,6 5 4"
             + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
         "--password=2fooBAR",
         "example.tld");
@@ -112,10 +114,11 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_nameservers=ns1.zdns.google,ns2.zdns.google",
         "--add_statuses=serverDeleteProhibited",
         "--add_ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4"
-            + " 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+            + " 5 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "--remove_nameservers=ns[3-4].zdns.google",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3,6 5 4"
+        "--remove_ds_records=7 8 2"
+            + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,6 5 4"
             + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
         "--password=2fooBAR",
         "example.tld",
@@ -163,7 +166,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--add_nameservers=ns2.zdns.google,ns3.zdns.google",
         "--add_statuses=serverDeleteProhibited",
         "--add_ds_records=1 2 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,4"
-            + " 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+            + " 5 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_update_add.xml");
   }
@@ -174,7 +177,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--client=NewRegistrar",
         "--remove_nameservers=ns4.zdns.google",
         "--remove_statuses=serverHold",
-        "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3,6 5 4"
+        "--remove_ds_records=7 8 2"
+            + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,6 5 4"
             + " 768412320F7B0AA5812FCE428DC4706B3CAE50E02A64CAA16A782249BFE8EFC4B7EF1CCB126255D196047DFEDF17A0A9",
         "example.tld");
     eppVerifier.verifySent("domain_update_remove.xml");
@@ -230,8 +234,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   void testSuccess_setDsRecords() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
-        "--ds_records=1 2 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,4 5 1"
-            + " A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--ds_records=1 2 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,4 5 2"
+            + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_update_set_ds_records.xml");
   }
@@ -240,8 +244,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   void testSuccess_setDsRecords_withUnneededClear() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
-        "--ds_records=1 2 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,4 5 1"
-            + " A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+        "--ds_records=1 2 2 D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A,4 5 2"
+            + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "--clear_ds_records",
         "example.tld");
     eppVerifier.verifySent("domain_update_set_ds_records.xml");
@@ -538,9 +542,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--client=NewRegistrar",
-                    "--ds_records=1 2 1 abcd",
-                    "example.tld"));
+                    "--client=NewRegistrar", "--ds_records=1 2 2 abcd", "example.tld"));
     assertThat(thrown).hasMessageThat().isEqualTo("DS record has an invalid digest length: ABCD");
   }
 
@@ -554,7 +556,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                     "--client=NewRegistrar",
                     "--add_ds_records=1 2 2"
                         + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
-                    "--ds_records=4 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+                    "--ds_records=4 5 2"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
                     "example.tld"));
     assertThat(thrown)
         .hasMessageThat()
@@ -571,8 +574,10 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
-                    "--ds_records=4 5 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+                    "--remove_ds_records=7 8 2"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+                    "--ds_records=4 5 2"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
                     "example.tld"));
     assertThat(thrown)
         .hasMessageThat()
@@ -608,7 +613,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             () ->
                 runCommandForced(
                     "--client=NewRegistrar",
-                    "--remove_ds_records=7 8 1 A94A8FE5CCB19BA61C4C0873D391E987982FBBD3",
+                    "--remove_ds_records=7 8 2"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
                     "--clear_ds_records",
                     "example.tld"));
     assertThat(thrown)

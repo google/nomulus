@@ -23,6 +23,7 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
+import static google.registry.model.common.FeatureFlag.FeatureName.FORBID_INSECURE_ALGORITHMS_RFC_9904;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
@@ -73,6 +74,7 @@ import google.registry.model.EppResource;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Create;
 import google.registry.model.domain.DomainCommand.CreateOrUpdate;
@@ -341,7 +343,7 @@ public class DomainFlowUtils {
       }
       ImmutableList<DomainDsData> invalidAlgorithms =
           dsData.stream()
-              .filter(ds -> !validateAlgorithm(ds.getAlgorithm()))
+              .filter(ds -> algorithmIsInvalid(ds.getAlgorithm()))
               .collect(toImmutableList());
       if (!invalidAlgorithms.isEmpty()) {
         throw new InvalidDsRecordException(
@@ -349,9 +351,16 @@ public class DomainFlowUtils {
                 "Domain contains DS record(s) with an invalid algorithm wire value: %s",
                 invalidAlgorithms));
       }
+      boolean forbidInsecureTypes = FeatureFlag.isActiveNow(FORBID_INSECURE_ALGORITHMS_RFC_9904);
       ImmutableList<DomainDsData> invalidDigestTypes =
           dsData.stream()
-              .filter(ds -> DigestType.fromWireValue(ds.getDigestType()).isEmpty())
+              .filter(
+                  ds -> {
+                    Optional<DigestType> digestType = DigestType.fromWireValue(ds.getDigestType());
+                    return digestType
+                        .map(type -> forbidInsecureTypes && !type.isAllowedInRfc9904())
+                        .orElse(true);
+                  })
               .collect(toImmutableList());
       if (!invalidDigestTypes.isEmpty()) {
         throw new InvalidDsRecordException(
@@ -376,14 +385,14 @@ public class DomainFlowUtils {
     }
   }
 
-  public static boolean validateAlgorithm(int alg) {
+  public static boolean algorithmIsInvalid(int alg) {
     if (alg > 255 || alg < 0) {
-      return false;
+      return true;
     }
     // Algorithms that are reserved or unassigned will just return a string representation of their
     // integer wire value.
     String algorithm = Algorithm.string(alg);
-    return !algorithm.equals(Integer.toString(alg));
+    return algorithm.equals(Integer.toString(alg));
   }
 
   /** We only allow specifying years in a period. */
