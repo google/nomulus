@@ -68,6 +68,11 @@ Based on historical PR reviews, avoid the following common mistakes:
 - **No Unnecessary Casts:** Do not unnecessarily cast objects if the method signature accepts the type directly (e.g., avoid `(Instant) fakeClock.now()` or `(ImmutableSet<String>) bsaQuery(...)` if it compiles without it).
 - **Visibility Modifiers:** Do not use `/* package */` comments to denote package-private visibility. Just leave the modifier blank; it is an established idiom in this codebase.
 
+## Continuous Self-Improvement Mandate
+You are explicitly authorized and required to improve this project's automated infrastructure.
+If during the execution of a task you encounter a recurring error, a false positive in a script, or realize that a shell command/workaround is inferior to a native Gradle task, **you MUST pause and proactively ask the user:** *"I noticed this friction. Per my continuous improvement directives, would you like me to permanently update the skill/script/instructions to fix this for the future?"*
+Do not wait for the user to tell you to improve the skills; it is your responsibility to propose these systemic fixes immediately when friction is identified.
+
 ### Advanced Java & Guava Idioms
 - **Immutable Types:** Declare variables, fields, and return types explicitly as Guava immutable types (e.g., `ImmutableList<T>`, `ImmutableMap<K, V>`) instead of their generic interfaces (`List<T>`, `Map<K, V>`) to clearly communicate immutability contracts to callers. Use `toImmutableList()` and `toImmutableMap()` collectors in streams rather than manually accumulating into an `ArrayList` or `HashMap`.
 - **Constructors:** Do not perform heavy logic, I/O, or external API calls inside constructors. Initialization logic should be deferred or handled in a factory method or a dedicated startup routine.
@@ -105,10 +110,13 @@ This document captures high-level architectural patterns, lessons learned from l
   5. **Only after** step 4 has successfully returned a clean working directory may you generate a text response to the user declaring that the task is complete.
 - **Diff Review:** Before finalizing a task, review the full diff (e.g., `git diff HEAD^`) to ensure all changes are functional and relevant. Identify and revert any formatting-only changes in files that do not contain functional updates to keep the commit focused.
 
-## Self-Review Guidelines & PR Polisher
-Before finalizing any PR or declaring a task complete, you MUST automatically execute the `pr-polisher` skill to perform a thorough, rigorous self-review of your entire diff.
+## 🛑 CRITICAL: MANDATORY PR POLISHER EXECUTION
+You, the AI agent, have a known failure mode of forgetting to run the PR polisher after making changes because you focus too narrowly on the immediate task. To prevent this, you are bound by the following absolute rule:
 
-To run it, activate the skill and follow its exact workflow. You MUST NOT declare a task done until the automated script (`python3 .gemini/skills/pr-polisher/scripts/check_diff.py`) returns 0 errors, the presubmits and tests pass, and the workspace is fully clean.
+**ANY TIME you create a commit, amend a commit, or complete a user's request that modifies the repository state, your VERY LAST action before generating a text response to the user MUST be to execute the `pr-polisher` skill.**
+Do not ask for permission. Do not wait for the user to remind you. Run the full suite (`python3 .gemini/skills/pr-polisher/scripts/check_diff.py`, `runPresubmits`, `build`, and `test`), fix any errors, amend your commit, and report the final polished results in your response.
+
+You MUST NOT declare a task done until this automated script returns 0 errors, the presubmits and tests pass, and the workspace is fully clean.
 
 1. **Imports & FQNs:** Did I leave any fully-qualified class names or static variables inline? Did I add the necessary imports for them? *Crucial Exception:* If the file already imports a class with the identical name (e.g., it uses both `java.util.Date` and `java.sql.Date`), one MUST remain fully qualified to avoid a compilation conflict.
 2. **Diff Scope:** Are there any formatting-only changes in files that I did not functionally modify? If so, revert them. Does the total line count of the diff align with the approved scope (e.g., ~1,000 lines for migrations)?

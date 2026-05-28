@@ -7,15 +7,17 @@ description: Automated pre-flight checklist to polish PRs. Use this before decla
 
 This skill runs an exhaustive, automated pre-flight checklist against the repository to ensure all changes conform to Nomulus's strict engineering mandates.
 
-## When to Use
-
-You MUST activate and execute this workflow immediately before you are about to declare a PR, task, or codebase refactor "done" or ready for human review. Do not declare the task complete until this workflow succeeds with 0 errors.
+## 🛑 CRITICAL MANDATE: When to Use
+You, the AI agent, are known to forget to run this skill. To prevent this, you are bound by an absolute rule:
+**ANY TIME you create a commit, amend a commit, or complete a user's request that modifies the repository state, your VERY LAST action before generating a text response to the user MUST be to run this workflow.**
+Do not ask for permission. Do not wait for the user to remind you. Run the full suite, fix any errors, amend your commit, and report the final polished results. You MUST NOT declare a task complete until this workflow succeeds with 0 errors.
 
 ## Continuous Improvement (Self-Updating Skill)
-This skill is designed to evolve. If a human code reviewer (or presubmit hook) points out a deficit, or if you (the agent) independently catch a recurring mistake, anti-pattern, or convention violation:
-1. **Determine how to enforce the check.** Consider if the check is suitable for automation in the Python script. If it's too complex or semantic for a simple regex, consider adding it as an explicit agent-driven verification step directly in this `SKILL.md` file.
-2. Update `.gemini/skills/pr-polisher/scripts/check_diff.py` to add a new automated check, OR modify this `SKILL.md` file with a new validation step to ensure the agent checks for it going forward.
-3. Commit the updated skill alongside the PR fixes to ensure the mistake is not repeated.
+This skill is designed to evolve. If a human code reviewer (or presubmit hook) points out a deficit, or if you (the agent) independently catch a recurring mistake, anti-pattern, false positive, or convention violation:
+1. **You MUST proactively propose a fix to the user.** Do not wait for the user to instruct you to update the skill. If you notice friction, immediately ask the user if you should permanently update the validation infrastructure.
+2. **Determine how to enforce the check.** Consider if the check is suitable for automation in the Python script. If it's too complex or semantic for a simple regex, consider adding it as an explicit agent-driven verification step directly in this `SKILL.md` file.
+3. Update `.gemini/skills/pr-polisher/scripts/check_diff.py` to add a new automated check, OR modify this `SKILL.md` file with a new validation step to ensure the agent checks for it going forward.
+4. Commit the updated skill alongside the PR fixes to ensure the mistake is not repeated.
 
 ## Workflow Execution Steps
 

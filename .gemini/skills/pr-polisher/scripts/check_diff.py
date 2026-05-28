@@ -93,7 +93,10 @@ def check_package_lock():
     print("\n--- Checking package-lock.json ---")
     diff_files = run_cmd("git diff HEAD^ --name-only").split('\n')
     if "console-webapp/package-lock.json" in diff_files:
-        log_error("console-webapp/package-lock.json is modified in the diff. Unless NPM dependencies were explicitly changed, revert this file using: git checkout console-webapp/package-lock.json")
+        if "console-webapp/package.json" in diff_files or "dependencies.gradle" in diff_files:
+            log_warning("console-webapp/package-lock.json is modified in the diff. This is expected since dependencies were updated.")
+        else:
+            log_error("console-webapp/package-lock.json is modified in the diff. Unless NPM dependencies were explicitly changed, revert this file using: git checkout console-webapp/package-lock.json")
     else:
         log_success("console-webapp/package-lock.json is untouched.")
 

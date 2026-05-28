@@ -22,9 +22,9 @@ python3 .gemini/skills/java-ast-refactoring/scripts/safe_rename.py <filepath> <o
 ```bash
 ./.gemini/skills/java-ast-refactoring/scripts/run_rewrite.sh rewrite.yml
 ```
-3. The script will safely apply the AST transformations and then automatically run `./gradlew spotlessApply` and `google-java-format --replace` on the modified files to automatically fix any Checkstyle line-length and import ordering issues caused by longer/shorter identifiers. Verify the output using `git diff`.
+3. The script will safely apply the AST transformations and then automatically run `./gradlew spotlessApply` and `./gradlew javaIncrementalFormatApply` on the modified files to automatically fix any Checkstyle line-length and import ordering issues caused by longer/shorter identifiers. Verify the output using `git diff`.
 4. **MANDATORY:** Always run `./gradlew build -x test` (or the equivalent compile task) after running OpenRewrite to ensure no compilation errors were introduced.
 
 ## Known Limitations & Troubleshooting
 *   **Static Imports Dropped on Class Rename:** When using `ChangeType` to rename a class, OpenRewrite may sometimes drop static imports for fields/constants belonging to the old class instead of updating them to the new class. If compilation fails due to "cannot find symbol" for a constant after a class rename, manually restore the static import (e.g., `import static com.new.ClassName.CONSTANT;`).
-*   **Continuous Improvement:** If any new issues or edge cases are found while running the refactoring (e.g., build failures, formatting issues, or missed transformations), proactively update this skill file (`SKILL.md`) and its accompanying scripts (`scripts/run_rewrite.sh`, `scripts/safe_rename.py`) to permanently fix the issue for future use.
+*   **Continuous Improvement:** If any new issues or edge cases are found while running the refactoring (e.g., build failures, formatting issues, or missed transformations), you **MUST** proactively ask the user if you should permanently update this skill file (`SKILL.md`) and its accompanying scripts (`scripts/run_rewrite.sh`, `scripts/safe_rename.py`) to fix the issue for future use. Do not wait for the user to prompt you to fix the infrastructure.
