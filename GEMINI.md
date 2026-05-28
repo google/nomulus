@@ -53,6 +53,11 @@ This document outlines foundational mandates, architectural patterns, and projec
 
 ### 6. Project Dependencies
 - **Common Module:** When using `Clock` or other core utilities in a new or separate module (like `load-testing`), ensure `implementation project(':common')` is added to the module's `build.gradle`.
+- **Updating Dependencies:** When updating third-party dependencies, you must follow this exact sequence:
+  1. Modify `dependencies.gradle`.
+  2. Run `./gradlew dependencies --write-locks` to regenerate the Gradle lockfiles locally. This is much faster than running the full update script blindly.
+  3. Verify the build succeeds (e.g., `./gradlew :core:build -x test` or `./gradlew build`) to ensure there are no resolution or compilation errors.
+  4. ONLY after the lockfiles are generated and the build is verified, execute the internal script `/google/src/head/depot/google3/domain/registry/tools/update_dependency.sh` to push the new dependencies to the private Maven repository.
 
 ### 7. Search and Discovery
 - **No CodeSearch:** This project is hosted on GitHub, not Google3. Do NOT use `mcp_Coding_search_for_files_codesearch` or other internal Google3 search tools.
