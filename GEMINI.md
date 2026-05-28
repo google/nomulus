@@ -92,6 +92,7 @@ This document captures high-level architectural patterns, lessons learned from l
   - Core boundaries: `DateTimeUtils.START_INSTANT` (Unix Epoch) and `DateTimeUtils.END_INSTANT` (Long.MAX_VALUE / 1000).
 
 ## Source Control
+- **No Unprompted Pushing:** You MUST NEVER push your changes to a remote repository (e.g., `git push origin ...`) unless the user VERY EXPLICITLY instructs you to do so. If you have finished a task, simply state that it is committed locally and ready for review. Do not assume pushing is desired.
 - **Committing:** Always create a new commit on the branch if one hasn't been created yet for the branch's specific work. Only perform amending (`git commit --amend --no-edit`) for subsequent changes once the initial commit has been successfully created.
 - **One Commit Per PR:** All changes for a single PR must be squashed into a single commit before merging.
 - **Default to Amend:** Once an initial commit is created for a PR, all subsequent functional changes should be amended into that same commit by default (`git commit --amend --no-edit`). This ensures the PR remains a single, clean unit of work throughout the development lifecycle.
@@ -104,8 +105,10 @@ This document captures high-level architectural patterns, lessons learned from l
   5. **Only after** step 4 has successfully returned a clean working directory may you generate a text response to the user declaring that the task is complete.
 - **Diff Review:** Before finalizing a task, review the full diff (e.g., `git diff HEAD^`) to ensure all changes are functional and relevant. Identify and revert any formatting-only changes in files that do not contain functional updates to keep the commit focused.
 
-## Self-Review Guidelines
-Before finalizing any PR or declaring a task complete, you MUST perform a thorough, rigorous self-review of your entire diff. Run `git diff HEAD^` (or review the staged changes) and actively verify the following against every modified line:
+## Self-Review Guidelines & PR Polisher
+Before finalizing any PR or declaring a task complete, you MUST automatically execute the `pr-polisher` skill to perform a thorough, rigorous self-review of your entire diff.
+
+To run it, activate the skill and follow its exact workflow. You MUST NOT declare a task done until the automated script (`python3 .gemini/skills/pr-polisher/scripts/check_diff.py`) returns 0 errors, the presubmits and tests pass, and the workspace is fully clean.
 
 1. **Imports & FQNs:** Did I leave any fully-qualified class names or static variables inline? Did I add the necessary imports for them? *Crucial Exception:* If the file already imports a class with the identical name (e.g., it uses both `java.util.Date` and `java.sql.Date`), one MUST remain fully qualified to avoid a compilation conflict.
 2. **Diff Scope:** Are there any formatting-only changes in files that I did not functionally modify? If so, revert them. Does the total line count of the diff align with the approved scope (e.g., ~1,000 lines for migrations)?
@@ -113,7 +116,7 @@ Before finalizing any PR or declaring a task complete, you MUST perform a thorou
 4. **Missing Tests & Coverage:** *Perform a structured check for any new methods or modified behavior.* Did I add a new utility method (like `plusMonths(Instant, int)`) or change core logic? If so, I MUST open the corresponding test file and write tests to cover the new functionality (including edge cases, negative values, and leap years) before considering the task complete. A code review is not thorough if it only checks for compilation. I must actively ensure every new branch of logic has a test.
 5. **Package Lock:** Did I include `console-webapp/package-lock.json` in my diff? If so, I MUST revert it (`git checkout console-webapp/package-lock.json`) unless I explicitly intended to modify NPM dependencies. This file is often modified by the build process and should not be committed accidentally.
 
-Only after actively confirming these checks against your diff are you permitted to finalize the task.
+Only after actively executing the `pr-polisher` skill and confirming these checks against your diff are you permitted to finalize the task.
 
 ## Refactoring & Migration Guardrails
 
