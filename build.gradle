@@ -609,3 +609,9 @@ gradle.taskGraph.whenReady { graph ->
     }
   }
 }
+
+task buildAll {
+  group = 'build'
+  description = 'Runs a full build including heavy dependencies and fragile tests (ideal for CI).'
+  dependsOn build, ':core:buildToolImage', ':core:fragileTest', ':core:sqlIntegrationTest', stage, ':jetty:buildNomulusImage'
+}
