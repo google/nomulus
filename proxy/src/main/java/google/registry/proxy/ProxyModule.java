@@ -383,6 +383,10 @@ public class ProxyModule {
   @Singleton
   @Provides
   static Random provideRandom() {
+    // Note: We intentionally use java.util.Random instead of SecureRandom here.
+    // This Random instance is injected into the hot path of the proxy exclusively for
+    // stochastic metrics sampling. Using SecureRandom would introduce severe lock
+    // contention and exhaust the system entropy pool under high load, causing DoS.
     return new Random();
   }
 

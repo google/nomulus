@@ -27,7 +27,6 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Date;
-import java.util.Random;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -45,7 +44,7 @@ public class SelfSignedCaCertificate {
 
   private static final String DEFAULT_ISSUER_FQDN = "registry-test";
 
-  private static final Random RANDOM = new Random();
+  private static final SecureRandom RANDOM = new SecureRandom();
   private static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
   private static final KeyPairGenerator keyGen = createKeyPairGenerator();
   private static final ImmutableMap<String, String> KEY_SIGNATURE_ALGS =

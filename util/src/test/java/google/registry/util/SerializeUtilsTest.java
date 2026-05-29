@@ -20,9 +20,12 @@ import static google.registry.util.SerializeUtils.parse;
 import static google.registry.util.SerializeUtils.serialize;
 import static google.registry.util.SerializeUtils.stringify;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.InvalidClassException;
 import java.io.Serializable;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 /** Unit tests for {@link SerializeUtils}. */
 class SerializeUtilsTest {
@@ -110,5 +113,20 @@ class SerializeUtilsTest {
     NullPointerException thrown =
         assertThrows(NullPointerException.class, () -> parse(String.class, null));
     assertThat(thrown).hasMessageThat().contains("Object string cannot be null");
+  }
+
+  @Test
+  void testDeserialize_unauthorizedClass_isRejectedByFilter() {
+    // AssertionFailedError implements Serializable but is NOT in the
+    // whitelist of allowed deserialization packages.
+    AssertionFailedError untrustedObject = new AssertionFailedError("test");
+
+    try {
+      deserialize(Object.class, serialize(untrustedObject));
+      fail("Expected an exception");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasCauseThat().isInstanceOf(InvalidClassException.class);
+      assertThat(e).hasCauseThat().hasMessageThat().contains("REJECTED");
+    }
   }
 }

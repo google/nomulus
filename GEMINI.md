@@ -46,6 +46,7 @@ This document outlines foundational mandates, architectural patterns, and projec
     - **Transactional Time:** Ensure code that relies on `tm().getTransactionTime()` (or `tm().getTxTime()`) is executed within a transaction context.
 
 ### 5. Testing Best Practices
+- **Mandatory Proactive Testing:** You MUST automatically write and update tests alongside your code changes WITHOUT waiting for the user to prompt you. If you add a new feature, fix a bug, or change core logic, you are explicitly required to identify the corresponding `*Test.java` file and implement comprehensive test coverage for your changes.
 - **FakeClock and Sleeper:** Use `FakeClock` and `Sleeper` for any logic involving timeouts, delays, or expiration.
 - **Empirical Reproduction:** Before fixing a bug, always create a test case that reproduces the failure.
 - **Base Classes:** Leverage `CommandTestCase`, `EppToolCommandTestCase`, etc., to reduce boilerplate and ensure consistent setup (e.g., clock initialization).

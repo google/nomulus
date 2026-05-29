@@ -285,6 +285,25 @@ def check_diff_anti_patterns():
             if 'src/test/' in current_file and clock_now_pattern.search(code_line):
                 log_warning(f"[{current_file}] Prefer using a fixed, static constant Instant over capturing clock.now() in tests to prevent flakiness.")
 
+def check_missing_tests():
+    print("\n--- Checking for Missing Tests ---")
+    diff_files = run_cmd("git diff HEAD^ --name-only").split('\n')
+    main_files_modified = False
+    test_files_modified = False
+
+    for f in diff_files:
+        if f.startswith('core/src/main/') or f.startswith('util/src/main/'):
+            if f.endswith('.java'):
+                main_files_modified = True
+        if f.startswith('core/src/test/') or f.startswith('util/src/test/'):
+            if f.endswith('Test.java'):
+                test_files_modified = True
+
+    if main_files_modified and not test_files_modified:
+        log_warning("Production code (.java files in src/main/) was modified, but no corresponding tests (.java files in src/test/) were added or updated. You MUST proactively write tests for any new logic or bug fixes.")
+    else:
+        log_success("Test coverage check passed (tests were included or no production Java code was changed).")
+
 def main():
     print("========================================")
     print("     NOMULUS PR POLISHER CHECKLIST      ")
@@ -295,6 +314,7 @@ def main():
     check_workspace_clean()
     check_package_lock()
     check_license_headers()
+    check_missing_tests()
     check_formatting()
     check_diff_anti_patterns()
 

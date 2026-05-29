@@ -177,6 +177,8 @@ public class EppMessage {
             new StreamSource(readResource(path + "launch.xsd")),
           };
       SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+      schemaFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      schemaFactory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
       eppSchema = schemaFactory.newSchema(sources);
     } catch (SAXException | IOException e) {
       throw new ExceptionInInitializerError(e);
@@ -271,7 +273,9 @@ public class EppMessage {
       return null;
     }
     try {
-      Transformer transformer = TransformerFactory.newInstance().newTransformer();
+      TransformerFactory tf = TransformerFactory.newInstance();
+      tf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      Transformer transformer = tf.newTransformer();
       StreamResult result = new StreamResult(new StringWriter());
       DOMSource source = new DOMSource(xml);
       transformer.transform(source, result);
@@ -291,7 +295,9 @@ public class EppMessage {
    */
   public static byte[] xmlDocToByteArray(Document xml) throws EppClientException {
     try {
-      Transformer transformer = TransformerFactory.newInstance().newTransformer();
+      TransformerFactory tf = TransformerFactory.newInstance();
+      tf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      Transformer transformer = tf.newTransformer();
       StreamResult result = new StreamResult(new StringWriter());
       DOMSource source = new DOMSource(xml);
       transformer.transform(source, result);

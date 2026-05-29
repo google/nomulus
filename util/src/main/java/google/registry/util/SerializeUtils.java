@@ -20,6 +20,7 @@ import static com.google.common.io.BaseEncoding.base16;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputFilter.Config;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -60,7 +61,13 @@ public final class SerializeUtils {
       return null;
     }
     try {
-      return type.cast(new ObjectInputStream(new ByteArrayInputStream(objectBytes)).readObject());
+      ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(objectBytes));
+      // Restrict deserialization to known, trusted packages to prevent RCE gadget chain attacks.
+      ois.setObjectInputFilter(
+          Config.createFilter(
+              "google.registry.**;com.google.common.**;java.**;javax.**;jakarta.**;"
+                  + "org.hibernate.**;org.joda.**;com.googlecode.objectify.**;!*"));
+      return type.cast(ois.readObject());
     } catch (ClassNotFoundException | IOException e) {
       throw new IllegalArgumentException(
           "Unable to deserialize: objectBytes=" + base16().encode(objectBytes), e);
