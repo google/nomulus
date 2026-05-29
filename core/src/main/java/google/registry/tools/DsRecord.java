@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.IStringConverter;
@@ -46,7 +47,7 @@ record DsRecord(int keyTag, int alg, int digestType, String digest) {
           String.format("DS record has an invalid digest length: %s", digest));
     }
 
-    if (DomainFlowUtils.algorithmIsInvalid(alg)) {
+    if (tm().reTransact(() -> DomainFlowUtils.algorithmIsInvalid(alg))) {
       throw new IllegalArgumentException(
           String.format("DS record uses an unrecognized algorithm: %d", alg));
     }

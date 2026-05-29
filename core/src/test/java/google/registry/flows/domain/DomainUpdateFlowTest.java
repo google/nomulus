@@ -130,7 +130,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   private static final ImmutableMap<String, String> OTHER_DSDATA_TEMPLATE_MAP =
       ImmutableMap.of(
           "KEY_TAG", "12346",
-          "ALG", "3",
+          "ALG", "8",
           "DIGEST_TYPE", "2",
           "DIGEST", SHA_256_DIGEST);
 
@@ -459,9 +459,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_add.xml",
         null,
-        ImmutableSet.of(DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
+        ImmutableSet.of(DomainDsData.create(12346, 8, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableMap.of(
-            "KEY_TAG", "12346", "ALG", "3", "DIGEST_TYPE", "2", "DIGEST", SHA_256_DIGEST),
+            "KEY_TAG", "12346", "ALG", "8", "DIGEST_TYPE", "2", "DIGEST", SHA_256_DIGEST),
         true);
   }
 
@@ -471,9 +471,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         "domain_update_dsdata_add.xml",
         ImmutableSet.of(SOME_DSDATA),
         ImmutableSet.of(
-            SOME_DSDATA, DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
+            SOME_DSDATA, DomainDsData.create(12346, 8, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableMap.of(
-            "KEY_TAG", "12346", "ALG", "3", "DIGEST_TYPE", "2", "DIGEST", SHA_256_DIGEST),
+            "KEY_TAG", "12346", "ALG", "8", "DIGEST_TYPE", "2", "DIGEST", SHA_256_DIGEST),
         true);
   }
 
@@ -648,7 +648,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             union(
                 commonDsData,
                 ImmutableSet.of(
-                    DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))))),
+                    DomainDsData.create(12346, 8, 2, base16().decode(SHA_256_DIGEST))))),
         true);
   }
 
@@ -657,7 +657,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_rem.xml",
         ImmutableSet.of(
-            SOME_DSDATA, DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
+            SOME_DSDATA, DomainDsData.create(12346, 8, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableSet.of(SOME_DSDATA),
         true);
   }
@@ -668,7 +668,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_rem_all.xml",
         ImmutableSet.of(
-            SOME_DSDATA, DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
+            SOME_DSDATA, DomainDsData.create(12346, 8, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableSet.of(),
         true);
   }
@@ -678,9 +678,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     doSecDnsSuccessfulTest(
         "domain_update_dsdata_add_rem.xml",
         ImmutableSet.of(
-            SOME_DSDATA, DomainDsData.create(12345, 3, 2, base16().decode(SHA_256_DIGEST))),
+            SOME_DSDATA, DomainDsData.create(12345, 8, 2, base16().decode(SHA_256_DIGEST))),
         ImmutableSet.of(
-            SOME_DSDATA, DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))),
+            SOME_DSDATA, DomainDsData.create(12346, 8, 2, base16().decode(SHA_256_DIGEST))),
         true);
   }
 
@@ -703,12 +703,12 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             union(
                 commonDsData,
                 ImmutableSet.of(
-                    DomainDsData.create(12345, 3, 2, base16().decode(SHA_256_DIGEST))))),
+                    DomainDsData.create(12345, 8, 2, base16().decode(SHA_256_DIGEST))))),
         ImmutableSet.copyOf(
             union(
                 commonDsData,
                 ImmutableSet.of(
-                    DomainDsData.create(12346, 3, 2, base16().decode(SHA_256_DIGEST))))),
+                    DomainDsData.create(12346, 8, 2, base16().decode(SHA_256_DIGEST))))),
         true);
   }
 
@@ -988,6 +988,82 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .build());
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_secDnsForbiddenAlgorithm() throws Exception {
+    setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
+    persistResource(
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
+            .asBuilder()
+            .setDsData(
+                ImmutableSet.of(DomainDsData.create(1, 1, 2, base16().decode(SHA_256_DIGEST))))
+            .build());
+    DatabaseHelper.persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
+            .build());
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_secDnsForbiddenAlgorithm_flagInactive() throws Exception {
+    setEppInput("domain_update_dsdata_add.xml", OTHER_DSDATA_TEMPLATE_MAP);
+    persistResource(
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
+            .asBuilder()
+            .setDsData(
+                ImmutableSet.of(DomainDsData.create(1, 1, 2, base16().decode(SHA_256_DIGEST))))
+            .build());
+    DatabaseHelper.persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.INACTIVE))
+            .build());
+    runFlow();
+    Domain domain = reloadResourceByForeignKey();
+    assertAboutDomains()
+        .that(domain)
+        .hasExactlyDsData(
+            DomainDsData.create(1, 1, 2, base16().decode(SHA_256_DIGEST)),
+            DomainDsData.create(12346, 8, 2, base16().decode(SHA_256_DIGEST)));
+  }
+
+  @Test
+  void testFailure_unrelatedUpdate_existingForbiddenAlgorithm() throws Exception {
+    persistReferencedEntities();
+    persistResource(
+        persistDomain()
+            .asBuilder()
+            .setDsData(
+                ImmutableSet.of(DomainDsData.create(1, 1, 2, base16().decode(SHA_256_DIGEST))))
+            .build());
+    DatabaseHelper.persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
+            .build());
+    assertAboutEppExceptions()
+        .that(assertThrows(InvalidDsRecordException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_unrelatedUpdate_existingForbiddenAlgorithm_flagInactive() throws Exception {
+    persistReferencedEntities();
+    persistResource(
+        persistDomain()
+            .asBuilder()
+            .setDsData(
+                ImmutableSet.of(DomainDsData.create(1, 1, 2, base16().decode(SHA_256_DIGEST))))
+            .build());
+    runFlow();
+    Domain updatedDomain = reloadResourceByForeignKey();
+    assertAboutDomains()
+        .that(updatedDomain)
+        .hasExactlyDsData(DomainDsData.create(1, 1, 2, base16().decode(SHA_256_DIGEST)));
   }
 
   @Test

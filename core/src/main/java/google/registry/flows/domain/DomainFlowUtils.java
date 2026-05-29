@@ -389,6 +389,10 @@ public class DomainFlowUtils {
     if (alg > 255 || alg < 0) {
       return true;
     }
+    if (DomainDsData.FORBIDDEN_ALGORITHMS.contains(alg)
+        && FeatureFlag.isActiveNow(FORBID_INSECURE_ALGORITHMS_RFC_9904)) {
+      return true;
+    }
     // Algorithms that are reserved or unassigned will just return a string representation of their
     // integer wire value.
     String algorithm = Algorithm.string(alg);

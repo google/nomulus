@@ -14,6 +14,7 @@
 
 package google.registry.model.domain.secdns;
 
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import jakarta.persistence.Access;
@@ -26,12 +27,23 @@ import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import org.xbill.DNS.DNSSEC.Algorithm;
 
 /** Base class for {@link DomainDsData} and {@link DomainDsDataHistory}. */
 @MappedSuperclass
 @Access(AccessType.FIELD)
 @XmlType(propOrder = {"keyTag", "algorithm", "digestType", "digest"})
 public abstract class DomainDsDataBase extends ImmutableObject implements UnsafeSerializable {
+
+  // A set of algorithms that we do not allow. See RFC 9904 for more details.
+  public static final ImmutableSet<Integer> FORBIDDEN_ALGORITHMS =
+      ImmutableSet.of(
+          Algorithm.RSAMD5,
+          Algorithm.RSASHA1,
+          Algorithm.RSA_NSEC3_SHA1,
+          Algorithm.DSA,
+          Algorithm.DSA_NSEC3_SHA1,
+          Algorithm.ECC_GOST);
 
   @XmlTransient @Transient @Insignificant String domainRepoId;
 

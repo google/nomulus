@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.FeatureFlag.FeatureName.FORBID_INSECURE_ALGORITHMS_RFC_9904;
 import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
@@ -26,6 +27,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 import static google.registry.testing.TestLogHandlerUtils.assertNoLogMessage;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,9 +35,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
+import google.registry.model.common.FeatureFlag;
+import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -533,6 +538,25 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                         + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
                     "example.tld"));
     assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized digest type: 3");
+  }
+
+  @Test
+  void testFailure_forbiddenDsRecordAlgorithm() {
+    persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
+            .build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar",
+                    "--add_ds_records=1 1 2"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+                    "example.tld"));
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized algorithm: 1");
   }
 
   @Test

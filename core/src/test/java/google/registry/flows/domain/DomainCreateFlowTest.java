@@ -798,7 +798,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .hasExactlyDsData(
             DomainDsData.create(
                     12345,
-                    3,
+                    8,
                     2,
                     base16()
                         .decode("D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A"))
@@ -992,7 +992,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .that(domain)
         .hasExactlyDsData(
             DomainDsData.create(
-                    12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC49FD46E6C4B45C55D4AC"))
+                    12345, 8, 1, base16().decode("49FD46E6C4B45C55D4AC49FD46E6C4B45C55D4AC"))
                 .cloneWithDomainRepoId(domain.getRepoId()));
   }
 
@@ -1002,6 +1002,42 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistHosts();
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_secDnsForbiddenAlgorithm() throws Exception {
+    setEppInput("domain_create_dsdata_forbidden_algorithm.xml");
+    persistHosts();
+    DatabaseHelper.persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
+            .build());
+    EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_secDnsForbiddenAlgorithm_flagInactive() throws Exception {
+    setEppInput("domain_create_dsdata_forbidden_algorithm.xml");
+    persistHosts();
+    DatabaseHelper.persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.INACTIVE))
+            .build());
+    doSuccessfulTest("tld");
+    Domain domain = reloadResourceByForeignKey();
+    assertAboutDomains()
+        .that(domain)
+        .hasExactlyDsData(
+            DomainDsData.create(
+                    12345,
+                    1,
+                    2,
+                    base16()
+                        .decode("D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A"))
+                .cloneWithDomainRepoId(domain.getRepoId()));
   }
 
   @Test
