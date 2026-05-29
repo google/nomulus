@@ -40,6 +40,8 @@ import java.util.Arrays;
 import java.util.List;
 import org.jline.reader.Candidate;
 import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.ParsedLine;
+import org.jline.reader.Parser;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.impl.DumbTerminal;
@@ -176,12 +178,13 @@ class ShellCommandTest {
     jcommander.addCommand("testCommand", new TestCommand());
     jcommander.addCommand("testAnotherCommand", new TestAnotherCommand());
     List<Candidate> completions = new ArrayList<>();
+    ParsedLine parsedLine =
+        new DefaultParser().parse(line, line.length(), Parser.ParseContext.COMPLETE);
     new JCommanderCompleter(jcommander)
-        .complete(
-            LineReaderBuilder.builder().build(),
-            new DefaultParser().parse(line, line.length()),
-            completions);
-    assertThat(completions).containsExactlyElementsIn(candidates);
+        .complete(LineReaderBuilder.builder().build(), parsedLine, completions);
+    List<String> actualValues = completions.stream().map(Candidate::value).toList();
+    List<String> expectedValues = candidates.stream().map(Candidate::value).toList();
+    assertThat(actualValues).containsExactlyElementsIn(expectedValues);
   }
 
   @Test
