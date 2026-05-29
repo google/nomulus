@@ -98,6 +98,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
           "UNIT", "y");
 
   private static final Pattern OK_PATTERN = Pattern.compile("\"ok\"");
+  private static final String SHA_256_DIGEST =
+      "D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A";
 
   private Host host1;
   private Host host2;
@@ -314,8 +316,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
         domain
             .asBuilder()
             .setDsData(
-                ImmutableSet.of(
-                    DomainDsData.create(12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))))
+                ImmutableSet.of(DomainDsData.create(12345, 8, 2, base16().decode(SHA_256_DIGEST))))
             .setNameservers(ImmutableSet.of(host1.createVKey(), host3.createVKey()))
             .build());
     doSuccessfulTest("domain_info_response_dsdata.xml", false);
@@ -519,8 +520,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                     "TheRegistrar",
                     null))
             .setDsData(
-                ImmutableSet.of(
-                    DomainDsData.create(12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))))
+                ImmutableSet.of(DomainDsData.create(12345, 8, 2, base16().decode(SHA_256_DIGEST))))
             .build());
     doSuccessfulTest("domain_info_response_dsdata_addperiod.xml", false);
   }

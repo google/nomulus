@@ -13,7 +13,7 @@
        xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
         <secDNS:dsData>
           <secDNS:keyTag>12345</secDNS:keyTag>
-          <secDNS:alg>3</secDNS:alg>
+          <secDNS:alg>8</secDNS:alg>
           <secDNS:digestType>1</secDNS:digestType>
           <secDNS:digest>49FD46E6C4B45C55D4AC</secDNS:digest>
         </secDNS:dsData>

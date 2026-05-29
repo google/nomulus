@@ -15,16 +15,21 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.FeatureFlag.FeatureName.FORBID_INSECURE_ALGORITHMS_RFC_9904;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
+import google.registry.model.common.FeatureFlag;
+import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumListDao;
@@ -49,9 +54,9 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--period=1",
         "--nameservers=ns1.zdns.google,ns2.zdns.google,ns3.zdns.google,ns4.zdns.google",
         "--password=2fooBAR",
-        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 5 2"
+        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 8 2"
             + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
-        "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+        "--ds_records=60485 8  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_create_complete.xml");
   }
@@ -63,9 +68,9 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--period=1",
         "--nameservers=NS1.zdns.google,ns2.ZDNS.google,ns3.zdns.gOOglE,ns4.zdns.google",
         "--password=2fooBAR",
-        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 5 2"
+        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 8 2"
             + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
-        "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+        "--ds_records=60485 8  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_create_complete.xml");
   }
@@ -77,9 +82,9 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--period=1",
         "--nameservers=ns[1-4].zdns.google",
         "--password=2fooBAR",
-        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 5 2"
+        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 8 2"
             + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
-        "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+        "--ds_records=60485 8  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_create_complete.xml");
   }
@@ -91,9 +96,9 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--period=1",
         "--nameservers=NS[1-4].zdns.google",
         "--password=2fooBAR",
-        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 5 2"
+        "--ds_records=1 2 2 9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08,4 8 2"
             + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
-        "--ds_records=60485 5  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+        "--ds_records=60485 8  2  D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
         "example.tld");
     eppVerifier.verifySent("domain_create_complete.xml");
   }
@@ -277,6 +282,25 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
                     "--ds_records=1 2 3 abcd",
                     "example.tld"));
     assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized digest type: 3");
+  }
+
+  @Test
+  void testFailure_forbiddenAlgorithm() {
+    persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
+            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
+            .build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar",
+                    "--ds_records=1 1 2"
+                        + " D4B7D520E7BB5F0F67674A0CCEB1E3E0614B93C4F9E99B8383F6A1E4469DA50A",
+                    "example.tld"));
+    assertThat(thrown).hasMessageThat().isEqualTo("DS record uses an unrecognized algorithm: 1");
   }
 
   @Test
