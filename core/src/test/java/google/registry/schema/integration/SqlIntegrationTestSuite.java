@@ -52,9 +52,8 @@ import google.registry.schema.registrar.RegistrarDaoTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
 import org.junit.platform.suite.api.SelectClasses;
-import org.junit.runner.RunWith;
+import org.junit.platform.suite.api.Suite;
 
 /**
  * Groups all JPA entity tests in one suite for easy invocation. This suite is used for
@@ -68,20 +67,8 @@ import org.junit.runner.RunWith;
  * <p>Note that with {@link JpaIntegrationWithCoverageExtension}, each method starts with an empty
  * database. Therefore, this is not the right place for verifying backwards data compatibility in
  * end-to-end functional tests.
- *
- * <p>As of April 2020, none of the before/after annotations ({@code BeforeClass} and {@code
- * AfterClass} in JUnit 4, or {@code BeforeAll} and {@code AfterAll} in JUnit5) work in a test suite
- * run with {@link JUnitPlatform the current JUnit 5 runner}. However, staying with the JUnit 4
- * runner would prevent any member tests from migrating to JUnit 5.
- *
- * <p>This class uses a hack to work with the current JUnit 5 runner. {@link BeforeSuiteTest} is
- * added to the front of the suite class list and invokes the suite's setup method, and {@link
- * AfterSuiteTest} is added to the tail of the suite class list and invokes the suite's teardown
- * method. This works because the member tests are run in the order they are declared (See {@code
- * org.junit.platform.engine.support.descriptor.AbstractTestDescriptor#addChild}). Should the
- * ordering changes in the future, we will only get false alarms.
  */
-@RunWith(JUnitPlatform.class)
+@Suite
 @SelectClasses({
   // BeforeSuiteTest must be the first entry. See class javadoc for details.
   BeforeSuiteTest.class,

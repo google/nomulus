@@ -274,6 +274,7 @@ dependencies {
   testImplementation deps['org.junit-pioneer:junit-pioneer']
   testImplementation deps['org.junit.platform:junit-platform-runner']
   testImplementation deps['org.junit.platform:junit-platform-suite-api']
+  testImplementation deps['org.junit.platform:junit-platform-suite']
   testImplementation deps['org.mockito:mockito-core']
   testImplementation deps['org.mockito:mockito-junit-jupiter']
 
@@ -694,10 +695,7 @@ task fragileTest(type: FilteringTest) {
 
 // Dedicated test suite for schema-dependent tests.
 task sqlIntegrationTest(type: FilteringTest) {
-  // TestSuite still requires a JUnit 4 runner, which knows how to handle JUnit 5 tests.
-  // Here we need to override parent's choice of JUnit 5. If changing this, remember to
-  // change :integration:sqlIntegrationTest too.
-  useJUnit()
+  useJUnitPlatform()
   excludeTestCases = false
   tests = ['google/registry/schema/integration/SqlIntegrationTestSuite.*']
 
@@ -744,9 +742,9 @@ test {
   // Don't run any tests from this task, all testing gets done in the
   // FilteringTest tasks.
   exclude "**"
-}.dependsOn(standardTest, registryToolIntegrationTest)
+}.dependsOn(standardTest, registryToolIntegrationTest, sqlIntegrationTest)
 
 // When we override tests, we also break the cleanTest command.
-cleanTest.dependsOn(cleanStandardTest, cleanRegistryToolIntegrationTest)
+cleanTest.dependsOn(cleanStandardTest, cleanRegistryToolIntegrationTest, cleanSqlIntegrationTest)
 
 project.build.dependsOn devtool
