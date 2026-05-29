@@ -53,11 +53,13 @@ This document outlines foundational mandates, architectural patterns, and projec
 
 ### 6. Project Dependencies
 - **Common Module:** When using `Clock` or other core utilities in a new or separate module (like `load-testing`), ensure `implementation project(':common')` is added to the module's `build.gradle`.
-- **Updating Dependencies:** When updating third-party dependencies, you must follow this exact sequence:
+- **Updating Dependencies:** When updating third-party dependencies, you MUST follow this exact, non-negotiable sequence. NEVER run the update script without first verifying the lockfiles locally.
   1. Modify `dependencies.gradle`.
-  2. Run `./gradlew dependencies --write-locks` to regenerate the Gradle lockfiles locally. This is much faster than running the full update script blindly.
-  3. Verify the build succeeds (e.g., `./gradlew :core:build -x test` or `./gradlew build`) to ensure there are no resolution or compilation errors.
-  4. ONLY after the lockfiles are generated and the build is verified, execute the internal script `/google/src/head/depot/google3/domain/registry/tools/update_dependency.sh` to push the new dependencies to the private Maven repository.
+  2. Run `./gradlew dependencies --write-locks --update-locks '*:*'` to regenerate all Gradle lockfiles locally to resolve new versions.
+  3. Run `./gradlew clean build` to exhaustively compile and run all tests against the new transitive dependency tree. If there are compilation or test errors due to breaking API changes or output formatting changes in the new dependency version, your primary goal is to **fix our codebase** to be compliant with the new dependency version. Only revert the dependency bump or cap the version if the required code changes are prohibitively complex or outside the scope of the current task.
+  4. Only once the build passes and `git status` shows modified lockfiles, commit the `dependencies.gradle` and lockfile changes.
+  5. ONLY after the local changes are committed and verified, execute the internal script `/google/src/head/depot/google3/domain/registry/tools/update_dependency.sh`. This ensures you don't corrupt the upstream remote artifact cache with broken or missing lockfiles.
+  6. **Crucial Final Verification:** The `update_dependency.sh` script runs its own internal Blaze resolution and often modifies or drops additional `buildscript-gradle.lockfile` files. After the script finishes successfully, run `git status`. If there are any untracked or modified `*.lockfile` files, stage them and run `git commit --amend --no-edit` to ensure your commit perfectly reflects the final state deployed to the SSO repository.
 
 ### 7. Search and Discovery
 - **No CodeSearch:** This project is hosted on GitHub, not Google3. Do NOT use `mcp_Coding_search_for_files_codesearch` or other internal Google3 search tools.
