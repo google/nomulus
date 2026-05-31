@@ -79,8 +79,19 @@ task extractSqlIntegrationTestSuite (type: Copy) {
 
 // TODO(weiminyu): inherit from FilteringTest (defined in :core).
 task sqlIntegrationTest(type: Test) {
-  // Explicitly choose JUnit 4 for test suites. See :core:sqlIntegrationTest for details.
-  useJUnit()
+  // Use JUnit 5 Platform for local tests since the suite has been migrated to @Suite.
+  // However, Kokoro runs cross-version compatibility tests against older, deployed nomulus
+  // artifacts that were compiled using the legacy JUnit 4 @RunWith(JUnitPlatform.class) runner.
+  // We must fall back to the classic JUnit 4 runner for those remote environments to prevent
+  // NoClassDefFoundError and test discovery failures.
+  // TODO: Remove this fallback and use useJUnitPlatform() unconditionally once all deployed
+  // environments (sandbox and production) are running a Nomulus release built after the
+  // JUnit 5 @Suite migration.
+  if (nomulus_env == USE_LOCAL) {
+    useJUnitPlatform()
+  } else {
+    useJUnit()
+  }
   testClassesDirs = files(unpackedTestDir)
   classpath = configurations.testRuntimeClasspath
   include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'
