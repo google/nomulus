@@ -74,6 +74,14 @@ def createConsoleTask = { env ->
   createConsoleTask(env)
 }
 
+// Force an order so we don't run these tasks in parallel.
+tasks.buildConsoleForCrash.mustRunAfter(tasks.buildConsoleForAlpha)
+tasks.buildConsoleForQa.mustRunAfter(tasks.buildConsoleForCrash)
+tasks.buildConsoleForSandbox.mustRunAfter(tasks.buildConsoleForQa)
+tasks.buildConsoleForProduction.mustRunAfter(tasks.buildConsoleForSandbox)
+// This task must run last, otherwise the previous tasks will have deleted the "dist" folder.
+tasks.buildConsoleWebapp.mustRunAfter(tasks.buildConsoleForProduction)
+
 task applyFormatting(type: Exec) {
   workingDir "${consoleDir}/"
   executable 'npm'

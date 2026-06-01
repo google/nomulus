@@ -174,7 +174,9 @@ public class ConsoleScreenshotTest {
     // Script that set cursor to transparent to prevent blanking cursor flakiness when comparing
     // screenshots
     String script =
-        "document.styleSheets[0].insertRule(\"html * {caret-color: transparent !important;}\")";
+        "var style = document.createElement('style');"
+            + "style.innerHTML = 'html * {caret-color: transparent !important;}';"
+            + "document.head.appendChild(style);";
     driver.executeScript(script);
   }
 

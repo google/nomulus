@@ -33,7 +33,7 @@ public final class RegistryTestServer {
 
   public static final ImmutableMap<String, Path> RUNFILES =
       new ImmutableMap.Builder<String, Path>()
-          .put("/console/*", PROJECT_ROOT.resolve("console-webapp/staged/dist"))
+          .put("/console/*", PROJECT_ROOT.resolve("console-webapp/staged/dist/browser"))
           .build();
 
   public static final ImmutableList<Route> ROUTES =

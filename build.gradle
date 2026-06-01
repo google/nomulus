@@ -609,3 +609,15 @@ gradle.taskGraph.whenReady { graph ->
     }
   }
 }
+
+task buildAll {
+  group = 'build'
+  description = 'Runs the standard build plus all heavy staging/Docker dependencies and fragile tests that were stripped out of the default build for performance.'
+  dependsOn build
+  dependsOn ':core:fragileTest'
+  dependsOn ':core:sqlIntegrationTest'
+  dependsOn ':core:buildToolImage'
+  dependsOn ':stage'
+  dependsOn ':jetty:buildNomulusImage'
+  dependsOn ':console-webapp:buildConsoleForAll'
+}
