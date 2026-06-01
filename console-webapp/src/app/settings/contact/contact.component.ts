@@ -34,14 +34,7 @@ export default class ContactComponent {
     {
       columnDef: 'name',
       header: 'Name',
-      cell: (contact: ViewReadyContact) => `
-        <div class="contact__name-column">
-          <div class="contact__name-column-title">${contact.name}</div>
-          <div class="contact__name-column-roles">${contact.userFriendlyTypes.join(
-            ' • '
-          )}</div>
-          </div>
-      `,
+      cell: (contact: ViewReadyContact) => `${contact.name}`,
     },
     {
       columnDef: 'emailAddress',

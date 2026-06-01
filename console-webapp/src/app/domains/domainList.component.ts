@@ -48,7 +48,11 @@ interface DomainData {
   selector: 'app-response-dialog',
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
-    <mat-dialog-content [innerHTML]="data.content" />
+    <mat-dialog-content>
+      @for (line of data.content; track line) {
+      <div>{{ line }}</div>
+      }
+    </mat-dialog-content>
     <mat-dialog-actions>
       <button mat-button (click)="onClose()">Close</button>
     </mat-dialog-actions>
@@ -59,7 +63,7 @@ export class ResponseDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<ReasonDialogComponent>,
     @Inject(MAT_DIALOG_DATA)
-    public data: { title: string; content: string }
+    public data: { title: string; content: string[] }
   ) {}
 
   onClose(): void {
@@ -312,11 +316,13 @@ export class DomainListComponent {
           this.dialog.open(ResponseDialogComponent, {
             data: {
               title: 'Domain Deletion Results',
-              content: `Successfully deleted - ${successCount} domain(s)<br/>Failed to delete - ${failureCount} domain(s)<br/>${
+              content: [
+                `Successfully deleted - ${successCount} domain(s)`,
+                `Failed to delete - ${failureCount} domain(s)`,
                 failureCount
-                  ? 'Some domains could not be deleted due to ongoing processes or server errors. '
-                  : ''
-              }Please check the table for more information.`,
+                  ? 'Some domains could not be deleted due to ongoing processes or server errors. Please check the table for more information.'
+                  : 'Please check the table for more information.',
+              ],
             },
           });
           this.selection.clear();

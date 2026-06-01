@@ -97,10 +97,9 @@
           @for (column of columns; track column.columnDef) {
           <mat-list-item role="listitem">
             <span class="console-app__list-key">{{ column.header }} </span>
-            <span
-              class="console-app__list-value"
-              [innerHTML]="column.cell(registrarInEdit).replace('<br/>', ' ')"
-            ></span>
+            <span class="console-app__list-value">{{
+              column.cell(registrarInEdit)
+            }}</span>
           </mat-list-item>
           <mat-divider></mat-divider>
           }

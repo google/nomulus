@@ -62,17 +62,20 @@ public class ConsoleHistoryDataAction extends ConsoleApiAction {
   private final Optional<String> consoleUserEmail;
 
   private final String supportEmail;
+  private final int historyQueryLimit;
 
   @Inject
   public ConsoleHistoryDataAction(
       ConsoleApiParams consoleApiParams,
       @Config("supportEmail") String supportEmail,
+      @Config("consoleHistoryQueryLimit") int historyQueryLimit,
       @Parameter("registrarId") String registrarId,
       @Parameter("consoleUserEmail") Optional<String> consoleUserEmail) {
     super(consoleApiParams);
     this.registrarId = registrarId;
     this.consoleUserEmail = consoleUserEmail;
     this.supportEmail = supportEmail;
+    this.historyQueryLimit = historyQueryLimit;
   }
 
   @Override
@@ -117,6 +120,7 @@ public class ConsoleHistoryDataAction extends ConsoleApiAction {
                         .createNativeQuery(SQL_REGISTRAR_HISTORY, ConsoleUpdateHistory.class)
                         .setParameter("registrarId", registrarId)
                         .setHint("org.hibernate.fetchSize", 1000)
+                        .setMaxResults(historyQueryLimit)
                         .getResultList());
 
     List<ConsoleUpdateHistory> formattedHistoryList =

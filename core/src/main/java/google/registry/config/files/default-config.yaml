@@ -380,6 +380,12 @@ registrarConsole:
   # URL linking to directory of technical support docs on the registry.
   technicalDocsUrl: http://example.com/your_support_docs/
 
+  # Maximum number of history records returned in a single query.
+  historyQueryLimit: 500
+
+  # Maximum number of domains allowed in a single bulk action.
+  bulkDomainActionLimit: 500
+
 monitoring:
   # Max queries per second for the Google Cloud Monitoring V3 (aka Stackdriver)
   # API. The limit can be adjusted by contacting Cloud Support.

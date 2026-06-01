@@ -25,7 +25,18 @@
     @for (column of columns; track column) {
     <ng-container [matColumnDef]="column.columnDef">
       <mat-header-cell *matHeaderCellDef> {{ column.header }} </mat-header-cell>
-      <mat-cell *matCellDef="let row" [innerHTML]="column.cell(row)"></mat-cell>
+      <mat-cell *matCellDef="let row">
+        @if (column.columnDef === 'name') {
+        <div class="contact__name-column">
+          <div class="contact__name-column-title">{{ row.name }}</div>
+          <div class="contact__name-column-roles">
+            {{ row.userFriendlyTypes.join(" • ") }}
+          </div>
+        </div>
+        } @else {
+        {{ column.cell(row) }}
+        }
+      </mat-cell>
     </ng-container>
     }
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>

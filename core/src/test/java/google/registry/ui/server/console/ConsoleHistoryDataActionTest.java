@@ -23,6 +23,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
@@ -163,6 +165,27 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
+  void testSuccess_limitsResults() {
+    for (int i = 0; i < 10; i++) {
+      DatabaseHelper.persistResource(
+          new ConsoleUpdateHistory.Builder()
+              .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
+              .setDescription("TheRegistrar|some detail " + i)
+              .setActingUser(fteUser)
+              .setUrl("https://test.com")
+              .setMethod("GET")
+              .setModificationTime(clock.now())
+              .build());
+    }
+    ConsoleHistoryDataAction action =
+        createAction(AuthResult.createUser(fteUser), "TheRegistrar", Optional.empty(), 5);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    JsonArray payload = JsonParser.parseString(response.getPayload()).getAsJsonArray();
+    assertThat(payload.size()).isEqualTo(5);
+  }
+
+  @Test
   void testFailure_getByRegistrar_noPermission() {
     ConsoleHistoryDataAction action =
         createAction(AuthResult.createUser(noPermissionUser), "TheRegistrar", Optional.empty());
@@ -192,10 +215,15 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
 
   private ConsoleHistoryDataAction createAction(
       AuthResult authResult, String registrarId, Optional<String> consoleUserEmail) {
+    return createAction(authResult, registrarId, consoleUserEmail, 500);
+  }
+
+  private ConsoleHistoryDataAction createAction(
+      AuthResult authResult, String registrarId, Optional<String> consoleUserEmail, int limit) {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn("GET");
     response = (FakeResponse) consoleApiParams.response();
     return new ConsoleHistoryDataAction(
-        consoleApiParams, SUPPORT_EMAIL, registrarId, consoleUserEmail);
+        consoleApiParams, SUPPORT_EMAIL, limit, registrarId, consoleUserEmail);
   }
 }

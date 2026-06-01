@@ -56,7 +56,7 @@ export const columns = [
     cell: (record: Registrar) =>
       `${Object.entries(record.billingAccountMap || {}).reduce(
         (acc, [key, val]) => {
-          return `${acc}${key}=${val}<br/>`;
+          return `${acc}${key}=${val}\n`;
         },
         ''
       )}`,

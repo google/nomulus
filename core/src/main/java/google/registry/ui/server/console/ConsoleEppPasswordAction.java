@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.Expose;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.PasswordOnlyTransportCredentials;
+import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
@@ -83,6 +84,8 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
     checkArgument(
         eppRequestBody.newPassword().equals(eppRequestBody.newPasswordRepeat()),
         "New password fields don't match");
+
+    checkPermission(user, eppRequestBody.registrarId(), ConsolePermission.CONFIGURE_EPP_CONNECTION);
 
     Registrar registrar;
     try {

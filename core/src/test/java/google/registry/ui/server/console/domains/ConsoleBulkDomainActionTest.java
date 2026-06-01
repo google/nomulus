@@ -45,6 +45,7 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.console.ConsoleActionBaseTestCase;
 import google.registry.ui.server.console.ConsoleApiParams;
+import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -173,7 +174,9 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testFailure_badActionString() {
-    ConsoleBulkDomainAction action = createAction("bad", GSON.toJsonTree(ImmutableMap.of()));
+    ConsoleBulkDomainAction action =
+        createAction(
+            "bad", GSON.toJsonTree(ImmutableMap.of("domainList", ImmutableList.of("domain.tld"))));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload())
@@ -188,6 +191,29 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload()).isEqualTo("Bulk action payload must be present");
+  }
+
+  @Test
+  void testFailure_listTooLarge() {
+    JsonElement payload =
+        GSON.toJsonTree(
+            ImmutableMap.of(
+                "domainList", Collections.nCopies(6, "domain.tld"), "reason", "reason"));
+    ConsoleBulkDomainAction action = createAction("DELETE", payload, fteUser, 5);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .isEqualTo("Cannot process more than 5 domains in a single bulk action");
+  }
+
+  @Test
+  void testFailure_emptyList() {
+    JsonElement payload =
+        GSON.toJsonTree(ImmutableMap.of("domainList", ImmutableList.of(), "reason", "reason"));
+    ConsoleBulkDomainAction action = createAction("DELETE", payload);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).isEqualTo("Domain list cannot be empty");
   }
 
   @Test
@@ -232,15 +258,20 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
   // }
 
   private ConsoleBulkDomainAction createAction(String action, JsonElement payload) {
-    return createAction(action, payload, fteUser);
+    return createAction(action, payload, fteUser, 500);
   }
 
   private ConsoleBulkDomainAction createAction(String action, JsonElement payload, User user) {
+    return createAction(action, payload, user, 500);
+  }
+
+  private ConsoleBulkDomainAction createAction(
+      String action, JsonElement payload, User user, int limit) {
     AuthResult authResult = AuthResult.createUser(user);
     ConsoleApiParams params = ConsoleApiParamsUtils.createFake(authResult);
     when(params.request().getMethod()).thenReturn("POST");
     response = (FakeResponse) params.response();
     return new ConsoleBulkDomainAction(
-        params, eppController, "TheRegistrar", action, Optional.ofNullable(payload));
+        params, eppController, limit, "TheRegistrar", action, Optional.ofNullable(payload));
   }
 }

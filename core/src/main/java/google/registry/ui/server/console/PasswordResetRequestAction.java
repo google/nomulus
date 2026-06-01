@@ -86,7 +86,7 @@ public class PasswordResetRequestAction extends ConsoleApiAction {
             "Must provide registry lock email to reset");
         requiredPermission = ConsolePermission.MANAGE_USERS;
         destinationEmail = passwordResetRequestData.registryLockEmail;
-        checkUserExistsWithRegistryLockEmail(destinationEmail);
+        checkUserExistsWithRegistryLockEmail(destinationEmail, registrarId);
         emailSubject = "Registry lock password reset request";
       }
       default -> throw new IllegalArgumentException("Unknown type " + type);
@@ -121,12 +121,24 @@ public class PasswordResetRequestAction extends ConsoleApiAction {
         .sendEmail(EmailMessage.create(emailSubject, body, destinationAddress));
   }
 
-  static User checkUserExistsWithRegistryLockEmail(String destinationEmail) {
-    return tm().createQueryComposer(User.class)
-        .where("registryLockEmailAddress", QueryComposer.Comparator.EQ, destinationEmail)
-        .first()
-        .orElseThrow(
-            () -> new IllegalArgumentException("Unknown user with lock email " + destinationEmail));
+  static User checkUserExistsWithRegistryLockEmail(String destinationEmail, String registrarId) {
+    User targetUser =
+        tm().createQueryComposer(User.class)
+            .where("registryLockEmailAddress", QueryComposer.Comparator.EQ, destinationEmail)
+            .first()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Unknown user with lock email " + destinationEmail));
+
+    // Prevent IDOR: Ensure the resolved user actually belongs to the registrar the requester
+    // has permissions for, or is a global admin.
+    if (!targetUser.getUserRoles().isAdmin()
+        && !targetUser.getUserRoles().getRegistrarRoles().containsKey(registrarId)) {
+      throw new IllegalArgumentException(
+          "User with lock email " + destinationEmail + " is not associated with " + registrarId);
+    }
+    return targetUser;
   }
 
   private String getAdminPocEmail(String registrarId) {

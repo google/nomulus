@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.console.domains;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -22,6 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.Expose;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppController;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.PasswordOnlyTransportCredentials;
@@ -64,11 +66,13 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
   private final String registrarId;
   private final String bulkDomainAction;
   private final Optional<JsonElement> optionalJsonPayload;
+  private final int bulkDomainActionLimit;
 
   @Inject
   public ConsoleBulkDomainAction(
       ConsoleApiParams consoleApiParams,
       EppController eppController,
+      @Config("consoleBulkDomainActionLimit") int bulkDomainActionLimit,
       @Parameter("registrarId") String registrarId,
       @Parameter("bulkDomainAction") String bulkDomainAction,
       @OptionalJsonPayload Optional<JsonElement> optionalJsonPayload) {
@@ -77,6 +81,7 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
     this.registrarId = registrarId;
     this.bulkDomainAction = bulkDomainAction;
     this.optionalJsonPayload = optionalJsonPayload;
+    this.bulkDomainActionLimit = bulkDomainActionLimit;
   }
 
   @Override
@@ -85,6 +90,13 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
         optionalJsonPayload.orElseThrow(
             () -> new IllegalArgumentException("Bulk action payload must be present"));
     BulkDomainList domainList = consoleApiParams.gson().fromJson(jsonPayload, BulkDomainList.class);
+    checkArgument(
+        domainList.domainList != null && !domainList.domainList.isEmpty(),
+        "Domain list cannot be empty");
+    checkArgument(
+        domainList.domainList.size() <= bulkDomainActionLimit,
+        "Cannot process more than %s domains in a single bulk action",
+        bulkDomainActionLimit);
     ConsoleDomainActionType actionType =
         ConsoleDomainActionType.parseActionType(bulkDomainAction, jsonPayload);
 

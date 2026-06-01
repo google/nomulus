@@ -181,6 +181,8 @@ public class RegistryConfigSettings {
     public String supportPhoneNumber;
     public String supportEmailAddress;
     public String technicalDocsUrl;
+    public int historyQueryLimit;
+    public int bulkDomainActionLimit;
   }
 
   /** Configuration for monitoring. */

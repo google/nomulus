@@ -94,7 +94,7 @@ Do not wait for the user to tell you to improve the skills; it is your responsib
 
 # Gemini Engineering Guide: Nomulus Codebase
 
-This document captures high-level architectural patterns, lessons learned from large-scale refactorings (like the Joda-Time to `java.time` migration), and specific instructions to avoid common pitfalls in this environment.
+This document captures high-level architectural patterns, lessons learned from large-scale refactorings, and specific instructions to avoid common pitfalls in this environment.
 
 ## 🏛 Architecture Overview
 

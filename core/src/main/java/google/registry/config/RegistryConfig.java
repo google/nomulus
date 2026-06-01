@@ -173,6 +173,18 @@ public final class RegistryConfig {
       return config.registrarConsole.supportEmailAddress;
     }
 
+    @Provides
+    @Config("consoleHistoryQueryLimit")
+    public static int provideConsoleHistoryQueryLimit(RegistryConfigSettings config) {
+      return config.registrarConsole.historyQueryLimit;
+    }
+
+    @Provides
+    @Config("consoleBulkDomainActionLimit")
+    public static int provideConsoleBulkDomainActionLimit(RegistryConfigSettings config) {
+      return config.registrarConsole.bulkDomainActionLimit;
+    }
+
     /**
      * The DUM file name, used as a file name base for DUM csv file
      *

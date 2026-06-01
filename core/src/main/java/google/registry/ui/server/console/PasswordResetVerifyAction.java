@@ -98,7 +98,9 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
   }
 
   private void handleRegistryLockPasswordReset(PasswordResetRequest request) {
-    User affectedUser = checkUserExistsWithRegistryLockEmail(request.getDestinationEmail());
+    User affectedUser =
+        checkUserExistsWithRegistryLockEmail(
+            request.getDestinationEmail(), request.getRegistrarId());
     tm().put(
             affectedUser
                 .asBuilder()
