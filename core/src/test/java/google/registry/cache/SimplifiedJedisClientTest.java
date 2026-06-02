@@ -19,6 +19,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 
 import com.google.common.collect.ImmutableList;
@@ -67,7 +68,8 @@ public class SimplifiedJedisClientTest {
 
   @Test
   void testClient_roundTrip_host() {
-    Host host = persistActiveHost("ns1.example.tld");
+    Domain domain = persistActiveDomain("example.tld");
+    Host host = persistActiveSubordinateHost("ns1.example.tld", domain);
     SimplifiedJedisClient client = createJedisClient();
     client.set(new SimplifiedJedisClient.JedisResource<>("repoId1", host));
     assertThat(client.get(Host.class, "repoId1")).hasValue(host);

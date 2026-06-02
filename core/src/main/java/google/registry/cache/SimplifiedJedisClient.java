@@ -25,10 +25,20 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.EppResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
+import io.protostuff.Input;
 import io.protostuff.LinkedBuffer;
+import io.protostuff.Output;
+import io.protostuff.Pipe;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
+import io.protostuff.WireFormat;
+import io.protostuff.runtime.DefaultIdStrategy;
+import io.protostuff.runtime.Delegate;
 import io.protostuff.runtime.RuntimeSchema;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import redis.clients.jedis.AbstractPipeline;
@@ -52,11 +62,20 @@ public class SimplifiedJedisClient {
           Domain.class, "d_",
           Host.class, "h_");
 
+  /** We need to inform Protostuff of the custom {@link InetAddress} delegates. */
+  private static DefaultIdStrategy createIdStrategy() {
+    DefaultIdStrategy strategy = new DefaultIdStrategy();
+    strategy.registerDelegate(new GenericInetAddressDelegate<>(InetAddress.class));
+    strategy.registerDelegate(new GenericInetAddressDelegate<>(Inet4Address.class));
+    strategy.registerDelegate(new GenericInetAddressDelegate<>(Inet6Address.class));
+    return strategy;
+  }
+
   private static final ImmutableMap<Class<? extends EppResource>, Schema<? extends EppResource>>
       VALUE_SCHEMAS =
           ImmutableMap.of(
               Domain.class, RuntimeSchema.getSchema(Domain.class),
-              Host.class, RuntimeSchema.getSchema(Host.class));
+              Host.class, RuntimeSchema.getSchema(Host.class, createIdStrategy()));
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -150,5 +169,47 @@ public class SimplifiedJedisClient {
   private <V extends EppResource> Schema<V> getValueSchema(Class<V> clazz) {
     checkArgument(VALUE_SCHEMAS.containsKey(clazz), "Unknown class type %s", clazz);
     return (Schema<V>) VALUE_SCHEMAS.get(clazz);
+  }
+
+  /**
+   * A custom Protostuff {@link Delegate} for {@link InetAddress} and its subclasses.
+   *
+   * <p>This is required in Java 17+ because Protostuff's default runtime schema serialization
+   * relies on reflection. Since {@link InetAddress} is part of the encapsulated {@code java.base}
+   * module, reflective access is restricted and throws {@link
+   * java.lang.reflect.InaccessibleObjectException}.
+   *
+   * <p>This delegate serializes the IP address as a raw byte array using {@link
+   * InetAddress#getAddress()} and reconstructs it using {@link InetAddress#getByAddress(byte[])}
+   */
+  private record GenericInetAddressDelegate<T extends InetAddress>(Class<T> clazz)
+      implements Delegate<T> {
+
+    @Override
+    public WireFormat.FieldType getFieldType() {
+      return WireFormat.FieldType.BYTES;
+    }
+
+    @Override
+    public Class<T> typeClass() {
+      return clazz;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T readFrom(Input input) throws IOException {
+      return (T) InetAddress.getByAddress(input.readByteArray());
+    }
+
+    @Override
+    public void writeTo(Output output, int number, T value, boolean repeated) throws IOException {
+      output.writeByteArray(number, value.getAddress(), repeated);
+    }
+
+    @Override
+    public void transfer(Pipe pipe, Input input, Output output, int number, boolean repeated)
+        throws IOException {
+      output.writeByteArray(number, input.readByteArray(), repeated);
+    }
   }
 }
