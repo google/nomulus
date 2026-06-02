@@ -38,7 +38,7 @@ steps:
   - -c
   - |
     set -e
-    for env in crash; do
+    for env in crash sandbox; do
       config_file="release/clouddeploy/${env}-config.yaml"
       if [ -f "$config_file" ]; then
         echo "Extracting checks from $config_file..."
@@ -52,8 +52,8 @@ steps:
         ' "$config_file" > checks.tmp
         
         # Insert the checks where the placeholder is located and remove the placeholder
-        sed -i '/stableDeploymentAlertPolicyChecks/r checks.tmp' release/clouddeploy/delivery-pipeline.yaml
-        sed -i '/stableDeploymentAlertPolicyChecks/d' release/clouddeploy/delivery-pipeline.yaml
+        sed -i "/${env}StableDeploymentAlertPolicyChecks/r checks.tmp" release/clouddeploy/delivery-pipeline.yaml
+        sed -i "/${env}StableDeploymentAlertPolicyChecks/d" release/clouddeploy/delivery-pipeline.yaml
         rm -f checks.tmp
 
         # Extract only the indented block under partialDeploymentAlertPolicyChecks.
@@ -68,8 +68,8 @@ steps:
           ' "$config_file" > partial_checks.tmp
           
           # Insert the checks where the placeholder is located and remove the placeholder
-          sed -i '/partialDeploymentAlertPolicyChecks/r partial_checks.tmp' release/clouddeploy/delivery-pipeline.yaml
-          sed -i '/partialDeploymentAlertPolicyChecks/d' release/clouddeploy/delivery-pipeline.yaml
+          sed -i "/${env}PartialDeploymentAlertPolicyChecks/r partial_checks.tmp" release/clouddeploy/delivery-pipeline.yaml
+          sed -i "/${env}PartialDeploymentAlertPolicyChecks/d" release/clouddeploy/delivery-pipeline.yaml
           rm -f partial_checks.tmp
         fi
         
@@ -95,7 +95,7 @@ steps:
   - -c
   - |
     set -e
-    for env in crash; do
+    for env in crash sandbox; do
       target_file="release/clouddeploy/${env}-target.yaml"
       if [ -f "$target_file" ]; then
         echo "Applying target $target_file..."

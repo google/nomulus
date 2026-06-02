@@ -19,7 +19,7 @@ serialPipeline:
               duration: 600s
               googleCloud:
                 alertPolicyChecks:
-                    partialDeploymentAlertPolicyChecks
+                    crashPartialDeploymentAlertPolicyChecks
           - phaseId: "canary-5"
             profiles: ["crash-partial-phase-5"]
             percentage: 50
@@ -28,7 +28,7 @@ serialPipeline:
               duration: 600s
               googleCloud:
                 alertPolicyChecks:
-                    partialDeploymentAlertPolicyChecks
+                    crashPartialDeploymentAlertPolicyChecks
           - phaseId: "stable"
             profiles: ["crash"]
             percentage: 100
@@ -51,4 +51,50 @@ serialPipeline:
               duration: 600s
               googleCloud:
                 alertPolicyChecks:
-                    stableDeploymentAlertPolicyChecks
+                    crashStableDeploymentAlertPolicyChecks
+  - targetId: sandbox
+    strategy:
+      canary:
+        customCanaryDeployment:
+          phaseConfigs:
+          - phaseId: "canary-1"
+            profiles: ["sandbox-partial-phase-1"]
+            percentage: 10
+            analysis:
+              # 10 minutes.
+              duration: 600s
+              googleCloud:
+                alertPolicyChecks:
+                    sandboxPartialDeploymentAlertPolicyChecks
+          - phaseId: "canary-5"
+            profiles: ["sandbox-partial-phase-5"]
+            percentage: 50
+            analysis:
+              # 10 minutes.
+              duration: 600s
+              googleCloud:
+                alertPolicyChecks:
+                    sandboxPartialDeploymentAlertPolicyChecks
+          - phaseId: "stable"
+            profiles: ["sandbox"]
+            percentage: 100
+            postdeploy:
+              tasks:
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
+                  DEPLOYED_IMAGE: ${{ deploy_params['deployed_image'] }}
+                  BASE_IMAGE: ${{ deploy_params['base_image'] }}
+                  TARGET_ID: ${{ target.id }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud artifacts docker tags add $DEPLOYED_IMAGE \
+                    ${BASE_IMAGE}:live-cd-${TARGET_ID}
+            analysis:
+              # 10 minutes.
+              duration: 600s
+              googleCloud:
+                alertPolicyChecks:
+                    sandboxStableDeploymentAlertPolicyChecks
