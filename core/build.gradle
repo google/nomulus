@@ -442,7 +442,7 @@ project.tasks.create('generateSqlSchema', JavaExec) {
   mainClass = 'google.registry.tools.DevTool'
   jvmArgs "--sun-misc-unsafe-memory-access=allow"
   args = [
-      '-e', 'alpha',
+      '-e', 'unittest',
       'generate_sql_schema', '--start_postgresql', '-o',
       "${rootProject.projectRootDir}/db/src/main/resources/sql/schema/" +
       "db-schema.sql.generated"
@@ -741,9 +741,9 @@ test {
   // Don't run any tests from this task, all testing gets done in the
   // FilteringTest tasks.
   exclude "**"
-}.dependsOn(standardTest, registryToolIntegrationTest, sqlIntegrationTest)
+}.dependsOn(standardTest, registryToolIntegrationTest, sqlIntegrationTest, fragileTest)
 
 // When we override tests, we also break the cleanTest command.
-cleanTest.dependsOn(cleanStandardTest, cleanRegistryToolIntegrationTest, cleanSqlIntegrationTest)
+cleanTest.dependsOn(cleanStandardTest, cleanRegistryToolIntegrationTest, cleanSqlIntegrationTest, cleanFragileTest)
 
-project.build.dependsOn devtool
+project.build.dependsOn devtool, buildToolImage

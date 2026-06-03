@@ -148,4 +148,5 @@ tasks.register('getEndpoints', Exec) {
     commandLine './get-endpoints.py', "${rootProject.gcpProject}"
 }
 
+project.build.dependsOn(tasks.named('buildNomulusImage'))
 rootProject.deploy.dependsOn(tasks.named('deployNomulus'))

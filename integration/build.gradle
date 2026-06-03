@@ -77,35 +77,54 @@ task extractSqlIntegrationTestSuite (type: Copy) {
   }
 }
 
-// TODO(weiminyu): inherit from FilteringTest (defined in :core).
-task sqlIntegrationTest(type: Test) {
-  // Use JUnit 5 Platform for local tests since the suite has been migrated to @Suite.
-  // However, Kokoro runs cross-version compatibility tests against older, deployed nomulus
-  // artifacts that were compiled using the legacy JUnit 4 @RunWith(JUnitPlatform.class) runner.
-  // We must fall back to the classic JUnit 4 runner for those remote environments to prevent
-  // NoClassDefFoundError and test discovery failures.
-  // TODO: Remove this fallback and use useJUnitPlatform() unconditionally once all deployed
-  // environments (sandbox and production) are running a Nomulus release built after the
-  // JUnit 5 @Suite migration.
-  if (nomulus_env == USE_LOCAL) {
-    useJUnitPlatform()
-  } else {
-    useJUnit()
+task removeUnpackedTests {
+  doLast {
+    delete file(unpackedTestDir)
   }
+}
+
+task sqlIntegrationTestLegacy(type: Test) {
+  useJUnit()
   testClassesDirs = files(unpackedTestDir)
   classpath = configurations.testRuntimeClasspath
   include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'
-
   dependsOn extractSqlIntegrationTestSuite
-
-  finalizedBy tasks.create('removeUnpackedTests') {
-    doLast {
-      delete file(unpackedTestDir)
-    }
-  }
-
-  // Disable incremental build/test since Gradle cannot detect changes
-  // in dependencies on its own. Will not fix since this test is typically
-  // run once (in presubmit or ci tests).
+  // Prevent build failures when evaluating newer JUnit 5 artifacts that have no JUnit 4 tests.
+  failOnNoDiscoveredTests = false
   outputs.upToDateWhen { false }
+}
+
+task sqlIntegrationTestModern(type: Test) {
+  useJUnitPlatform()
+  testClassesDirs = files(unpackedTestDir)
+  classpath = configurations.testRuntimeClasspath
+  include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'
+  dependsOn extractSqlIntegrationTestSuite
+  // Prevent build failures when evaluating older JUnit 4 artifacts that have no JUnit 5 tests.
+  failOnNoDiscoveredTests = false
+  outputs.upToDateWhen { false }
+}
+
+// TODO(weiminyu): inherit from FilteringTest (defined in :core).
+task sqlIntegrationTest {
+  // Kokoro runs cross-version compatibility tests against both older deployed artifacts
+  // (which use the legacy JUnit 4 @RunWith wrapper) and newer deployed artifacts (which use
+  // the JUnit 5 @Suite annotation). We cannot statically configure the test runner because
+  // we do not know which runner the downloaded artifact expects, nor can we inject the
+  // modern junit-platform-suite engine dependency without causing a classpath collision
+  // with older embedded engine APIs.
+  // To solve this, we execute both test runners sequentially and ignore "no tests discovered"
+  // errors. The runner compatible with the artifact will discover and execute the tests,
+  // while the incompatible runner will safely no-op.
+  //
+  // TODO: Remove this split fallback once all deployed environments (sandbox, qa, production)
+  // are running a Nomulus release built after the JUnit 5 @Suite migration.
+  // When that happens:
+  // 1. Delete the 'sqlIntegrationTestLegacy' and 'sqlIntegrationTestModern' tasks entirely.
+  // 2. Change this task back to: task sqlIntegrationTest(type: Test) { ... }
+  // 3. Add 'useJUnitPlatform()' unconditionally inside it.
+  // 4. Move the 'testClassesDirs', 'classpath', 'include', and 'outputs.upToDateWhen'
+  //    configurations back into it.
+  dependsOn sqlIntegrationTestLegacy, sqlIntegrationTestModern
+  finalizedBy removeUnpackedTests
 }

@@ -610,14 +610,22 @@ gradle.taskGraph.whenReady { graph ->
   }
 }
 
-task buildAll {
+task fastBuild {
   group = 'build'
-  description = 'Runs the standard build plus all heavy staging/Docker dependencies and fragile tests that were stripped out of the default build for performance.'
+  description = 'A lightweight build for local dev. Compiles Java, runs standard tests, and checks formatting, but skips Docker images, fragile tests, and the massive Angular console builds. (Do not use this target to verify console changes.)'
+
   dependsOn build
-  dependsOn ':core:fragileTest'
-  dependsOn ':core:sqlIntegrationTest'
-  dependsOn ':core:buildToolImage'
-  dependsOn ':stage'
-  dependsOn ':jetty:buildNomulusImage'
-  dependsOn ':console-webapp:buildConsoleForAll'
+  // Remove the heavy default dependencies specifically for fastBuild
+  gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(fastBuild)) {
+      project(':console-webapp').tasks.named('buildConsoleForAll').get().enabled = false
+      project(':jetty').tasks.named('buildNomulusImage').get().enabled = false
+      project(':core').tasks.named('buildToolImage').get().enabled = false
+      project(':core').tasks.named('fragileTest').get().enabled = false
+      project(':jetty').tasks.named('stage').get().enabled = false
+      if (project.tasks.findByName('stage') != null) {
+        project.tasks.named('stage').get().enabled = false
+      }
+    }
+  }
 }
