@@ -372,7 +372,7 @@ public class RdePipeline implements Serializable {
    * <p>The (repoId, pendingDeposit) pairs denote hosts that are referenced from a domain, that are
    * to be included in the corresponding pending deposit.
    *
-   * <p>The (repoId, revisionId) paris come from the most recent history entry query, which can be
+   * <p>The (repoId, revisionId) pairs come from the most recent history entry query, which can be
    * used to load the embedded resources themselves.
    *
    * @return a pair of (repoId, ([pendingDeposit], [revisionId])) where neither the pendingDeposit

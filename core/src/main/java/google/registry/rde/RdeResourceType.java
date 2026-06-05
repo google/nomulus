@@ -30,7 +30,7 @@ public enum RdeResourceType {
   REGISTRAR("urn:ietf:params:xml:ns:rdeRegistrar-1.0", EnumSet.of(FULL, THIN)),
   IDN("urn:ietf:params:xml:ns:rdeIDN-1.0", EnumSet.of(FULL)),
   HEADER("urn:ietf:params:xml:ns:rdeHeader-1.0", EnumSet.of(FULL, THIN)),
-  EPP_PARAMS("urn:ietf:params:xml:ns:rdeEppParams-1.0", EnumSet.of(FULL, THIN));
+  EPP_PARAMS("urn:ietf:params:xml:ns:rdeEppParams-1.0", EnumSet.of(FULL));
 
   private final String uri;
   private final ImmutableSet<RdeMode> modes;

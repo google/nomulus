@@ -212,16 +212,15 @@ public class RdeIO {
           }
         }
 
-        // Don't write the IDN elements for BRDA.
+        // Don't write the IDN elements or EPP params for BRDA.
         if (mode == RdeMode.FULL) {
           for (IdnTableEnum idn : IdnTableEnum.values()) {
             output.write(marshaller.marshalIdn(idn.getTable()));
             counter.increment(RdeResourceType.IDN);
           }
+          output.write(marshaller.marshalRdeEppParams());
+          counter.increment(RdeResourceType.EPP_PARAMS);
         }
-
-        output.write(marshaller.marshalRdeEppParams());
-        counter.increment(RdeResourceType.EPP_PARAMS);
 
         // Output XML that says how many resources were emitted.
         header = counter.makeHeader(tld, mode);
