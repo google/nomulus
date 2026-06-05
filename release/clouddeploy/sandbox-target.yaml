@@ -1,0 +1,20 @@
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: sandbox
+requireApproval: true
+executionConfigs:
+- usages:
+  - RENDER
+  - DEPLOY
+  - ANALYSIS
+  - POSTDEPLOY
+  executionTimeout: 3600s
+  defaultPool:
+    # Placeholder: Replace with artifact bucket name.
+    artifactStorage: artifactStorage
+    # Placeholder: Replace with project number.
+    serviceAccount: serviceAccount
+gke:
+  # Placeholder: Replace with project ID, location, and cluster name.
+  cluster: cluster
