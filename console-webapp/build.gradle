@@ -53,9 +53,16 @@ def createConsoleTask = { env ->
   project.tasks.register("buildConsoleFor${env.capitalize()}", Exec) {
     workingDir "${consoleDir}/"
     executable 'npx'
-    args 'ng', 'build', '--base-href=/console/', "--configuration=${env}", "--output-path=staged/console-${env}"
+    args 'ng', 'build', '--base-href=/console/', "--configuration=${env}"
     doFirst {
       println "Building console for environment: ${env}"
+    }
+    doLast {
+      copy {
+        from "${consoleDir}/staged/dist/"
+        into "${consoleDir}/staged/console-${env}"
+      }
+      delete "${consoleDir}/staged/dist"
     }
     dependsOn(tasks.npmInstallDeps)
   }
