@@ -7,54 +7,54 @@ profiles:
 - name: crash
   manifests:
     rawYaml:
-    - ../jetty/kubernetes/nomulus-crash-backend.yaml
-    - ../jetty/kubernetes/nomulus-crash-console.yaml
-    - ../jetty/kubernetes/nomulus-crash-frontend.yaml
-    - ../jetty/kubernetes/nomulus-crash-pubapi.yaml
+    - ../../jetty/kubernetes/nomulus-crash-backend.yaml
+    - ../../jetty/kubernetes/nomulus-crash-console.yaml
+    - ../../jetty/kubernetes/nomulus-crash-frontend.yaml
+    - ../../jetty/kubernetes/nomulus-crash-pubapi.yaml
   deploy:
     kubectl: { }
 - name: crash-partial-phase-1
   manifests:
     rawYaml:
-    - ../jetty/kubernetes/nomulus-crash-backend-partial-phase-1.yaml
-    - ../jetty/kubernetes/nomulus-crash-console-partial-phase-1.yaml
-    - ../jetty/kubernetes/nomulus-crash-frontend-partial-phase-1.yaml
-    - ../jetty/kubernetes/nomulus-crash-pubapi-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-crash-backend-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-crash-console-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-crash-frontend-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-crash-pubapi-partial-phase-1.yaml
   deploy:
     kubectl: { }
 - name: crash-partial-phase-5
   manifests:
     rawYaml:
-    - ../jetty/kubernetes/nomulus-crash-backend-partial-phase-5.yaml
-    - ../jetty/kubernetes/nomulus-crash-console-partial-phase-5.yaml
-    - ../jetty/kubernetes/nomulus-crash-frontend-partial-phase-5.yaml
-    - ../jetty/kubernetes/nomulus-crash-pubapi-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-crash-backend-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-crash-console-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-crash-frontend-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-crash-pubapi-partial-phase-5.yaml
   deploy:
     kubectl: { }
 - name: sandbox
   manifests:
     rawYaml:
-    - ../jetty/kubernetes/nomulus-sandbox-backend.yaml
-    - ../jetty/kubernetes/nomulus-sandbox-console.yaml
-    - ../jetty/kubernetes/nomulus-sandbox-frontend.yaml
-    - ../jetty/kubernetes/nomulus-sandbox-pubapi.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-backend.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-console.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-frontend.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-pubapi.yaml
   deploy:
     kubectl: { }
 - name: sandbox-partial-phase-1
   manifests:
     rawYaml:
-    - ../jetty/kubernetes/nomulus-sandbox-backend-partial-phase-1.yaml
-    - ../jetty/kubernetes/nomulus-sandbox-console-partial-phase-1.yaml
-    - ../jetty/kubernetes/nomulus-sandbox-frontend-partial-phase-1.yaml
-    - ../jetty/kubernetes/nomulus-sandbox-pubapi-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-backend-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-console-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-frontend-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-pubapi-partial-phase-1.yaml
   deploy:
     kubectl: { }
 - name: sandbox-partial-phase-5
   manifests:
     rawYaml:
-    - ../jetty/kubernetes/nomulus-sandbox-backend-partial-phase-5.yaml
-    - ../jetty/kubernetes/nomulus-sandbox-console-partial-phase-5.yaml
-    - ../jetty/kubernetes/nomulus-sandbox-frontend-partial-phase-5.yaml
-    - ../jetty/kubernetes/nomulus-sandbox-pubapi-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-backend-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-console-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-frontend-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-pubapi-partial-phase-5.yaml
   deploy:
     kubectl: { }
