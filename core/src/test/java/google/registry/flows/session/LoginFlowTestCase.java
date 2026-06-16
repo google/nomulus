@@ -20,13 +20,12 @@ import static google.registry.model.common.FeatureFlag.FeatureName.PROHIBIT_CONT
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.deleteResource;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppException.UnimplementedObjectServiceException;
@@ -39,7 +38,6 @@ import google.registry.flows.session.LoginFlow.BadRegistrarIdException;
 import google.registry.flows.session.LoginFlow.RegistrarAccountNotActiveException;
 import google.registry.flows.session.LoginFlow.TooManyFailedLoginsException;
 import google.registry.flows.session.LoginFlow.UnsupportedLanguageException;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.registrar.Registrar;
@@ -61,11 +59,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
     sessionMetadata.setRegistrarId(null); // Don't implicitly log in (all other flows need to).
     registrar = loadRegistrar("NewRegistrar");
     registrarBuilder = registrar.asBuilder();
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(PROHIBIT_CONTACT_OBJECTS_ON_LOGIN)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
-            .build());
+    persistFeatureFlag(PROHIBIT_CONTACT_OBJECTS_ON_LOGIN, FeatureStatus.ACTIVE);
   }
 
   // Can't inline this since it may be overridden in subclasses.

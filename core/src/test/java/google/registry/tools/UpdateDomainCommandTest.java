@@ -23,11 +23,11 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 import static google.registry.testing.TestLogHandlerUtils.assertNoLogMessage;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
-import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,11 +35,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -542,11 +540,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
 
   @Test
   void testFailure_forbiddenDsRecordAlgorithm() {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.ACTIVE);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

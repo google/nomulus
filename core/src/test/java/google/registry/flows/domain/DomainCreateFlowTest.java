@@ -53,6 +53,7 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
@@ -151,7 +152,6 @@ import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
@@ -968,11 +968,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testFailure_secDnsSha1DigestType() throws Exception {
     setEppInput("domain_create_dsdata_sha1.xml");
     persistHosts();
-    DatabaseHelper.persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.ACTIVE);
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -981,11 +977,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testSuccess_secDnsSha1_flagInactive() throws Exception {
     setEppInput("domain_create_dsdata_sha1.xml");
     persistHosts();
-    DatabaseHelper.persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.INACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.INACTIVE);
     doSuccessfulTest("tld");
     Domain domain = reloadResourceByForeignKey();
     assertAboutDomains()
@@ -1008,11 +1000,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testFailure_secDnsForbiddenAlgorithm() throws Exception {
     setEppInput("domain_create_dsdata_forbidden_algorithm.xml");
     persistHosts();
-    DatabaseHelper.persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.ACTIVE);
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -1021,11 +1009,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testSuccess_secDnsForbiddenAlgorithm_flagInactive() throws Exception {
     setEppInput("domain_create_dsdata_forbidden_algorithm.xml");
     persistHosts();
-    DatabaseHelper.persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.INACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.INACTIVE);
     doSuccessfulTest("tld");
     Domain domain = reloadResourceByForeignKey();
     assertAboutDomains()

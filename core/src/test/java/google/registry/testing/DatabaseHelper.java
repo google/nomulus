@@ -69,6 +69,9 @@ import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.DnsRefreshRequest;
+import google.registry.model.common.FeatureFlag;
+import google.registry.model.common.FeatureFlag.FeatureName;
+import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -680,6 +683,32 @@ public final class DatabaseHelper {
       newRegistrars.add(persistNewRegistrar(registrarId));
     }
     return newRegistrars.build();
+  }
+
+  /** Persists and returns a {@link FeatureFlag} with a single status starting from the epoch. */
+  public static FeatureFlag persistFeatureFlag(FeatureName featureName, FeatureStatus status) {
+    return persistFeatureFlag(featureName, ImmutableSortedMap.of(START_INSTANT, status));
+  }
+
+  /** Persists and returns a {@link FeatureFlag} with an initial status and one transition. */
+  public static FeatureFlag persistFeatureFlag(
+      FeatureName featureName,
+      FeatureStatus initialStatus,
+      Instant transitionTime,
+      FeatureStatus status) {
+    return persistFeatureFlag(
+        featureName,
+        ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+            .put(START_INSTANT, initialStatus)
+            .put(transitionTime, status)
+            .build());
+  }
+
+  /** Persists and returns a {@link FeatureFlag} with a custom status map. */
+  public static FeatureFlag persistFeatureFlag(
+      FeatureName featureName, ImmutableSortedMap<Instant, FeatureStatus> statusMap) {
+    return persistResource(
+        new FeatureFlag.Builder().setFeatureName(featureName).setStatusMap(statusMap).build());
   }
 
   public static Iterable<BillingBase> getBillingEvents() {

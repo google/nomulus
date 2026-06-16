@@ -21,8 +21,8 @@ import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,10 +35,8 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.StorageException;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -80,7 +78,7 @@ class ExportDomainListsActionTest {
     action.gcsUtils = gcsUtils;
     action.clock = clock;
     action.driveConnection = driveConnection;
-    persistFeatureFlag(INACTIVE);
+    persistFeatureFlag(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS, INACTIVE);
   }
 
   private void verifyExportedToDrive(String folderId, String filename, String domains)
@@ -110,7 +108,7 @@ class ExportDomainListsActionTest {
 
   @Test
   void test_outputsOnlyActiveDomains_csv() throws Exception {
-    persistFeatureFlag(ACTIVE);
+    persistFeatureFlag(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS, ACTIVE);
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
     persistDeletedDomain("mortuary.tld", Instant.parse("2001-03-14T10:11:12Z"));
@@ -144,7 +142,7 @@ class ExportDomainListsActionTest {
 
   @Test
   void test_outputsOnlyDomainsOnRealTlds_csv() throws Exception {
-    persistFeatureFlag(ACTIVE);
+    persistFeatureFlag(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS, ACTIVE);
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
     persistActiveDomain("wontgo.testtld");
@@ -164,7 +162,7 @@ class ExportDomainListsActionTest {
 
   @Test
   void test_outputIncludesDeletionTimes_forPendingDeletes_notRdemption() throws Exception {
-    persistFeatureFlag(ACTIVE);
+    persistFeatureFlag(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS, ACTIVE);
     // Domains pending delete (meaning the 5 day period, not counting the 30 day redemption period)
     // should include their pending deletion date
     persistActiveDomain("active.tld");
@@ -227,7 +225,7 @@ class ExportDomainListsActionTest {
 
   @Test
   void test_outputsDomainsFromDifferentTldsToMultipleFiles_csv() throws Exception {
-    persistFeatureFlag(ACTIVE);
+    persistFeatureFlag(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS, ACTIVE);
     createTld("tldtwo");
     persistResource(Tld.get("tldtwo").asBuilder().setDriveFolderId("hooray").build());
 
@@ -254,14 +252,5 @@ class ExportDomainListsActionTest {
         "hooray", "registered_domains_tldtwo.txt", "buddy.tldtwo,\nrudolph.tldtwo,\nsanta.tldtwo,");
     // tldthree does not have a drive id, so no export to drive is performed.
     verifyNoMoreInteractions(driveConnection);
-  }
-
-  private void persistFeatureFlag(FeatureFlag.FeatureStatus status) {
-    persistResource(
-        new FeatureFlag()
-            .asBuilder()
-            .setFeatureName(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, status))
-            .build());
   }
 }

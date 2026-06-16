@@ -18,10 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 
-import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.FeatureFlag;
 import org.junit.jupiter.api.Test;
 
@@ -30,12 +28,7 @@ public class DeleteFeatureFlagCommandTest extends CommandTestCase<DeleteFeatureF
 
   @Test
   void testSimpleSuccess() throws Exception {
-    persistResource(
-        new FeatureFlag()
-            .asBuilder()
-            .setFeatureName(TEST_FEATURE)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, ACTIVE))
-            .build());
+    persistFeatureFlag(TEST_FEATURE, ACTIVE);
     assertThat(tm().transact(() -> FeatureFlag.isActiveNow(TEST_FEATURE))).isTrue();
     runCommandForced("TEST_FEATURE");
     assertThat(FeatureFlag.getUncached(TEST_FEATURE)).isEmpty();

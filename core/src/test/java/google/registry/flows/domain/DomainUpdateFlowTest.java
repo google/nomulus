@@ -47,6 +47,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -95,7 +96,6 @@ import google.registry.flows.exceptions.ResourceStatusProhibitsOperationExceptio
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
@@ -893,11 +893,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE", "1",
             "DIGEST", "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"));
     persistResource(DatabaseHelper.newDomain(getUniqueIdFromCommand()));
-    DatabaseHelper.persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.ACTIVE);
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -912,11 +908,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE", "1",
             "DIGEST", "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"));
     persistResource(DatabaseHelper.newDomain(getUniqueIdFromCommand()));
-    DatabaseHelper.persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.INACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.INACTIVE);
     runFlow();
     Domain domain = reloadResourceByForeignKey();
     assertAboutDomains()
@@ -999,11 +991,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setDsData(
                 ImmutableSet.of(DomainDsData.create(1, 1, 2, base16().decode(SHA_256_DIGEST))))
             .build());
-    DatabaseHelper.persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.ACTIVE);
     EppException thrown = assertThrows(InvalidDsRecordException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -1017,11 +1005,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setDsData(
                 ImmutableSet.of(DomainDsData.create(1, 1, 2, base16().decode(SHA_256_DIGEST))))
             .build());
-    DatabaseHelper.persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.INACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.INACTIVE);
     runFlow();
     Domain domain = reloadResourceByForeignKey();
     assertAboutDomains()
@@ -1040,11 +1024,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setDsData(
                 ImmutableSet.of(DomainDsData.create(1, 1, 2, base16().decode(SHA_256_DIGEST))))
             .build());
-    DatabaseHelper.persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.ACTIVE);
     assertAboutEppExceptions()
         .that(assertThrows(InvalidDsRecordException.class, this::runFlow))
         .marshalsToXml();

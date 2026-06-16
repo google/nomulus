@@ -19,7 +19,7 @@ import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATAS
 import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
-import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.plusWeeks;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityYamlUtils;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureFlagNotFoundException;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.testing.FakeClock;
@@ -47,15 +46,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
 
   @Test
   void testSuccess() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(TEST_FEATURE)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .put(plusWeeks(clock.now(), 8), ACTIVE)
-                    .build())
-            .build());
+    persistFeatureFlag(TEST_FEATURE, INACTIVE, plusWeeks(clock.now(), 8), ACTIVE);
     runCommand("TEST_FEATURE");
     assertInStdout(
         """
@@ -68,24 +59,13 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
 
   @Test
   void testSuccess_multipleArguments() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(TEST_FEATURE)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .put(plusWeeks(clock.now(), 8), ACTIVE)
-                    .build())
-            .build());
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .put(plusWeeks(clock.now(), 3), ACTIVE)
-                    .put(plusWeeks(clock.now(), 6), INACTIVE)
-                    .build())
+    persistFeatureFlag(TEST_FEATURE, INACTIVE, plusWeeks(clock.now(), 8), ACTIVE);
+    persistFeatureFlag(
+        MINIMUM_DATASET_CONTACTS_OPTIONAL,
+        ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+            .put(START_INSTANT, INACTIVE)
+            .put(plusWeeks(clock.now(), 3), ACTIVE)
+            .put(plusWeeks(clock.now(), 6), INACTIVE)
             .build());
     runCommand("TEST_FEATURE", "MINIMUM_DATASET_CONTACTS_OPTIONAL");
     assertInStdout(
@@ -114,15 +94,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
 
   @Test
   void testFailure_oneFlagDoesNotExist() {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(TEST_FEATURE)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .put(plusWeeks(clock.now(), 8), ACTIVE)
-                    .build())
-            .build());
+    persistFeatureFlag(TEST_FEATURE, INACTIVE, plusWeeks(clock.now(), 8), ACTIVE);
     assertThrows(
         FeatureFlagNotFoundException.class,
         () -> runCommand("TEST_FEATURE", "MINIMUM_DATASET_CONTACTS_OPTIONAL"));

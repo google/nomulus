@@ -18,14 +18,13 @@ import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATAS
 import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
-import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.plusWeeks;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityYamlUtils;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,49 +40,23 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
 
   @Test
   void testSuccess_oneFlag() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(TEST_FEATURE)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .put(plusWeeks(fakeClock.now(), 8), ACTIVE)
-                    .build())
-            .build());
+    persistFeatureFlag(TEST_FEATURE, INACTIVE, plusWeeks(fakeClock.now(), 8), ACTIVE);
     runCommand();
     assertInStdout(loadFile(getClass(), "oneFlag.yaml"));
   }
 
   @Test
   void test_success_manyFlags() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(TEST_FEATURE)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .put(plusWeeks(fakeClock.now(), 8), ACTIVE)
-                    .build())
+    persistFeatureFlag(TEST_FEATURE, INACTIVE, plusWeeks(fakeClock.now(), 8), ACTIVE);
+    persistFeatureFlag(
+        MINIMUM_DATASET_CONTACTS_OPTIONAL,
+        ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+            .put(START_INSTANT, INACTIVE)
+            .put(plusWeeks(fakeClock.now(), 1), ACTIVE)
+            .put(plusWeeks(fakeClock.now(), 8), INACTIVE)
+            .put(plusWeeks(fakeClock.now(), 10), ACTIVE)
             .build());
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .put(plusWeeks(fakeClock.now(), 1), ACTIVE)
-                    .put(plusWeeks(fakeClock.now(), 8), INACTIVE)
-                    .put(plusWeeks(fakeClock.now(), 10), ACTIVE)
-                    .build())
-            .build());
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, ACTIVE)
-                    .build())
-            .build());
+    persistFeatureFlag(MINIMUM_DATASET_CONTACTS_PROHIBITED, ACTIVE);
     runCommand();
     assertInStdout(loadFile(getClass(), "threeFlags.yaml"));
   }

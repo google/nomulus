@@ -18,17 +18,15 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.FeatureFlag.FeatureName.FORBID_INSECURE_ALGORITHMS_RFC_9904;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.tld.Tld;
@@ -286,11 +284,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
 
   @Test
   void testFailure_forbiddenAlgorithm() {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(FORBID_INSECURE_ALGORITHMS_RFC_9904)
-            .setStatusMap(ImmutableSortedMap.of(START_INSTANT, FeatureStatus.ACTIVE))
-            .build());
+    persistFeatureFlag(FORBID_INSECURE_ALGORITHMS_RFC_9904, FeatureStatus.ACTIVE);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

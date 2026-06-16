@@ -19,7 +19,7 @@ import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATAS
 import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
-import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.plusWeeks;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.FeatureFlag;
-import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.testing.FakeClock;
 import java.time.Instant;
@@ -81,14 +80,7 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
 
   @Test
   void testUpdate() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(TEST_FEATURE)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .build())
-            .build());
+    persistFeatureFlag(TEST_FEATURE, INACTIVE);
 
     Instant featureStart = plusWeeks(clock.now(), 6);
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
@@ -110,14 +102,7 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
 
   @Test
   void testConfigure_multipleFlags() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(TEST_FEATURE)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .build())
-            .build());
+    persistFeatureFlag(TEST_FEATURE, INACTIVE);
 
     Instant featureStart = plusWeeks(clock.now(), 6);
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
@@ -179,14 +164,7 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
 
   @Test
   void testUpdate_invalidStatusMap() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(TEST_FEATURE)
-            .setStatusMap(
-                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
-                    .put(START_INSTANT, INACTIVE)
-                    .build())
-            .build());
+    persistFeatureFlag(TEST_FEATURE, INACTIVE);
 
     Instant featureStart = plusWeeks(clock.now(), 6);
     assertThat(FeatureFlag.get(TEST_FEATURE).getStatusMap())
