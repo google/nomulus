@@ -44,6 +44,8 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -134,7 +136,9 @@ public final class ResourceFlowUtils {
     }
     String authPassword = authInfo.getPw().getValue();
     String domainPassword = domain.getAuthInfo().getPw().getValue();
-    if (!domainPassword.equals(authPassword)) {
+    if (!MessageDigest.isEqual(
+        authPassword.getBytes(StandardCharsets.UTF_8),
+        domainPassword.getBytes(StandardCharsets.UTF_8))) {
       throw new BadAuthInfoForResourceException();
     }
   }

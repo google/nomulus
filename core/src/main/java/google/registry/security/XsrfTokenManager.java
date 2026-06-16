@@ -25,6 +25,7 @@ import com.google.common.hash.Hashing;
 import google.registry.model.server.ServerSecret;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -102,7 +103,7 @@ public final class XsrfTokenManager {
     }
     // Reconstruct the token to verify validity.
     String reconstructedToken = encodeToken(ServerSecret.get().asBytes(), email, timestampMillis);
-    if (!token.equals(reconstructedToken)) {
+    if (!MessageDigest.isEqual(token.getBytes(UTF_8), reconstructedToken.getBytes(UTF_8))) {
       logger.atWarning().log(
           "Reconstructed XSRF mismatch (got != expected): %s != %s", token, reconstructedToken);
       return false;

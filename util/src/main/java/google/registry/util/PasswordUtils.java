@@ -22,8 +22,8 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import com.google.common.base.Supplier;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.primitives.Bytes;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Optional;
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.generators.SCrypt;
@@ -143,11 +143,11 @@ public final class PasswordUtils {
     byte[] decodedSalt = base64().decode(salt);
     byte[] decodedPassword = password.getBytes(US_ASCII);
 
-    if (Arrays.equals(decodedHash, ARGON_2_ID.hash(decodedPassword, decodedSalt))) {
+    if (MessageDigest.isEqual(decodedHash, ARGON_2_ID.hash(decodedPassword, decodedSalt))) {
       logger.atInfo().log("ARGON_2_ID hash verified.");
       return Optional.of(ARGON_2_ID);
     }
-    if (Arrays.equals(decodedHash, SCRYPT_P_1.hash(decodedPassword, decodedSalt))) {
+    if (MessageDigest.isEqual(decodedHash, SCRYPT_P_1.hash(decodedPassword, decodedSalt))) {
       logger.atInfo().log("SCRYPT_P_1 hash verified.");
       return Optional.of(SCRYPT_P_1);
     }
