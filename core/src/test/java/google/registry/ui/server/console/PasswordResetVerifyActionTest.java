@@ -86,6 +86,16 @@ public class PasswordResetVerifyActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
+  void testFailure_post_replay() throws Exception {
+    createAction("POST", verificationCode, "newPassword1").run();
+    assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_OK);
+
+    // Attempting to reuse the same code should fail
+    createAction("POST", verificationCode, "newPassword2").run();
+    assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
+  }
+
+  @Test
   void testFailure_get_invalidVerificationCode() throws Exception {
     createAction("GET", "invalid", null).run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);

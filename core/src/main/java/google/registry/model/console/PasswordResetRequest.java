@@ -118,7 +118,9 @@ public class PasswordResetRequest extends ImmutableObject implements Buildable {
       checkArgumentNotNull(getInstance().requester, "Requester must be specified");
       checkArgumentNotNull(getInstance().destinationEmail, "Destination email must be specified");
       checkArgumentNotNull(getInstance().registrarId, "Registrar ID must be specified");
-      getInstance().verificationCode = UUID.randomUUID().toString();
+      if (getInstance().verificationCode == null) {
+        getInstance().verificationCode = UUID.randomUUID().toString();
+      }
       return super.build();
     }
 
