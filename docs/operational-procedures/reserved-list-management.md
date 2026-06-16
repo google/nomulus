@@ -75,9 +75,11 @@ purposes of this example, we are creating a common reserved list named
 
 ```shell
 $ nomulus -e {ENVIRONMENT} create_reserved_list -i common_bad-words.txt
-[ ... snip long confirmation prompt ... ]
+reservedListMap=[(availableinga, ALLOWED_IN_SUNRISE),
+                 (reserveddomain, FULLY_BLOCKED), ...]
 Perform this command? (y/N): y
-Updated 1 entities.
+Running ...
+Saved reserved list common_bad-words with 2 entries.
 ```
 
 Note that `-i` is the input file containing the list. You can optionally specify
@@ -97,9 +99,11 @@ file containing the reserved list entries, then pass it as input to the
 
 ```shell
 $ nomulus -e {ENVIRONMENT} update_reserved_list -i common_bad-words.txt
-[ ... snip diff of changes to list entries ... ]
+Update reserved list for common_bad-words?
+[diff of changes...]
 Perform this command? (y/N): y
-Updated 1 entities.
+Running ...
+Saved reserved list common_bad-words with 2 entries.
 ```
 
 Note that, like the create command, the name of the list is inferred from the
@@ -168,9 +172,11 @@ $ nomulus -e production check_domain {domain_name}
 ```
 
 **Note that the list can be cached for up to 60 minutes, so changes may not take
-place immediately**. If it is urgent that the new changes be applied, and it's
-OK to potentially interrupt client connections, then you can use the GCP web
-console to kill instances of the `frontend` service, as the cache is
-per-instance. Once you've killed all the existing instances (don't kill them all
-at once!), all the newly spun up instances will now be using the new values
-you've configured.
+place immediately**. If it is urgent that the new changes be applied, you can
+perform a rolling restart of the `frontend` service deployment:
+
+```shell
+$ kubectl rollout restart deployment frontend
+```
+
+This will cycle the pods and clear the per-instance caches without causing downtime.

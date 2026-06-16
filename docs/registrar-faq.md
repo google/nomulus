@@ -524,10 +524,10 @@ need to specify two items in <domain:create> requests, one for the normal price,
 one for the Early Access Fee. These should be specified as in the following
 example:
 
-```
-<fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+```xml
+<fee:create xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
   <fee:currency>USD</fee:currency>
-  <fee:fee description="create">70</fee:fee>
+  <fee:fee description="create">70.00</fee:fee>
   <fee:fee description="Early Access Period">80.00</fee:fee>
 </fee:create>
 ```

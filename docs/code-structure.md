@@ -20,12 +20,13 @@ versions stored in the various `gradle.lockfile` files. To update these
 versions, run any Gradle command (e.g. `./gradlew build`) with the
 `--write-locks` argument.
 
-### Generating WAR archives for deployment
+### Generating Docker images for deployment
 
-The `jetty` project is the main entry point for building the Nomulus WAR files,
-and one can use the `war` gradle task to build the base WAR file. The various
-deployment/release files use Docker to deploy this, in a system that is too
-Google-specialized to replicate directly here.
+The `jetty` project is the main entry point for building the Nomulus Docker
+images. You can use the `./gradlew :jetty:buildNomulusImage` task to build the
+image locally, which contains the compiled WAR files and Angular assets staged
+inside a Jetty base image. You can use `./gradlew :jetty:pushNomulusImage` to
+push this image to your GCR/Artifact Registry repository.
 
 ## Subprojects
 
@@ -68,6 +69,12 @@ The following cursor types are defined:
     events into one-time `BillingEvent`s.
 *   **`SYNC_REGISTRAR_SHEET`** - Tracks the last time the registrar spreadsheet
     was successfully synced.
+*   **`ICANN_UPLOAD_TX`** - Tracks monthly uploads of ICANN transaction reports.
+*   **`ICANN_UPLOAD_ACTIVITY`** - Tracks monthly uploads of ICANN activity reports.
+*   **`REMOTE_CACHE_DOMAIN_SYNC`** - Tracks the reflection of domain changes in
+    the remote cache.
+*   **`REMOTE_CACHE_HOST_SYNC`** - Tracks the reflection of host changes in
+    the remote cache.
 
 All `Cursor` entities in the database contain a `DateTime` that represents the
 next timestamp at which an operation should resume processing and a `CursorType`

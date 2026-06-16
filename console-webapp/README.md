@@ -9,15 +9,14 @@ expected to change.
 
 ## Deployment
 
-The webapp is deployed with the nomulus default service war to GKE.
-During nomulus default service war build task, gradle script triggers the
-following:
+The webapp is deployed as part of the default Nomulus GKE service image.
+During the image build task, the Gradle script triggers the following:
 
 1) Console webapp build script `buildConsoleWebapp`, which installs
    dependencies, assembles a compiled ts -> js, minified, optimized static
    artifact (html, css, js)
-2) Artifact assembled in step 1 then gets copied to core project web artifact
-   location, so that it can be deployed with the rest of the core webapp
+2) Artifact assembled in step 1 then gets copied to the jetty webapp resource
+   location, so that it can be staged inside the default GKE service container.
 
 ## Development server
 

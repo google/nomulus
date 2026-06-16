@@ -34,6 +34,10 @@ providing the test project as an argument, e.g.
 ./gradlew deployNomulus -Penvironment=alpha
 ```
 
+Note: Deploying to GCP requires Docker to be running locally (to build the
+Nomulus container image) and `gcloud` credentials to be configured with access
+to the target GCP project.
+
 ### Notable Issues
 
 Test suites (RdeTestSuite and TmchTestSuite) are ignored to avoid duplicate

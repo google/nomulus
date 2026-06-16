@@ -12,7 +12,7 @@ for more information on using webdriver.
 2. Missing golden images
   * If you added a new test using screenshot comparison, you have to generate
     the golden image for that test in advance and copy it to
-    [goldens/](https://github.com/google/nomulus/tree/master/core/src/test/java/google/registry/webdriver/goldens)
+    [goldens/](https://github.com/google/nomulus/tree/master/core/src/test/resources/google/registry/webdriver/goldens)
     folder. There
     is an auxiliary Gradle build task to help with this, and here are some examples:
     ```shell

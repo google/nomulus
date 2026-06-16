@@ -40,11 +40,13 @@ Once the file containing the premium prices is ready, run the
 `create_premium_list` command to load it into the database as follows:
 
 ```shell
-$ nomulus -e {ENVIRONMENT} create_premium_list -n exampletld -i exampletld.txt
+$ nomulus -e {ENVIRONMENT} create_premium_list -n exampletld \
+    -i exampletld.txt -c USD
 
-You are about to save the premium list exampletld with 2 items:
+Create new premium list for exampletld?
 Perform this command? (y/N): y
-Successfully saved premium list exampletld
+Running ...
+Saved premium list exampletld with 2 entries.
 ```
 
 `-n` is the name of the list to be created, and `-i` is the input filename. Note
@@ -64,9 +66,12 @@ from a text file, the procedure is exactly the same, except using the
 ```shell
 $ nomulus -e {ENVIRONMENT} update_premium_list -n exampletld -i exampletld.txt
 
-You are about to save the premium list exampletld with 2 items:
+Update premium list for exampletld?
+ Old List: PremiumList{name=exampletld, ...}
+ New List: PremiumList{name=exampletld, ...}
 Perform this command? (y/N): y
-Successfully saved premium list exampletld
+Running ...
+Saved premium list exampletld with 2 entries.
 ```
 
 ### Note:
@@ -140,8 +145,11 @@ $ nomulus -e production check_domain {domain_name}
 
 **Note that the list can be cached for up to 60 minutes, so the old value may
 still be returned for a little while**. If it is urgent that the new pricing
-changes be applied, and it's OK to potentially interrupt client connections,
-then you can use the GCP web console to kill instances of the `frontend`
-service, as the cache is per-instance. Once you've killed all the existing
-instances (don't kill them all at once!), all the newly spun up instances will
-now be using the new values you've configured.
+changes be applied, you can perform a rolling restart of the `frontend` service
+deployment:
+
+```shell
+$ kubectl rollout restart deployment frontend
+```
+
+This will cycle the pods and clear the per-instance caches without causing downtime.

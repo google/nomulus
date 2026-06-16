@@ -117,16 +117,19 @@ For the Nomulus tool OAuth configuration, do the following steps:
     `registryTool` section. This will make the `nomulus` tool use this
     credential to authenticate itself to the system.
 
-For IAP configuration, do the following steps: * **Create the IAP client ID:**
-Follow similar steps from above to create an additional OAuth client ID, but
-using an application type of "Web application". Note the client ID and secret. *
-**Enable IAP for your HTTPS load balancer:** On the
-[IAP page](https://pantheon.corp.google.com/security/iap), enable IAP for all of
-the backend services that all use the same HTTPS load balancer. * **Use a custom
-OAuth configuration:** For the backend services, under the "Settings" section
-(in the three-dot menu) enable custom OAuth and insert the client ID and secret
-that we just created * **Save the client ID:** In the configuration file, save
-the client ID as `oauthClientId` in the `auth` section
+For IAP configuration, do the following steps:
+
+*   **Create the IAP client ID:** Follow similar steps from above to create an
+    additional OAuth client ID, but using an application type of "Web
+    application". Note the client ID and secret.
+*   **Enable IAP for your HTTPS load balancer:** On the
+    [IAP page](https://pantheon.corp.google.com/security/iap), enable IAP for
+    all of the backend services that all use the same HTTPS load balancer.
+*   **Use a custom OAuth configuration:** For the backend services, under the
+    "Settings" section (in the three-dot menu), enable custom OAuth and
+    insert the client ID and secret that we just created.
+*   **Save the client ID:** In the configuration file, save the client ID as
+    `oauthClientId` in the `auth` section.
 
 Once these steps are taken, the `nomulus` tool and IAP will both use client IDs
 which the server is configured to accept, and authentication should succeed.
@@ -171,9 +174,8 @@ To create or update TLDs, we use
 configure_tld` command. Because the TLDs are stored as data in the running
 system, they do not require code pushes to update.
 
-[app-engine-config]: https://cloud.google.com/appengine/docs/java/configuration-files
-[default-config]: https://github.com/google/nomulus/blob/master/java/google/registry/config/files/default-config.yaml
-[registry-config]: https://github.com/google/nomulus/blob/master/java/google/registry/config/RegistryConfig.java
+[default-config]: https://github.com/google/nomulus/blob/master/core/src/main/java/google/registry/config/files/default-config.yaml
+[registry-config]: https://github.com/google/nomulus/blob/master/core/src/main/java/google/registry/config/RegistryConfig.java
 
 ## Cloud SQL Configuration
 
@@ -244,9 +246,9 @@ something similar. However, for purposes of this exercise we will push the
 schema from the build system.
 
 First, download the
-[Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy). This will
-allow you to connect to your database from a local workstation without a lot of
-additional configuration.
+[Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy).
+This will allow you to connect to your database from a local workstation without
+a lot of additional configuration.
 
 Create a service account for use with the proxy:
 
@@ -277,12 +279,11 @@ Now start the proxy:
 
 ```
 $ PORT=3306   # Use a different value for this if you like.
-$ ./cloud_sql_proxy -credential_file=sql-admin.json \
-    -instances=$PROJECT_ID:nomulus=tcp:$PORT
-2020/07/01 12:11:20 current FDs rlimit set to 32768, wanted limit is 8500. Nothing to do here.
-2020/07/01 12:11:20 using credential file for authentication; email=sql-proxy@pproject-id.iam.gserviceaccount.com
-2020/07/01 12:11:20 Listening on 127.0.0.1:3306 for project-id:nomulus
-2020/07/01 12:11:20 Ready for new connections
+$ ./cloud-sql-proxy --credentials-file=sql-admin.json --port=$PORT \
+    $PROJECT_ID:us-central1:nomulus
+2026/06/16 12:11:20 Authorizing with credentials file: sql-admin.json
+2026/06/16 12:11:20 Listening on 127.0.0.1:3306 for project-id:us-central1:nomulus
+2026/06/16 12:11:20 The proxy has started successfully and is ready for new connections!
 ```
 
 Finally, upload the new database schema:
@@ -366,8 +367,8 @@ $ nomulus -e $ENV update_keyring_secret --keyname TOOLS_CLOUD_SQL_PASSWORD \
 Use get_keyring_secret command to verify the data you put in:
 
 ```
-$ nomulus -e alpha -e alpha get_keyring_secret --keyname CLOUD_SQL_PASSWORD
+$ nomulus -e alpha get_keyring_secret --keyname CLOUD_SQL_PASSWORD
 [your password]
-$ nomulus -e alpha -e alpha get_keyring_secret --keyname CLOUD_SQL_PASSWORD
+$ nomulus -e alpha get_keyring_secret --keyname TOOLS_CLOUD_SQL_PASSWORD
 [your password]
 ```

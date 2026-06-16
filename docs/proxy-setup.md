@@ -452,7 +452,7 @@ immediately after.
 ```bash
 $ gcloud container clusters create proxy-americas-cluster --enable-autorepair \
 --enable-autoupgrade --enable-autoscaling --max-nodes=3 --min-nodes=1 \
---zone=us-east1-c --cluster-version=1.9.4-gke.1 --tags=proxy-cluster \
+--zone=us-east1-c --tags=proxy-cluster \
 --service-account=<service-account-email>
 ```
 

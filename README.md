@@ -12,7 +12,7 @@ Nomulus is an open source, scalable, cloud-based service for operating
 [top-level domains](https://en.wikipedia.org/wiki/Top-level_domain) (TLDs). It
 is the authoritative source for the TLDs that it runs, meaning that it is
 responsible for tracking domain name ownership and handling registrations,
-renewals, availability checks, and WHOIS requests. End-user registrants (i.e.,
+renewals, availability checks, and RDAP requests. End-user registrants (i.e.,
 people or companies that want to register a domain name) use an intermediate
 domain name registrar acting on their behalf to interact with the registry.
 
@@ -97,7 +97,7 @@ Nomulus has the following capabilities:
       for details), and an implementation based on
       [Google Cloud Secret Manager](https://cloud.google.com/security/products/secret-manager) is
       available.
-*   **TPC Proxy**: Nomulus is built on top of the [Jetty](https://jetty.org/)
+*   **TCP Proxy**: Nomulus is built on top of the [Jetty](https://jetty.org/)
     container that implements the [Jakarta Servlet](https://jakarta.ee/specifications/servlet/)
     specification and only serves HTTP/S traffic. A proxy to translate raw TCP traffic (e.g., EPP)
     to and from HTTP is provided.

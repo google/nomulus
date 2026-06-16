@@ -21,16 +21,19 @@ it'll never be created for real on the Internet at large. Then,
 [example template](https://github.com/google/nomulus/blob/master/core/src/test/resources/google/registry/tools/tld.yaml)
 as a guide.
 
-The fields you'll want to change from the template: * `driveFolderId` should be
-null * `roidSuffix` should be `EXAMPLE` -- this is the suffix that will be used
-for repository ids of domains on the TLD. This suffix must be all uppercase and
-a maximum of eight ASCII characters and can be set to the upper-case equivalent
-of our TLD name (if it is 8 characters or fewer), such as "EXAMPLE." You can
-also abbreviate the upper-case TLD name down to 8 characters. Refer to the
-[gTLD Registry Advisory: Correction of non-compliant ROIDs][roids] for further
-information. * `tldStr` should be `example` * `tldType` should be `TEST`, which
-identifies that the TLD is for testing purposes, whereas `REAL` would identify
-the TLD as a live TLD
+The fields you'll want to change from the template:
+
+*   `driveFolderId` should be null.
+*   `roidSuffix` should be `EXAMPLE` -- this is the suffix that will be used
+    for repository ids of domains on the TLD. This suffix must be all uppercase and
+    a maximum of eight ASCII characters and can be set to the upper-case equivalent
+    of our TLD name (if it is 8 characters or fewer), such as "EXAMPLE." You can
+    also abbreviate the upper-case TLD name down to 8 characters. Refer to the
+    [gTLD Registry Advisory: Correction of non-compliant ROIDs][roids] for further
+    information.
+*   `tldStr` should be `example`.
+*   `tldType` should be `TEST`, which identifies that the TLD is for testing purposes,
+    whereas `REAL` would identify the TLD as a live TLD.
 
 ```shell
 $ nomulus -e alpha configure_tld --input=example.yaml

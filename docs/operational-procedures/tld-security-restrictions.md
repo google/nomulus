@@ -31,5 +31,5 @@ allowedFullyQualifiedHostNames:
 
 When nameserver restrictions are set on a TLD, any domain mutation flow under
 that TLD will verify that the supplied nameservers are not empty and that they
-are a strict subset of the allowed nameservers and registrants on the TLD. If no
+are a strict subset of the allowed nameservers on the TLD. If no
 restrictions are set, domains can be created or updated without nameservers.

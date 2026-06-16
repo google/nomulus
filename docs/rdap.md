@@ -43,8 +43,8 @@ containing the requested data.
 ## Nomulus RDAP request endpoints <a id="endpoints"></a>
 
 The suite of URL endpoint paths is listed below. The paths should be tacked onto
-the usual App Engine server name. For example, if the App Engine project ID is
-`project-id`, the full path for a domain lookup of domain iam.soy would be:
+the pubapi workload host name. For example, if the base domain is
+`mydomain.com`, the full path for a domain lookup of domain iam.soy would be:
 
 ```
     https://pubapi.mydomain.com/rdap/domain/iam.soy

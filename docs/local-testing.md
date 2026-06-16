@@ -9,9 +9,10 @@ useful for doing web UI development (i.e. the registrar console). It allows you
 to update Typescript, HTML, and CSS and see the changes simply by refreshing the
 relevant page in your browser.
 
-In order to serve content locally, there are two services that must be run: *
-the `RegistryTestServer` to serve as the backing server * the Angular service to
-provide the UI files
+In order to serve content locally, there are two services that must be run:
+
+*   The `RegistryTestServer` to serve as the backing server.
+*   The Angular service to provide the UI files.
 
 In order to do this in one step, from the `console-webapp` folder, run:
 
@@ -24,7 +25,7 @@ This will start both the `RegistryTestServer` and the Angular testing service.
 Any changes to Typescript/HTML/CSS files will be recompiled and available on
 page reload.
 
-One it is running, you can interact with the console by going to
+Once it is running, you can interact with the console by going to
 `http://localhost:4200` to view the registrar console in a web browser. The
 server will continue running until you terminate the process.
 

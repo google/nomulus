@@ -156,16 +156,6 @@
   </task>
 
   <task>
-    <url><![CDATA[/_dr/task/wipeOutContactHistoryPii]]></url>
-    <name>wipeOutContactHistoryPii</name>
-    <description>
-      This job runs weekly to wipe out PII fields of ContactHistory entities
-      that have been in the database for a certain period of time.
-    </description>
-    <schedule>0 15 * * 1</schedule>
-  </task>
-
-  <task>
     <url><![CDATA[/_dr/task/bsaDownload]]></url>
     <name>bsaDownload</name>
     <service>bsa</service>

@@ -185,12 +185,13 @@ architecture -- an `Authorization` HTTP header of the form "Bearer: XXXX".
 
 ### Configuration
 
-The `auth` block of the configuration requires two fields: *
-`allowedServiceAccountEmails` is the list of service accounts that should be
-allowed to run tasks when internally authenticated. This will likely include
-whatever service account runs Nomulus in Google Kubernetes Engine, as well as
-the Cloud Scheduler service account. * `oauthClientId` is the OAuth client ID
-associated with IAP. This is retrievable from the
-[Clients page](https://pantheon.corp.google.com/auth/clients) of GCP after
-enabling the Identity-Aware Proxy. It should look something like
-`someNumbers-someNumbersAndLetters.apps.googleusercontent.com`
+The `auth` block of the configuration requires two fields:
+
+*   `allowedServiceAccountEmails` is the list of service accounts that should be
+    allowed to run tasks when internally authenticated. This will likely include
+    whatever service account runs Nomulus in Google Kubernetes Engine, as well
+    as the Cloud Scheduler service account.
+*   `oauthClientId` is the OAuth client ID associated with IAP. This is retrievable
+    from the [Clients page](https://pantheon.corp.google.com/auth/clients) of GCP
+    after enabling the Identity-Aware Proxy. It should look something like
+    `someNumbers-someNumbersAndLetters.apps.googleusercontent.com`

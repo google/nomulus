@@ -6,9 +6,9 @@ This document covers the steps necessary to download, build, and deploy Nomulus.
 
 You will need the following programs installed on your local machine:
 
-*   A recent version of the [Java 21 JDK][java-jdk21].
+*   A recent version of the [Java 25 JDK][java-jdk25].
 *   The [Google Cloud CLI](https://docs.cloud.google.com/sdk/docs/install-sdk)
-    (configure an alias to the `gcloud`utility, because you'll use it a lot)
+    (configure an alias to the `gcloud` utility, because you'll use it a lot)
 *   [Git](https://git-scm.com/) version control system.
 *   Docker (confirm with `docker info` no permission issues, use `sudo groupadd
     docker` for sudoless docker).
@@ -63,7 +63,7 @@ while.
 ## Create and configure a GCP project
 
 First,
-[create an application](https://cloud.google.com/appengine/docs/java/quickstart)
+[create a project][create-project]
 on Google Cloud Platform. Make sure to choose a good Project ID, as it will be
 used repeatedly in a large number of places. If your company is named Acme, then
 a good Project ID for your production environment would be "acme-registry". Keep
@@ -123,10 +123,14 @@ $ gcloud container clusters create proxy-cluster \
     --num-nodes=3 \
     --enable-ip-alias
 ```
+Then create an artifact repository:
 
-Then create an artifact repository: `shell $ gcloud artifacts repositories
-create nomulus-repo \ --repository-format=docker \ --location=$REGION \
---description="Nomulus Docker images"`
+```shell
+$ gcloud artifacts repositories create nomulus-repo \
+    --repository-format=docker \
+    --location=$REGION \
+    --description="Nomulus Docker images"
+```
 
 See the files and documentation in the `release/` folder for more information on
 the release process. You will likely need to customize the internal build
@@ -141,7 +145,8 @@ can rebuild and start using the `nomulus` tool to create test entities in your
 newly deployed system. See the [first steps tutorial](./first-steps-tutorial.md)
 for more information.
 
-[java-jdk21]: https://www.oracle.com/java/technologies/javase-downloads.html
+[java-jdk25]: https://www.oracle.com/java/technologies/javase-downloads.html
+[create-project]: https://cloud.google.com/resource-manager/docs/creating-managing-projects
 
 ## Deploy the Beam Pipelines
 
