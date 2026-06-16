@@ -43,6 +43,7 @@ import jakarta.inject.Qualifier;
 import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
@@ -88,8 +89,8 @@ public class AuthModule {
   TokenVerifier provideIapTokenVerifier(
       @Config("projectIdNumber") long projectIdNumber,
       @Named("backendServiceIdMap") Supplier<ImmutableMap<String, Long>> backendServiceIdMap) {
-    com.google.auth.oauth2.TokenVerifier.Builder tokenVerifierBuilder =
-        com.google.auth.oauth2.TokenVerifier.newBuilder().setIssuer(IAP_ISSUER_URL);
+    ConcurrentHashMap<String, com.google.auth.oauth2.TokenVerifier> tokenVerifiers =
+        new ConcurrentHashMap<>();
     return (String service, String token) -> {
       Long backendServiceId = backendServiceIdMap.get().get(service);
       checkNotNull(
@@ -98,7 +99,15 @@ public class AuthModule {
           service,
           backendServiceIdMap);
       String audience = String.format(IAP_AUDIENCE_FORMAT, projectIdNumber, backendServiceId);
-      return tokenVerifierBuilder.setAudience(audience).build().verify(token);
+      com.google.auth.oauth2.TokenVerifier verifier =
+          tokenVerifiers.computeIfAbsent(
+              audience,
+              aud ->
+                  com.google.auth.oauth2.TokenVerifier.newBuilder()
+                      .setIssuer(IAP_ISSUER_URL)
+                      .setAudience(aud)
+                      .build());
+      return verifier.verify(token);
     };
   }
 
