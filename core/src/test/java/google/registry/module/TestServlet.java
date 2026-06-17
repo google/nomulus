@@ -14,9 +14,6 @@
 
 package google.registry.module;
 
-import com.google.monitoring.metrics.MetricReporter;
-import dagger.Lazy;
-
 /**
  * Servlet used in the test server to handle routing.
  *
@@ -27,9 +24,8 @@ import dagger.Lazy;
 public class TestServlet extends ServletBase {
   private static final TestRegistryComponent component = DaggerTestRegistryComponent.create();
   private static final TestRequestHandler requestHandler = component.requestHandler();
-  private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
   public TestServlet() {
-    super(requestHandler, metricReporter);
+    super(requestHandler);
   }
 }

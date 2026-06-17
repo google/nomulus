@@ -15,14 +15,12 @@
 package google.registry.module;
 
 import com.google.common.flogger.FluentLogger;
-import com.google.monitoring.metrics.MetricReporter;
 import google.registry.eppserver.DaggerEppServerModule_EppServerComponent;
 import google.registry.eppserver.EppServer;
 import google.registry.eppserver.EppServerModule;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
-import java.time.Duration;
 
 /** A {@link ServletContextListener} that starts and stops the integrated Netty EPP server. */
 @WebListener
@@ -30,11 +28,16 @@ public class EppServerLifecycleListener implements ServletContextListener {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private EppServer eppServer;
-  private MetricReporter metricReporter;
   private EppServerModule.EppServerComponent eppServerComponent;
 
   @Override
   public void contextInitialized(ServletContextEvent sce) {
+    if (!Boolean.parseBoolean(System.getenv("TCP_SERVER_ENABLED"))) {
+      logger.atInfo().log(
+          "TCP_SERVER_ENABLED is false or not set. Skipping integrated EPP server initialization.");
+      return;
+    }
+
     logger.atInfo().log("Initializing integrated EPP server...");
     try {
       EppServerModule eppServerModule = new EppServerModule();
@@ -42,10 +45,6 @@ public class EppServerLifecycleListener implements ServletContextListener {
           DaggerEppServerModule_EppServerComponent.builder()
               .eppServerModule(eppServerModule)
               .build();
-
-      metricReporter = eppServerComponent.metricReporter();
-      metricReporter.startAsync().awaitRunning(Duration.ofSeconds(10));
-      logger.atInfo().log("Started up EppServer MetricReporter.");
 
       eppServer = new EppServer(eppServerComponent);
       eppServer.start();
@@ -61,14 +60,6 @@ public class EppServerLifecycleListener implements ServletContextListener {
       logger.atInfo().log("Stopping integrated EPP server...");
       eppServer.stop();
       logger.atInfo().log("Integrated EPP server stopped.");
-    }
-    if (metricReporter != null) {
-      try {
-        metricReporter.stopAsync().awaitTerminated(Duration.ofSeconds(10));
-        logger.atInfo().log("Shut down EppServer MetricReporter.");
-      } catch (Exception e) {
-        logger.atSevere().withCause(e).log("Failed to stop EppServer MetricReporter.");
-      }
     }
     if (eppServerComponent != null) {
       eppServerComponent
