@@ -7,11 +7,11 @@ utilities.
 
 The following links are the ER diagrams generated from the current SQL schema:
 
-* [Full ER diagram](https://storage.googleapis.com/domain-registry-dev-er-diagram/full_er_diagram.html): 
+* [Full ER diagram](https://storage.googleapis.com/domain-registry-dev-er-diagram/full_er_diagram.html):
 shows all columns, foreign keys and indexes.
 
-* [Brief ER diagram](https://storage.googleapis.com/domain-registry-dev-er-diagram/brief_er_diagram.html): 
-shows only significant columns, such as primary and foreign key columns, and 
+* [Brief ER diagram](https://storage.googleapis.com/domain-registry-dev-er-diagram/brief_er_diagram.html):
+shows only significant columns, such as primary and foreign key columns, and
 columns that are part of unique indexes.
 
 ### Database roles and privileges
@@ -55,7 +55,7 @@ following steps:
     one. The generated SQL file from the previous step should help. New create
     table statements can be used as is, whereas alter table statements should be
     written to change any existing tables.
- 
+
     If an incremental file changes more than one schema element (table, index,
     or sequence), it MAY hit deadlocks when applied on sandbox/production where
     it'll be competing against live traffic that may also be locking said
@@ -131,6 +131,71 @@ copy over its contents using a `@PostLoad` action in Java, re-save all rows,
 update the Java to no longer contain the old column, wait for a deployment, and
 then remove the old column. A rename operation requires the most complicated
 series of steps to complete, as it is effectively an add followed by a remove.
+
+### Refactoring Column Types (Expand and Contract)
+
+When refactoring a column (such as changing its type, e.g., from a basic `boolean` to an `hstore` timed transition map), you must be extremely careful to avoid breaking running servers during rolling deployments.
+
+Because the database schema change is deployed *before* the new server code is running on all instances, the database must remain compatible with both the old and new Java code at all times. This is achieved using the **Expand and Contract** pattern:
+
+*   **Case A: The old column is NOT mapped in Java.**
+    If the old column exists in the database but was never mapped as a field in any ORM entity (i.e., it is "dead weight" in the schema), you can safely drop it immediately in the first PR. The running servers do not know it exists, so dropping it will not cause any errors.
+*   **Case B: The old column IS mapped in Java.**
+    If the old column is actively mapped in Java, you **cannot** drop it in the first PR. Doing so will immediately crash the running servers. Instead, you must perform a three-step migration across separate releases:
+    1.  **First PR (DB-only):** Add the new column as nullable, migrate data from the old column, and keep the old column.
+    2.  **Second PR (Java-only):** Update the Java ORM classes to map only the new column and ignore the old one. Wait for this to be fully deployed to 100% of production instances.
+    3.  **Third PR (DB-only Cleanup):** Create a new Flyway migration to safely drop the old column from the database.
+
+### Writing Safe NOT NULL Migrations for Transition Maps
+
+Nomulus avoids database-level `DEFAULT` constraints on timed transition properties (like `create_billing_cost_transitions` or `expiry_access_period_transitions`) in the long run to ensure that the application layer explicitly manages the data and fails fast if it fails to initialize a field.
+
+However, during a Two-PR deployment, the database schema change (PR 1) is live in production *before* the new Java code (PR 2) is deployed. If you add a new column as `NOT NULL` with no default in the first PR, any new inserts from the running old Java code (which doesn't know about the column) will immediately fail with a constraint violation, causing production write downtime.
+
+To satisfy both the `NOT NULL` requirement (for consistency) and backward compatibility, you must use the **Temporary Database Default** pattern across three phases:
+
+1.  **PR 1 (DB Schema Change):**
+    *   Add the column as `NOT NULL` with a temporary database-level `DEFAULT` value matching the initial state. This allows the old Java code to continue inserting rows (the database will automatically apply the default value for the missing column).
+    *   Leave a `TODO` comment in the Flyway SQL migration script to remind developers to drop the default in a subsequent release.
+    *   **PostgreSQL hstore Cast:** When writing transition map updates or defaults in SQL, **PostgreSQL requires an explicit `::hstore` cast** on string literals, otherwise the migration will fail with a type mismatch:
+        ```sql
+        ALTER TABLE "Tld" ADD COLUMN expiry_access_period_transitions hstore
+            DEFAULT '"1970-01-01T00:00:00.000Z"=>"DISABLED"'::hstore NOT NULL;
+        ```
+
+2.  **PR 2 (Java Implementation):**
+    *   Deploy the Java changes that map the column and ensure the application layer always explicitly sets the value (e.g., in the entity builder or via Java-level defaults).
+    *   Leave a `TODO` comment in the Java code near the `@Column` annotation referencing the plan to drop the DB default.
+
+3.  **PR 3 (DB Cleanup - Contract Phase):**
+    *   Once the new Java code is fully deployed to 100% of production instances, create a new subsequent Flyway migration to safely drop the temporary database-level default constraint:
+        ```sql
+        -- Drop the temporary default constraint to restore the fail-fast invariant in Java
+        ALTER TABLE "Tld" ALTER COLUMN expiry_access_period_transitions DROP DEFAULT;
+        ```
+    *   Remove the `TODO` comments from the SQL and Java files.
+
+### Recommended Git Workflow for Two-PR Splits
+
+To cleanly manage a two-PR split where the second branch depends on the first, use the following chained branch workflow:
+
+1.  Implement and verify all your changes (both DB and Java) on a single implementation branch (e.g., `feature-impl`). Commit all changes in a single commit.
+2.  Create the database-only branch off `master`:
+    ```shell
+    $ git checkout master
+    $ git checkout -b feature-db
+    ```
+3.  Checkout only the database-related files from your implementation branch and commit them:
+    ```shell
+    $ git checkout feature-impl -- db/src/main/resources/sql/flyway/ db/src/main/resources/sql/flyway.txt db/src/main/resources/sql/schema/nomulus.golden.sql db/src/main/resources/sql/er_diagram/
+    $ git commit -m "Implement database schema for feature"
+    ```
+4.  Switch back to your implementation branch and rebase it against the database branch:
+    ```shell
+    $ git checkout feature-impl
+    $ git rebase feature-db
+    ```
+    Git will automatically detect that the database changes are already present in the parent branch and will skip them, leaving your implementation commit containing **only** the Java changes, tests, and the ORM-generated `db-schema.sql.generated`!
 
 ### Summary of Schema Tests
 
