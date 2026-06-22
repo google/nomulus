@@ -1205,7 +1205,7 @@ CREATE TABLE public."Tld" (
     breakglass_mode boolean DEFAULT false NOT NULL,
     bsa_enroll_start_time timestamp with time zone,
     create_billing_cost_transitions public.hstore NOT NULL,
-    expiry_access_period_enabled boolean DEFAULT false NOT NULL
+    expiry_access_period_transitions public.hstore DEFAULT '"1970-01-01T00:00:00.000Z"=>"DISABLED"'::public.hstore NOT NULL
 );
 
 
