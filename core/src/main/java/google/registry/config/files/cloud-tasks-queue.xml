@@ -19,6 +19,7 @@
   <queue>
     <name>dns-refresh</name>
     <max-dispatches-per-second>100</max-dispatches-per-second>
+    <max-retry-duration>82800s</max-retry-duration>
   </queue>
 
   <!-- Queue for publishing DNS updates in batches. -->
@@ -29,6 +30,7 @@
     <min-backoff>30s</min-backoff>
     <max-backoff>1800s</max-backoff>
     <max-doublings>0</max-doublings>
+    <max-retry-duration>82800s</max-retry-duration>
   </queue>
 
   <!-- Queue for uploading RDE deposits to the escrow provider. -->
@@ -59,6 +61,7 @@
   <queue>
     <name>async-host-rename</name>
     <max-dispatches-per-second>1</max-dispatches-per-second>
+    <max-retry-duration>82800s</max-retry-duration>
   </queue>
 
   <!-- Queue for tasks that wait for a Beam pipeline to complete (i.e. Spec11 and invoicing). -->
@@ -110,11 +113,12 @@
     <max-attempts>3</max-attempts>
   </queue>
 
-  <!--  &lt;!&ndash; Queue for async actions that should be run at some point in the future. &ndash;&gt;-->
+  <!--  Queue for async actions that should be run at some point in the future.-->
   <queue>
     <name>async-actions</name>
     <max-dispatches-per-second>1</max-dispatches-per-second>
     <max-concurrent-dispatches>5</max-concurrent-dispatches>
+    <max-retry-duration>82800s</max-retry-duration>
   </queue>
 
 </entries>
