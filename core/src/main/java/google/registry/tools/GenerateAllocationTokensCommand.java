@@ -32,7 +32,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.internal.Nullable;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -60,10 +59,8 @@ import google.registry.util.StringGenerator;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.File;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
@@ -78,13 +75,13 @@ import org.joda.money.Money;
         "Generates and persists the given number of AllocationTokens, "
             + "printing each token to stdout.")
 @NonFinalForTesting
-class GenerateAllocationTokensCommand implements Command {
+class GenerateAllocationTokensCommand extends ConfirmingCommand {
 
   @Parameter(
       names = {"--tokens"},
       description =
-          "Comma-separated list of exact tokens to generate, otherwise use --prefix or "
-              + "--domain_names_file to generate tokens if the exact strings do not matter")
+          "Comma-separated list of exact tokens to generate, otherwise use --prefix or"
+              + " --domain_names_file to generate tokens if the exact strings do not matter")
   private List<String> tokenStrings;
 
   @Parameter(
@@ -95,7 +92,7 @@ class GenerateAllocationTokensCommand implements Command {
   @Parameter(
       names = {"-n", "--number"},
       description = "The number of tokens to generate")
-  private long numTokens;
+  private int numTokens;
 
   @Parameter(
       names = {"-d", "--domain_names_file"},
@@ -140,18 +137,18 @@ class GenerateAllocationTokensCommand implements Command {
   @Parameter(
       names = {"--discount_premiums"},
       description =
-          "Whether the discount is valid for premium names in addition to standard ones. Default"
-              + " is false.",
+          "Whether the discount is valid for premium names in addition to standard ones. Default is"
+              + " false.",
       arity = 1)
   private Boolean discountPremiums;
 
   @Parameter(
       names = {"--discount_price"},
       description =
-          "A discount that allows the setting of promotional prices. This field is different from "
-              + "{@code discountFraction} because the price set here is treated as the domain "
-              + "price, versus {@code discountFraction} that applies a fraction discount to the "
-              + "domain base price. Use CURRENCY PRICE format, example: USD 777.99",
+          "A discount that allows the setting of promotional prices. This field is different from"
+              + " {@code discountFraction} because the price set here is treated as the domain"
+              + " price, versus {@code discountFraction} that applies a fraction discount to the"
+              + " domain base price. Use CURRENCY PRICE format, example: USD 777.99",
       converter = MoneyParameter.class,
       validateWith = MoneyParameter.class)
   private Money discountPrice;
@@ -206,8 +203,10 @@ class GenerateAllocationTokensCommand implements Command {
   private static final int BATCH_SIZE = 20;
   private static final Joiner SKIP_NULLS = Joiner.on(',').skipNulls();
 
+  private ImmutableSet<AllocationToken> generatedTokens;
+
   @Override
-  public void run() throws IOException {
+  protected void init() throws Exception {
     verifyInput();
     if (tokenStrings != null) {
       numTokens = tokenStrings.size();
@@ -226,10 +225,11 @@ class GenerateAllocationTokensCommand implements Command {
       numTokens = domainNames.size();
     }
 
-    int tokensSaved = 0;
+    ImmutableSet.Builder<AllocationToken> tokensBuilder = new ImmutableSet.Builder<>();
+    int tokensGenerated = 0;
     do {
-      ImmutableSet<AllocationToken> tokens =
-          getNextTokenBatch(tokensSaved)
+      ImmutableSet<AllocationToken> batch =
+          getNextTokenBatch(tokensGenerated)
               .map(
                   t -> {
                     AllocationToken.Builder token =
@@ -259,8 +259,11 @@ class GenerateAllocationTokensCommand implements Command {
                     return token.build();
                   })
               .collect(toImmutableSet());
-      tokensSaved += saveTokens(tokens);
-    } while (tokensSaved < numTokens);
+      tokensBuilder.addAll(batch);
+      tokensGenerated += batch.size();
+    } while (tokensGenerated < numTokens);
+
+    generatedTokens = tokensBuilder.build();
   }
 
   private void verifyInput() {
@@ -377,25 +380,40 @@ class GenerateAllocationTokensCommand implements Command {
     }
   }
 
-  @VisibleForTesting
-  int saveTokens(final ImmutableSet<AllocationToken> tokens) {
-    Collection<AllocationToken> savedTokens;
+  @Override
+  protected String prompt() {
     if (dryRun) {
-      savedTokens = tokens;
-    } else {
-      tm().transact(() -> tm().putAll(tokens));
-      savedTokens = tm().transact(() -> tm().loadByEntities(tokens));
+      return String.format(
+          "Dry run: would generate %d tokens (not persisted).", generatedTokens.size());
     }
-    savedTokens.forEach(
-        t -> System.out.println(SKIP_NULLS.join(t.getDomainName().orElse(null), t.getToken())));
-    return savedTokens.size();
+    return String.format(
+        "Generate and persist %d tokens of type %s?",
+        generatedTokens.size(), tokenType == null ? SINGLE_USE : tokenType);
   }
 
-  /**
-   * This function generates at MOST {@code count} tokens, filtering out already-existing token
+  @Override
+  protected boolean dontRunCommand() {
+    return dryRun;
+  }
+
+  @Override
+  protected String execute() {
+    ImmutableList<AllocationToken> tokensList = generatedTokens.asList();
+    for (int i = 0; i < tokensList.size(); i += BATCH_SIZE) {
+      List<AllocationToken> batch =
+          tokensList.subList(i, Math.min(i + BATCH_SIZE, tokensList.size()));
+      tm().transact(() -> tm().putAll(ImmutableList.copyOf(batch)));
+    }
+    generatedTokens.forEach(
+        t -> printStream.println(SKIP_NULLS.join(t.getDomainName().orElse(null), t.getToken())));
+    return String.format("Successfully generated and persisted %d tokens.", generatedTokens.size());
+  }
+
+  /*
+   * This function generates at most "count" tokens, filtering out already-existing token
    * strings.
    *
-   * <p>Note that in the incredibly rare case that all generated tokens already exist, this function
+   * Note that in the incredibly rare case that all generated tokens already exist, this function
    * may return an empty set.
    */
   private ImmutableSet<String> generateTokens(int count) {

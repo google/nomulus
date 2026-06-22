@@ -41,6 +41,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
 
   @BeforeEach
   final void beforeEach() {
+    command.printStream = System.out;
     command.clock = fakeClock;
     fakeClock.setTo(Instant.parse("2015-02-04T08:16:32.064Z"));
     createTld("tld");
@@ -69,7 +70,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     OneTime futurePollMessage =
         persistPollMessage(123L, Instant.parse("2015-09-01T22:33:44Z"), "notme");
     VKey<OneTime> pm4 = futurePollMessage.createVKey();
-    runCommand("-c", "TheRegistrar");
+    runCommandForced("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
         .containsExactly(futurePollMessage);
     assertInStdout(
@@ -97,7 +98,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     Autorenew resaved =
         autorenew.asBuilder().setEventTime(Instant.parse("2012-04-15T22:33:44Z")).build();
     VKey<Autorenew> pm3 = autorenew.createVKey();
-    runCommand("-c", "TheRegistrar");
+    runCommandForced("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3)).values())
         .containsExactly(resaved);
     assertInStdout(
@@ -123,7 +124,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                 .setMsg("autorenew")
                 .build());
     VKey<Autorenew> pm3 = autorenew.createVKey();
-    runCommand("-c", "TheRegistrar");
+    runCommandForced("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3))).isEmpty();
     assertInStdout(
         "625-2011,2011-04-15T22:33:44Z,autorenew",
@@ -144,7 +145,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     OneTime notMatched2 =
         persistPollMessage(123L, Instant.parse("2015-09-01T22:33:44Z"), "time flies");
     VKey<OneTime> pm4 = notMatched2.createVKey();
-    runCommand("-c", "TheRegistrar", "-m", "food");
+    runCommandForced("-c", "TheRegistrar", "-m", "food");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
         .containsExactly(notMatched1, notMatched2);
   }
@@ -167,7 +168,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                 .setMsg("baaaahh")
                 .build());
     VKey<OneTime> pm3 = notMatched.createVKey();
-    runCommand("-c", "TheRegistrar");
+    runCommandForced("-c", "TheRegistrar");
     assertThat(loadByKeysIfPresent(ImmutableList.of(pm1, pm2, pm3)).values())
         .containsExactly(notMatched);
   }

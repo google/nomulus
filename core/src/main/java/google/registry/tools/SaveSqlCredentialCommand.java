@@ -34,7 +34,7 @@ import java.nio.file.Path;
 @Parameters(
     separators = " =",
     commandDescription = "Create or update the Cloud SQL Credential for a given user")
-public class SaveSqlCredentialCommand implements Command {
+public class SaveSqlCredentialCommand extends ConfirmingCommand {
 
   @Inject SqlCredentialStore store;
 
@@ -52,12 +52,22 @@ public class SaveSqlCredentialCommand implements Command {
   @Inject
   SaveSqlCredentialCommand() {}
 
+  private SqlUser sqlUser;
+
   @Override
-  public void run() throws Exception {
-    String password = getPassword();
-    SqlUser sqlUser = new RobotUser(SqlUser.RobotId.valueOf(Ascii.toUpperCase(user)));
-    store.createOrUpdateCredential(sqlUser, password);
-    System.out.printf("\nDone:[%s]\n", password);
+  protected void init() throws Exception {
+    sqlUser = new RobotUser(SqlUser.RobotId.valueOf(Ascii.toUpperCase(user)));
+  }
+
+  @Override
+  protected String prompt() {
+    return String.format("Save Cloud SQL credential for user %s?", user);
+  }
+
+  @Override
+  protected String execute() throws Exception {
+    store.createOrUpdateCredential(sqlUser, getPassword());
+    return String.format("Successfully saved SQL credential for user %s.", user);
   }
 
   private String getPassword() throws Exception {

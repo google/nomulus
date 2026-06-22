@@ -39,6 +39,7 @@ public class GenerateEscrowDepositCommandTest
     createTld("tld");
     createTld("anothertld");
     command = new GenerateEscrowDepositCommand();
+    command.printStream = System.out;
     command.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   }
 
@@ -188,7 +189,7 @@ public class GenerateEscrowDepositCommandTest
 
   @Test
   void testCommand_successWithLenientValidationMode() throws Exception {
-    runCommand(
+    runCommandForced(
         "--tld=tld",
         "--watermark=2017-01-01T00:00:00Z",
         "--mode=thin",
@@ -211,7 +212,8 @@ public class GenerateEscrowDepositCommandTest
 
   @Test
   void testCommand_successWithDefaultValidationMode() throws Exception {
-    runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-r 42", "-o test");
+    runCommandForced(
+        "--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-r 42", "-o test");
 
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
@@ -228,7 +230,7 @@ public class GenerateEscrowDepositCommandTest
 
   @Test
   void testCommand_successWithDefaultRevision() throws Exception {
-    runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-o test");
+    runCommandForced("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-o test");
 
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
@@ -244,7 +246,7 @@ public class GenerateEscrowDepositCommandTest
 
   @Test
   void testCommand_successWithDefaultMode() throws Exception {
-    runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "-r=42", "-o test");
+    runCommandForced("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "-r=42", "-o test");
 
     cloudTasksHelper.assertTasksEnqueued(
         "rde-report",
@@ -261,7 +263,7 @@ public class GenerateEscrowDepositCommandTest
 
   @Test
   void testCommand_successWithMultipleArgumentValues() throws Exception {
-    runCommand(
+    runCommandForced(
         "--tld=tld,anothertld",
         "--watermark=2017-01-01T00:00:00Z,2017-01-02T00:00:00Z",
         "--mode=thin",

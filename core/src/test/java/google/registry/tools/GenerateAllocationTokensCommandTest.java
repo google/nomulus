@@ -58,20 +58,21 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @BeforeEach
   void beforeEach() {
+    command.printStream = System.out;
     DatabaseHelper.createTlds("tld", "example");
     command.stringGenerator = new DeterministicStringGenerator(Alphabets.BASE_58);
   }
 
   @Test
   void testSuccess_oneToken() throws Exception {
-    runCommand("--prefix", "blah", "--number", "1", "--length", "9");
+    runCommandForced("--prefix", "blah", "--number", "1", "--length", "9");
     assertAllocationTokens(createToken("blah123456789", null, null));
     assertInStdout("blah123456789");
   }
 
   @Test
   void testSuccess_threeTokens() throws Exception {
-    runCommand("--prefix", "foo", "--number", "3", "--length", "10");
+    runCommandForced("--prefix", "foo", "--number", "3", "--length", "10");
     assertAllocationTokens(
         createToken("foo123456789A", null, null),
         createToken("fooBCDEFGHJKL", null, null),
@@ -81,7 +82,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @Test
   void testSuccess_defaults() throws Exception {
-    runCommand("--number", "1");
+    runCommandForced("--number", "1");
     assertAllocationTokens(createToken("123456789ABCDEFG", null, null));
     assertInStdout("123456789ABCDEFG");
   }
@@ -94,7 +95,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
                 .setToken("DEADBEEF123456789ABC")
                 .setTokenType(SINGLE_USE)
                 .build());
-    runCommand("--number", "1", "--prefix", "DEADBEEF", "--length", "12");
+    runCommandForced("--number", "1", "--prefix", "DEADBEEF", "--length", "12");
     assertAllocationTokens(existingToken, createToken("DEADBEEFDEFGHJKLMNPQ", null, null));
     assertInStdout("DEADBEEFDEFGHJKLMNPQ");
   }
@@ -103,14 +104,14 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
   void testSuccess_dryRun_outputsButDoesntSave() throws Exception {
     runCommand("--prefix", "foo", "--number", "2", "--length", "10", "--dry_run");
     assertAllocationTokens();
-    assertInStdout("foo123456789A\nfooBCDEFGHJKL");
+    assertInStdout("Dry run: would generate 2 tokens (not persisted).");
   }
 
   @Test
   void testSuccess_largeNumberOfTokens() throws Exception {
     command.stringGenerator =
         new DeterministicStringGenerator(Alphabets.BASE_58, Rule.PREPEND_COUNTER);
-    runCommand("--prefix", "ooo", "--number", "100", "--length", "16");
+    runCommandForced("--prefix", "ooo", "--number", "100", "--length", "16");
     // The deterministic string generator makes it too much hassle to assert about each token, so
     // just assert total number.
     assertThat(loadAllOf(AllocationToken.class)).hasSize(100);
@@ -121,7 +122,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     createTlds("tld", "xn--q9jyb4c");
     File domainNamesFile = tmpDir.resolve("domain_names.txt").toFile();
     Files.asCharSink(domainNamesFile, UTF_8).write("foo1.tld\nboo2.tld\nçauçalito.みんな\n");
-    runCommand("--domain_names_file", domainNamesFile.getPath());
+    runCommandForced("--domain_names_file", domainNamesFile.getPath());
     assertAllocationTokens(
         createToken("123456789ABCDEFG", null, "foo1.tld"),
         createToken("HJKLMNPQRSTUVWXY", null, "boo2.tld"),
@@ -136,7 +137,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
   void testSuccess_promotionToken() throws Exception {
     Instant promoStart = fakeClock.now();
     Instant promoEnd = promoStart.atZone(ZoneOffset.UTC).plusMonths(1).toInstant();
-    runCommand(
+    runCommandForced(
         "--number", "1",
         "--prefix", "promo",
         "--type", "UNLIMITED_USE",
@@ -171,7 +172,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
   void testSuccess_promotionToken_withDiscountPrice() throws Exception {
     Instant promoStart = fakeClock.now();
     Instant promoEnd = promoStart.atZone(ZoneOffset.UTC).plusMonths(1).toInstant();
-    runCommand(
+    runCommandForced(
         "--number",
         "1",
         "--prefix",
@@ -211,28 +212,28 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @Test
   void testSuccess_specifyTokens() throws Exception {
-    runCommand("--tokens", "foobar,foobaz");
+    runCommandForced("--tokens", "foobar,foobaz");
     assertAllocationTokens(createToken("foobar", null, null), createToken("foobaz", null, null));
     assertInStdout("foobar", "foobaz");
   }
 
   @Test
   void testSuccess_renewalPriceBehaviorIsDefault() throws Exception {
-    runCommand("--tokens", "foobar,foobaz", "--renewal_price_behavior", "DEFAULT");
+    runCommandForced("--tokens", "foobar,foobaz", "--renewal_price_behavior", "DEFAULT");
     assertAllocationTokens(createToken("foobar", null, null), createToken("foobaz", null, null));
     assertInStdout("foobar", "foobaz");
   }
 
   @Test
   void testSuccess_renewalPriceBehaviorIsSetToDefaultByDefault() throws Exception {
-    runCommand("--tokens", "foobar,foobaz");
+    runCommandForced("--tokens", "foobar,foobaz");
     assertAllocationTokens(createToken("foobar", null, null), createToken("foobaz", null, null));
     assertInStdout("foobar", "foobaz");
   }
 
   @Test
   void testSuccess_renewalPriceBehaviorIsNonPremium() throws Exception {
-    runCommand("--tokens", "foobar,foobaz", "--renewal_price_behavior", "NONPREMIUM");
+    runCommandForced("--tokens", "foobar,foobaz", "--renewal_price_behavior", "NONPREMIUM");
     assertAllocationTokens(
         createToken("foobar", null, null).asBuilder().setRenewalPriceBehavior(NONPREMIUM).build(),
         createToken("foobaz", null, null).asBuilder().setRenewalPriceBehavior(NONPREMIUM).build());
@@ -241,7 +242,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @Test
   void testSuccess_renewalPriceBehaviorIsSpecified() throws Exception {
-    runCommand(
+    runCommandForced(
         "--tokens",
         "foobar,foobaz",
         "--renewal_price_behavior",
@@ -264,7 +265,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @Test
   void testSuccess_renewalPriceBehaviorIsSpecifiedButMixedCase() throws Exception {
-    runCommand(
+    runCommandForced(
         "--tokens",
         "foobar,foobaz",
         "--renewal_price_behavior",
@@ -323,7 +324,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @Test
   void testSuccess_defaultRegistrationBehavior() throws Exception {
-    runCommand("--tokens", "foobar,blah");
+    runCommandForced("--tokens", "foobar,blah");
     assertThat(
             loadAllOf(AllocationToken.class).stream()
                 .map(AllocationToken::getRegistrationBehavior)
@@ -335,7 +336,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @Test
   void testSuccess_defaultRegistrationBehavior_specified() throws Exception {
-    runCommand("--tokens", "foobar,blah", "--registration_behavior", "DEFAULT");
+    runCommandForced("--tokens", "foobar,blah", "--registration_behavior", "DEFAULT");
     assertThat(
             loadAllOf(AllocationToken.class).stream()
                 .map(AllocationToken::getRegistrationBehavior)
@@ -347,7 +348,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @Test
   void testSuccess_specifiedRegistrationBehavior() throws Exception {
-    runCommand("--tokens", "foobar,blah", "--registration_behavior", "BYPASS_TLD_STATE");
+    runCommandForced("--tokens", "foobar,blah", "--registration_behavior", "BYPASS_TLD_STATE");
     assertThat(
             loadAllOf(AllocationToken.class).stream()
                 .map(AllocationToken::getRegistrationBehavior)
@@ -384,7 +385,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     command.stringGenerator =
         new DeterministicStringGenerator(Alphabets.BASE_58, Rule.PREPEND_COUNTER);
     Collection<String> sampleTokens = command.stringGenerator.createStrings(13, 100);
-    runCommand("--tokens", Joiner.on(",").join(sampleTokens));
+    runCommandForced("--tokens", Joiner.on(",").join(sampleTokens));
     assertInStdout(Iterables.toArray(sampleTokens, String.class));
     assertThat(loadAllOf(AllocationToken.class)).hasSize(100);
   }
@@ -445,8 +446,10 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @Test
   void testFailure_specifiesAlreadyExistingToken() throws Exception {
-    runCommand("--tokens", "foobar");
-    beforeEachCommandTestCase(); // reset the command variables
+    runCommandForced("--tokens", "foobar");
+    command = newCommandInstance();
+    command.printStream = System.out;
+    command.stringGenerator = new DeterministicStringGenerator(Alphabets.BASE_58);
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("--tokens", "foobar,foobaz"));
     assertThat(thrown)

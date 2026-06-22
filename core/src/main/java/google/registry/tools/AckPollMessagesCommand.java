@@ -23,6 +23,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
@@ -53,7 +54,7 @@ import jakarta.inject.Inject;
  * event time is in the past), same as through EPP.
  */
 @Parameters(separators = " =", commandDescription = "Acknowledge one-time poll messages.")
-final class AckPollMessagesCommand implements Command {
+final class AckPollMessagesCommand extends ConfirmingCommand {
 
   @Parameter(
       names = {"-c", "--client"},
@@ -74,33 +75,51 @@ final class AckPollMessagesCommand implements Command {
 
   @Inject Clock clock;
 
+  private ImmutableList<PollMessage> pollMessages;
+
   @Override
-  public void run() {
-      ackPollMessagesSql();
+  protected void init() throws Exception {
+    pollMessages =
+        tm().transact(
+                () -> {
+                  QueryComposer<PollMessage> query = createPollMessageQuery(clientId, clock.now());
+                  if (!isNullOrEmpty(message)) {
+                    query = query.where("msg", LIKE, "%" + message + "%");
+                  }
+                  return query.stream().collect(ImmutableList.toImmutableList());
+                });
   }
 
-  /** Loads and acks all matching poll messages from SQL in one transaction. */
-  private void ackPollMessagesSql() {
-    tm().transact(
-            () -> {
-              QueryComposer<PollMessage> query = createPollMessageQuery(clientId, clock.now());
-              if (!isNullOrEmpty(message)) {
-                query = query.where("msg", LIKE, "%" + message + "%");
-              }
-              query.stream().forEach(this::actOnPollMessage);
-            });
-  }
-
-  /** Acks the poll message if not running in dry-run mode, prints regardless. */
-  private void actOnPollMessage(PollMessage pollMessage) {
-    if (!dryRun) {
-      PollFlowUtils.ackPollMessage(pollMessage);
+  @Override
+  protected String prompt() {
+    if (pollMessages.isEmpty()) {
+      return "No matching poll messages found.";
     }
-    System.out.println(
-        Joiner.on(',')
-            .join(
-                makePollMessageExternalId(pollMessage),
-                pollMessage.getEventTime(),
-                pollMessage.getMsg()));
+    StringBuilder sb = new StringBuilder();
+    sb.append(
+        String.format(
+            "Found %d poll messages to acknowledge for registrar %s:\n",
+            pollMessages.size(), clientId));
+    for (PollMessage pollMessage : pollMessages) {
+      sb.append(
+              Joiner.on(',')
+                  .join(
+                      makePollMessageExternalId(pollMessage),
+                      pollMessage.getEventTime(),
+                      pollMessage.getMsg()))
+          .append("\n");
+    }
+    return sb.toString();
+  }
+
+  @Override
+  protected boolean dontRunCommand() {
+    return dryRun;
+  }
+
+  @Override
+  protected String execute() {
+    tm().transact(() -> pollMessages.forEach(PollFlowUtils::ackPollMessage));
+    return String.format("Successfully acknowledged %d poll messages.", pollMessages.size());
   }
 }

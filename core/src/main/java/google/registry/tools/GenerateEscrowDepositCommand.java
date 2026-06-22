@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  * be stored in the specified manual subdirectory of the GCS RDE bucket.
  */
 @Parameters(separators = " =", commandDescription = "Generate an XML escrow deposit.")
-final class GenerateEscrowDepositCommand implements Command {
+final class GenerateEscrowDepositCommand extends ConfirmingCommand {
 
   @Parameter(
       names = {"-t", "--tld"},
@@ -84,7 +84,7 @@ final class GenerateEscrowDepositCommand implements Command {
   @Inject CloudTasksUtils cloudTasksUtils;
 
   @Override
-  public void run() {
+  protected void init() throws Exception {
     if (watermarks.isEmpty()) {
       throw new ParameterException("At least one watermark must be specified");
     }
@@ -109,25 +109,35 @@ final class GenerateEscrowDepositCommand implements Command {
     if (outdir.isEmpty()) {
       throw new ParameterException("Output subdirectory must not be empty");
     }
+  }
 
-    ImmutableMultimap.Builder<String, String> paramsBuilder =
+  @Override
+  protected String prompt() {
+    return String.format(
+        "Enqueue task to generate %s escrow deposit for TLD(s) %s with watermark(s) %s in directory"
+            + " %s?",
+        mode, tlds, watermarks, outdir);
+  }
+
+  @Override
+  protected String execute() {
+    ImmutableMultimap.Builder<String, String> params =
         new ImmutableMultimap.Builder<String, String>()
             .put(PARAM_MANUAL, String.valueOf(true))
             .put(PARAM_MODE, mode.toString())
             .put(PARAM_DIRECTORY, outdir)
             .put(PARAM_LENIENT, Boolean.toString(lenient))
-            .put(PARAM_TLDS, tlds.stream().collect(Collectors.joining(",")))
+            .put(PARAM_TLDS, String.join(",", tlds))
             .put(
                 PARAM_WATERMARKS,
                 watermarks.stream()
                     .map(DateTimeUtils::formatInstant)
                     .collect(Collectors.joining(",")));
-
     if (revision != null) {
-      paramsBuilder.put(PARAM_REVISION, String.valueOf(revision));
+      params.put(PARAM_REVISION, String.valueOf(revision));
     }
     cloudTasksUtils.enqueue(
-        RDE_REPORT_QUEUE,
-        cloudTasksUtils.createTask(RdeStagingAction.class, POST, paramsBuilder.build()));
+        RDE_REPORT_QUEUE, cloudTasksUtils.createTask(RdeStagingAction.class, POST, params.build()));
+    return "Successfully enqueued task.";
   }
 }

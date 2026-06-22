@@ -31,7 +31,7 @@ import java.nio.file.Path;
  * Command to set and update ASCII-armored secret from the active {@code Keyring} implementation.
  */
 @Parameters(separators = " =", commandDescription = "Update values of secret in the keyring.")
-final class UpdateKeyringSecretCommand implements Command {
+final class UpdateKeyringSecretCommand extends ConfirmingCommand {
 
   @Inject SecretManagerKeyringUpdater secretManagerKeyringUpdater;
 
@@ -50,9 +50,13 @@ final class UpdateKeyringSecretCommand implements Command {
   private Path inputPath = null;
 
   @Override
-  public void run() throws Exception {
-    byte[] input = Files.readAllBytes(inputPath);
+  protected String prompt() {
+    return String.format("Update keyring secret %s in Secret Manager?", keyringKeyName);
+  }
 
+  @Override
+  protected String execute() throws Exception {
+    byte[] input = Files.readAllBytes(inputPath);
     switch (keyringKeyName) {
       case BRDA_RECEIVER_PUBLIC_KEY ->
           secretManagerKeyringUpdater.setBrdaReceiverPublicKey(deserializePublicKey(input));
@@ -105,5 +109,6 @@ final class UpdateKeyringSecretCommand implements Command {
     }
 
     secretManagerKeyringUpdater.update();
+    return String.format("Successfully updated keyring secret %s.", keyringKeyName);
   }
 }
