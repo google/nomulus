@@ -283,15 +283,15 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   private JsonObject generateExpectedJsonForTwoDomainsNsReply() {
     return jsonFileBuilder()
-        .addDomain("cat.example", "F-EXAMPLE")
-        .addDomain("cat.lol", "6-LOL")
+        .addDomain("cat.example", domainCatExample.getRepoId())
+        .addDomain("cat.lol", domainCatLol.getRepoId())
         .load("rdap_domains_two.json");
   }
 
   private JsonObject generateExpectedJsonForTwoDomainsCatStarReplySql() {
     return jsonFileBuilder()
-        .addDomain("cat.lol", "6-LOL")
-        .addDomain("cat2.lol", "B-LOL")
+        .addDomain("cat.lol", domainCatLol.getRepoId())
+        .addDomain("cat2.lol", domainCatLol2.getRepoId())
         .load("rdap_domains_two.json");
   }
 
@@ -306,7 +306,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             minusMonths(clock.now(), 6)));
   }
 
-  private void createManyDomainsAndHosts(
+  private ImmutableList<Domain> createManyDomainsAndHosts(
       int numActiveDomains, int numTotalDomainsPerActiveDomain, int numHosts) {
     ImmutableSet.Builder<VKey<Host>> hostKeysBuilder = new ImmutableSet.Builder<>();
     ImmutableSet.Builder<String> subordinateHostnamesBuilder = new ImmutableSet.Builder<>();
@@ -340,7 +340,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
       }
       domainsBuilder.add(builder.build());
     }
-    persistResources(domainsBuilder.build());
+    return persistResources(domainsBuilder.build());
   }
 
   private void checkNumberOfDomainsInResult(JsonObject obj, int expected) {
@@ -353,10 +353,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         requestType,
         queryString,
         jsonFileBuilder()
-            .addDomain("cat.lol", "6-LOL")
+            .addDomain("cat.lol", domainCatLol.getRepoId())
             .addRegistrar("Yes Virginia <script>")
-            .addNameserver("ns1.cat.lol", "2-ROID")
-            .addNameserver("ns2.cat.lol", "4-ROID")
+            .addNameserver("ns1.cat.lol", hostNs1CatLol.getRepoId())
+            .addNameserver("ns2.cat.lol", hostNs2CatLol.getRepoId())
             .setNextQuery(queryString)
             .load(filename));
   }
@@ -367,10 +367,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         requestType,
         queryString,
         jsonFileBuilder()
-            .addDomain("cat2.lol", "B-LOL")
+            .addDomain("cat2.lol", domainCatLol2.getRepoId())
             .addRegistrar("Yes Virginia <script>")
-            .addNameserver("ns1.cat.example", "7-ROID")
-            .addNameserver("ns2.dog.lol", "9-ROID")
+            .addNameserver("ns1.cat.example", hostNameToHostMap.get("ns1.cat.example").getRepoId())
+            .addNameserver("ns2.dog.lol", hostNameToHostMap.get("ns2.dog.lol").getRepoId())
             .setNextQuery(queryString)
             .load(filename));
   }
@@ -679,10 +679,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "cat.example",
         jsonFileBuilder()
-            .addDomain("cat.example", "F-EXAMPLE")
+            .addDomain("cat.example", domainCatExample.getRepoId())
             .addRegistrar("St. John Chrysostom")
-            .addNameserver("ns1.cat.lol", "2-ROID")
-            .addNameserver("ns2.external.tld", "D-ROID")
+            .addNameserver("ns1.cat.lol", hostNs1CatLol.getRepoId())
+            .addNameserver(
+                "ns2.external.tld", hostNameToHostMap.get("ns2.external.tld").getRepoId())
             .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
@@ -693,10 +694,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "cat.みんな",
         jsonFileBuilder()
-            .addDomain("cat.みんな", "15-Q9JYB4C")
+            .addDomain("cat.みんな", domainIdn.getRepoId())
             .addRegistrar("みんな")
-            .addNameserver("ns1.cat.みんな", "11-ROID")
-            .addNameserver("ns2.cat.みんな", "13-ROID")
+            .addNameserver("ns1.cat.みんな", hostNameToHostMap.get("ns1.cat.xn--q9jyb4c").getRepoId())
+            .addNameserver("ns2.cat.みんな", hostNameToHostMap.get("ns2.cat.xn--q9jyb4c").getRepoId())
             .load("rdap_domain_unicode_with_unicode_nameservers.json"));
     // The unicode gets translated to ASCII before getting parsed into a search pattern.
     metricPrefixLength = 15;
@@ -709,10 +710,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "cat.xn--q9jyb4c",
         jsonFileBuilder()
-            .addDomain("cat.みんな", "15-Q9JYB4C")
+            .addDomain("cat.みんな", domainIdn.getRepoId())
             .addRegistrar("みんな")
-            .addNameserver("ns1.cat.みんな", "11-ROID")
-            .addNameserver("ns2.cat.みんな", "13-ROID")
+            .addNameserver("ns1.cat.みんな", hostNameToHostMap.get("ns1.cat.xn--q9jyb4c").getRepoId())
+            .addNameserver("ns2.cat.みんな", hostNameToHostMap.get("ns2.cat.xn--q9jyb4c").getRepoId())
             .load("rdap_domain_unicode_with_unicode_nameservers.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
@@ -723,10 +724,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "cat.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "1B-1TEST")
+            .addDomain("cat.1.test", domainMultipart.getRepoId())
             .addRegistrar("1.test")
-            .addNameserver("ns1.cat.1.test", "17-ROID")
-            .addNameserver("ns2.cat.2.test", "19-ROID")
+            .addNameserver("ns1.cat.1.test", hostNameToHostMap.get("ns1.cat.1.test").getRepoId())
+            .addNameserver("ns2.cat.2.test", hostNameToHostMap.get("ns2.cat.2.test").getRepoId())
             .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
@@ -737,10 +738,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "ca*.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "1B-1TEST")
+            .addDomain("cat.1.test", domainMultipart.getRepoId())
             .addRegistrar("1.test")
-            .addNameserver("ns1.cat.1.test", "17-ROID")
-            .addNameserver("ns2.cat.2.test", "19-ROID")
+            .addNameserver("ns1.cat.1.test", hostNameToHostMap.get("ns1.cat.1.test").getRepoId())
+            .addNameserver("ns2.cat.2.test", hostNameToHostMap.get("ns2.cat.2.test").getRepoId())
             .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
@@ -813,10 +814,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NAME, "cat.*"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("cat.1.test", "1B-1TEST")
-                .addDomain("cat.example", "F-EXAMPLE")
-                .addDomain("cat.lol", "6-LOL")
-                .addDomain("cat.みんな", "15-Q9JYB4C")
+                .addDomain("cat.1.test", domainMultipart.getRepoId())
+                .addDomain("cat.example", domainCatExample.getRepoId())
+                .addDomain("cat.lol", domainCatLol.getRepoId())
+                .addDomain("cat.みんな", domainIdn.getRepoId())
                 .load("rdap_domains_four_with_one_unicode.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(4L));
@@ -851,10 +852,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NAME, "cat*"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("cat.1.test", "1B-1TEST")
-                .addDomain("cat.example", "F-EXAMPLE")
-                .addDomain("cat.lol", "6-LOL")
-                .addDomain("cat.みんな", "15-Q9JYB4C")
+                .addDomain("cat.1.test", domainMultipart.getRepoId())
+                .addDomain("cat.example", domainCatExample.getRepoId())
+                .addDomain("cat.lol", domainCatLol.getRepoId())
+                .addDomain("cat.みんな", domainIdn.getRepoId())
                 .setNextQuery("name=cat*&cursor=Y2F0LnhuLS1xOWp5YjRj")
                 .load("rdap_domains_four_with_one_unicode_truncated.json"));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -970,15 +971,15 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     // This is not exactly desired behavior, but expected: There are enough domains to fill a full
     // result set, but there are so many deleted domains that we run out of patience before we work
     // our way through all of them.
-    createManyDomainsAndHosts(4, 50, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(4, 50, 2);
     rememberWildcardType("domain*.lol");
     assertAboutJson()
         .that(generateActualJson(RequestType.NAME, "domain*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain100.lol", "8E-LOL")
-                .addDomain("domain150.lol", "5C-LOL")
-                .addDomain("domain200.lol", "2A-LOL")
+                .addDomain("domain100.lol", domains.get(100).getRepoId())
+                .addDomain("domain150.lol", domains.get(50).getRepoId())
+                .addDomain("domain200.lol", domains.get(0).getRepoId())
                 .addDomain("domainunused.lol", "unused-LOL")
                 .load("rdap_incomplete_domain_result_set.json"));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -990,28 +991,28 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testDomainMatch_nontruncatedResultsSet() {
-    createManyDomainsAndHosts(4, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(4, 1, 2);
     runSuccessfulTestWithFourDomains(
         RequestType.NAME,
         "domain*.lol",
-        "2D-LOL",
-        "2C-LOL",
-        "2B-LOL",
-        "2A-LOL",
+        domains.get(3).getRepoId(),
+        domains.get(2).getRepoId(),
+        domains.get(1).getRepoId(),
+        domains.get(0).getRepoId(),
         "rdap_nontruncated_domains.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(4L));
   }
 
   @Test
   void testDomainMatch_truncatedResultsSet() {
-    createManyDomainsAndHosts(5, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(5, 1, 2);
     runSuccessfulTestWithFourDomains(
         RequestType.NAME,
         "domain*.lol",
-        "2E-LOL",
-        "2D-LOL",
-        "2C-LOL",
-        "2B-LOL",
+        domains.get(4).getRepoId(),
+        domains.get(3).getRepoId(),
+        domains.get(2).getRepoId(),
+        domains.get(1).getRepoId(),
         "name=domain*.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1019,16 +1020,16 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testDomainMatch_tldSearchOrderedProperly_sql() {
-    createManyDomainsAndHosts(4, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(4, 1, 2);
     rememberWildcardType("*.lol");
     assertAboutJson()
         .that(generateActualJson(RequestType.NAME, "*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("cat.lol", "6-LOL")
-                .addDomain("cat2.lol", "B-LOL")
-                .addDomain("domain1.lol", "2D-LOL")
-                .addDomain("domain2.lol", "2C-LOL")
+                .addDomain("cat.lol", domainCatLol.getRepoId())
+                .addDomain("cat2.lol", domainCatLol2.getRepoId())
+                .addDomain("domain1.lol", domains.get(3).getRepoId())
+                .addDomain("domain2.lol", domains.get(2).getRepoId())
                 .setNextQuery("name=*.lol&cursor=ZG9tYWluMi5sb2w%3D")
                 .load("rdap_domains_four_truncated.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1038,14 +1039,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   void testDomainMatch_reallyTruncatedResultsSet() {
     // Don't use 10 or more domains for this test, because domain10.lol will come before
     // domain2.lol, and you'll get the wrong domains in the result set.
-    createManyDomainsAndHosts(9, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(9, 1, 2);
     runSuccessfulTestWithFourDomains(
         RequestType.NAME,
         "domain*.lol",
-        "32-LOL",
-        "31-LOL",
-        "30-LOL",
-        "2F-LOL",
+        domains.get(8).getRepoId(),
+        domains.get(7).getRepoId(),
+        domains.get(6).getRepoId(),
+        domains.get(5).getRepoId(),
         "name=domain*.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1053,16 +1054,16 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testDomainMatch_truncatedResultsAfterMultipleChunks_sql() {
-    createManyDomainsAndHosts(5, 6, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(5, 6, 2);
     rememberWildcardType("domain*.lol");
     assertAboutJson()
         .that(generateActualJson(RequestType.NAME, "domain*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain12.lol", "3C-LOL")
-                .addDomain("domain18.lol", "36-LOL")
-                .addDomain("domain24.lol", "30-LOL")
-                .addDomain("domain30.lol", "2A-LOL")
+                .addDomain("domain12.lol", domains.get(18).getRepoId())
+                .addDomain("domain18.lol", domains.get(12).getRepoId())
+                .addDomain("domain24.lol", domains.get(6).getRepoId())
+                .addDomain("domain30.lol", domains.get(0).getRepoId())
                 .setNextQuery("name=domain*.lol&cursor=ZG9tYWluMzAubG9s")
                 .load("rdap_domains_four_truncated.json"));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -1261,10 +1262,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NS_LDH_NAME,
         "ns1.cat.xn--q9jyb4c",
         jsonFileBuilder()
-            .addDomain("cat.みんな", "15-Q9JYB4C")
+            .addDomain("cat.みんな", domainIdn.getRepoId())
             .addRegistrar("みんな")
-            .addNameserver("ns1.cat.みんな", "11-ROID")
-            .addNameserver("ns2.cat.みんな", "13-ROID")
+            .addNameserver("ns1.cat.みんな", hostNameToHostMap.get("ns1.cat.xn--q9jyb4c").getRepoId())
+            .addNameserver("ns2.cat.みんな", hostNameToHostMap.get("ns2.cat.xn--q9jyb4c").getRepoId())
             .load("rdap_domain_unicode_with_unicode_nameservers.json"));
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
@@ -1275,10 +1276,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NS_LDH_NAME,
         "ns1.cat.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "1B-1TEST")
+            .addDomain("cat.1.test", domainMultipart.getRepoId())
             .addRegistrar("1.test")
-            .addNameserver("ns1.cat.1.test", "17-ROID")
-            .addNameserver("ns2.cat.2.test", "19-ROID")
+            .addNameserver("ns1.cat.1.test", hostNameToHostMap.get("ns1.cat.1.test").getRepoId())
+            .addNameserver("ns2.cat.2.test", hostNameToHostMap.get("ns2.cat.2.test").getRepoId())
             .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
@@ -1289,10 +1290,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NS_LDH_NAME,
         "ns*.cat.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "1B-1TEST")
+            .addDomain("cat.1.test", domainMultipart.getRepoId())
             .addRegistrar("1.test")
-            .addNameserver("ns1.cat.1.test", "17-ROID")
-            .addNameserver("ns2.cat.2.test", "19-ROID")
+            .addNameserver("ns1.cat.1.test", hostNameToHostMap.get("ns1.cat.1.test").getRepoId())
+            .addNameserver("ns2.cat.2.test", hostNameToHostMap.get("ns2.cat.2.test").getRepoId())
             .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
@@ -1430,28 +1431,28 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testNameserverMatch_nontruncatedResultsSet() {
-    createManyDomainsAndHosts(4, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(4, 1, 2);
     runSuccessfulTestWithFourDomains(
         RequestType.NS_LDH_NAME,
         "ns1.domain1.lol",
-        "2D-LOL",
-        "2C-LOL",
-        "2B-LOL",
-        "2A-LOL",
+        domains.get(3).getRepoId(),
+        domains.get(2).getRepoId(),
+        domains.get(1).getRepoId(),
+        domains.get(0).getRepoId(),
         "rdap_nontruncated_domains.json");
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(4L), Optional.of(1L));
   }
 
   @Test
   void testNameserverMatch_truncatedResultsSet() {
-    createManyDomainsAndHosts(5, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(5, 1, 2);
     runSuccessfulTestWithFourDomains(
         RequestType.NS_LDH_NAME,
         "ns1.domain1.lol",
-        "2E-LOL",
-        "2D-LOL",
-        "2C-LOL",
-        "2B-LOL",
+        domains.get(4).getRepoId(),
+        domains.get(3).getRepoId(),
+        domains.get(2).getRepoId(),
+        domains.get(1).getRepoId(),
         "nsLdhName=ns1.domain1.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
@@ -1463,14 +1464,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testNameserverMatch_reallyTruncatedResultsSet() {
-    createManyDomainsAndHosts(9, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(9, 1, 2);
     runSuccessfulTestWithFourDomains(
         RequestType.NS_LDH_NAME,
         "ns1.domain1.lol",
-        "32-LOL",
-        "31-LOL",
-        "30-LOL",
-        "2F-LOL",
+        domains.get(8).getRepoId(),
+        domains.get(7).getRepoId(),
+        domains.get(6).getRepoId(),
+        domains.get(5).getRepoId(),
         "nsLdhName=ns1.domain1.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
@@ -1484,16 +1485,16 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   void testNameserverMatch_duplicatesNotTruncated() {
     // 36 nameservers for each of 4 domains; these should translate into two fetches, which should
     // not trigger the truncation warning because all the domains will be duplicates.
-    createManyDomainsAndHosts(4, 1, 36);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(4, 1, 36);
     rememberWildcardType("ns*.domain1.lol");
     assertAboutJson()
         .that(generateActualJson(RequestType.NS_LDH_NAME, "ns*.domain1.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain1.lol", "71-LOL")
-                .addDomain("domain2.lol", "70-LOL")
-                .addDomain("domain3.lol", "6F-LOL")
-                .addDomain("domain4.lol", "6E-LOL")
+                .addDomain("domain1.lol", domains.get(3).getRepoId())
+                .addDomain("domain2.lol", domains.get(2).getRepoId())
+                .addDomain("domain3.lol", domains.get(1).getRepoId())
+                .addDomain("domain4.lol", domains.get(0).getRepoId())
                 .load("rdap_nontruncated_domains.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(4L), Optional.of(36L));
@@ -1501,14 +1502,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testNameserverMatch_incompleteResultsSet() {
-    createManyDomainsAndHosts(2, 1, 41);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(2, 1, 41);
     rememberWildcardType("ns*.domain1.lol");
     assertAboutJson()
         .that(generateActualJson(RequestType.NS_LDH_NAME, "ns*.domain1.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain1.lol", "79-LOL")
-                .addDomain("domain2.lol", "78-LOL")
+                .addDomain("domain1.lol", domains.get(1).getRepoId())
+                .addDomain("domain2.lol", domains.get(0).getRepoId())
                 .load("rdap_incomplete_domains.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(
@@ -1641,10 +1642,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .isEqualTo(
             wrapInSearchReply(
                 jsonFileBuilder()
-                    .addDomain("cat.lol", "6-LOL")
+                    .addDomain("cat.lol", domainCatLol.getRepoId())
                     .addRegistrar("Yes Virginia <script>")
-                    .addNameserver("ns1.cat.lol", "2-ROID")
-                    .addNameserver("ns2.cat.lol", "4-ROID")
+                    .addNameserver("ns1.cat.lol", hostNs1CatLol.getRepoId())
+                    .addNameserver("ns2.cat.lol", hostNs2CatLol.getRepoId())
                     .load("rdap_domain.json")));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 1, 1);
@@ -1667,28 +1668,28 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testAddressMatch_nontruncatedResultsSet() {
-    createManyDomainsAndHosts(4, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(4, 1, 2);
     runSuccessfulTestWithFourDomains(
         RequestType.NS_IP,
         "5.5.5.1",
-        "2D-LOL",
-        "2C-LOL",
-        "2B-LOL",
-        "2A-LOL",
+        domains.get(3).getRepoId(),
+        domains.get(2).getRepoId(),
+        domains.get(1).getRepoId(),
+        domains.get(0).getRepoId(),
         "rdap_nontruncated_domains.json");
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 4, 1);
   }
 
   @Test
   void testAddressMatch_truncatedResultsSet() {
-    createManyDomainsAndHosts(5, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(5, 1, 2);
     runSuccessfulTestWithFourDomains(
         RequestType.NS_IP,
         "5.5.5.1",
-        "2E-LOL",
-        "2D-LOL",
-        "2C-LOL",
-        "2B-LOL",
+        domains.get(4).getRepoId(),
+        domains.get(3).getRepoId(),
+        domains.get(2).getRepoId(),
+        domains.get(1).getRepoId(),
         "nsIp=5.5.5.1&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
@@ -1700,14 +1701,14 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   @Test
   void testAddressMatch_reallyTruncatedResultsSet() {
-    createManyDomainsAndHosts(9, 1, 2);
+    ImmutableList<Domain> domains = createManyDomainsAndHosts(9, 1, 2);
     runSuccessfulTestWithFourDomains(
         RequestType.NS_IP,
         "5.5.5.1",
-        "32-LOL",
-        "31-LOL",
-        "30-LOL",
-        "2F-LOL",
+        domains.get(8).getRepoId(),
+        domains.get(7).getRepoId(),
+        domains.get(6).getRepoId(),
+        domains.get(5).getRepoId(),
         "nsIp=5.5.5.1&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
