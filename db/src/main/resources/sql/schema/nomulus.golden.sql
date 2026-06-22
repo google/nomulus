@@ -283,7 +283,8 @@ CREATE TABLE public."ConsoleUpdateHistory" (
     type text NOT NULL,
     url text NOT NULL,
     description text,
-    acting_user text NOT NULL
+    acting_user text NOT NULL,
+    client_ip text NOT NULL
 );
 
 
