@@ -26,7 +26,7 @@ import java.util.List;
 
 /** Command to send ICANN notification that an escrow deposit was uploaded. */
 @Parameters(separators = " =", commandDescription = "Send an ICANN report of an uploaded deposit.")
-final class SendEscrowReportToIcannCommand implements Command {
+final class SendEscrowReportToIcannCommand extends ConfirmingCommand {
 
   @Parameter(
       description = "One or more foo-report.xml files.",
@@ -37,10 +37,16 @@ final class SendEscrowReportToIcannCommand implements Command {
   @Inject Lazy<RdeReporter> rdeReporter;
 
   @Override
-  public void run() throws Exception {
+  protected String prompt() {
+    return String.format("Upload %d escrow report file(s) to ICANN?", files.size());
+  }
+
+  @Override
+  protected String execute() throws Exception {
     for (Path file : files) {
       rdeReporter.get().send(Files.readAllBytes(file));
-      System.out.printf("Uploaded: %s\n", file);
+      printStream.printf("Uploaded: %s\n", file);
     }
+    return String.format("Successfully uploaded %d escrow report file(s) to ICANN.", files.size());
   }
 }
