@@ -14,6 +14,7 @@
 
 package google.registry.flows.picker;
 
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
@@ -255,6 +256,17 @@ public class FlowPicker {
     if (innerCommand == null && !(eppInput.getCommandWrapper() instanceof Hello)) {
       throw new MissingCommandException();
     }
+    if (innerCommand instanceof ResourceCommandWrapper resourceCommandWrapper) {
+      ResourceCommand resourceCommand = resourceCommandWrapper.getResourceCommand();
+      if (resourceCommand != null) {
+        String wrapperName = innerCommand.getClass().getSimpleName();
+        String commandName = resourceCommand.getClass().getSimpleName();
+        if (!wrapperName.equals(commandName)) {
+          throw new MismatchedCommandException(
+              Ascii.toLowerCase(wrapperName), Ascii.toLowerCase(commandName));
+        }
+      }
+    }
     // Try the FlowProviders until we find a match. The order matters because it's possible to
     // match multiple FlowProviders and so more specific matches are tried first.
     for (FlowProvider flowProvider : FLOW_PROVIDERS) {
@@ -277,6 +289,16 @@ public class FlowPicker {
   static class MissingCommandException extends SyntaxErrorException {
     public MissingCommandException() {
       super("Command missing");
+    }
+  }
+
+  /** Command wrapper and inner resource command do not match. */
+  static class MismatchedCommandException extends SyntaxErrorException {
+    public MismatchedCommandException(String wrapperName, String commandName) {
+      super(
+          String.format(
+              "EPP command wrapper <%s> does not match resource command <%s>",
+              wrapperName, commandName));
     }
   }
 }
