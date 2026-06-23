@@ -164,7 +164,7 @@ import google.registry.ui.server.console.settings.SecurityAction;
       ToolsServerModule.class,
       WhiteboxModule.class
     })
-interface RequestComponent {
+public interface RequestComponent {
   FlowComponent.Builder flowComponentBuilder();
 
   BrdaCopyAction brdaCopyAction();

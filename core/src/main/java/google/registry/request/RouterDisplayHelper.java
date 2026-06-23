@@ -14,11 +14,9 @@
 
 package google.registry.request;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 import java.util.Comparator;
@@ -62,18 +60,6 @@ public class RouterDisplayHelper {
   /** Returns a string representation of the routing map in the specified component. */
   public static String extractHumanReadableRoutesFromComponent(Class<?> componentClass) {
     return formatRoutes(Router.extractRoutesFromComponent(componentClass).values());
-  }
-
-  public static ImmutableList<String> extractHumanReadableRoutesWithWrongService(
-      Class<?> componentClass, Action.Service expectedService) {
-    return Router.extractRoutesFromComponent(componentClass).values().stream()
-        .filter(route -> route.action().service() != expectedService)
-        .map(
-            route ->
-                String.format(
-                    "%s (%s%s)",
-                    route.actionClass(), route.action().service(), route.action().path()))
-        .collect(toImmutableList());
   }
 
   private static String getFormatString(Map<String, Integer> columnWidths) {

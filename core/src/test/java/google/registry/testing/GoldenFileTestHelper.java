@@ -55,7 +55,7 @@ public class GoldenFileTestHelper {
 
   public static GoldenFileTestHelper assertThatRoutesFromComponent(Class<?> component) {
     return assertThat(RouterDisplayHelper.extractHumanReadableRoutesFromComponent(component))
-        .createdByNomulusCommand("get_routing_map -c " + component.getName());
+        .createdByNomulusCommand("get_routing_map");
   }
 
   public GoldenFileTestHelper createdByNomulusCommand(String nomulusCommand) {
