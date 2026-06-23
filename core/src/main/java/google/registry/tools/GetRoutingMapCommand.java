@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.request.RouterDisplayHelper;
 
@@ -22,19 +21,10 @@ import google.registry.request.RouterDisplayHelper;
 @Parameters(commandDescription = "Generate a routing map file")
 final class GetRoutingMapCommand implements Command {
 
-  @Parameter(
-    names = {"-c", "--class"},
-    description =
-        "Request component class (e.g. google.registry.module.backend.BackendRequestComponent)"
-        + " for which routing map should be generated",
-    required = true
-  )
-  private String serviceClassName;
-
   @Override
   public void run() throws Exception {
     System.out.println(
         RouterDisplayHelper.extractHumanReadableRoutesFromComponent(
-            Class.forName(serviceClassName)));
+            Class.forName("google.registry.module.RequestComponent")));
   }
 }
