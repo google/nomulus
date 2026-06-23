@@ -116,15 +116,21 @@ public class HostFlowUtils {
     if (inetAddresses == null) {
       return;
     }
-    if (inetAddresses.stream().anyMatch(InetAddress::isLoopbackAddress)) {
-      throw new LoopbackIpNotValidForHostException();
+    for (InetAddress inetAddress : inetAddresses) {
+      if (inetAddress.isLoopbackAddress()
+          || inetAddress.isLinkLocalAddress()
+          || inetAddress.isSiteLocalAddress()
+          || inetAddress.isAnyLocalAddress()
+          || inetAddress.isMulticastAddress()) {
+        throw new IpAddressNotRoutableException(inetAddress.getHostAddress());
+      }
     }
   }
 
-  /** Loopback IPs are not valid for hosts. */
-  static class LoopbackIpNotValidForHostException extends ParameterValuePolicyErrorException {
-    public LoopbackIpNotValidForHostException() {
-      super("Loopback IPs are not valid for hosts");
+  /** IP address is not a public, routable address. */
+  static class IpAddressNotRoutableException extends ParameterValuePolicyErrorException {
+    public IpAddressNotRoutableException(String ipAddress) {
+      super(String.format("IP address %s is not a public, globally routable address", ipAddress));
     }
   }
 
