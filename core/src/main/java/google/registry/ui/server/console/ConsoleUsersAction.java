@@ -37,6 +37,7 @@ import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -149,10 +150,15 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       throw new BadRequestException("Total users amount per registrar is limited to 4");
     }
 
+    User userToAppend = verifyUserExists(this.userData.get().emailAddress);
+    if (userToAppend.getUserRoles().isAdmin()
+        || !userToAppend.getUserRoles().getGlobalRole().equals(GlobalRole.NONE)) {
+      throw new BadRequestException(
+          "Cannot append a global administrator or user with a global role to a registrar");
+    }
+
     updateUserRegistrarRoles(
-        this.userData.get().emailAddress,
-        registrarId,
-        requestRoleToAllowedRoles(this.userData.get().role));
+        userToAppend, registrarId, requestRoleToAllowedRoles(this.userData.get().role));
 
     sendConfirmationEmail(registrarId, this.userData.get().emailAddress, "Added existing user");
     consoleApiParams.response().setStatus(SC_OK);
@@ -164,7 +170,14 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     }
 
     String email = this.userData.get().emailAddress;
-    User updatedUser = updateUserRegistrarRoles(email, registrarId, null);
+    User userToDelete = verifyUserExists(email);
+    if (userToDelete.getUserRoles().isAdmin()
+        || !userToDelete.getUserRoles().getGlobalRole().equals(GlobalRole.NONE)) {
+      throw new BadRequestException(
+          "Cannot delete a global administrator or user with a global role");
+    }
+
+    User updatedUser = updateUserRegistrarRoles(userToDelete, registrarId, null);
 
     // User has no registrars assigned
     if (updatedUser.getUserRoles().getRegistrarRoles().isEmpty()) {
@@ -251,7 +264,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     }
 
     updateUserRegistrarRoles(
-        this.userData.get().emailAddress,
+        verifyUserExists(this.userData.get().emailAddress),
         registrarId,
         requestRoleToAllowedRoles(this.userData.get().role));
 
@@ -297,9 +310,8 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     return false;
   }
 
-  private User updateUserRegistrarRoles(String email, String registrarId, RegistrarRole newRole) {
+  private User updateUserRegistrarRoles(User user, String registrarId, RegistrarRole newRole) {
     Map<String, RegistrarRole> updatedRegistrarRoles;
-    User user = verifyUserExists(email);
     if (newRole == null) {
       updatedRegistrarRoles =
           user.getUserRoles().getRegistrarRoles().entrySet().stream()

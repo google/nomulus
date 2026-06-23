@@ -407,6 +407,103 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
         .contains("Can't update user not associated with registrarId TheRegistrar");
   }
 
+  @Test
+  void testSuccess_appendUser() throws IOException {
+    User user = DatabaseHelper.createAdminUser("email@email.com");
+    AuthResult authResult = AuthResult.createUser(user);
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("POST"),
+            Optional.of(
+                new UserData("test3@test.com", null, RegistrarRole.TECH_CONTACT.name(), null)));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    User appendedUser = DatabaseHelper.loadByKey(VKey.create(User.class, "test3@test.com"));
+    assertThat(appendedUser.getUserRoles().getRegistrarRoles().get("TheRegistrar"))
+        .isEqualTo(RegistrarRole.TECH_CONTACT);
+  }
+
+  @Test
+  void testFailure_appendUser_globalAdmin() throws IOException {
+    User user = DatabaseHelper.createAdminUser("email@email.com");
+    AuthResult authResult = AuthResult.createUser(user);
+    DatabaseHelper.persistResource(
+        new User.Builder()
+            .setEmailAddress("globaladmin@test.com")
+            .setUserRoles(
+                new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.NONE).build())
+            .build());
+
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("POST"),
+            Optional.of(
+                new UserData(
+                    "globaladmin@test.com", null, RegistrarRole.TECH_CONTACT.name(), null)));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("Cannot append a global administrator or user with a global role");
+  }
+
+  @Test
+  void testFailure_appendUser_globalRole() throws IOException {
+    User user = DatabaseHelper.createAdminUser("email@email.com");
+    AuthResult authResult = AuthResult.createUser(user);
+    DatabaseHelper.persistResource(
+        new User.Builder()
+            .setEmailAddress("support@test.com")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setIsAdmin(false)
+                    .setGlobalRole(GlobalRole.SUPPORT_AGENT)
+                    .build())
+            .build());
+
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("POST"),
+            Optional.of(
+                new UserData("support@test.com", null, RegistrarRole.TECH_CONTACT.name(), null)));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("Cannot append a global administrator or user with a global role");
+  }
+
+  @Test
+  void testFailure_deleteUser_globalAdmin() throws IOException {
+    User user = DatabaseHelper.createAdminUser("email@email.com");
+    AuthResult authResult = AuthResult.createUser(user);
+    // Historically associated global admin
+    DatabaseHelper.persistResource(
+        new User.Builder()
+            .setEmailAddress("globaladmin@test.com")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setIsAdmin(true)
+                    .setGlobalRole(GlobalRole.NONE)
+                    .setRegistrarRoles(
+                        ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                    .build())
+            .build());
+
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("DELETE"),
+            Optional.of(
+                new UserData(
+                    "globaladmin@test.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("Cannot delete a global administrator or user with a global role");
+  }
+
   private ConsoleUsersAction createAction(
       Optional<ConsoleApiParams> maybeConsoleApiParams,
       Optional<String> method,
