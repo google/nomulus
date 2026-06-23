@@ -157,6 +157,48 @@ public class PasswordResetVerifyActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
   }
 
+  @Test
+  void testFailure_post_lock_differentRegistryLockEmail() throws Exception {
+    User user =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("anotheruser@example.tld")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of(
+                                "TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                        .build())
+                .setRegistryLockEmailAddress("anotherregistrylock@theregistrar.com")
+                .build());
+    verificationCode = saveRequest(PasswordResetRequest.Type.REGISTRY_LOCK).getVerificationCode();
+    createAction(user, "POST", verificationCode, "newPassword").run();
+    assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .isEqualTo("User anotheruser@example.tld has the wrong registry lock email address");
+  }
+
+  @Test
+  void testFailure_get_lock_differentRegistryLockEmail() throws Exception {
+    User user =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("anotheruser@example.tld")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of(
+                                "TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                        .build())
+                .setRegistryLockEmailAddress("anotherregistrylock@theregistrar.com")
+                .build());
+    verificationCode = saveRequest(PasswordResetRequest.Type.REGISTRY_LOCK).getVerificationCode();
+    createAction(user, "GET", verificationCode, null).run();
+    assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .isEqualTo("User anotheruser@example.tld has the wrong registry lock email address");
+  }
+
   private User createTechUser() {
     return new User.Builder()
         .setEmailAddress("tech@example.tld")

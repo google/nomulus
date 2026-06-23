@@ -105,7 +105,8 @@ public abstract class ConsoleApiAction implements Runnable {
     }
   }
 
-  protected void checkPermission(User user, String registrarId, ConsolePermission permission) {
+  protected static void checkPermission(
+      User user, String registrarId, ConsolePermission permission) {
     if (!user.getUserRoles().hasPermission(registrarId, permission)) {
       throw new ConsolePermissionForbiddenException(
           String.format(

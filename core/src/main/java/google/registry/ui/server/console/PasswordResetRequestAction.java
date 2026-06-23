@@ -131,13 +131,12 @@ public class PasswordResetRequestAction extends ConsoleApiAction {
                     new IllegalArgumentException(
                         "Unknown user with lock email " + destinationEmail));
 
-    // Prevent IDOR: Ensure the resolved user actually belongs to the registrar the requester
-    // has permissions for, or is a global admin.
-    if (!targetUser.getUserRoles().isAdmin()
-        && !targetUser.getUserRoles().getRegistrarRoles().containsKey(registrarId)) {
-      throw new IllegalArgumentException(
-          "User with lock email " + destinationEmail + " is not associated with " + registrarId);
-    }
+    // Prevent IDOR: Ensure the resolved user has the right permission
+    checkArgument(
+        targetUser.getUserRoles().hasPermission(registrarId, ConsolePermission.REGISTRY_LOCK),
+        "User %s does not have permission REGISTRY_LOCK on registrar %s",
+        targetUser.getEmailAddress(),
+        registrarId);
     return targetUser;
   }
 

@@ -121,7 +121,15 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
     ConsolePermission requiredVerifyPermission =
         switch (request.getType()) {
           case EPP -> ConsolePermission.MANAGE_USERS;
-          case REGISTRY_LOCK -> ConsolePermission.REGISTRY_LOCK;
+          case REGISTRY_LOCK -> {
+            checkArgument(
+                user.getRegistryLockEmailAddress()
+                    .map(address -> address.equals(request.getDestinationEmail()))
+                    .orElse(false),
+                "User %s has the wrong registry lock email address",
+                user.getEmailAddress());
+            yield ConsolePermission.REGISTRY_LOCK;
+          }
         };
     checkPermission(user, request.getRegistrarId(), requiredVerifyPermission);
     if (plusHours(request.getRequestTime(), 1).isBefore(tm().getTxTime())) {

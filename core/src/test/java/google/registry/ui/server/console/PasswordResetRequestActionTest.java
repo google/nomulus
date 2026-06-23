@@ -159,6 +159,31 @@ public class PasswordResetRequestActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
+  void testFailure_registryLock_userNoLockPermission() throws Exception {
+    DatabaseHelper.persistResource(
+        new User.Builder()
+            .setEmailAddress("email@registry.tld")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER))
+                    .build())
+            .setRegistryLockEmailAddress("registrylock@theregistrar.com")
+            .build());
+    PasswordResetRequestAction action =
+        createAction(
+            PasswordResetRequest.Type.REGISTRY_LOCK,
+            "TheRegistrar",
+            "registrylock@theregistrar.com");
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            "User email@registry.tld does not have permission REGISTRY_LOCK on registrar"
+                + " TheRegistrar");
+  }
+
+  @Test
   @Disabled("Enable when testing is done in sandbox and isAdmin check is removed")
   void testFailure_epp_noPermission() throws Exception {
     User user =
