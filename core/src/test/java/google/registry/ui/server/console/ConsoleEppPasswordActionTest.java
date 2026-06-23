@@ -29,13 +29,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
+import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
+import google.registry.testing.ConsoleApiParamsUtils;
+import google.registry.testing.FakeResponse;
 import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordData;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.AddressException;
@@ -121,6 +128,36 @@ class ConsoleEppPasswordActionTest extends ConsoleActionBaseTestCase {
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.EPP_PASSWORD_UPDATE);
     assertThat(history.getDescription()).hasValue("TheRegistrar");
+  }
+
+  @Test
+  void testFailure_noPermission() throws IOException {
+    User user =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("no.permission@example.tld")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER))
+                        .build())
+                .build());
+    ConsoleEppPasswordAction action =
+        createAction(user, "TheRegistrar", "foobar", "randomPassword", "randomPassword");
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  private ConsoleEppPasswordAction createAction(
+      User user,
+      String registrarId,
+      String oldPassword,
+      String newPassword,
+      String newPasswordRepeat)
+      throws IOException {
+    consoleApiParams = ConsoleApiParamsUtils.createFake(AuthResult.createUser(user));
+    response = (FakeResponse) consoleApiParams.response();
+    return createAction(registrarId, oldPassword, newPassword, newPasswordRepeat);
   }
 
   private ConsoleEppPasswordAction createAction(

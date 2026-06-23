@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.Expose;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.PasswordOnlyTransportCredentials;
+import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
@@ -91,6 +92,8 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
       setFailedResponse(e.getMessage(), SC_NOT_FOUND);
       return;
     }
+
+    checkPermission(user, eppRequestBody.registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS);
 
     try {
       credentials.validate(registrar, eppRequestBody.oldPassword());
