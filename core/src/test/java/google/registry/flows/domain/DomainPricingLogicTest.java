@@ -204,6 +204,29 @@ public class DomainPricingLogicTest {
   }
 
   @Test
+  void testGetDomainCreatePrice_discountPriceAllocationToken_oneYearCreate_moreDiscountYears()
+      throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123_more_discount")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("default.example")
+                .setDiscountPrice(Money.of(USD, 5))
+                .setDiscountYears(2)
+                .setRegistrationBehavior(RegistrationBehavior.DEFAULT)
+                .build());
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                tld, "default.example", clock.now(), 1, false, false, Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("5.00"), CREATE, false))
+                .build());
+  }
+
+  @Test
   void testGetDomainRenewPrice_oneYear_standardDomain_noBilling_isStandardPrice()
       throws EppException {
     assertThat(
@@ -1092,5 +1115,24 @@ public class DomainPricingLogicTest {
                     tld, "premium.example", clock.now(), 1, null, Optional.of(allocationToken))
                 .getRenewCost())
         .isEqualTo(Money.of(USD, 5));
+  }
+
+  @Test
+  void testDomainRenewPrice_specifiedToken_multiYear() throws Exception {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123_multi")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("premium.example")
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 5))
+                .build());
+    assertThat(
+            domainPricingLogic
+                .getRenewPrice(
+                    tld, "premium.example", clock.now(), 5, null, Optional.of(allocationToken))
+                .getRenewCost())
+        .isEqualTo(Money.of(USD, 25));
   }
 }

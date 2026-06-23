@@ -283,7 +283,7 @@ public final class DomainPricingLogic {
         return tld.getStandardRenewCost(dateTime).multipliedBy(years);
       }
       if (token.getRenewalPriceBehavior().equals(RenewalPriceBehavior.SPECIFIED)) {
-        return token.getRenewalPrice().get();
+        return token.getRenewalPrice().get().multipliedBy(years);
       }
     }
     return getDomainCostWithDiscount(
@@ -328,12 +328,13 @@ public final class DomainPricingLogic {
     // Apply the allocation token discount, if applicable.
     if (token.getDiscountPrice().isPresent()
         && tld.getCurrency().equals(token.getDiscountPrice().get().getCurrencyUnit())) {
-      int nonDiscountedYears = Math.max(0, years - token.getDiscountYears());
+      int discountedYears = Math.min(years, token.getDiscountYears());
+      int nonDiscountedYears = years - discountedYears;
       totalDomainFlowCost =
           token
               .getDiscountPrice()
               .get()
-              .multipliedBy(token.getDiscountYears())
+              .multipliedBy(discountedYears)
               .plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(nonDiscountedYears));
     } else if (token.getDiscountFraction() > 0) {
       int discountedYears = Math.min(years, token.getDiscountYears());
