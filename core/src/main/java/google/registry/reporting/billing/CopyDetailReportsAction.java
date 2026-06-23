@@ -21,10 +21,8 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.util.stream.Collectors.joining;
 
 import com.google.cloud.storage.BlobId;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import com.google.common.net.MediaType;
@@ -41,6 +39,8 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Copy all registrar detail reports in a given bucket's subdirectory from GCS to Drive. */
 @Action(
@@ -53,6 +53,9 @@ public final class CopyDetailReportsAction implements Runnable {
   public static final String PATH = "/_dr/task/copyDetailReports";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static final Pattern FILENAME_PATTERN =
+      Pattern.compile("^invoice_details_[0-9]{4}-[0-9]{2}_(.+)_.+\\.csv$");
 
   private final String billingBucket;
   private final String invoiceDirectoryPrefix;
@@ -101,8 +104,13 @@ public final class CopyDetailReportsAction implements Runnable {
         new ImmutableMultimap.Builder<>();
     for (String detailReportName : detailReportObjectNames) {
       // The standard report format is "invoice_details_yyyy-MM_registrarId_tld.csv
-      // TODO(larryruili): Determine a safer way of enforcing this.
-      String registrarId = Iterables.get(Splitter.on('_').split(detailReportName), 3);
+      Matcher matcher = FILENAME_PATTERN.matcher(detailReportName);
+      if (!matcher.matches()) {
+        logger.atWarning().log(
+            "Detail report filename '%s' does not match the expected pattern.", detailReportName);
+        continue;
+      }
+      String registrarId = matcher.group(1);
       Optional<Registrar> registrar = Registrar.loadByRegistrarId(registrarId);
       if (registrar.isEmpty()) {
         logger.atWarning().log(

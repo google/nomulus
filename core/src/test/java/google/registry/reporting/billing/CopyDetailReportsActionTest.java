@@ -248,4 +248,38 @@ class CopyDetailReportsActionTest {
     action.run();
     verifyNoInteractions(driveConnection);
   }
+
+  @Test
+  void testSuccess_registrarIdWithUnderscores() throws IOException {
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setRegistrarId("The_Registrar")
+            .setDriveFolderId("0B-99999")
+            .build());
+
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10_The_Registrar_test.csv"),
+        "hello,world\n1,2".getBytes(UTF_8));
+
+    action.run();
+    verify(driveConnection)
+        .createOrUpdateFile(
+            "invoice_details_2017-10_The_Registrar_test.csv",
+            MediaType.CSV_UTF_8,
+            "0B-99999",
+            "hello,world\n1,2".getBytes(UTF_8));
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+  }
+
+  @Test
+  void testSuccess_invalidFilenamePattern_skipped() throws IOException {
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10.csv"),
+        "hello,world\n1,2".getBytes(UTF_8));
+
+    action.run();
+    verifyNoInteractions(driveConnection);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+  }
 }
