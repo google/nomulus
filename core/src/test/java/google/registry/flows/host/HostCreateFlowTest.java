@@ -48,7 +48,7 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooLongException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
 import google.registry.flows.host.HostFlowUtils.InvalidHostNameException;
-import google.registry.flows.host.HostFlowUtils.LoopbackIpNotValidForHostException;
+import google.registry.flows.host.HostFlowUtils.IpAddressNotRoutableException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainInPendingDeleteException;
 import google.registry.model.ForeignKeyUtils;
@@ -354,22 +354,62 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
   }
 
   @Test
-  void testFailure_localhostInetAddress_ipv4() {
+  void testFailure_loopbackInetAddress_ipv4() {
     createTld("tld");
     persistActiveDomain("example.tld");
     setEppHostCreateInput("ns1.example.tld", "<host:addr ip=\"v4\">127.0.0.1</host:addr>");
     assertAboutEppExceptions()
-        .that(assertThrows(LoopbackIpNotValidForHostException.class, this::runFlow))
+        .that(assertThrows(IpAddressNotRoutableException.class, this::runFlow))
         .marshalsToXml();
   }
 
   @Test
-  void testFailure_localhostInetAddress_ipv6() {
+  void testFailure_loopbackInetAddress_ipv6() {
     createTld("tld");
     persistActiveDomain("example.tld");
     setEppHostCreateInput("ns1.example.tld", "<host:addr ip=\"v6\">::1</host:addr>");
     assertAboutEppExceptions()
-        .that(assertThrows(LoopbackIpNotValidForHostException.class, this::runFlow))
+        .that(assertThrows(IpAddressNotRoutableException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_linkLocalInetAddress_ipv4() {
+    createTld("tld");
+    persistActiveDomain("example.tld");
+    setEppHostCreateInput("ns1.example.tld", "<host:addr ip=\"v4\">169.254.1.1</host:addr>");
+    assertAboutEppExceptions()
+        .that(assertThrows(IpAddressNotRoutableException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_linkLocalInetAddress_ipv6() {
+    createTld("tld");
+    persistActiveDomain("example.tld");
+    setEppHostCreateInput("ns1.example.tld", "<host:addr ip=\"v6\">fe80::1</host:addr>");
+    assertAboutEppExceptions()
+        .that(assertThrows(IpAddressNotRoutableException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_privateInetAddress_ipv4() {
+    createTld("tld");
+    persistActiveDomain("example.tld");
+    setEppHostCreateInput("ns1.example.tld", "<host:addr ip=\"v4\">192.168.1.1</host:addr>");
+    assertAboutEppExceptions()
+        .that(assertThrows(IpAddressNotRoutableException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_anyLocalInetAddress_ipv4() {
+    createTld("tld");
+    persistActiveDomain("example.tld");
+    setEppHostCreateInput("ns1.example.tld", "<host:addr ip=\"v4\">0.0.0.0</host:addr>");
+    assertAboutEppExceptions()
+        .that(assertThrows(IpAddressNotRoutableException.class, this::runFlow))
         .marshalsToXml();
   }
 
