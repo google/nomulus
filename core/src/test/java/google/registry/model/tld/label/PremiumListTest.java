@@ -110,28 +110,44 @@ public class PremiumListTest {
 
   @Test
   void testValidation_labelMustBeLowercase() {
-    Exception e =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                new PremiumEntry.Builder()
-                    .setPrice(BigDecimal.valueOf(399))
-                    .setLabel("UPPER.tld")
-                    .build());
-    assertThat(e).hasMessageThat().contains("must be in puny-coded, lower-case form");
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new PremiumEntry.Builder()
+                        .setPrice(BigDecimal.valueOf(399))
+                        .setLabel("UPPER.tld")
+                        .build()))
+        .hasMessageThat()
+        .contains("must be in puny-coded, lower-case form");
+  }
+
+  @Test
+  void testValidation_priceMustNotBeNegative() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new PremiumEntry.Builder()
+                        .setPrice(BigDecimal.valueOf(-100))
+                        .setLabel("anchor")
+                        .build()))
+        .hasMessageThat()
+        .isEqualTo("Price must not be negative");
   }
 
   @Test
   void testValidation_labelMustBePunyCoded() {
-    Exception e =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                new PremiumEntry.Builder()
-                    .setPrice(BigDecimal.valueOf(399))
-                    .setLabel("lower.みんな")
-                    .build());
-    assertThat(e).hasMessageThat().contains("must be in puny-coded, lower-case form");
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new PremiumEntry.Builder()
+                        .setPrice(BigDecimal.valueOf(399))
+                        .setLabel("lower.みんな")
+                        .build()))
+        .hasMessageThat()
+        .contains("must be in puny-coded, lower-case form");
   }
 
   @Test
