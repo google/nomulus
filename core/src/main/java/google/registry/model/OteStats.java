@@ -176,11 +176,12 @@ public class OteStats {
      * Check if the {@link HistoryEntry} type matches as well as the {@link EppInput} if supplied.
      */
     private boolean matches(HistoryEntry.Type historyType, Optional<EppInput> eppInput) {
-      if (eppInputFilter.isPresent() && eppInput.isPresent()) {
-        return typeFilter.test(historyType) && eppInputFilter.get().test(eppInput.get());
-      } else {
-        return typeFilter.test(historyType);
+      if (!typeFilter.test(historyType)) {
+        return false;
       }
+      return eppInputFilter
+          .map(filter -> eppInput.isPresent() && filter.test(eppInput.get()))
+          .orElse(true);
     }
   }
 
