@@ -21,10 +21,13 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.Expose;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.console.User;
 import google.registry.model.domain.Domain;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
@@ -33,7 +36,10 @@ import jakarta.inject.Inject;
 import jakarta.persistence.TypedQuery;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Returns a (paginated) list of domains for a particular registrar. */
 @Action(
@@ -46,11 +52,11 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
   public static final String PATH = "/console-api/domain-list";
 
   private static final int DEFAULT_RESULTS_PER_PAGE = 50;
-  private static final String DOMAIN_QUERY_TEMPLATE =
-      "FROM Domain WHERE currentSponsorRegistrarId = :registrarId AND deletionTime >"
-          + " :deletedAfterTime AND creationTime <= :createdBeforeTime";
-  private static final String SEARCH_TERM_QUERY = " AND LOWER(domainName) LIKE :searchTerm";
-  private static final String ORDER_BY_STATEMENT = " ORDER BY creationTime DESC";
+  private static final String DOMAIN_QUERY_FILTER =
+      " WHERE d.currentSponsorRegistrarId = :registrarId AND d.deletionTime >"
+          + " :deletedAfterTime AND d.creationTime <= :createdBeforeTime";
+  private static final String SEARCH_TERM_QUERY = " AND LOWER(d.domainName) LIKE :searchTerm";
+  private static final String ORDER_BY_STATEMENT = " ORDER BY d.creationTime DESC";
 
   private final String registrarId;
   private final Optional<Instant> checkpointTime;
@@ -112,18 +118,46 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
             .setMaxResults(resultsPerPage)
             .getResultList();
 
+    ImmutableList<ConsoleDomainInfo> domainInfos;
+    if (domains.isEmpty()) {
+      domainInfos = ImmutableList.of();
+    } else {
+      ImmutableList<String> repoIds =
+          domains.stream().map(Domain::getRepoId).collect(ImmutableList.toImmutableList());
+      List<Domain> domainsWithStatuses =
+          tm().query(
+                  "SELECT DISTINCT d FROM Domain d "
+                      + "LEFT JOIN FETCH d.statuses "
+                      + "WHERE d.repoId IN (:repoIds)",
+                  Domain.class)
+              .setParameter("repoIds", repoIds)
+              .getResultList();
+
+      Map<String, Domain> statusMap =
+          domainsWithStatuses.stream().collect(Collectors.toMap(Domain::getRepoId, d -> d));
+
+      domainInfos =
+          domains.stream()
+              .map(
+                  d -> {
+                    Domain domainWithStatuses = statusMap.getOrDefault(d.getRepoId(), d);
+                    return ConsoleDomainInfo.fromDomain(domainWithStatuses);
+                  })
+              .collect(ImmutableList.toImmutableList());
+    }
+
     consoleApiParams
         .response()
         .setPayload(
             consoleApiParams
                 .gson()
-                .toJson(new DomainListResult(domains, checkpoint, actualTotalResults)));
+                .toJson(new DomainListResult(domainInfos, checkpoint, actualTotalResults)));
     consoleApiParams.response().setStatus(SC_OK);
   }
 
   /** Creates the query to get the total number of matching domains, interpolating as necessary. */
   private TypedQuery<Long> createCountQuery() {
-    String queryString = "SELECT COUNT(*) " + DOMAIN_QUERY_TEMPLATE;
+    String queryString = "SELECT COUNT(d) FROM Domain d" + DOMAIN_QUERY_FILTER;
     if (searchTerm.isPresent() && !searchTerm.get().isEmpty()) {
       return tm().query(queryString + SEARCH_TERM_QUERY, Long.class)
           .setParameter("searchTerm", String.format("%%%s%%", Ascii.toLowerCase(searchTerm.get())));
@@ -133,22 +167,64 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
 
   /** Creates the query to retrieve the matching domains themselves, interpolating as necessary. */
   private TypedQuery<Domain> createDomainQuery() {
+    String query = "SELECT d FROM Domain d" + DOMAIN_QUERY_FILTER;
     if (searchTerm.isPresent() && !searchTerm.get().isEmpty()) {
-      return tm().query(
-              DOMAIN_QUERY_TEMPLATE + SEARCH_TERM_QUERY + ORDER_BY_STATEMENT, Domain.class)
+      return tm().query(query + SEARCH_TERM_QUERY + ORDER_BY_STATEMENT, Domain.class)
           .setParameter("searchTerm", String.format("%%%s%%", Ascii.toLowerCase(searchTerm.get())));
     }
-    return tm().query(DOMAIN_QUERY_TEMPLATE + ORDER_BY_STATEMENT, Domain.class);
+    return tm().query(query + ORDER_BY_STATEMENT, Domain.class);
+  }
+
+  public static final class ConsoleDomainInfo {
+    @Expose String domainName;
+    @Expose CreateAutoTimestamp creationTime;
+    @Expose Instant registrationExpirationTime;
+    @Expose String currentSponsorRegistrarId;
+    @Expose Set<String> statuses;
+
+    public String getDomainName() {
+      return domainName;
+    }
+
+    public CreateAutoTimestamp getCreationTime() {
+      return creationTime;
+    }
+
+    public Instant getRegistrationExpirationTime() {
+      return registrationExpirationTime;
+    }
+
+    public String getCurrentSponsorRegistrarId() {
+      return currentSponsorRegistrarId;
+    }
+
+    public Set<String> getStatuses() {
+      return statuses;
+    }
+
+    static ConsoleDomainInfo fromDomain(Domain domain) {
+      ConsoleDomainInfo info = new ConsoleDomainInfo();
+      info.domainName = domain.getDomainName();
+      info.creationTime = CreateAutoTimestamp.create(domain.getCreationTime());
+      info.registrationExpirationTime = domain.getRegistrationExpirationTime();
+      info.currentSponsorRegistrarId = domain.getCurrentSponsorRegistrarId();
+      info.statuses =
+          domain.getStatusValues().stream()
+              .map(StatusValue::name)
+              .collect(ImmutableSet.toImmutableSet());
+      return info;
+    }
   }
 
   /** Container result class that allows for pagination. */
   @VisibleForTesting
   static final class DomainListResult {
-    @Expose List<Domain> domains;
+    @Expose List<ConsoleDomainInfo> domains;
     @Expose Instant checkpointTime;
     @Expose long totalResults;
 
-    private DomainListResult(List<Domain> domains, Instant checkpointTime, long totalResults) {
+    private DomainListResult(
+        List<ConsoleDomainInfo> domains, Instant checkpointTime, long totalResults) {
       this.domains = domains;
       this.checkpointTime = checkpointTime;
       this.totalResults = totalResults;

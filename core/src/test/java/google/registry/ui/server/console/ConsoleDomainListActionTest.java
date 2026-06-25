@@ -30,6 +30,7 @@ import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeResponse;
+import google.registry.ui.server.console.ConsoleDomainListAction.ConsoleDomainInfo;
 import google.registry.ui.server.console.ConsoleDomainListAction.DomainListResult;
 import java.time.Instant;
 import java.util.Optional;
@@ -77,7 +78,10 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 5, null, null);
     action.run();
     DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
-    assertThat(result.domains.stream().map(Domain::getDomainName).collect(toImmutableList()))
+    assertThat(
+            result.domains.stream()
+                .map(ConsoleDomainInfo::getDomainName)
+                .collect(toImmutableList()))
         .containsExactly("9exists.tld", "8exists.tld", "7exists.tld", "6exists.tld", "5exists.tld");
     assertThat(result.totalResults).isEqualTo(10);
 
@@ -85,7 +89,10 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     action = createAction("TheRegistrar", result.checkpointTime, 1, 5, 10L, null);
     action.run();
     result = GSON.fromJson(response.getPayload(), DomainListResult.class);
-    assertThat(result.domains.stream().map(Domain::getDomainName).collect(toImmutableList()))
+    assertThat(
+            result.domains.stream()
+                .map(ConsoleDomainInfo::getDomainName)
+                .collect(toImmutableList()))
         .containsExactly("4exists.tld", "3exists.tld", "2exists.tld", "1exists.tld", "0exists.tld");
   }
 
@@ -94,7 +101,10 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 1, 8, null, null);
     action.run();
     DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
-    assertThat(result.domains.stream().map(Domain::getDomainName).collect(toImmutableList()))
+    assertThat(
+            result.domains.stream()
+                .map(ConsoleDomainInfo::getDomainName)
+                .collect(toImmutableList()))
         .containsExactly("1exists.tld", "0exists.tld");
   }
 
@@ -132,7 +142,10 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     action = createAction("TheRegistrar", result.checkpointTime, 1, 5, null, null);
     action.run();
     result = GSON.fromJson(response.getPayload(), DomainListResult.class);
-    assertThat(result.domains.stream().map(Domain::getDomainName).collect(toImmutableList()))
+    assertThat(
+            result.domains.stream()
+                .map(ConsoleDomainInfo::getDomainName)
+                .collect(toImmutableList()))
         .containsExactly("4exists.tld", "3exists.tld", "2exists.tld", "1exists.tld", "0exists.tld");
   }
 
