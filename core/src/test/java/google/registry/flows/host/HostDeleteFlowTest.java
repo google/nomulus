@@ -27,6 +27,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HostSubject.assertAboutHosts;
 import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -42,6 +43,8 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry.Type;
@@ -307,6 +310,30 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
             .asBuilder()
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .build());
+    EppException thrown = assertThrows(ResourceToDeleteIsReferencedException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_failfastWhenLinkedToDomainInRedemption() throws Exception {
+    createTld("tld");
+    Host host = persistActiveHost("ns1.example.tld");
+    Domain domain = persistResource(DatabaseHelper.newDomain("example.tld"));
+    persistResource(
+        domain
+            .asBuilder()
+            .setNameservers(ImmutableSet.of(host.createVKey()))
+            .setDeletionTime(plusDays(clock.now(), 35))
+            .addGracePeriod(
+                GracePeriod.create(
+                    GracePeriodStatus.REDEMPTION,
+                    domain.getRepoId(),
+                    plusDays(clock.now(), 1),
+                    "TheRegistrar",
+                    null))
+            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+            .build());
+
     EppException thrown = assertThrows(ResourceToDeleteIsReferencedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
