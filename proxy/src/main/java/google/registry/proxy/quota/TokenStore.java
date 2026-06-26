@@ -185,7 +185,7 @@ public class TokenStore {
           if (Duration.between(availableTokens.timestamp(), clock.now())
                   .compareTo(config.getRefreshPeriod())
               >= 0) {
-            tokensMap.remove(user);
+            tokensMap.remove(user, availableTokens);
           }
         });
   }
