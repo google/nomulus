@@ -226,18 +226,17 @@ public class SafeBrowsingTransforms {
     private void processResponse(
         CloseableHttpResponse response,
         ImmutableSet.Builder<KV<DomainNameInfo, ThreatMatch>> resultBuilder)
-        throws JSONException, IOException {
+        throws IOException {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != SC_OK) {
-        logger.atWarning().log("Got unexpected status code %s from response.", statusCode);
-      } else {
-        // Unpack the response body
-        JSONObject responseBody =
-            new JSONObject(
-                CharStreams.toString(
-                    new InputStreamReader(response.getEntity().getContent(), UTF_8)));
-        logger.atInfo().log("Got response: %s", responseBody);
-        if (responseBody.length() == 0) {
+        throw new IOException(
+            String.format("Got unexpected status code %s from response.", statusCode));
+      }
+      // Unpack the response body
+      try (InputStreamReader reader =
+          new InputStreamReader(response.getEntity().getContent(), UTF_8)) {
+        JSONObject responseBody = new JSONObject(CharStreams.toString(reader));
+        if (responseBody.isEmpty()) {
           logger.atInfo().log("Response was empty, no threats detected.");
         } else {
           // Emit all DomainNameInfos with their API results.
