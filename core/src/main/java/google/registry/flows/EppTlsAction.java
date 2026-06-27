@@ -14,6 +14,7 @@
 
 package google.registry.flows;
 
+import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Payload;
@@ -36,12 +37,17 @@ public class EppTlsAction implements Runnable {
   @Inject TlsCredentials tlsCredentials;
   @Inject HttpServletRequest request;
   @Inject EppRequestHandler eppRequestHandler;
+
+  @Inject
+  @Config("sessionSecret")
+  String sessionSecret;
+
   @Inject EppTlsAction() {}
 
   @Override
   public void run() {
     eppRequestHandler.executeEpp(
-        new CookieSessionMetadata(request),
+        new CookieSessionMetadata(request, sessionSecret),
         tlsCredentials,
         EppRequestSource.TLS,
         false, // This endpoint is never a dry run.

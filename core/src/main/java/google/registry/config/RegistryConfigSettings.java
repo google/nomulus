@@ -203,6 +203,7 @@ public class RegistryConfigSettings {
     public String spec11OutgoingEmailAddress;
     public List<String> spec11BccEmailAddresses;
     public int transientFailureRetries;
+    public String sessionSecret;
   }
 
   /** Configuration options for the registry tool. */

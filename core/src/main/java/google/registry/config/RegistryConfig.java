@@ -1178,6 +1178,13 @@ public final class RegistryConfig {
       return config.registryTool.clientSecret;
     }
 
+    /** Secret key used to sign EPP session cookies (SESSION_INFO). */
+    @Provides
+    @Config("sessionSecret")
+    public static String provideSessionSecret(RegistryConfigSettings config) {
+      return config.misc.sessionSecret;
+    }
+
     @Provides
     @Config("rdapTos")
     public static ImmutableList<String> provideRdapTos(RegistryConfigSettings config) {

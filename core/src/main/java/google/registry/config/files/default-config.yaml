@@ -428,6 +428,9 @@ misc:
   # The number of milliseconds it'll sleep before giving up is (2^n - 2) * 100.
   transientFailureRetries: 12
 
+  # Secret key used to sign EPP session cookies (SESSION_INFO).
+  sessionSecret: "default-unsigned-session-secret-key-placeholder"
+
 beam:
   # The default region to run Apache Beam (Cloud Dataflow) jobs in.
   defaultJobRegion: us-central1
