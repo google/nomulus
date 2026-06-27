@@ -78,6 +78,10 @@ public class SignedMark extends ImmutableObject implements AbstractSignedMark {
     return mark;
   }
 
+  public String getXsdId() {
+    return xsdId;
+  }
+
   public boolean hasSignature() {
     return xmlSignature != null;
   }

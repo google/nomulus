@@ -51,6 +51,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.validation.Schema;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -78,11 +79,32 @@ public class TmchXmlSignature {
    * @throws GeneralSecurityException for unsupported protocols, certs not signed by the TMCH,
    *     incorrect keys, and for invalid, old, not-yet-valid or revoked certificates.
    */
-  public void verify(byte[] smdXml)
-      throws GeneralSecurityException, IOException, MarshalException, ParserConfigurationException,
-          SAXException, XMLSignatureException {
+  public String verify(byte[] smdXml)
+      throws GeneralSecurityException,
+          IOException,
+          MarshalException,
+          ParserConfigurationException,
+          SAXException,
+          XMLSignatureException {
     checkArgument(smdXml.length > 0);
     Document doc = parseSmdDocument(new ByteArrayInputStream(smdXml));
+
+    Element rootElement = doc.getDocumentElement();
+    if (!"signedMark".equals(rootElement.getLocalName())
+        || !"urn:ietf:params:xml:ns:signedMark-1.0".equals(rootElement.getNamespaceURI())) {
+      throw new XMLSignatureException("Invalid root element name or namespace.");
+    }
+    String rootId = rootElement.getAttribute("id");
+    if (rootId.isEmpty()) {
+      throw new XMLSignatureException("Root element missing id attribute.");
+    }
+
+    // Verify that exactly one <smd:signedMark> element exists in the DOM
+    NodeList smdNodes =
+        doc.getElementsByTagNameNS("urn:ietf:params:xml:ns:signedMark-1.0", "signedMark");
+    if (smdNodes.getLength() != 1) {
+      throw new XMLSignatureException("Expected exactly one <smd:signedMark> element.");
+    }
 
     NodeList signatureNodes = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
     if (signatureNodes.getLength() != 1) {
@@ -103,6 +125,23 @@ public class TmchXmlSignature {
     if (!isValid) {
       throw new XMLSignatureException(explainValidationProblem(context, signature));
     }
+
+    @SuppressWarnings("unchecked")
+    List<Reference> references = signature.getSignedInfo().getReferences();
+    if (references.isEmpty()) {
+      throw new XMLSignatureException("No references found in signature.");
+    }
+    Reference reference = references.get(0);
+    String uri = reference.getURI();
+    if (uri == null || !uri.startsWith("#")) {
+      throw new XMLSignatureException("Invalid signature reference URI: " + uri);
+    }
+    String signedElementId = uri.substring(1);
+    if (!signedElementId.equals(rootId)) {
+      throw new XMLSignatureException(
+          String.format("Signature reference ID mismatch: expected #%s, got %s", rootId, uri));
+    }
+    return signedElementId;
   }
 
   private static Document parseSmdDocument(InputStream input)
