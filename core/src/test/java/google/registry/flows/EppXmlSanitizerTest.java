@@ -116,4 +116,13 @@ class EppXmlSanitizerTest {
     String sanitizedXml = sanitizeEppXml(inputXml.getBytes(UTF_16LE));
     assertThat(sanitizedXml).isEqualTo(inputXml);
   }
+
+  @Test
+  void testSanitize_withDtd_returnsBase64() {
+    String inputXml = "<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><pw>&xxe;</pw>";
+    byte[] inputXmlBytes = inputXml.getBytes(UTF_8);
+    // Since DTDs are disabled, parsing should fail and fallback to base64 encoding of input.
+    String expectedBase64 = Base64.getMimeEncoder().encodeToString(inputXmlBytes);
+    assertThat(sanitizeEppXml(inputXmlBytes).trim()).isEqualTo(expectedBase64.trim());
+  }
 }

@@ -115,6 +115,10 @@ public class XmlTransformer {
     // Prevent XXE attacks.
     xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
     xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+    xmlInputFactory.setXMLResolver(
+        (publicID, systemID, baseURI, namespace) -> {
+          throw new XMLStreamException("Entity resolution disabled.");
+        });
     return xmlInputFactory;
   }
 
