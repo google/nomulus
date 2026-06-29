@@ -38,7 +38,7 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeUrlConnectionService;
 import java.io.ByteArrayInputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,33 +49,35 @@ class NordnVerifyActionTest {
 
   private static final String LOG_ACCEPTED =
       """
-          1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,no-warnings,1
-          roid,result-code
-          SH8013-REP,2000""";
+      1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,no-warnings,1
+      roid,result-code
+      SH8013-REP,2000\
+      """;
 
   private static final String LOG_REJECTED =
       """
-          1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,rejected,no-warnings,1
-          roid,result-code
-          SH8013-REP,2001""";
+      1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,rejected,no-warnings,1
+      roid,result-code
+      SH8013-REP,2001\
+      """;
 
   private static final String LOG_WARNINGS =
       """
-          1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,warnings-present,3
-          roid,result-code
-          SH8013-REP,2001
-          lulz-roid,3609
-          sabokitty-roid,3610
-          """;
+      1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,warnings-present,3
+      roid,result-code
+      SH8013-REP,2001
+      lulz-roid,3609
+      sabokitty-roid,3610
+      """;
 
   private static final String LOG_ERRORS =
       """
-          1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,warnings-present,3
-          roid,result-code
-          SH8013-REP,2000
-          lulz-roid,4601
-          bogpog,4611
-          """;
+      1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,warnings-present,3
+      roid,result-code
+      SH8013-REP,2000
+      lulz-roid,4601
+      bogpog,4611
+      """;
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -101,14 +103,15 @@ class NordnVerifyActionTest {
         .thenReturn(new ByteArrayInputStream(LOG_ACCEPTED.getBytes(UTF_8)));
     action.lordnRequestInitializer = lordnRequestInitializer;
     action.response = response;
-    action.url = new URL("http://127.0.0.1/blobio");
+    action.url = URI.create("http://ry.marksdb.org/blobio").toURL();
   }
 
   @Test
   @SuppressWarnings("DirectInvocationOnMock")
   void testSuccess_sendHttpRequest_urlIsCorrect() throws Exception {
     action.run();
-    assertThat(httpUrlConnection.getURL()).isEqualTo(new URL("http://127.0.0.1/blobio"));
+    assertThat(httpUrlConnection.getURL())
+        .isEqualTo(URI.create("http://ry.marksdb.org/blobio").toURL());
   }
 
   @Test
@@ -161,5 +164,23 @@ class NordnVerifyActionTest {
     when(httpUrlConnection.getResponseCode()).thenReturn(SC_NO_CONTENT);
     ConflictException thrown = assertThrows(ConflictException.class, action::run);
     assertThat(thrown).hasMessageThat().contains("Not ready");
+  }
+
+  @Test
+  void testFailure_badUrl() throws Exception {
+    action.url = URI.create("http://example.com/blobio").toURL();
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("URL http://example.com/blobio must start with ry.marksdb.org");
+  }
+
+  @Test
+  @SuppressWarnings("DirectInvocationOnMock")
+  void testSuccess_uppercaseUrl() throws Exception {
+    action.url = URI.create("http://RY.MARKSDB.ORG/blobio").toURL();
+    action.run();
+    assertThat(httpUrlConnection.getURL())
+        .isEqualTo(URI.create("http://RY.MARKSDB.ORG/blobio").toURL());
   }
 }
