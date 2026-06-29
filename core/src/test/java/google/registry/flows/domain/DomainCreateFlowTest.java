@@ -81,7 +81,6 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.ExtensionManager.UndeclaredServiceExtensionException;
-import google.registry.flows.FlowUtils;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -144,6 +143,7 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.NonexistentAllocationTokenException;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.flows.exceptions.OnlyToolCanPassMetadataException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.billing.BillingBase;
@@ -1937,8 +1937,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testFailure_minimumDataset_noRegistrantButSomeOtherContactTypes() throws Exception {
     setEppInput("domain_create_other_contact_types.xml");
     persistHosts();
-    EppException thrown =
-        assertThrows(FlowUtils.GenericXmlSyntaxErrorException.class, this::runFlow);
+    EppException thrown = assertThrows(ContactsProhibitedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 

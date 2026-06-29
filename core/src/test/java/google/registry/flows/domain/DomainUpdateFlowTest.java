@@ -67,7 +67,6 @@ import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
-import google.registry.flows.FlowUtils;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.AddExistingValueException;
@@ -90,6 +89,7 @@ import google.registry.flows.domain.DomainFlowUtils.SecDnsAllUsageException;
 import google.registry.flows.domain.DomainFlowUtils.TooManyDsRecordsException;
 import google.registry.flows.domain.DomainFlowUtils.TooManyNameserversException;
 import google.registry.flows.domain.DomainFlowUtils.UrgentAttributeNotSupportedException;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.flows.exceptions.OnlyToolCanPassMetadataException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
@@ -283,8 +283,10 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     // This EPP adds a new technical contact mak21 that wasn't already present.
     setEppInput("domain_update_empty_registrant.xml");
     persistReferencedEntities();
+    persistDomain();
     // Fails because the update adds some new contacts, although the registrant has been removed.
-    assertThrows(FlowUtils.GenericXmlSyntaxErrorException.class, this::persistDomain);
+    EppException thrown = assertThrows(ContactsProhibitedException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   private void modifyDomainToHave13Nameservers() throws Exception {

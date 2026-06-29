@@ -158,11 +158,11 @@ public class DomainCommand {
         throws InvalidReferencesException, ParameterValuePolicyErrorException {
       Create clone = clone(this);
       clone.nameservers = linkHosts(nullSafeImmutableCopy(clone.nameserverHostNames), now);
-      if (registrantContactId != null) {
-        throw new RegistrantProhibitedException();
-      }
       if (!isNullOrEmpty(foreignKeyedDesignatedContacts)) {
         throw new ContactsProhibitedException();
+      }
+      if (registrantContactId != null) {
+        throw new RegistrantProhibitedException();
       }
       return clone;
     }
