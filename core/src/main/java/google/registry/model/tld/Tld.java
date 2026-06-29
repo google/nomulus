@@ -71,6 +71,8 @@ import google.registry.model.domain.token.VKeyConverter_AllocationToken;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.EntityCallbacksListener.RecursivePostPersist;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostRemove;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostUpdate;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.AllocationTokenVkeyListUserType;
 import google.registry.persistence.converter.BillingCostTransitionUserType;
@@ -222,6 +224,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * deleted.
    */
   @RecursivePostPersist
+  @RecursivePostRemove
+  @RecursivePostUpdate
   public void invalidateInCache() {
     CACHE.invalidate(tldStr);
   }
