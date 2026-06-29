@@ -37,7 +37,7 @@ import google.registry.testing.FakeUrlConnectionService;
 import google.registry.util.UrlConnectionException;
 import java.io.ByteArrayInputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +88,8 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   private void assertCorrectRequestSent() throws Exception {
     assertThat(urlConnectionService.getConnectedUrls())
         .containsExactly(
-            new URL("https://www.iana.org/assignments/registrar-ids/registrar-ids-1.csv"));
+            URI.create("https://www.iana.org/assignments/registrar-ids/registrar-ids-1.csv")
+                .toURL());
     verify(connection).setRequestProperty("Accept-Encoding", "gzip");
   }
 

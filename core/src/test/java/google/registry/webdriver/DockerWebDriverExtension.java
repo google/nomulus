@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import google.registry.util.UrlChecker;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -55,11 +56,12 @@ class DockerWebDriverExtension implements BeforeAllCallback, AfterAllCallback {
     URL url;
     try {
       url =
-          new URL(
-              String.format(
-                  "http://%s:%d",
-                  container.getContainerIpAddress(),
-                  container.getMappedPort(CHROME_DRIVER_SERVICE_PORT)));
+          URI.create(
+                  String.format(
+                      "http://%s:%d",
+                      container.getContainerIpAddress(),
+                      container.getMappedPort(CHROME_DRIVER_SERVICE_PORT)))
+              .toURL();
     } catch (MalformedURLException e) {
       throw new IllegalArgumentException(e);
     }

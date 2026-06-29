@@ -57,7 +57,7 @@ import google.registry.util.UrlConnectionException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
@@ -249,7 +249,7 @@ class NordnUploadActionTest {
         .setRequestProperty(eq(CONTENT_TYPE), startsWith("multipart/form-data; boundary="));
     verify(httpUrlConnection).setRequestMethod("POST");
     assertThat(httpUrlConnection.getURL())
-        .isEqualTo(new URL("http://127.0.0.1/LORDN/tld/" + phase));
+        .isEqualTo(URI.create("http://127.0.0.1/LORDN/tld/" + phase).toURL());
     assertThat(connectionOutputStream.toString(UTF_8)).contains(csv);
     verifyColumnCleared(domain1);
     verifyColumnCleared(domain2);

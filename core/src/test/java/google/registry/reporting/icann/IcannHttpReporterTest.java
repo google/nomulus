@@ -34,7 +34,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeUrlConnectionService;
 import java.io.ByteArrayOutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -74,7 +74,7 @@ class IcannHttpReporterTest {
     assertThat(reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv")).isTrue();
 
     assertThat(urlConnectionService.getConnectedUrls())
-        .containsExactly(new URL("https://fake-transactions.url/test/2017-06"));
+        .containsExactly(URI.create("https://fake-transactions.url/test/2017-06").toURL());
     String userPass = "test_ry:fakePass";
     String expectedAuth =
         String.format("Basic %s", BaseEncoding.base64().encode(StringUtils.getBytesUtf8(userPass)));
@@ -88,7 +88,7 @@ class IcannHttpReporterTest {
     assertThat(reporter.send(FAKE_PAYLOAD, "xn--abc123-transactions-201706.csv")).isTrue();
 
     assertThat(urlConnectionService.getConnectedUrls())
-        .containsExactly(new URL("https://fake-transactions.url/xn--abc123/2017-06"));
+        .containsExactly(URI.create("https://fake-transactions.url/xn--abc123/2017-06").toURL());
     String userPass = "xn--abc123_ry:fakePass";
     String expectedAuth =
         String.format("Basic %s", BaseEncoding.base64().encode(StringUtils.getBytesUtf8(userPass)));
