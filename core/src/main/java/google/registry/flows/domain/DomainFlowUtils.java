@@ -70,7 +70,6 @@ import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.EppException.UnimplementedOptionException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
-import google.registry.model.EppResource;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
@@ -410,11 +409,9 @@ public class DomainFlowUtils {
   /** Verify that no linked nameservers have disallowed statuses. */
   static void verifyNotInPendingDelete(ImmutableSet<VKey<Host>> nameservers)
       throws StatusProhibitsOperationException {
-    for (EppResource resource :
-        EppResource.loadByCacheIfEnabled(ImmutableSet.copyOf(nameservers)).values()) {
-      if (resource.getStatusValues().contains(StatusValue.PENDING_DELETE)) {
-        throw new LinkedResourceInPendingDeleteProhibitsOperationException(
-            resource.getForeignKey());
+    for (Host host : tm().loadByKeys(nameservers).values()) {
+      if (host.getStatusValues().contains(StatusValue.PENDING_DELETE)) {
+        throw new LinkedResourceInPendingDeleteProhibitsOperationException(host.getForeignKey());
       }
     }
   }
