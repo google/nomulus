@@ -105,6 +105,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   @Override
   public void run() {
+    checkArgument(!tlds.isEmpty(), "Must specify TLDs to refresh");
     assertTldsExist(tlds);
     checkArgument(batchSize > 0, "Must specify a positive number for batch size");
     logger.atInfo().log("Enqueueing DNS refresh tasks for TLDs %s.", tlds);

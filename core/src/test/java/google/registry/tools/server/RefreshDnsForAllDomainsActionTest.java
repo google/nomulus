@@ -24,6 +24,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.util.DateTimeUtils.minusYears;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -150,5 +151,19 @@ public class RefreshDnsForAllDomainsActionTest {
     }
     action.run();
     assertDnsRequestsWithRequestTime(clock.now(), 11);
+  }
+
+  @Test
+  void test_runAction_emptyTlds_throwsException() {
+    action =
+        new RefreshDnsForAllDomainsAction(
+            response,
+            ImmutableSet.of(),
+            Optional.of(10),
+            Optional.empty(),
+            Optional.empty(),
+            new Random());
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
+    assertThat(thrown).hasMessageThat().isEqualTo("Must specify TLDs to refresh");
   }
 }
