@@ -75,7 +75,7 @@ export class RegistrarDetailsComponent implements OnInit {
   }
 
   checkOteStatus() {
-    this.router.navigate(['ote-status/', this.registrarInEdit.registrarId], {
+    this.router.navigate(['ote-status', this.registrarInEdit.registrarId], {
       queryParamsHandling: 'merge',
     });
   }
