@@ -14,10 +14,14 @@
 
 package google.registry.reporting.billing;
 
+import static com.google.common.base.Preconditions.checkState;
 import static google.registry.beam.BeamUtils.createJobName;
+import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static java.time.ZoneOffset.UTC;
 
 import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateParameter;
@@ -29,6 +33,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.common.Cursor;
 import google.registry.persistence.PersistenceModule;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
@@ -40,7 +45,9 @@ import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.YearMonth;
+import java.util.Optional;
 
 /**
  * Invokes the {@code InvoicingPipeline} beam template via the REST api, and enqueues the {@link
@@ -107,6 +114,7 @@ public class GenerateInvoicesAction implements Runnable {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     logger.atInfo().log("Launching invoicing pipeline for %s.", yearMonth);
     try {
+      checkBillingRecurrenceCursor();
       LaunchFlexTemplateParameter parameter =
           new LaunchFlexTemplateParameter()
               .setJobName(createJobName("invoicing", clock))
@@ -155,5 +163,21 @@ public class GenerateInvoicesAction implements Runnable {
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(String.format("Pipeline launch failed: %s", e.getMessage()));
     }
+  }
+
+  private void checkBillingRecurrenceCursor() {
+    Optional<Cursor> previousCursor =
+        tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createGlobalVKey(RECURRING_BILLING)));
+    checkState(
+        previousCursor.isPresent(),
+        "BillingRecurrence expansion cursor is not present. Run ExpandBillingRecurrencesAction.");
+    Instant startOfNextMonth = yearMonth.plusMonths(1).atDay(1).atStartOfDay(UTC).toInstant();
+    Instant previousCursorTime = previousCursor.get().getCursorTime();
+    checkState(
+        !previousCursorTime.isBefore(startOfNextMonth),
+        "BillingRecurrence expansion cursor (%s) is before the start of the next month (%s). "
+            + "Run ExpandBillingRecurrencesAction.",
+        previousCursorTime,
+        startOfNextMonth);
   }
 }

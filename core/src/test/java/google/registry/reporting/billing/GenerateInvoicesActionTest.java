@@ -15,8 +15,11 @@
 package google.registry.reporting.billing;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,6 +28,7 @@ import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.beam.BeamActionTestBase;
+import google.registry.model.common.Cursor;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.reporting.ReportingModule;
@@ -33,6 +37,7 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.YearMonth;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -50,8 +55,13 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
   private CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   private GenerateInvoicesAction action;
 
+  private void setCursor(Instant cursorTime) {
+    persistResource(Cursor.createGlobal(RECURRING_BILLING, cursorTime));
+  }
+
   @Test
   void testLaunchTemplateJob_withPublish() throws Exception {
+    setCursor(Instant.parse("2017-11-01T00:00:00Z"));
     action =
         new GenerateInvoicesAction(
             "test-project",
@@ -84,6 +94,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
 
   @Test
   void testLaunchTemplateJob_withoutPublish() throws Exception {
+    setCursor(Instant.parse("2017-11-01T00:00:00Z"));
     action =
         new GenerateInvoicesAction(
             "test-project",
@@ -107,6 +118,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
 
   @Test
   void testCaughtIOException() throws IOException {
+    setCursor(Instant.parse("2017-11-01T00:00:00Z"));
     when(launch.execute()).thenThrow(new IOException("Pipeline error"));
     action =
         new GenerateInvoicesAction(
@@ -126,6 +138,60 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(response.getPayload()).isEqualTo("Pipeline launch failed: Pipeline error");
     verify(emailUtils).sendAlertEmail("Pipeline Launch failed due to Pipeline error");
+    cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
+  }
+
+  @Test
+  void testFailure_cursorLagging() {
+    setCursor(Instant.parse("2017-10-31T23:59:59.999Z"));
+    action =
+        new GenerateInvoicesAction(
+            "test-project",
+            "test-region",
+            "staging_bucket",
+            "billing_bucket",
+            "REG-INV",
+            false,
+            YearMonth.of(2017, 10),
+            emailUtils,
+            cloudTasksUtils,
+            clock,
+            response,
+            dataflow);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.getPayload()).contains("Pipeline launch failed");
+    assertThat(response.getPayload()).contains("BillingRecurrence expansion cursor");
+    verify(emailUtils)
+        .sendAlertEmail(
+            startsWith("Pipeline Launch failed due to BillingRecurrence expansion cursor"));
+    cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
+  }
+
+  @Test
+  void testFailure_cursorMissing() {
+    // Do not set cursor, should default to START_INSTANT (1970)
+    action =
+        new GenerateInvoicesAction(
+            "test-project",
+            "test-region",
+            "staging_bucket",
+            "billing_bucket",
+            "REG-INV",
+            false,
+            YearMonth.of(2017, 10),
+            emailUtils,
+            cloudTasksUtils,
+            clock,
+            response,
+            dataflow);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.getPayload()).contains("Pipeline launch failed");
+    assertThat(response.getPayload()).contains("BillingRecurrence expansion cursor");
+    verify(emailUtils)
+        .sendAlertEmail(
+            startsWith("Pipeline Launch failed due to BillingRecurrence expansion cursor"));
     cloudTasksHelper.assertNoTasksEnqueued("beam-reporting");
   }
 }
