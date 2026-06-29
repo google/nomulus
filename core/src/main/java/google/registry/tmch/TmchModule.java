@@ -25,6 +25,7 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
@@ -53,7 +54,7 @@ public final class TmchModule {
   @Parameter(NordnVerifyAction.NORDN_URL_PARAM)
   static URL provideNordnUrl(HttpServletRequest req) {
     try {
-      return new URL(extractRequiredParameter(req, NordnVerifyAction.NORDN_URL_PARAM));
+      return URI.create(extractRequiredParameter(req, NordnVerifyAction.NORDN_URL_PARAM)).toURL();
     } catch (MalformedURLException e) {
       throw new BadRequestException("Bad URL: " + NordnVerifyAction.NORDN_URL_PARAM);
     }

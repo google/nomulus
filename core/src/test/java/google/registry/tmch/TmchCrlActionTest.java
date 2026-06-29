@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import java.io.ByteArrayInputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.security.SignatureException;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateNotYetValidException;
@@ -39,7 +39,7 @@ class TmchCrlActionTest extends TmchActionTestCase {
     TmchCrlAction action = new TmchCrlAction();
     action.marksdb = marksdb;
     action.tmchCertificateAuthority = new TmchCertificateAuthority(tmchCaMode, clock);
-    action.tmchCrlUrl = new URL("https://sloth.lol/tmch.crl");
+    action.tmchCrlUrl = URI.create("https://sloth.lol/tmch.crl").toURL();
     return action;
   }
 
@@ -57,7 +57,7 @@ class TmchCrlActionTest extends TmchActionTestCase {
     newTmchCrlAction(TmchCaMode.PILOT).run();
     verify(httpUrlConnection).getInputStream();
     assertThat(urlConnectionService.getConnectedUrls())
-        .containsExactly(new URL("https://sloth.lol/tmch.crl"));
+        .containsExactly(URI.create("https://sloth.lol/tmch.crl").toURL());
   }
 
   @Test

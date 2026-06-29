@@ -14,12 +14,14 @@
 
 package google.registry.tmch;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.request.UrlConnectionUtils.getResponseBytes;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ascii;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteSource;
 import google.registry.request.Action;
@@ -61,6 +63,8 @@ public final class NordnVerifyAction implements Runnable {
   static final String QUEUE = "marksdb";
   static final String NORDN_URL_PARAM = "nordnUrl";
   static final String NORDN_LOG_ID_PARAM = "nordnLogId";
+
+  private static final String MARKSDB_URL_BEGINNING = "ry.marksdb.org";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -104,6 +108,12 @@ public final class NordnVerifyAction implements Runnable {
    */
   @VisibleForTesting
   LordnLog verify() throws IOException, GeneralSecurityException {
+    String host = Ascii.toLowerCase(url.getHost());
+    checkArgument(
+        host.startsWith(MARKSDB_URL_BEGINNING),
+        "URL %s must start with %s",
+        url,
+        MARKSDB_URL_BEGINNING);
     logger.atInfo().log("LORDN verify task %s: Sending request to URL %s", actionLogId, url);
     HttpURLConnection connection = urlConnectionService.createConnection(url);
     lordnRequestInitializer.initialize(connection, tld);
