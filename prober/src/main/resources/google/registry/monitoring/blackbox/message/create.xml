@@ -9,8 +9,6 @@
           <domain:hostObj>ns.fake-domain.tld</domain:hostObj>
         </domain:ns>
         <domain:registrant>google-mon</domain:registrant>
-        <domain:contact type="admin">google-mon</domain:contact>
-        <domain:contact type="tech">google-mon</domain:contact>
         <domain:authInfo>
           <domain:pw>insecure</domain:pw>
         </domain:authInfo>

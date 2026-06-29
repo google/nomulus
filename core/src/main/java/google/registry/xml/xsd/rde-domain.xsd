@@ -60,6 +60,9 @@
             maxOccurs="unbounded"/>
           <element name="registrant"
             type="eppcom:clIDType" minOccurs="0"/>
+          <element name="contact"
+            type="domain:contactType"
+            minOccurs="0" maxOccurs="unbounded"/>
           <element name="ns"
             type="domain:nsType" minOccurs="0"/>
           <element name="clID"
