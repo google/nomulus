@@ -3,6 +3,24 @@
             xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
             version="5.0">
 
+        <filter>
+            <filter-name>CspHeaderFilter</filter-name>
+            <filter-class>org.eclipse.jetty.ee10.servlets.HeaderFilter</filter-class>
+            <init-param>
+                <param-name>headerConfig</param-name>
+                <param-value>
+                    set Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; object-src 'none'; base-uri 'self';
+                    set X-Content-Type-Options: nosniff
+                    set X-Frame-Options: DENY
+                </param-value>
+            </init-param>
+        </filter>
+
+        <filter-mapping>
+            <filter-name>CspHeaderFilter</filter-name>
+            <url-pattern>/*</url-pattern>
+        </filter-mapping>
+
         <servlet>
             <servlet-name>default-no-cache</servlet-name>
             <servlet-class>org.eclipse.jetty.ee10.servlet.DefaultServlet</servlet-class>
