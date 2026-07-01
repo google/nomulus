@@ -30,7 +30,7 @@ JOIN Registrar r ON b.clientId = r.registrarId
 JOIN Domain d ON b.domainRepoId = d.repoId
 JOIN Tld t ON t.tldStr = d.tld
 LEFT JOIN BillingCancellation c ON b.id = c.billingEvent
-LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.billingRecurrence
+LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.billingRecurrence AND b.billingTime = cr.billingTime
 WHERE r.billingAccountMap IS NOT NULL
 AND r.type = 'REAL'
 AND t.invoicingEnabled IS TRUE

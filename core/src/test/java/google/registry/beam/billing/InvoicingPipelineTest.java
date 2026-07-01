@@ -229,7 +229,22 @@ class InvoicingPipelineTest {
               3,
               "USD",
               20.5,
-              ""));
+              ""),
+          google.registry.beam.billing.BillingEvent.create(
+              17,
+              Instant.parse("2017-10-04T00:00:00Z"),
+              Instant.parse("2017-10-04T00:00:00Z"),
+              "theRegistrar",
+              "234",
+              "",
+              "test",
+              "RENEW",
+              "recurrence-collision.test",
+              "REPO-ID",
+              3,
+              "USD",
+              20.5,
+              "SYNTHETIC"));
 
   private static final ImmutableMap<String, ImmutableList<String>> EXPECTED_DETAILED_REPORT_MAP =
       ImmutableMap.of(
@@ -239,6 +254,8 @@ class InvoicingPipelineTest {
                   + "test,RENEW,mydomain2.test,REPO-ID,3,USD,20.50,",
               "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
                   + "test,RENEW,mydomain.test,REPO-ID,3,USD,20.50,",
+              "17,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
+                  + "test,RENEW,recurrence-collision.test,REPO-ID,3,USD,20.50,",
               "7,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
                   + "test,SERVER_STATUS,update-prohibited.test,REPO-ID,0,USD,20.00,",
               "6,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
@@ -264,7 +281,7 @@ class InvoicingPipelineTest {
 
   private static final ImmutableList<String> EXPECTED_INVOICE_OUTPUT =
       ImmutableList.of(
-          "2017-10-01,2020-09-30,234,61.50,USD,10125,1,PURCHASE,,3,"
+          "2017-10-01,2020-09-30,234,82.00,USD,10125,1,PURCHASE,,4,"
               + "RENEW | TLD: test | TERM: 3-year,20.50,USD,",
           "2017-10-01,2022-09-30,234,70.00,JPY,10125,1,PURCHASE,,1,"
               + "CREATE | TLD: hello | TERM: 5-year,70.00,JPY,",
@@ -398,7 +415,8 @@ JOIN Registrar r ON b.clientId = r.registrarId
 JOIN Domain d ON b.domainRepoId = d.repoId
 JOIN Tld t ON t.tldStr = d.tld
 LEFT JOIN BillingCancellation c ON b.id = c.billingEvent
-LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.billingRecurrence
+LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.billingRecurrence AND \
+b.billingTime = cr.billingTime
 WHERE r.billingAccountMap IS NOT NULL
 AND r.type = 'REAL'
 AND t.invoicingEnabled IS TRUE
@@ -607,6 +625,51 @@ AND cr.id IS NULL
         Instant.parse("2017-10-04T00:00:00.0Z"),
         Instant.parse("2017-10-02T00:00:00.0Z"));
     persistBillingEvent(16, domain15, registrar11, Reason.RENEW, 3, Money.of(USD, 20.5));
+
+    // Add a billing event in Year 1 and a cancellation in Year 2 for the same recurrence.
+    // The Year 1 event should NOT be cancelled.
+    Domain domain17 = persistActiveDomain("recurrence-collision.test");
+    DomainHistory domainHistoryCollision = persistDomainHistory(domain17, registrar1);
+
+    BillingRecurrence billingRecurrenceCollision =
+        new BillingRecurrence()
+            .asBuilder()
+            .setRegistrarId(registrar1.getRegistrarId())
+            .setRecurrenceEndTime(END_INSTANT)
+            .setId(100)
+            .setDomainHistory(domainHistoryCollision)
+            .setTargetId(domain17.getDomainName())
+            .setEventTime(Instant.parse("2017-10-04T00:00:00.0Z"))
+            .setReason(Reason.RENEW)
+            .build();
+    persistResource(billingRecurrenceCollision);
+
+    // Year 1 Billing Event (October 2017)
+    BillingEvent billingEventYear1 =
+        persistBillingEvent(17, domain17, registrar1, Reason.RENEW, 3, Money.of(USD, 20.5));
+    billingEventYear1 =
+        billingEventYear1
+            .asBuilder()
+            .setCancellationMatchingBillingEvent(billingRecurrenceCollision)
+            .setFlags(ImmutableSet.of(Flag.SYNTHETIC))
+            .setSyntheticCreationTime(Instant.parse("2017-10-03T00:00:00.0Z"))
+            .build();
+    persistResource(billingEventYear1);
+
+    // Year 2 Billing Cancellation (October 2018)
+    BillingCancellation cancellationYear2 =
+        new BillingCancellation()
+            .asBuilder()
+            .setId(101)
+            .setRegistrarId(registrar1.getRegistrarId())
+            .setEventTime(Instant.parse("2018-10-05T00:00:00.0Z"))
+            .setBillingTime(Instant.parse("2018-10-04T00:00:00.0Z"))
+            .setBillingRecurrence(billingRecurrenceCollision.createVKey())
+            .setTargetId(domain17.getDomainName())
+            .setReason(Reason.RENEW)
+            .setDomainHistory(domainHistoryCollision)
+            .build();
+    persistResource(cancellationYear2);
   }
 
   private static DomainHistory persistDomainHistory(Domain domain, Registrar registrar) {
