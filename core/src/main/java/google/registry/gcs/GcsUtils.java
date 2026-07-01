@@ -14,12 +14,15 @@
 
 package google.registry.gcs;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
 
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.StorageException;
@@ -33,12 +36,14 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.util.GoogleCredentialsBundle;
+import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.channels.Channels;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.CheckReturnValue;
 
 /**
@@ -49,6 +54,8 @@ import javax.annotation.CheckReturnValue;
 public class GcsUtils implements Serializable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static final ConcurrentHashMap<String, Boolean> PAP_CACHE = new ConcurrentHashMap<>();
 
   private static final ImmutableMap<String, MediaType> EXTENSIONS =
       new ImmutableMap.Builder<String, MediaType>()
@@ -85,6 +92,7 @@ public class GcsUtils implements Serializable {
   /** Opens a GCS file for writing as an {@link OutputStream}, overwriting existing files. */
   @CheckReturnValue
   public OutputStream openOutputStream(BlobId blobId) {
+    verifyPublicAccessPrevention(blobId.getBucket());
     return Channels.newOutputStream(storage().writer(createBlobInfo(blobId)));
   }
 
@@ -94,6 +102,7 @@ public class GcsUtils implements Serializable {
    */
   @CheckReturnValue
   public OutputStream openOutputStream(BlobId blobId, ImmutableMap<String, String> metadata) {
+    verifyPublicAccessPrevention(blobId.getBucket());
     return Channels.newOutputStream(
         storage().writer(BlobInfo.newBuilder(blobId).setMetadata(metadata).build()));
   }
@@ -105,6 +114,7 @@ public class GcsUtils implements Serializable {
 
   /** Creates a GCS file with the given byte contents and metadata, overwriting existing files. */
   public void createFromBytes(BlobInfo blobInfo, byte[] bytes) throws StorageException {
+    verifyPublicAccessPrevention(blobInfo.getBucket());
     storage().create(blobInfo, bytes);
   }
 
@@ -120,6 +130,7 @@ public class GcsUtils implements Serializable {
 
   /** Update file content type on existing GCS file */
   public void updateContentType(BlobId blobId, String contentType) throws StorageException {
+    verifyPublicAccessPrevention(blobId.getBucket());
     if (existsAndNotEmpty(blobId)) {
       Blob blob = storage().get(blobId);
       blob.toBuilder().setContentType(contentType).build().update();
@@ -154,12 +165,6 @@ public class GcsUtils implements Serializable {
     }
   }
 
-  /** Returns the user defined metadata of a GCS file if the file exists, or an empty map. */
-  public ImmutableMap<String, String> getMetadata(BlobId blobId) throws StorageException {
-    Blob blob = storage().get(blobId);
-    return blob == null ? ImmutableMap.of() : ImmutableMap.copyOf(blob.getMetadata());
-  }
-
   /**
    * Returns the {@link BlobInfo} of the given GCS file.
    *
@@ -177,6 +182,37 @@ public class GcsUtils implements Serializable {
       builder = builder.setContentType(mediaType.toString());
     }
     return builder.build();
+  }
+
+  /**
+   * Asserts that Public Access Prevention (PAP) is enforced on the GCS bucket.
+   *
+   * @throws IllegalStateException if PAP is not ENFORCED.
+   */
+  @VisibleForTesting
+  void verifyPublicAccessPrevention(String bucketName) {
+    if (RegistryEnvironment.get() != RegistryEnvironment.PRODUCTION) {
+      return;
+    }
+    PAP_CACHE.computeIfAbsent(
+        bucketName,
+        name -> {
+          Bucket bucket = storage().get(name);
+          checkState(bucket != null, "Bucket %s does not exist", name);
+          BucketInfo.PublicAccessPrevention pap =
+              bucket.getIamConfiguration().getPublicAccessPrevention();
+          checkState(
+              pap == BucketInfo.PublicAccessPrevention.ENFORCED,
+              "Public Access Prevention is not enforced on bucket %s. Current state: %s",
+              name,
+              pap);
+          return true;
+        });
+  }
+
+  @VisibleForTesting
+  static void clearPapCache() {
+    PAP_CACHE.clear();
   }
 
   // These two methods are needed to check whether serialization is done correctly in tests.
