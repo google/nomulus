@@ -2,6 +2,17 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
   version="6.0">
+  <!-- Filters -->
+  <filter>
+    <filter-name>CspFilter</filter-name>
+    <filter-class>google.registry.ui.server.CspFilter</filter-class>
+  </filter>
+
+  <filter-mapping>
+    <filter-name>CspFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
   <!-- Servlets -->
 
   <!-- Servlet for injected frontend actions -->
