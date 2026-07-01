@@ -1,2 +1,2 @@
 out/
-src/main/resources/google/registry/monitoring/blackbox/modules/secrets/
+src/main/resources/google/registry/monitoring/blackbox/module/secrets/
