@@ -169,6 +169,14 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
         getInstance().revisionId = revisionId;
         return this;
       }
+
+      @Override
+      public PremiumEntry build() {
+        checkArgument(getInstance().price != null, "Price must not be null");
+        checkArgument(
+            getInstance().price.compareTo(BigDecimal.ZERO) >= 0, "Price must not be negative");
+        return super.build();
+      }
     }
   }
 
