@@ -25,6 +25,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.io.BaseEncoding;
 import jakarta.servlet.http.HttpServletRequest;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -39,10 +41,12 @@ class EppTlsActionTest {
     action.inputXmlBytes = INPUT_XML_BYTES;
     action.tlsCredentials = mock(TlsCredentials.class);
     action.request = mock(HttpServletRequest.class);
+    action.sessionSecret = "test-secret-32-chars-long-epptlsaction";
     when(action.request.getHeader("Cookie"))
         .thenReturn(
             "SESSION_INFO="
-                + BaseEncoding.base64Url().encode("clientId=ClientIdentifier".getBytes(US_ASCII)));
+                + createSignedCookie(
+                    "clientId=ClientIdentifier", "test-secret-32-chars-long-epptlsaction"));
     action.eppRequestHandler = mock(EppRequestHandler.class);
     action.run();
     ArgumentCaptor<SessionMetadata> captor = ArgumentCaptor.forClass(SessionMetadata.class);
@@ -55,5 +59,24 @@ class EppTlsActionTest {
             eq(false),
             eq(INPUT_XML_BYTES));
     assertThat(captor.getValue().getRegistrarId()).isEqualTo("ClientIdentifier");
+  }
+
+  private static String createSignedCookie(String plainText, String secret) {
+    try {
+      byte[] payloadBytes = plainText.getBytes(US_ASCII);
+      byte[] signatureBytes = calculateHmac(payloadBytes, secret);
+      String encodedPayload = BaseEncoding.base64Url().encode(payloadBytes);
+      String encodedSignature = BaseEncoding.base64Url().encode(signatureBytes);
+      return encodedPayload + "." + encodedSignature;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static byte[] calculateHmac(byte[] data, String secret) throws Exception {
+    SecretKeySpec signingKey = new SecretKeySpec(secret.getBytes(UTF_8), "HmacSHA256");
+    Mac mac = Mac.getInstance("HmacSHA256");
+    mac.init(signingKey);
+    return mac.doFinal(data);
   }
 }

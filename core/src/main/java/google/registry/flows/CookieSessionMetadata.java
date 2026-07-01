@@ -15,6 +15,7 @@
 package google.registry.flows;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -23,12 +24,15 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.io.BaseEncoding;
 import google.registry.request.Response;
 import jakarta.servlet.http.HttpServletRequest;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * A metadata class that saves the data directly in cookies.
@@ -58,33 +62,42 @@ public class CookieSessionMetadata extends SessionMetadata {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Map<String, String> data = new HashMap<>();
+  private final String sessionSecret;
 
-  public CookieSessionMetadata(HttpServletRequest request) {
+  public CookieSessionMetadata(HttpServletRequest request, String sessionSecret) {
+    this.sessionSecret = sessionSecret;
     Optional.ofNullable(request.getHeader("Cookie"))
         .ifPresent(
             cookie -> {
               Matcher matcher = COOKIE_PATTERN.matcher(cookie);
               if (matcher.find()) {
-                String sessionInfo = decode(matcher.group(1));
-                logger.atInfo().log("SESSION INFO: %s", sessionInfo);
-                matcher = REGISTRAR_ID_PATTERN.matcher(sessionInfo);
-                if (matcher.find()) {
-                  String registrarId = matcher.group(1);
-                  if (!registrarId.equals("null")) {
-                    data.put(REGISTRAR_ID, registrarId);
+                String cookieValue = matcher.group(1);
+                if (cookieValue != null) {
+                  Optional<String> sessionInfoOpt =
+                      verifyAndDecodeCookie(cookieValue, sessionSecret);
+                  if (sessionInfoOpt.isPresent()) {
+                    String sessionInfo = sessionInfoOpt.get();
+                    logger.atInfo().log("SESSION INFO: %s", sessionInfo);
+                    Matcher matcher2 = REGISTRAR_ID_PATTERN.matcher(sessionInfo);
+                    if (matcher2.find()) {
+                      String registrarId = matcher2.group(1);
+                      if (!registrarId.equals("null")) {
+                        data.put(REGISTRAR_ID, registrarId);
+                      }
+                    }
+                    matcher2 = SERVICE_EXTENSIONS_PATTERN.matcher(sessionInfo);
+                    if (matcher2.find()) {
+                      String serviceExtensions = matcher2.group(1);
+                      if (serviceExtensions != null) {
+                        data.put(SERVICE_EXTENSIONS, serviceExtensions);
+                      }
+                    }
+                    matcher2 = FAILED_LOGIN_ATTEMPTS_PATTERN.matcher(sessionInfo);
+                    if (matcher2.find()) {
+                      String failedLoginAttempts = matcher2.group(1);
+                      data.put(FAILED_LOGIN_ATTEMPTS, failedLoginAttempts);
+                    }
                   }
-                }
-                matcher = SERVICE_EXTENSIONS_PATTERN.matcher(sessionInfo);
-                if (matcher.find()) {
-                  String serviceExtensions = matcher.group(1);
-                  if (serviceExtensions != null) {
-                    data.put(SERVICE_EXTENSIONS, serviceExtensions);
-                  }
-                }
-                matcher = FAILED_LOGIN_ATTEMPTS_PATTERN.matcher(sessionInfo);
-                if (matcher.find()) {
-                  String failedLoginAttempts = matcher.group(1);
-                  data.put(FAILED_LOGIN_ATTEMPTS, failedLoginAttempts);
                 }
               }
             });
@@ -141,8 +154,49 @@ public class CookieSessionMetadata extends SessionMetadata {
 
   @Override
   public void save(Response response) {
-    String value = encode(toString());
-    response.setHeader("Set-Cookie", COOKIE_NAME + "=" + value);
+    String payload = toString();
+    try {
+      byte[] payloadBytes = payload.getBytes(US_ASCII);
+      byte[] signatureBytes = calculateHmac(payloadBytes, sessionSecret);
+      String encodedPayload = BaseEncoding.base64Url().encode(payloadBytes);
+      String encodedSignature = BaseEncoding.base64Url().encode(signatureBytes);
+      String cookieValue = encodedPayload + "." + encodedSignature;
+      response.setHeader("Set-Cookie", COOKIE_NAME + "=" + cookieValue);
+    } catch (Exception e) {
+      logger.atSevere().withCause(e).log("Failed to sign and save session cookie.");
+    }
+  }
+
+  private static Optional<String> verifyAndDecodeCookie(String cookieValue, String secret) {
+    int dotIndex = cookieValue.indexOf('.');
+    if (dotIndex == -1) {
+      logger.atWarning().log("Cookie does not contain a signature.");
+      return Optional.empty();
+    }
+    String encodedPayload = cookieValue.substring(0, dotIndex);
+    String encodedSignature = cookieValue.substring(dotIndex + 1);
+    try {
+      byte[] payloadBytes = BaseEncoding.base64Url().decode(encodedPayload);
+      byte[] signatureBytes = BaseEncoding.base64Url().decode(encodedSignature);
+      byte[] expectedSignatureBytes = calculateHmac(payloadBytes, secret);
+      if (MessageDigest.isEqual(signatureBytes, expectedSignatureBytes)) {
+        return Optional.of(new String(payloadBytes, US_ASCII));
+      } else {
+        logger.atWarning().log("Cookie signature verification failed.");
+      }
+    } catch (IllegalArgumentException e) {
+      logger.atWarning().withCause(e).log("Failed to decode cookie payload/signature.");
+    } catch (Exception e) {
+      logger.atWarning().withCause(e).log("Error verifying cookie signature.");
+    }
+    return Optional.empty();
+  }
+
+  private static byte[] calculateHmac(byte[] data, String secret) throws Exception {
+    SecretKeySpec signingKey = new SecretKeySpec(secret.getBytes(UTF_8), "HmacSHA256");
+    Mac mac = Mac.getInstance("HmacSHA256");
+    mac.init(signingKey);
+    return mac.doFinal(data);
   }
 
   protected static String encode(String plainText) {
