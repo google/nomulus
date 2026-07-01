@@ -49,8 +49,8 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
               d.domain_name,',',d.creation_time,',',d.registration_expiration_time,',',d.statuses
             ) AS result FROM "Domain" d
             WHERE d.current_sponsor_registrar_id = :registrarId
-            AND d.deletion_time > ':now'
-            AND d.creation_time <= ':now';
+            AND d.deletion_time > :now
+            AND d.creation_time <= :now
       """;
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -107,8 +107,6 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
   }
 
   private void writeCsv(CSVPrinter printer) throws IOException {
-    String sql = SQL_TEMPLATE.replaceAll(":now", clock.now().toString());
-
     printer.printRecord(
         ImmutableList.of("Domain Name", "Creation Time", "Expiration Time", "Domain Statuses"));
 
@@ -116,8 +114,9 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
             () -> {
               try (var resultStream =
                   tm().getEntityManager()
-                      .createNativeQuery(sql, String.class)
+                      .createNativeQuery(SQL_TEMPLATE, String.class)
                       .setParameter("registrarId", registrarId)
+                      .setParameter("now", clock.now())
                       .setHint("org.hibernate.fetchSize", 1000)
                       .getResultStream()) {
 

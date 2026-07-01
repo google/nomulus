@@ -53,7 +53,7 @@ public class ConsoleHistoryDataAction extends ConsoleApiAction {
       """
       SELECT *
       FROM "ConsoleUpdateHistory"
-      WHERE SPLIT_PART(description, '|', 1) = :registrarId;
+      WHERE SPLIT_PART(description, '|', 1) = :registrarId
       """;
 
   public static final String PATH = "/console-api/history";
