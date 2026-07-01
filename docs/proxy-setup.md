@@ -565,10 +565,10 @@ fill its role. Similarly a node may be shut down due to under-utilization
 (thanks to GKE autoscaling). In order to reliably route incoming traffic to the
 proxy, a
 [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport)
-service is used to expose the proxy on specificed port(s) on every running node
+service is used to expose the proxy on specified port(s) on every running node
 in the cluster, even if the proxy does not run on a VM (in which case the
 traffic is routed to a VM that has the proxy running). With a [NodePort]
-service, the load balancer can alway route traffic to any healthy node, and
+service, the load balancer can always route traffic to any healthy node, and
 kubernetes takes care of delivering that traffic to a servicing proxy pod.
 
 To deploy the NodePort service:
