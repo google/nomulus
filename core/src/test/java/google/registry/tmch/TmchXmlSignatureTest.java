@@ -23,17 +23,26 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.tmch.TmchXmlSignature.CertificateSignatureException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateRevokedException;
 import java.time.Instant;
 import javax.xml.crypto.dsig.XMLSignatureException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.junitpioneer.jupiter.cartesian.CartesianTest.Values;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * Unit tests for {@link TmchXmlSignature}.
@@ -138,5 +147,38 @@ class TmchXmlSignatureTest {
     CertificateRevokedException e =
         assertThrows(CertificateRevokedException.class, () -> tmchXmlSignature.verify(smdData));
     assertThat(e).hasMessageThat().contains("Certificate has been revoked");
+  }
+
+  @Test
+  void testVerify_signatureReferenceIdMismatch() throws Exception {
+    smdData = loadSmd("smd/active.smd");
+    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    dbf.setNamespaceAware(true);
+    Document originalDoc = dbf.newDocumentBuilder().parse(new ByteArrayInputStream(smdData));
+    Element originalRoot = originalDoc.getDocumentElement();
+
+    // Create a new document to construct the XML Signature Wrapping (XSW) payload
+    Document forgedDoc = dbf.newDocumentBuilder().newDocument();
+    Element forgedRoot =
+        forgedDoc.createElementNS("urn:ietf:params:xml:ns:signedMark-1.0", "smd:signedMark");
+    forgedRoot.setAttribute("id", "forged-id");
+    forgedRoot.setIdAttribute("id", true);
+    forgedDoc.appendChild(forgedRoot);
+
+    // Import the original valid signedMark element as a child of the forged root
+    Element importedChild = (Element) forgedDoc.importNode(originalRoot, true);
+    forgedRoot.appendChild(importedChild);
+    // Ensure the DOM resolver treats the original ID attribute correctly
+    importedChild.setIdAttribute("id", true);
+
+    // Serialize the XSW DOM back to bytes
+    Transformer transformer = TransformerFactory.newInstance().newTransformer();
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    transformer.transform(new DOMSource(forgedDoc), new StreamResult(bos));
+    byte[] manipulatedData = bos.toByteArray();
+
+    XMLSignatureException e =
+        assertThrows(XMLSignatureException.class, () -> tmchXmlSignature.verify(manipulatedData));
+    assertThat(e).hasMessageThat().contains("Expected exactly one <smd:signedMark> element");
   }
 }
