@@ -22,8 +22,6 @@ import static google.registry.util.GcpJsonFormatter.unsetLabels;
 import static google.registry.util.RandomStringGenerator.insecureRandomStringGenerator;
 import static google.registry.util.StringGenerator.Alphabets.HEX_DIGITS_ONLY;
 
-import com.google.monitoring.metrics.MetricReporter;
-import dagger.Lazy;
 import google.registry.request.RequestHandler;
 import google.registry.util.GcpJsonFormatter;
 import google.registry.util.JdkLoggerConfig;
@@ -49,9 +47,8 @@ public class RegistryServlet extends ServletBase {
   private static final RandomStringGenerator LOG_TRACE_ID_GENERATOR =
       insecureRandomStringGenerator(HEX_DIGITS_ONLY);
 
-  private static final RegistryComponent component = DaggerRegistryComponent.create();
+  public static final RegistryComponent component = DaggerRegistryComponent.create();
   private static final RequestHandler<RequestComponent> requestHandler = component.requestHandler();
-  private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
   // The regex pattern to capture the cookies that we want to log.
   private static final Pattern COOKIE_REGEX_PATTERN =
@@ -71,7 +68,7 @@ public class RegistryServlet extends ServletBase {
   }
 
   public RegistryServlet() {
-    super(requestHandler, metricReporter);
+    super(requestHandler);
     this.projectId = component.projectId();
   }
 
