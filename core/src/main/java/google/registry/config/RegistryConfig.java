@@ -38,6 +38,7 @@ import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.mosapi.MosApiClient;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.rde.RdeUploadUrl;
 import google.registry.request.Action.Service;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.YamlUtils;
@@ -842,8 +843,8 @@ public final class RegistryConfig {
      */
     @Provides
     @Config("rdeUploadUrl")
-    public static URI provideRdeUploadUrl(RegistryConfigSettings config) {
-      return URI.create(config.rde.uploadUrl);
+    public static RdeUploadUrl provideRdeUploadUrl(RegistryConfigSettings config) {
+      return RdeUploadUrl.create(URI.create(config.rde.uploadUrl));
     }
 
     /**

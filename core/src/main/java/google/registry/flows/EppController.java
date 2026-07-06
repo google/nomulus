@@ -68,9 +68,12 @@ public final class EppController {
       try {
         eppInput = unmarshalEpp(EppInput.class, inputXmlBytes);
       } catch (EppException e) {
-        // Log the unmarshalling error, with the raw bytes (in base64) to help with debugging.
+        // Log the unmarshalling error, with the sanitized bytes (in base64) to help with debugging.
+        Optional<String> sanitizedXml = EppXmlSanitizer.sanitizeEppXmlIfValid(inputXmlBytes);
+        String xmlBytesToLog =
+            base64().encode(sanitizedXml.map(xml -> xml.getBytes(UTF_8)).orElse(inputXmlBytes));
         logger.atInfo().withCause(e).log(
-            "EPP request XML unmarshalling failed - \"%s\":\n%s\n%s\n%s\n%s",
+            "EPP request XML unmarshalling failed - \"%s\":\n%s\n%s",
             e.getMessage(),
             lazy(
                 () ->
@@ -83,12 +86,7 @@ public final class EppController {
                             "resultMessage",
                             e.getResult().getCode().msg,
                             "xmlBytes",
-                            base64().encode(inputXmlBytes)))),
-            LOG_SEPARATOR,
-            lazy(
-                () ->
-                    new String(inputXmlBytes, UTF_8)
-                        .trim()), // Charset decoding failures are swallowed.
+                            xmlBytesToLog))),
             LOG_SEPARATOR);
         // Return early by sending an error message, with no clTRID since we couldn't unmarshal it.
         eppMetricBuilder.setStatus(e.getResult().getCode());

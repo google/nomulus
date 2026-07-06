@@ -64,7 +64,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -116,11 +115,16 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Inject @Config("rdeInterval") Duration interval;
   @Inject @Config("rdeUploadLockTimeout") Duration timeout;
   @Inject @Config("rdeUploadSftpCooldown") Duration sftpCooldown;
-  @Inject @Config("rdeUploadUrl") URI uploadUrl;
   @Inject @Key("rdeReceiverKey") PGPPublicKey receiverKey;
   @Inject @Key("rdeSigningKey") PGPKeyPair signingKey;
   @Inject @Key("rdeStagingDecryptionKey") PGPPrivateKey stagingDecryptionKey;
+
+  @Inject
+  @Config("rdeUploadUrl")
+  RdeUploadUrl rdeUploadUrl;
+
   @Inject RdeUploadAction() {}
+
   @Override
   public void run() {
     logger.atInfo().log("Attempting to acquire RDE upload lock for TLD '%s'.", tld);
@@ -135,7 +139,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Override
   public void runWithLock(Instant watermark) throws Exception {
     // If a prefix is not provided,try to determine the prefix. This should only happen when the RDE
-    // upload cron job runs to catch up any un-retried (i. e. expected) RDE failures.
+    // upload cron job runs to catch up any un-retried (i.e. expected) RDE failures.
     String actualPrefix =
         prefix.orElseGet(() -> findMostRecentPrefixForWatermark(watermark, bucket, tld, gcsUtils));
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");
@@ -181,7 +185,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     verifyFileExists(xmlFilename);
     verifyFileExists(xmlLengthFilename);
     verifyFileExists(reportFilename);
-    logger.atInfo().log("Commencing RDE upload for TLD '%s' to '%s'.", tld, uploadUrl);
+    logger.atInfo().log("Commencing RDE upload for TLD '%s' to '%s'.", tld, rdeUploadUrl);
     final long xmlLength = readXmlLength(xmlLengthFilename);
     retrier.callWithRetry(
         () -> upload(xmlFilename, xmlLength, watermark, name, nameWithoutPrefix),
@@ -221,10 +225,10 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   private void upload(
       BlobId xmlFile, long xmlLength, Instant watermark, String name, String nameWithoutPrefix)
       throws Exception {
-    logger.atInfo().log("Uploading XML file '%s' to remote path '%s'.", xmlFile, uploadUrl);
+    logger.atInfo().log("Uploading XML file '%s' to remote path '%s'.", xmlFile, rdeUploadUrl);
     try (InputStream gcsInput = gcsUtils.openInputStream(xmlFile);
         InputStream ghostrydeDecoder = Ghostryde.decoder(gcsInput, stagingDecryptionKey)) {
-      try (JSchSshSession session = jschSshSessionFactory.create(lazyJsch.get(), uploadUrl);
+      try (JSchSshSession session = jschSshSessionFactory.create(lazyJsch.get(), rdeUploadUrl);
           JSchSftpChannel ftpChan = session.openSftpChannel()) {
         ByteArrayOutputStream sigOut = new ByteArrayOutputStream();
         String rydeFilename = nameWithoutPrefix + ".ryde";

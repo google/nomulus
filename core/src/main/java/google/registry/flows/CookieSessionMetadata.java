@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.flogger.FluentLogger;
 import com.google.common.io.BaseEncoding;
 import google.registry.request.Response;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,7 +54,6 @@ public class CookieSessionMetadata extends SessionMetadata {
       Pattern.compile("serviceExtensionUris=([^,\\s}]+)?");
   private static final Pattern FAILED_LOGIN_ATTEMPTS_PATTERN =
       Pattern.compile("failedLoginAttempts=([^,\\s]+)?");
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Map<String, String> data = new HashMap<>();
 
@@ -66,7 +64,6 @@ public class CookieSessionMetadata extends SessionMetadata {
               Matcher matcher = COOKIE_PATTERN.matcher(cookie);
               if (matcher.find()) {
                 String sessionInfo = decode(matcher.group(1));
-                logger.atInfo().log("SESSION INFO: %s", sessionInfo);
                 matcher = REGISTRAR_ID_PATTERN.matcher(sessionInfo);
                 if (matcher.find()) {
                   String registrarId = matcher.group(1);

@@ -312,7 +312,8 @@ public final class RdeStagingAction implements Runnable {
                             jobRegion,
                             new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
                         .execute();
-                logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
+                logger.atInfo().log(
+                    "Launched RDE staging Dataflow job: %s", launchResponse.getJob().getId());
                 jobNameBuilder.add(launchResponse.getJob().getId());
               } catch (IOException e) {
                 logger.atWarning().withCause(e).log("Pipeline Launch failed");

@@ -87,14 +87,20 @@ public class EppXmlSanitizer {
    *
    * <p>Also, an empty element will be formatted as {@code <tag></tag>} instead of {@code <tag/>}.
    */
-  public static String sanitizeEppXml(byte[] inputXmlBytes) {
+  public static Optional<String> sanitizeEppXmlIfValid(byte[] inputXmlBytes) {
     try {
       // Keep exactly one newline at end of sanitized string.
-      return CharMatcher.whitespace().trimTrailingFrom(sanitizeAndEncode(inputXmlBytes)) + "\n";
+      return Optional.of(
+          CharMatcher.whitespace().trimTrailingFrom(sanitizeAndEncode(inputXmlBytes)) + "\n");
     } catch (XMLStreamException | UnsupportedEncodingException e) {
       logger.atWarning().withCause(e).log("Failed to sanitize EPP XML message.");
-      return Base64.getMimeEncoder().encodeToString(inputXmlBytes);
+      return Optional.empty();
     }
+  }
+
+  public static String sanitizeEppXml(byte[] inputXmlBytes) {
+    return sanitizeEppXmlIfValid(inputXmlBytes)
+        .orElseGet(() -> Base64.getMimeEncoder().encodeToString(inputXmlBytes));
   }
 
   private static String sanitizeAndEncode(byte[] inputXmlBytes)

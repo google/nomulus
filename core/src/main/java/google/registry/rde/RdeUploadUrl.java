@@ -37,7 +37,7 @@ import javax.annotation.concurrent.Immutable;
  * @see RdeUploadAction
  */
 @Immutable
-final class RdeUploadUrl implements Comparable<RdeUploadUrl> {
+public final class RdeUploadUrl implements Comparable<RdeUploadUrl> {
 
   public static final Protocol SFTP = new Protocol("sftp", 22);
   private static final ImmutableMap<String, Protocol> ALLOWED_PROTOCOLS =

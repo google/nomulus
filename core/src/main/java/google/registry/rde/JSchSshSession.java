@@ -24,7 +24,6 @@ import com.jcraft.jsch.SftpException;
 import google.registry.config.RegistryConfig.Config;
 import jakarta.inject.Inject;
 import java.io.Closeable;
-import java.net.URI;
 import java.time.Duration;
 
 /**
@@ -57,8 +56,7 @@ final class JSchSshSession implements Closeable {
      *
      * @throws JSchException if we fail to open the connection.
      */
-    JSchSshSession create(JSch jsch, URI uri) throws JSchException {
-      RdeUploadUrl url = RdeUploadUrl.create(uri);
+    JSchSshSession create(JSch jsch, RdeUploadUrl url) throws JSchException {
       logger.atInfo().log("Connecting to SSH endpoint: %s", url);
       Session session = jsch.getSession(
           url.getUser().orElse("domain-registry"),

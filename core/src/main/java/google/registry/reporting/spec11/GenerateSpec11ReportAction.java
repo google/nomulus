@@ -127,7 +127,7 @@ public class GenerateSpec11ReportAction implements Runnable {
                   jobRegion,
                   new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
               .execute();
-      logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
+      logger.atInfo().log("Launched Spec11 Dataflow job: %s", launchResponse.getJob().getId());
       String jobId = launchResponse.getJob().getId();
       if (sendEmail) {
         cloudTasksUtils.enqueue(

@@ -155,7 +155,7 @@ public class RdeUploadActionTest {
       action.timeout = Duration.ofSeconds(23);
       action.tld = "tld";
       action.sftpCooldown = Duration.ofSeconds(7);
-      action.uploadUrl = uploadUrl;
+      action.rdeUploadUrl = RdeUploadUrl.create(uploadUrl);
       action.receiverKey = keyring.getRdeReceiverKey();
       action.signingKey = keyring.getRdeSigningKey();
       action.stagingDecryptionKey = keyring.getRdeStagingDecryptionKey();
@@ -212,7 +212,7 @@ public class RdeUploadActionTest {
   @Test
   void testRun() {
     createTld("lol");
-    RdeUploadAction action = createAction(null);
+    RdeUploadAction action = createAction(URI.create("sftp://user:password@localhost:5432"));
     action.tld = "lol";
     action.run();
     verify(runner)
@@ -231,7 +231,7 @@ public class RdeUploadActionTest {
   @Test
   void testRun_withPrefix() throws Exception {
     createTld("lol");
-    RdeUploadAction action = createAction(null);
+    RdeUploadAction action = createAction(URI.create("sftp://user:password@localhost:5432"));
     action.prefix = Optional.of("job-name/");
     action.tld = "lol";
     action.run();
