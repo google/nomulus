@@ -33,6 +33,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tlds;
 import google.registry.request.Action;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.JsonActionRunner;
@@ -119,6 +120,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   public Map<String, Object> handleJsonRequest(Map<String, ?> json) {
     @SuppressWarnings("unchecked")
     ImmutableSet<String> tlds = ImmutableSet.copyOf((List<String>) json.get("tlds"));
+    Tlds.assertTldsExist(tlds);
     Instant exportTime = Instant.parse(json.get("exportTime").toString());
     // We disallow exporting within the past 2 minutes because there might be outstanding writes.
     // We can only reliably call loadAtPointInTime at times that are UTC midnight and >

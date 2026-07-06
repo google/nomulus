@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.plusMinutes;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
@@ -55,6 +56,20 @@ class GenerateZoneFilesActionTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
+
+  @Test
+  void testGenerate_nonexistentTld_throwsException() {
+    GenerateZoneFilesAction action = new GenerateZoneFilesAction();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                action.handleJsonRequest(
+                    ImmutableMap.<String, Object>of(
+                        "tlds", ImmutableList.of("nonexistent-tld"),
+                        "exportTime", Instant.parse("2024-03-27T00:00:00Z"))));
+    assertThat(thrown).hasMessageThat().contains("TLDs do not exist: nonexistent-tld");
+  }
 
   @Test
   void testGenerate_defaultTtls() throws Exception {
