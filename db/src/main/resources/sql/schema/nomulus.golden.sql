@@ -855,7 +855,8 @@ CREATE TABLE public."Registrar" (
     whois_server text,
     last_expiring_cert_notification_sent_date timestamp with time zone,
     last_expiring_failover_cert_notification_sent_date timestamp with time zone,
-    last_poc_verification_date timestamp with time zone
+    last_poc_verification_date timestamp with time zone,
+    expiry_access_period_enabled boolean DEFAULT false NOT NULL
 );
 
 

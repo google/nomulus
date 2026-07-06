@@ -221,3 +221,4 @@ V220__domain_package_token_idx.sql
 V221__remove_contact_history.sql
 V222__remove_contact.sql
 V223__tld_change_xap_enabled_to_transitions.sql
+V224__add_registrar_expiry_access_period_enabled.sql
