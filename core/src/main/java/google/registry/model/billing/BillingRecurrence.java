@@ -191,6 +191,10 @@ public class BillingRecurrence extends BillingBase {
               ^ instance.renewalPrice == null,
           "Renewal price can have a value if and only if the renewal price behavior is"
               + " SPECIFIED");
+      if (instance.renewalPrice != null) {
+        checkArgument(
+            instance.renewalPrice.isPositiveOrZero(), "SPECIFIED renewal price cannot be negative");
+      }
       instance.recurrenceTimeOfYear = TimeOfYear.fromInstant(instance.eventTime);
       instance.recurrenceEndTime =
           Optional.ofNullable(instance.recurrenceEndTime).orElse(END_INSTANT);

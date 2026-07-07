@@ -462,6 +462,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
           getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED)
               == (getInstance().renewalPrice != null),
           "renewalPrice must be specified iff renewalPriceBehavior is SPECIFIED");
+      if (getInstance().renewalPrice != null) {
+        checkArgument(
+            getInstance().renewalPrice.isPositiveOrZero(), "Renewal price cannot be negative");
+      }
 
       if (getInstance().tokenType.equals(TokenType.BULK_PRICING)) {
         checkArgument(

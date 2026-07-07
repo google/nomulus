@@ -613,6 +613,22 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
+  void testBuild_negativeRenewalPrice() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new AllocationToken.Builder()
+                        .setToken("abc")
+                        .setTokenType(SINGLE_USE)
+                        .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                        .setRenewalPrice(Money.of(CurrencyUnit.USD, -5))
+                        .build()))
+        .hasMessageThat()
+        .isEqualTo("Renewal price cannot be negative");
+  }
+
+  @Test
   void testBuild_registrationBehaviors() {
     createTld("tld");
     // BYPASS_TLD_STATE doesn't require a domain
