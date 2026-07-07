@@ -257,7 +257,8 @@ public final class TldTest extends EntityTestCase {
                     .asBuilder()
                     .setCreateBillingCostTransitions(createCostTransitions)
                     .build());
-    assertThat(thrown.getMessage()).isEqualTo("Create billing cost cannot be negative");
+    assertThat(thrown.getMessage())
+        .isEqualTo("Some create cost(s) are negative or in the wrong currency");
   }
 
   @Test
@@ -614,8 +615,11 @@ public final class TldTest extends EntityTestCase {
                 Tld.get("tld")
                     .asBuilder()
                     .setRenewBillingCostTransitions(
-                        ImmutableSortedMap.of(START_INSTANT, Money.of(USD, -42))));
-    assertThat(thrown).hasMessageThat().contains("billing cost cannot be negative");
+                        ImmutableSortedMap.of(START_INSTANT, Money.of(USD, -42)))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Some renew cost(s) are negative or in the wrong currency");
   }
 
   @Test
@@ -623,8 +627,10 @@ public final class TldTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, -42)));
-    assertThat(thrown).hasMessageThat().contains("restoreBillingCost cannot be negative");
+            () -> Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, -42)).build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Restore cost is negative or in the wrong currency");
   }
 
   @Test
@@ -652,8 +658,14 @@ public final class TldTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> Tld.get("tld").asBuilder().setServerStatusChangeBillingCost(Money.of(USD, -42)));
-    assertThat(thrown).hasMessageThat().contains("billing cost cannot be negative");
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setServerStatusChangeBillingCost(Money.of(USD, -42))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Server status change cost is negative or in the wrong currency");
   }
 
   @Test
@@ -667,7 +679,9 @@ public final class TldTest extends EntityTestCase {
                     .setRenewBillingCostTransitions(
                         ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 42)))
                     .build());
-    assertThat(thrown).hasMessageThat().contains("cost must be in the TLD's currency");
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Some renew cost(s) are negative or in the wrong currency");
   }
 
   @Test
@@ -681,7 +695,7 @@ public final class TldTest extends EntityTestCase {
                     .setCreateBillingCostTransitions(
                         ImmutableSortedMap.of(START_INSTANT, Money.of(EUR, 42)))
                     .build());
-    assertThat(thrown).hasMessageThat().contains("cost must be in the TLD's currency");
+    assertThat(thrown).hasMessageThat().contains("negative or in the wrong currency");
   }
 
   @Test
@@ -690,7 +704,7 @@ public final class TldTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () -> Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(EUR, 42)).build());
-    assertThat(thrown).hasMessageThat().contains("cost must be in the TLD's currency");
+    assertThat(thrown).hasMessageThat().contains("negative or in the wrong currency");
   }
 
   @Test
@@ -703,7 +717,7 @@ public final class TldTest extends EntityTestCase {
                     .asBuilder()
                     .setServerStatusChangeBillingCost(Money.of(EUR, 42))
                     .build());
-    assertThat(thrown).hasMessageThat().contains("cost must be in the TLD's currency");
+    assertThat(thrown).hasMessageThat().contains("negative or in the wrong currency");
   }
 
   @Test
@@ -742,7 +756,7 @@ public final class TldTest extends EntityTestCase {
                     .asBuilder()
                     .setEapFeeSchedule(ImmutableSortedMap.of(START_INSTANT, Money.zero(EUR)))
                     .build());
-    assertThat(thrown).hasMessageThat().contains("All EAP fees must be in the TLD's currency");
+    assertThat(thrown).hasMessageThat().contains("negative or in the wrong currency");
   }
 
   @Test

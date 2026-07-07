@@ -455,6 +455,16 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
+  void testFailure_negativeCreateCost() throws Exception {
+    File tldFile = tmpDir.resolve("negativecost.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "negativecost.yaml"));
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown.getMessage())
+        .isEqualTo("Some create cost(s) are negative or in the wrong currency");
+  }
+
+  @Test
   void testSuccess_emptyStringClearsDefaultPromoTokens() throws Exception {
     Tld tld = createTld("tld");
     AllocationToken defaultToken =
