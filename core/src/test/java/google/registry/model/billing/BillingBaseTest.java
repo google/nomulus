@@ -890,4 +890,23 @@ public class BillingBaseTest extends EntityTestCase {
             "Renewal price can have a value if and only if the "
                 + "renewal price behavior is SPECIFIED");
   }
+
+  @Test
+  void testFailure_buildWithSpecifiedRenewalBehavior_negativeRenewalPrice() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new BillingRecurrence.Builder()
+                        .setDomainHistory(domainHistory)
+                        .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                        .setReason(Reason.RENEW)
+                        .setEventTime(plusYears(now, 1))
+                        .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                        .setRenewalPrice(Money.of(USD, -100))
+                        .setRecurrenceEndTime(END_INSTANT)
+                        .build()))
+        .hasMessageThat()
+        .isEqualTo("SPECIFIED renewal price cannot be negative");
+  }
 }
