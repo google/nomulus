@@ -288,8 +288,9 @@ export class BackendService {
   verifyRegistryLockRequest(
     lockVerificationCode: string
   ): Observable<RegistryLockVerificationResponse> {
-    return this.http.get<RegistryLockVerificationResponse>(
-      `/console-api/registry-lock-verify?lockVerificationCode=${lockVerificationCode}`
+    return this.http.post<RegistryLockVerificationResponse>(
+      `/console-api/registry-lock-verify?lockVerificationCode=${lockVerificationCode}`,
+      {}
     );
   }
 
