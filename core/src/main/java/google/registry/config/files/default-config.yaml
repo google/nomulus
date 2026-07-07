@@ -88,6 +88,28 @@ registryPolicy:
   # registrar
   registryAdminClientId: TheRegistrar
 
+  # Configuration for the Expiry Access Period (XAP) that occurs immediately
+  # following completion of a domain's deletion. This needs to be enabled on a
+  # per-TLD basis as well.
+  domainExpiryAccessPeriod:
+    # The length of the total expiry access period; defaults to 10 days.
+    totalLengthSeconds: 864000
+    # The length of each tier during the expiry access period; defaults to 1
+    # hour. The XAP fee remains constant for the duration of each tier. The
+    # total length must be evenly divisible by the tier length, i.e. there
+    # should be a whole number of tiers all the same length.
+    tierLengthSeconds: 3600
+    # The initial fee for the first tier when the expiry access period starts,
+    # specified for each currency this registry platform uses.
+    initialFee:
+      USD: 100000
+      JPY: 10000000
+    # The final fee for the last tier when the expiry access period ends,
+    # specified for each currency this registry platform uses.
+    finalFee:
+      USD: 10
+      JPY: 1000
+
   # Disclaimer at the top of the exported premium terms list.
   premiumTermsExportDisclaimer: |
     This list contains domains for the TLD offered at a premium price. This

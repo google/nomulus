@@ -51,6 +51,10 @@ public abstract class BaseFee extends ImmutableObject {
   public enum FeeType {
     CREATE("create"),
     EAP("Early Access Period, fee expires: %s", "Early Access Period"),
+    /**
+     * A one-time fee for registering a recently dropped domain, during the Expiry Access Period.
+     */
+    XAP("Expiry Access Period, fee expires: %s", "Expiry Access Period"),
     RENEW("renew"),
     RESTORE("restore"),
     /**
