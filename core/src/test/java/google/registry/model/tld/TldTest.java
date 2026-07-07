@@ -747,6 +747,37 @@ public final class TldTest extends EntityTestCase {
   }
 
   @Test
+  void testExpiryAccessPeriodMode_undefined() {
+    assertThat(Tld.get("tld").getExpiryAccessPeriodModeAt(fakeClock.now()))
+        .isEqualTo(Tld.ExpiryAccessPeriodMode.DISABLED);
+  }
+
+  @Test
+  void testExpiryAccessPeriodMode_specified() {
+    Instant a = minusDays(fakeClock.now(), 1);
+    Instant b = plusDays(fakeClock.now(), 1);
+    Tld tld =
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(
+                    START_INSTANT,
+                    Tld.ExpiryAccessPeriodMode.DISABLED,
+                    a,
+                    Tld.ExpiryAccessPeriodMode.ENABLED,
+                    b,
+                    Tld.ExpiryAccessPeriodMode.DISABLED))
+            .build();
+
+    assertThat(tld.getExpiryAccessPeriodModeAt(fakeClock.now()))
+        .isEqualTo(Tld.ExpiryAccessPeriodMode.ENABLED);
+    assertThat(tld.getExpiryAccessPeriodModeAt(minusDays(fakeClock.now(), 2)))
+        .isEqualTo(Tld.ExpiryAccessPeriodMode.DISABLED);
+    assertThat(tld.getExpiryAccessPeriodModeAt(plusDays(fakeClock.now(), 2)))
+        .isEqualTo(Tld.ExpiryAccessPeriodMode.DISABLED);
+  }
+
+  @Test
   void testFailure_eapFee_wrongCurrency() {
     IllegalArgumentException thrown =
         assertThrows(

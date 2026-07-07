@@ -77,6 +77,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import google.registry.config.RegistryConfig;
+import google.registry.config.RegistryConfigSettings;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
@@ -113,6 +114,7 @@ import google.registry.flows.domain.DomainFlowUtils.FeeDescriptionMultipleMatche
 import google.registry.flows.domain.DomainFlowUtils.FeeDescriptionParseException;
 import google.registry.flows.domain.DomainFlowUtils.FeesMismatchException;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredDuringEarlyAccessProgramException;
+import google.registry.flows.domain.DomainFlowUtils.FeesRequiredDuringExpiryAccessPeriodException;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredForPremiumNameException;
 import google.registry.flows.domain.DomainFlowUtils.InvalidDsRecordException;
 import google.registry.flows.domain.DomainFlowUtils.InvalidIdnDomainLabelException;
@@ -2686,6 +2688,427 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .isEqualTo(
             "Fees must be explicitly acknowledged when creating domains "
                 + "during the Early Access Program. The EAP fee is: USD 100.00");
+  }
+
+  @Test
+  void testFailure_domainInXap_withoutFeeAck_throwsException() throws Exception {
+    // Creating a domain during an active XAP tier without acknowledging the XAP fee in the EPP fee
+    // extension should fail with FeesRequiredDuringExpiryAccessPeriodException.
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    try {
+      persistHosts();
+      Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+      setXapForTld("tld", deletionTime);
+      Exception e =
+          assertThrows(FeesRequiredDuringExpiryAccessPeriodException.class, this::runFlow);
+      assertThat(e)
+          .hasMessageThat()
+          .isEqualTo(
+              "Fees must be explicitly acknowledged when creating domains "
+                  + "during the Expiry Access Period. The XAP fee is: USD 100.00");
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
+  }
+
+  @Test
+  void testFailure_domainInXap_registrarNotOptedIn_throwsDomainReservedException()
+      throws Exception {
+    // When XAP is enabled on the TLD and the domain is in its XAP window, a registrar that has not
+    // opted into XAP cannot register the domain and should receive a DomainReservedException.
+    persistHosts();
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    persistResource(
+        new Domain.Builder()
+            .setDomainName(getUniqueIdFromCommand())
+            .setDeletionTime(deletionTime)
+            .setRegistrationExpirationTime(clock.now().plus(Duration.ofDays(365)))
+            .setCreationTime(clock.now().minus(Duration.ofDays(365)))
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("9999-EXAMPLE")
+            .build());
+    Exception e = assertThrows(DomainReservedException.class, this::runFlow);
+    assertThat(e).hasMessageThat().isEqualTo("example.tld is a reserved domain");
+  }
+
+  @Test
+  void testSuccess_domainInXap_optedIn_withFeeAck_chargesXapFee() throws Exception {
+    // When an opted-in registrar acknowledges the XAP fee during an active XAP tier, domain
+    // creation should succeed and persist a one-time XAP fee (Reason.FEE_EXPIRY_ACCESS) in
+    // addition to the standard domain create fee (Reason.CREATE) and autorenew recurrence
+    // (Reason.RENEW).
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    try {
+      persistHosts();
+      Instant deletionTime = Instant.parse("1999-04-03T21:00:00.0Z");
+      setXapForTld("tld", deletionTime);
+      setEppInput(
+          "domain_create_eap_fee.xml",
+          new ImmutableMap.Builder<String, String>()
+              .putAll(FEE_STD_1_0_MAP)
+              .put("DESCRIPTION_1", "create")
+              .put("DESCRIPTION_2", "Expiry Access Period")
+              .build());
+      runFlowAssertResponse(loadFile("domain_create_response_xap_fee.xml"));
+
+      Domain domain = reloadResourceByForeignKey();
+      DomainHistory historyEntry = getHistoryEntries(domain, DomainHistory.class).get(0);
+      assertBillingEvents(
+          new BillingEvent.Builder()
+              .setReason(Reason.CREATE)
+              .setTargetId("example.tld")
+              .setRegistrarId("TheRegistrar")
+              .setPeriodYears(2)
+              .setCost(Money.of(USD, 24))
+              .setEventTime(clock.now())
+              .setBillingTime(clock.now().plus(Tld.get("tld").getAddGracePeriodLength()))
+              .setDomainHistory(historyEntry)
+              .build(),
+          new BillingEvent.Builder()
+              .setReason(Reason.FEE_EXPIRY_ACCESS)
+              .setTargetId("example.tld")
+              .setRegistrarId("TheRegistrar")
+              .setPeriodYears(1)
+              .setCost(Money.of(USD, 100))
+              .setEventTime(clock.now())
+              .setBillingTime(clock.now().plus(Tld.get("tld").getAddGracePeriodLength()))
+              .setDomainHistory(historyEntry)
+              .build(),
+          new BillingRecurrence.Builder()
+              .setReason(Reason.RENEW)
+              .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+              .setTargetId("example.tld")
+              .setRegistrarId("TheRegistrar")
+              .setEventTime(domain.getRegistrationExpirationTime())
+              .setRecurrenceEndTime(END_INSTANT)
+              .setDomainHistory(historyEntry)
+              .build());
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
+  }
+
+  @Test
+  void testSuccess_premiumDomainInXap_optedIn_withFeeAck_chargesPremiumAndXapFees()
+      throws Exception {
+    // Creating a premium domain during active XAP should stack both fees, charging the premium
+    // domain create fee (Reason.CREATE) plus the one-time XAP tier fee (Reason.FEE_EXPIRY_ACCESS).
+    createTld("example");
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    try {
+      persistHosts();
+      setEppInput("domain_create_premium_xap.xml");
+      Instant deletionTime = Instant.parse("1999-04-03T21:00:00.0Z");
+      setXapForTld("example", deletionTime);
+      runFlowAssertResponse(loadFile("domain_create_response_premium_xap.xml"));
+
+      Domain domain = reloadResourceByForeignKey();
+      DomainHistory historyEntry = getHistoryEntries(domain, DomainHistory.class).get(0);
+      assertBillingEvents(
+          new BillingEvent.Builder()
+              .setReason(Reason.CREATE)
+              .setTargetId("rich.example")
+              .setRegistrarId("TheRegistrar")
+              .setPeriodYears(2)
+              .setCost(Money.of(USD, 200))
+              .setEventTime(clock.now())
+              .setBillingTime(clock.now().plus(Tld.get("example").getAddGracePeriodLength()))
+              .setDomainHistory(historyEntry)
+              .build(),
+          new BillingEvent.Builder()
+              .setReason(Reason.FEE_EXPIRY_ACCESS)
+              .setTargetId("rich.example")
+              .setRegistrarId("TheRegistrar")
+              .setPeriodYears(1)
+              .setCost(Money.of(USD, 100))
+              .setEventTime(clock.now())
+              .setBillingTime(clock.now().plus(Tld.get("example").getAddGracePeriodLength()))
+              .setDomainHistory(historyEntry)
+              .build(),
+          new BillingRecurrence.Builder()
+              .setReason(Reason.RENEW)
+              .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+              .setTargetId("rich.example")
+              .setRegistrarId("TheRegistrar")
+              .setEventTime(domain.getRegistrationExpirationTime())
+              .setRecurrenceEndTime(END_INSTANT)
+              .setDomainHistory(historyEntry)
+              .build());
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
+  }
+
+  @Test
+  void testSuccess_recentlyDeletedDomain_afterXapEnds_notOptedIn_succeedsWithoutXapFee()
+      throws Exception {
+    // Once the 10-day XAP window expires after deletion (e.g. day 11), the domain returns to
+    // standard pricing and can be registered without XAP fees or reservation blocks by
+    // non-opted-in registrars.
+    persistHosts();
+    Instant deletionTime = clock.now().minus(Duration.ofDays(11));
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    persistResource(
+        new Domain.Builder()
+            .setDomainName(getUniqueIdFromCommand())
+            .setDeletionTime(deletionTime)
+            .setRegistrationExpirationTime(clock.now().plus(Duration.ofDays(365)))
+            .setCreationTime(clock.now().minus(Duration.ofDays(365)))
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("9999-EXAMPLE")
+            .build());
+    doSuccessfulTest();
+  }
+
+  @Test
+  void testSuccess_recentlyDeletedDomain_afterXapEnds_optedIn_succeedsWithoutXapFee()
+      throws Exception {
+    // Once the 10-day XAP window expires after deletion (e.g. day 11), the domain returns to
+    // standard pricing and can be registered without XAP fees by opted-in registrars.
+    persistHosts();
+    Instant deletionTime = clock.now().minus(Duration.ofDays(11));
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(true)
+            .build());
+    persistResource(
+        new Domain.Builder()
+            .setDomainName(getUniqueIdFromCommand())
+            .setDeletionTime(deletionTime)
+            .setRegistrationExpirationTime(clock.now().plus(Duration.ofDays(365)))
+            .setCreationTime(clock.now().minus(Duration.ofDays(365)))
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("9999-EXAMPLE")
+            .build());
+    doSuccessfulTest();
+  }
+
+  @Test
+  void testSuccess_recentlyDeletedDomain_beforeXapStarts_notOptedIn_succeedsWithoutXapFee()
+      throws Exception {
+    // If a domain was recently deleted but XAP mode is currently disabled on the TLD, the domain
+    // can be registered at standard pricing without XAP fees or reservation blocks by
+    // non-opted-in registrars.
+    persistHosts();
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.DISABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    persistResource(
+        new Domain.Builder()
+            .setDomainName(getUniqueIdFromCommand())
+            .setDeletionTime(deletionTime)
+            .setRegistrationExpirationTime(clock.now().plus(Duration.ofDays(365)))
+            .setCreationTime(clock.now().minus(Duration.ofDays(365)))
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("9999-EXAMPLE")
+            .build());
+    doSuccessfulTest();
+  }
+
+  @Test
+  void testSuccess_recentlyDeletedDomain_beforeXapStarts_optedIn_succeedsWithoutXapFee()
+      throws Exception {
+    // If a domain was recently deleted but XAP mode is currently disabled on the TLD, the domain
+    // can be registered at standard pricing without XAP fees by opted-in registrars.
+    persistHosts();
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.DISABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(true)
+            .build());
+    persistResource(
+        new Domain.Builder()
+            .setDomainName(getUniqueIdFromCommand())
+            .setDeletionTime(deletionTime)
+            .setRegistrationExpirationTime(clock.now().plus(Duration.ofDays(365)))
+            .setCreationTime(clock.now().minus(Duration.ofDays(365)))
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("9999-EXAMPLE")
+            .build());
+    doSuccessfulTest();
+  }
+
+  @Test
+  void testSuccess_agpDeletedRegularDomain_duringXap_succeedsWithoutXapFee() throws Exception {
+    // A regular domain (registered without an XAP fee) that was deleted during its Add Grace
+    // Period (AGP) is exempt from XAP, succeeding at standard pricing without reservation blocks
+    // or XAP fees when re-registered during active XAP on the TLD.
+    persistHosts();
+    Instant creationTime = clock.now().minus(Duration.ofDays(2));
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(
+                    START_INSTANT,
+                    Tld.ExpiryAccessPeriodMode.DISABLED,
+                    clock.now().minus(Duration.ofHours(1)),
+                    Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    persistResource(
+        new Domain.Builder()
+            .setDomainName(getUniqueIdFromCommand())
+            .setCreationTime(creationTime)
+            .setDeletionTime(deletionTime)
+            .setRegistrationExpirationTime(clock.now().plus(Duration.ofDays(365)))
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("9999-EXAMPLE")
+            .build());
+    doSuccessfulTest();
+  }
+
+  @Test
+  void testSuccess_agpDeletedXapDomain_duringXap_succeedsWithoutXapFee() throws Exception {
+    // A domain originally registered with an XAP fee that was deleted during its Add Grace
+    // Period (AGP) is exempt from XAP upon subsequent re-registration, succeeding at standard
+    // pricing without reservation blocks or XAP fees when re-registered during active XAP on the
+    // TLD.
+    persistHosts();
+    Instant creationTime = clock.now().minus(Duration.ofHours(2));
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    persistResource(
+        new Domain.Builder()
+            .setDomainName(getUniqueIdFromCommand())
+            .setCreationTime(creationTime)
+            .setDeletionTime(deletionTime)
+            .setRegistrationExpirationTime(clock.now().plus(Duration.ofDays(365)))
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("9999-EXAMPLE")
+            .build());
+    doSuccessfulTest();
+  }
+
+  private void setXapForTld(String tldStr, Instant deletionTime) throws Exception {
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(true)
+            .build());
+    persistResource(
+        Tld.get(tldStr)
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        new Domain.Builder()
+            .setDomainName(getUniqueIdFromCommand())
+            .setDeletionTime(deletionTime)
+            .setRegistrationExpirationTime(clock.now().plus(Duration.ofDays(365)))
+            .setCreationTime(clock.now().minus(Duration.ofDays(365)))
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("9999-EXAMPLE")
+            .build());
   }
 
   private void setEapForTld(String tld) {

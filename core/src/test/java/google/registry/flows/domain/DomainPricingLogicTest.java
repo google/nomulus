@@ -30,12 +30,15 @@ import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusHours;
 import static google.registry.util.DateTimeUtils.plusHours;
+import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Range;
 import google.registry.flows.EppException;
 import google.registry.flows.HttpSessionMetadata;
 import google.registry.flows.SessionMetadata;
@@ -58,8 +61,10 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.util.Clock;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,7 +90,12 @@ public class DomainPricingLogicTest {
     createTld("example");
     sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     domainPricingLogic =
-        new DomainPricingLogic(new DomainPricingCustomLogic(eppInput, sessionMetadata, null));
+        new DomainPricingLogic(
+            new DomainPricingCustomLogic(eppInput, sessionMetadata, null),
+            Duration.ofDays(10),
+            Duration.ofHours(1),
+            ImmutableMap.of(USD, new BigDecimal("100000.00"), JPY, new BigDecimal("10000000")),
+            ImmutableMap.of(USD, new BigDecimal("10.00"), JPY, new BigDecimal("1000")));
     tld =
         persistResource(
             Tld.get("example")
@@ -146,7 +156,14 @@ public class DomainPricingLogicTest {
         persistResource(Tld.get("sunrise").asBuilder().setTldStateTransitions(transitions).build());
     assertThat(
             domainPricingLogic.getCreatePrice(
-                sunriseTld, "domain.sunrise", clock.now(), 2, false, true, Optional.empty()))
+                sunriseTld,
+                "domain.sunrise",
+                clock.now(),
+                Optional.empty(),
+                2,
+                false,
+                true,
+                Optional.empty()))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -170,7 +187,14 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld, "default.example", clock.now(), 1, false, false, Optional.of(allocationToken)))
+                tld,
+                "default.example",
+                clock.now(),
+                Optional.empty(),
+                1,
+                false,
+                false,
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -195,7 +219,14 @@ public class DomainPricingLogicTest {
     // 3 year create should be 5 (discount price) + 10*2 (regular price) = 25.
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld, "default.example", clock.now(), 3, false, false, Optional.of(allocationToken)))
+                tld,
+                "default.example",
+                clock.now(),
+                Optional.empty(),
+                3,
+                false,
+                false,
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -218,7 +249,14 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld, "default.example", clock.now(), 1, false, false, Optional.of(allocationToken)))
+                tld,
+                "default.example",
+                clock.now(),
+                Optional.empty(),
+                1,
+                false,
+                false,
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1006,7 +1044,14 @@ public class DomainPricingLogicTest {
                 .build());
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld, "premium.example", clock.now(), 1, false, false, Optional.of(allocationToken)))
+                tld,
+                "premium.example",
+                clock.now(),
+                Optional.empty(),
+                1,
+                false,
+                false,
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1015,7 +1060,14 @@ public class DomainPricingLogicTest {
     // Two-year create should be 13 (standard price) + 100 (premium price), and it's premium
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld, "premium.example", clock.now(), 2, false, false, Optional.of(allocationToken)))
+                tld,
+                "premium.example",
+                clock.now(),
+                Optional.empty(),
+                2,
+                false,
+                false,
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1051,7 +1103,14 @@ public class DomainPricingLogicTest {
     // are standard
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld, "premium.example", clock.now(), 2, false, false, Optional.of(allocationToken)))
+                tld,
+                "premium.example",
+                clock.now(),
+                Optional.empty(),
+                2,
+                false,
+                false,
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1060,7 +1119,14 @@ public class DomainPricingLogicTest {
     // Similarly, 3 years should be 13 + 10 + 10
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld, "premium.example", clock.now(), 3, false, false, Optional.of(allocationToken)))
+                tld,
+                "premium.example",
+                clock.now(),
+                Optional.empty(),
+                3,
+                false,
+                false,
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1081,7 +1147,14 @@ public class DomainPricingLogicTest {
     // Two-year create should be 100 (premium 1st year) plus 10 (nonpremium 2nd year)
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld, "premium.example", clock.now(), 2, false, false, Optional.of(allocationToken)))
+                tld,
+                "premium.example",
+                clock.now(),
+                Optional.empty(),
+                2,
+                false,
+                false,
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1090,7 +1163,14 @@ public class DomainPricingLogicTest {
     // Similarly, 3 years should be 100 + 10 + 10
     assertThat(
             domainPricingLogic.getCreatePrice(
-                tld, "premium.example", clock.now(), 3, false, false, Optional.of(allocationToken)))
+                tld,
+                "premium.example",
+                clock.now(),
+                Optional.empty(),
+                3,
+                false,
+                false,
+                Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
@@ -1134,5 +1214,292 @@ public class DomainPricingLogicTest {
                     tld, "premium.example", clock.now(), 5, null, Optional.of(allocationToken))
                 .getRenewCost())
         .isEqualTo(Money.of(USD, 25));
+  }
+
+  @Test
+  void testGetXapFeeFor_tier0_startOfXap() {
+    Instant deletionTime = clock.now();
+    Instant checkTime = deletionTime.plus(Duration.ofMinutes(30));
+    Optional<Fee> xapFee = domainPricingLogic.getXapFeeFor(checkTime, deletionTime, USD);
+    assertThat(xapFee)
+        .hasValue(
+            Fee.create(
+                new BigDecimal("100000.00"),
+                Fee.FeeType.XAP,
+                false,
+                Range.closedOpen(deletionTime, deletionTime.plus(Duration.ofHours(1))),
+                deletionTime.plus(Duration.ofHours(1))));
+  }
+
+  @Test
+  void testGetXapFeeFor_tier1() {
+    Instant deletionTime = clock.now();
+    Instant checkTime = deletionTime.plus(Duration.ofHours(1)).plus(Duration.ofMinutes(15));
+    Optional<Fee> xapFee = domainPricingLogic.getXapFeeFor(checkTime, deletionTime, USD);
+    assertThat(xapFee)
+        .hasValue(
+            Fee.create(
+                new BigDecimal("96219.61"),
+                Fee.FeeType.XAP,
+                false,
+                Range.closedOpen(
+                    deletionTime.plus(Duration.ofHours(1)), deletionTime.plus(Duration.ofHours(2))),
+                deletionTime.plus(Duration.ofHours(2))));
+  }
+
+  @Test
+  void testGetXapFeeFor_tier239_finalTier() {
+    Instant deletionTime = clock.now();
+    Instant checkTime = deletionTime.plus(Duration.ofHours(239)).plus(Duration.ofMinutes(30));
+    Optional<Fee> xapFee = domainPricingLogic.getXapFeeFor(checkTime, deletionTime, USD);
+    assertThat(xapFee)
+        .hasValue(
+            Fee.create(
+                new BigDecimal("10.00"),
+                Fee.FeeType.XAP,
+                false,
+                Range.closedOpen(
+                    deletionTime.plus(Duration.ofHours(239)),
+                    deletionTime.plus(Duration.ofHours(240))),
+                deletionTime.plus(Duration.ofHours(240))));
+  }
+
+  @Test
+  void testGetXapFeeFor_unconfiguredCurrency() {
+    Instant deletionTime = clock.now();
+    Instant checkTime = deletionTime.plus(Duration.ofMinutes(30));
+    Optional<Fee> xapFee =
+        domainPricingLogic.getXapFeeFor(checkTime, deletionTime, CurrencyUnit.EUR);
+    assertThat(xapFee).isEmpty();
+  }
+
+  @Test
+  void testGetCreatePrice_xapEnabled_includesXapFeeAndRequiresExtension() throws Exception {
+    Tld xapTld =
+        persistResource(
+            tld.asBuilder()
+                .setExpiryAccessPeriodTransitions(
+                    ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+                .build());
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    Domain deletedDomain =
+        new Domain.Builder()
+            .setDomainName("deleted.example")
+            .setDeletionTime(deletionTime)
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("2-EXAMPLE")
+            .build();
+    FeesAndCredits feesAndCredits =
+        domainPricingLogic.getCreatePrice(
+            xapTld,
+            "deleted.example",
+            clock.now(),
+            Optional.of(deletedDomain),
+            1,
+            false,
+            false,
+            Optional.empty());
+    assertThat(feesAndCredits.isFeeExtensionRequired()).isTrue();
+    assertThat(feesAndCredits.getXapCost()).isEqualTo(Money.of(USD, new BigDecimal("96219.61")));
+    assertThat(feesAndCredits.getTotalCost()).isEqualTo(Money.of(USD, new BigDecimal("96232.61")));
+  }
+
+  @Test
+  void testGetXapFeeFor_afterXapEnds_returnsEmpty() {
+    Instant deletionTime = clock.now();
+    Instant checkTime = deletionTime.plus(Duration.ofDays(10)).plus(Duration.ofMinutes(1));
+    Optional<Fee> xapFee = domainPricingLogic.getXapFeeFor(checkTime, deletionTime, USD);
+    assertThat(xapFee).isEmpty();
+  }
+
+  @Test
+  void testGetCreatePrice_agpDeletedRegularDomain_duringXap_noXapFee() throws Exception {
+    // A regular domain deleted during AGP is exempt from XAP fee evaluation upon subsequent
+    // creation during active XAP.
+    Tld xapTld =
+        persistResource(
+            tld.asBuilder()
+                .setExpiryAccessPeriodTransitions(
+                    ImmutableSortedMap.of(
+                        START_INSTANT,
+                        Tld.ExpiryAccessPeriodMode.DISABLED,
+                        clock.now().minus(Duration.ofHours(1)),
+                        Tld.ExpiryAccessPeriodMode.ENABLED))
+                .build());
+    Instant creationTime = clock.now().minus(Duration.ofDays(2));
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    Domain deletedDomain =
+        new Domain.Builder()
+            .setDomainName("deleted.example")
+            .setCreationTime(creationTime)
+            .setDeletionTime(deletionTime)
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("2-EXAMPLE")
+            .build();
+    FeesAndCredits feesAndCredits =
+        domainPricingLogic.getCreatePrice(
+            xapTld,
+            "deleted.example",
+            clock.now(),
+            Optional.of(deletedDomain),
+            1,
+            false,
+            false,
+            Optional.empty());
+    assertThat(feesAndCredits.isFeeExtensionRequired()).isFalse();
+    assertThat(feesAndCredits.getXapCost()).isEqualTo(Money.zero(USD));
+    assertThat(feesAndCredits.getTotalCost()).isEqualTo(Money.of(USD, new BigDecimal("13.00")));
+  }
+
+  @Test
+  void testGetCreatePrice_agpDeletedXapDomain_duringXap_noXapFee() throws Exception {
+    // A domain originally registered with an XAP fee deleted during AGP is exempt from XAP fee
+    // evaluation upon subsequent creation during active XAP.
+    Tld xapTld =
+        persistResource(
+            tld.asBuilder()
+                .setExpiryAccessPeriodTransitions(
+                    ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+                .build());
+    Instant creationTime = clock.now().minus(Duration.ofHours(2));
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    Domain deletedDomain =
+        new Domain.Builder()
+            .setDomainName("deleted.example")
+            .setCreationTime(creationTime)
+            .setDeletionTime(deletionTime)
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("2-EXAMPLE")
+            .build();
+    FeesAndCredits feesAndCredits =
+        domainPricingLogic.getCreatePrice(
+            xapTld,
+            "deleted.example",
+            clock.now(),
+            Optional.of(deletedDomain),
+            1,
+            false,
+            false,
+            Optional.empty());
+    assertThat(feesAndCredits.isFeeExtensionRequired()).isFalse();
+    assertThat(feesAndCredits.getXapCost()).isEqualTo(Money.zero(USD));
+    assertThat(feesAndCredits.getTotalCost()).isEqualTo(Money.of(USD, new BigDecimal("13.00")));
+  }
+
+  @Test
+  void testGetCreatePrice_anchorTenantDeletedAfterStandardAgp_duringXap_chargesXapFee()
+      throws Exception {
+    // An anchor tenant domain deleted after standard AGP (5 days), e.g. on day 10 of its 30-day
+    // anchor tenant AGP, is subject to XAP fees upon re-registration (not exempt as an AGP delete).
+    Tld xapTld =
+        persistResource(
+            tld.asBuilder()
+                .setAddGracePeriodLength(Duration.ofDays(5))
+                .setExpiryAccessPeriodTransitions(
+                    ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+                .build());
+    Instant creationTime = clock.now().minus(Duration.ofDays(10));
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    Domain deletedDomain =
+        new Domain.Builder()
+            .setDomainName("deleted.example")
+            .setCreationTime(creationTime)
+            .setDeletionTime(deletionTime)
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("2-EXAMPLE")
+            .build();
+    FeesAndCredits feesAndCredits =
+        domainPricingLogic.getCreatePrice(
+            xapTld,
+            "deleted.example",
+            clock.now(),
+            Optional.of(deletedDomain),
+            1,
+            false,
+            false,
+            Optional.empty());
+    assertThat(feesAndCredits.isFeeExtensionRequired()).isTrue();
+    assertThat(feesAndCredits.getXapCost()).isEqualTo(Money.of(USD, new BigDecimal("96219.61")));
+  }
+
+  @Test
+  void testGetCreatePrice_premiumDomainInXap_chargesPremiumAndXapFees() throws Exception {
+    // Calculating create price for a recently deleted premium domain during active XAP should sum
+    // both the premium create fee and the one-time XAP tier fee.
+    Tld xapTld =
+        persistResource(
+            tld.asBuilder()
+                .setExpiryAccessPeriodTransitions(
+                    ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+                .build());
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    Domain deletedDomain =
+        new Domain.Builder()
+            .setDomainName("premium.example")
+            .setDeletionTime(deletionTime)
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("2-EXAMPLE")
+            .build();
+    FeesAndCredits feesAndCredits =
+        domainPricingLogic.getCreatePrice(
+            xapTld,
+            "premium.example",
+            clock.now(),
+            Optional.of(deletedDomain),
+            1,
+            false,
+            false,
+            Optional.empty());
+    assertThat(feesAndCredits.hasAnyPremiumFees()).isTrue();
+    assertThat(feesAndCredits.isFeeExtensionRequired()).isTrue();
+    assertThat(feesAndCredits.getCreateCost()).isEqualTo(Money.of(USD, new BigDecimal("100.00")));
+    assertThat(feesAndCredits.getXapCost()).isEqualTo(Money.of(USD, new BigDecimal("96219.61")));
+    assertThat(feesAndCredits.getTotalCost()).isEqualTo(Money.of(USD, new BigDecimal("96319.61")));
+  }
+
+  @Test
+  void testGetCreatePrice_zeroXapFee_doesNotRequireExtension() throws Exception {
+    // When an XAP tier fee is $0.00, it is included in the fee items but does not require a fee
+    // extension acknowledgment from the registrar.
+    Tld xapTld =
+        persistResource(
+            tld.asBuilder()
+                .setExpiryAccessPeriodTransitions(
+                    ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+                .build());
+    DomainPricingLogic zeroFeePricingLogic =
+        new DomainPricingLogic(
+            new DomainPricingCustomLogic(eppInput, sessionMetadata, null),
+            Duration.ofDays(10),
+            Duration.ofHours(1),
+            ImmutableMap.of(USD, BigDecimal.ZERO),
+            ImmutableMap.of(USD, BigDecimal.ZERO));
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    Domain deletedDomain =
+        new Domain.Builder()
+            .setDomainName("deleted.example")
+            .setDeletionTime(deletionTime)
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setRepoId("2-EXAMPLE")
+            .build();
+    FeesAndCredits feesAndCredits =
+        zeroFeePricingLogic.getCreatePrice(
+            xapTld,
+            "deleted.example",
+            clock.now(),
+            Optional.of(deletedDomain),
+            1,
+            false,
+            false,
+            Optional.empty());
+    assertThat(feesAndCredits.isFeeExtensionRequired()).isFalse();
+    assertThat(feesAndCredits.getXapCost()).isEqualTo(Money.zero(USD));
+    assertThat(feesAndCredits.getTotalCost()).isEqualTo(Money.of(USD, new BigDecimal("13.00")));
   }
 }

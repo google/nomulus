@@ -49,6 +49,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
+import google.registry.config.RegistryConfig;
+import google.registry.config.RegistryConfigSettings;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.GenericXmlSyntaxErrorException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
@@ -95,6 +97,7 @@ import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.DatabaseHelper;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.joda.money.Money;
@@ -2445,6 +2448,283 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .build());
     setEppInputXml(inputXml);
     runFlowAssertResponse(outputXml);
+  }
+
+  @Test
+  void testFeeExtension_xapLabel_std_v1() throws Exception {
+    createTld("tld");
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(true)
+            .build());
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("110.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("110.00"));
+
+    try {
+      clock.setTo(Instant.parse("2009-01-06T00:00:00Z"));
+      Instant deletionTime = Instant.parse("2009-01-01T00:00:00Z");
+      persistDeletedDomain("example1.tld", deletionTime);
+
+      setEppInput("domain_check_fee_stdv1.xml");
+      runFlowAssertResponse(loadFile("domain_check_fee_xap_response.xml"));
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
+  }
+
+  @Test
+  void testCheck_xapLabel_notOptedIn_returnsReserved() throws Exception {
+    createTld("tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    Instant deletionTime = clock.now().minus(Duration.ofDays(5));
+    persistDeletedDomain("example1.tld", deletionTime);
+    setEppInput("domain_check_one_tld.xml");
+    doCheckTest(
+        create(false, "example1.tld", "Reserved"),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testCheck_recentlyDeletedDomain_afterXapEnds_notOptedIn_returnsAvailable() throws Exception {
+    // Once the 10-day XAP window expires after deletion (e.g. day 11), checking the domain should
+    // return available (avail="1") without XAP fees or reservation blocks for non-opted-in
+    // registrars.
+    createTld("tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    Instant deletionTime = clock.now().minus(Duration.ofDays(11));
+    persistDeletedDomain("example1.tld", deletionTime);
+    setEppInput("domain_check_one_tld.xml");
+    doCheckTest(
+        create(true, "example1.tld", null),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testCheck_recentlyDeletedDomain_afterXapEnds_optedIn_returnsAvailable() throws Exception {
+    // Once the 10-day XAP window expires after deletion (e.g. day 11), checking the domain should
+    // return available (avail="1") without XAP fees for opted-in registrars.
+    createTld("tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(true)
+            .build());
+    Instant deletionTime = clock.now().minus(Duration.ofDays(11));
+    persistDeletedDomain("example1.tld", deletionTime);
+    setEppInput("domain_check_one_tld.xml");
+    doCheckTest(
+        create(true, "example1.tld", null),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testCheck_recentlyDeletedDomain_beforeXapStarts_notOptedIn_returnsAvailable()
+      throws Exception {
+    // If a domain was recently deleted but XAP mode is currently disabled on the TLD, checking the
+    // domain should return available (avail="1") without XAP fees or reservation blocks for
+    // non-opted-in registrars.
+    createTld("tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.DISABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    Instant deletionTime = clock.now().minus(Duration.ofDays(5));
+    persistDeletedDomain("example1.tld", deletionTime);
+    setEppInput("domain_check_one_tld.xml");
+    doCheckTest(
+        create(true, "example1.tld", null),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testCheck_recentlyDeletedDomain_beforeXapStarts_optedIn_returnsAvailable() throws Exception {
+    // If a domain was recently deleted but XAP mode is currently disabled on the TLD, checking the
+    // domain should return available (avail="1") without XAP fees for opted-in registrars.
+    createTld("tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.DISABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(true)
+            .build());
+    Instant deletionTime = clock.now().minus(Duration.ofDays(5));
+    persistDeletedDomain("example1.tld", deletionTime);
+    setEppInput("domain_check_one_tld.xml");
+    doCheckTest(
+        create(true, "example1.tld", null),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testCheck_agpDeletedRegularDomain_duringXap_returnsAvailable() throws Exception {
+    // A regular domain (registered without an XAP fee) deleted during its Add Grace Period (AGP) is
+    // exempt from XAP, returning available (avail="1") without reservation blocks or XAP fees when
+    // checked during active XAP on the TLD.
+    createTld("tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(
+                    START_INSTANT,
+                    Tld.ExpiryAccessPeriodMode.DISABLED,
+                    clock.now().minus(Duration.ofHours(1)),
+                    Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    Instant creationTime = clock.now().minus(Duration.ofDays(2));
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    DatabaseHelper.persistDomainAsDeleted(
+        DatabaseHelper.newDomain("example1.tld")
+            .asBuilder()
+            .setCreationTimeForTest(creationTime)
+            .build(),
+        deletionTime);
+    setEppInput("domain_check_one_tld.xml");
+    doCheckTest(
+        create(true, "example1.tld", null),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testCheck_agpDeletedXapDomain_duringXap_returnsAvailable() throws Exception {
+    // A domain originally registered with an XAP fee deleted during its Add Grace Period (AGP) is
+    // exempt from XAP, returning available (avail="1") without reservation blocks or XAP fees when
+    // checked during active XAP on the TLD.
+    createTld("tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    Instant creationTime = clock.now().minus(Duration.ofHours(2));
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    DatabaseHelper.persistDomainAsDeleted(
+        DatabaseHelper.newDomain("example1.tld")
+            .asBuilder()
+            .setCreationTimeForTest(creationTime)
+            .build(),
+        deletionTime);
+    setEppInput("domain_check_one_tld.xml");
+    doCheckTest(
+        create(true, "example1.tld", null),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testCheck_anchorTenantDeletedAfterStandardAgp_duringXap_returnsReserved() throws Exception {
+    // An anchor tenant domain deleted after standard AGP (5 days), e.g. on day 10 of its 30-day
+    // anchor tenant AGP, is subject to XAP fees and reservation blocks (not exempt as an AGP
+    // delete).
+    createTld("tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setAddGracePeriodLength(Duration.ofDays(5))
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        Registrar.loadByRegistrarId("TheRegistrar")
+            .get()
+            .asBuilder()
+            .setExpiryAccessPeriodEnabled(false)
+            .build());
+    Instant creationTime = clock.now().minus(Duration.ofDays(10));
+    Instant deletionTime = clock.now().minus(Duration.ofHours(1));
+    DatabaseHelper.persistDomainAsDeleted(
+        DatabaseHelper.newDomain("example1.tld")
+            .asBuilder()
+            .setCreationTimeForTest(creationTime)
+            .build(),
+        deletionTime);
+    setEppInput("domain_check_one_tld.xml");
+    doCheckTest(
+        create(false, "example1.tld", "Reserved"),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
   }
 
   static AllocationToken setUpDefaultToken() {
