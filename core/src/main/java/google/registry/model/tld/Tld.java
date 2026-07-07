@@ -814,6 +814,55 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return new Builder(clone(this));
   }
 
+  /** Checks the validity of the TLD object, for use during building or deserializing. */
+  public void validateState() {
+    checkArgument(tldStr != null, "No registry TLD specified");
+    // Check for canonical form by converting to an InternetDomainName and then back.
+    checkArgument(
+        InternetDomainName.isValid(tldStr)
+            && tldStr.equals(InternetDomainName.from(tldStr).toString()),
+        "Cannot create registry for TLD that is not a valid, canonical domain name");
+    // Check the validity of all TimedTransitionProperties to ensure that they have values for
+    // START_INSTANT.  The setters above have already checked this for new values, but also check
+    // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
+    // and cloned it into a new builder, to block re-building a Tld in an invalid state.
+    tldStateTransitions.checkValidity();
+    createBillingCostTransitions.checkValidity();
+    renewBillingCostTransitions.checkValidity();
+    eapFeeSchedule.checkValidity();
+    // All costs must be in the expected currency.
+    checkArgumentNotNull(getCurrency(), "Currency must be set");
+    Predicate<Money> currencyCheck =
+        (Money money) -> money.getCurrencyUnit().equals(currency) && money.isPositiveOrZero();
+    checkArgument(
+        currencyCheck.test(getRestoreBillingCost()),
+        "Restore cost is negative or in the wrong currency");
+    checkArgument(
+        currencyCheck.test(getServerStatusChangeBillingCost()),
+        "Server status change cost is negative or in the wrong currency");
+    checkArgument(
+        currencyCheck.test(getRegistryLockOrUnlockBillingCost()),
+        "Registry lock/unlock cost is negative or in the wrong currency");
+    checkArgument(
+        getRenewBillingCostTransitions().values().stream().allMatch(currencyCheck),
+        "Some renew cost(s) are negative or in the wrong currency");
+    checkArgument(
+        getCreateBillingCostTransitions().values().stream().allMatch(currencyCheck),
+        "Some create cost(s) are negative or in the wrong currency");
+    checkArgument(
+        eapFeeSchedule.toValueMap().values().stream().allMatch(currencyCheck),
+        "Some EAP fee cost(s) are negative or in the wrong currency'");
+    checkArgumentNotNull(
+        pricingEngineClassName, "All registries must have a configured pricing engine");
+    checkArgument(
+        dnsWriters != null && !dnsWriters.isEmpty(),
+        "At least one DNS writer must be specified."
+            + " VoidDnsWriter can be used if DNS writing isn't desired");
+    checkArgument(
+        numDnsPublishLocks > 0,
+        "Number of DNS publish locks must be positive. Use 1 for TLD-wide locks.");
+  }
+
   /** A builder for constructing {@link Tld} objects, since they are immutable. */
   public static class Builder extends Buildable.Builder<Tld> {
     public Builder() {}
@@ -966,10 +1015,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setCreateBillingCostTransitions(
         ImmutableSortedMap<Instant, Money> createCostsMap) {
-      checkArgumentNotNull(createCostsMap, "Create billing costs map cannot be null");
-      checkArgument(
-          createCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
-          "Create billing cost cannot be negative");
       getInstance().createBillingCostTransitions =
           TimedTransitionProperty.fromValueMap(createCostsMap);
       return this;
@@ -1012,17 +1057,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setRestoreBillingCost(Money amount) {
-      checkArgument(amount.isPositiveOrZero(), "restoreBillingCost cannot be negative");
       getInstance().restoreBillingCost = amount;
       return this;
     }
 
     public Builder setRenewBillingCostTransitions(
         ImmutableSortedMap<Instant, Money> renewCostsMap) {
-      checkArgumentNotNull(renewCostsMap, "Renew billing costs map cannot be null");
-      checkArgument(
-          renewCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
-          "Renew billing cost cannot be negative");
       getInstance().renewBillingCostTransitions =
           TimedTransitionProperty.fromValueMap(renewCostsMap);
       return this;
@@ -1030,10 +1070,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     /** Sets the EAP fee schedule for the TLD. */
     public Builder setEapFeeSchedule(ImmutableSortedMap<Instant, Money> eapFeeSchedule) {
-      checkArgumentNotNull(eapFeeSchedule, "EAP fee schedule cannot be null");
-      checkArgument(
-          eapFeeSchedule.values().stream().allMatch(Money::isPositiveOrZero),
-          "EAP fee cannot be negative");
       getInstance().eapFeeSchedule = TimedTransitionProperty.fromValueMap(eapFeeSchedule);
       return this;
     }
@@ -1051,14 +1087,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setServerStatusChangeBillingCost(Money amount) {
-      checkArgument(
-          amount.isPositiveOrZero(), "Server status change billing cost cannot be negative");
       getInstance().serverStatusChangeBillingCost = amount;
       return this;
     }
 
     public Builder setRegistryLockOrUnlockBillingCost(Money amount) {
-      checkArgument(amount.isPositiveOrZero(), "Registry lock/unlock cost cannot be negative");
       getInstance().registryLockOrUnlockBillingCost = amount;
       return this;
     }
@@ -1120,58 +1153,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     @Override
     public Tld build() {
-      final Tld instance = getInstance();
-      // Pick up the name of the associated TLD from the instance object.
-      String tldName = instance.tldStr;
-      checkArgument(tldName != null, "No registry TLD specified");
-      // Check for canonical form by converting to an InternetDomainName and then back.
-      checkArgument(
-          InternetDomainName.isValid(tldName)
-              && tldName.equals(InternetDomainName.from(tldName).toString()),
-          "Cannot create registry for TLD that is not a valid, canonical domain name");
-      // Check the validity of all TimedTransitionProperties to ensure that they have values for
-      // START_INSTANT.  The setters above have already checked this for new values, but also check
-      // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
-      // and cloned it into a new builder, to block re-building a Tld in an invalid state.
-      instance.tldStateTransitions.checkValidity();
-      instance.createBillingCostTransitions.checkValidity();
-      instance.renewBillingCostTransitions.checkValidity();
-      instance.eapFeeSchedule.checkValidity();
-      // All costs must be in the expected currency.
-      checkArgumentNotNull(instance.getCurrency(), "Currency must be set");
-      checkArgument(
-          instance.getRestoreBillingCost().getCurrencyUnit().equals(instance.currency),
-          "Restore cost must be in the TLD's currency");
-      checkArgument(
-          instance.getServerStatusChangeBillingCost().getCurrencyUnit().equals(instance.currency),
-          "Server status change cost must be in the TLD's currency");
-      checkArgument(
-          instance.getRegistryLockOrUnlockBillingCost().getCurrencyUnit().equals(instance.currency),
-          "Registry lock/unlock cost must be in the TLD's currency");
-      Predicate<Money> currencyCheck =
-          (Money money) -> money.getCurrencyUnit().equals(instance.currency);
-      checkArgument(
-          instance.getRenewBillingCostTransitions().values().stream().allMatch(currencyCheck),
-          "Renew cost must be in the TLD's currency");
-      checkArgument(
-          instance.getCreateBillingCostTransitions().values().stream().allMatch(currencyCheck),
-          "Create cost must be in the TLD's currency");
-      checkArgument(
-          instance.eapFeeSchedule.toValueMap().values().stream().allMatch(currencyCheck),
-          "All EAP fees must be in the TLD's currency");
-      checkArgumentNotNull(
-          instance.pricingEngineClassName, "All registries must have a configured pricing engine");
-      checkArgument(
-          instance.dnsWriters != null && !instance.dnsWriters.isEmpty(),
-          "At least one DNS writer must be specified."
-              + " VoidDnsWriter can be used if DNS writing isn't desired");
       // If not set explicitly, numDnsPublishLocks defaults to 1.
-      instance.setDefaultNumDnsPublishLocks();
-      checkArgument(
-          instance.numDnsPublishLocks > 0,
-          "Number of DNS publish locks must be positive. Use 1 for TLD-wide locks.");
-      instance.tldStr = tldName;
-      instance.tldUnicode = Idn.toUnicode(tldName);
+      getInstance().setDefaultNumDnsPublishLocks();
+      getInstance().validateState();
+      getInstance().tldUnicode = Idn.toUnicode(getInstance().tldStr);
       return super.build();
     }
   }
