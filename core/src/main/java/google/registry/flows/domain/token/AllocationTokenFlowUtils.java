@@ -242,7 +242,14 @@ public class AllocationTokenFlowUtils {
       case CREATE ->
           pricingLogic
               .getCreatePrice(
-                  tld, domainName, now, yearsForAction, false, false, Optional.of(token))
+                  tld,
+                  domainName,
+                  now,
+                  Optional.empty(),
+                  yearsForAction,
+                  false,
+                  false,
+                  Optional.of(token))
               .getTotalCost()
               .getAmount();
       case RENEW ->
