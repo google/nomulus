@@ -220,11 +220,27 @@ public interface TransactionManager {
   <T> ImmutableList<T> loadAllOf(Class<T> clazz);
 
   /**
+   * Returns a list of all entities of the given type that exist in the database, ordered by the
+   * specified field names in ascending order.
+   *
+   * <p>The resulting list is empty if there are no entities of this type.
+   */
+  <T> ImmutableList<T> loadAllOfSorted(Class<T> clazz, String... sortFields);
+
+  /**
    * Returns a stream of all entities of the given type that exist in the database.
    *
    * <p>The resulting stream is empty if there are no entities of this type.
    */
   <T> Stream<T> loadAllOfStream(Class<T> clazz);
+
+  /**
+   * Returns a stream of all entities of the given type that exist in the database, ordered by the
+   * specified field names in ascending order.
+   *
+   * <p>The resulting stream is empty if there are no entities of this type.
+   */
+  <T> Stream<T> loadAllOfSortedStream(Class<T> clazz, String... sortFields);
 
   /**
    * Loads the only instance of this particular class, or empty if none exists.

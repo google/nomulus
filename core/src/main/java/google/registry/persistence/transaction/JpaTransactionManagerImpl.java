@@ -76,6 +76,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
@@ -88,6 +89,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Retrier retrier = new Retrier(new SystemSleeper(), 6);
+
+  /**
+   * Strict allowlist regex for property/field names in dynamic JPQL ORDER BY clauses.
+   *
+   * <p>JPA and database engines forbid bind parameters (e.g. ? or :param) for schema identifiers or
+   * property names in ORDER BY clauses. To prevent JPQL/SQL injection when dynamically constructing
+   * sort queries, every sort field MUST be validated against this pattern before concatenation.
+   */
+  private static final Pattern VALID_SORT_FIELD_PATTERN = Pattern.compile("^[a-zA-Z0-9_.]+$");
+
   private static final String NESTED_TRANSACTION_MESSAGE =
       "Nested transaction detected. Try refactoring to avoid nested transactions. If unachievable,"
           + " use reTransact() in nested transactions";
@@ -528,15 +539,38 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
-    return loadAllOfStream(clazz).collect(toImmutableList());
+    return loadAllOfSorted(clazz);
   }
 
   @Override
   public <T> Stream<T> loadAllOfStream(Class<T> clazz) {
+    return loadAllOfSortedStream(clazz);
+  }
+
+  @Override
+  public <T> ImmutableList<T> loadAllOfSorted(Class<T> clazz, String... sortFields) {
+    return loadAllOfSortedStream(clazz, sortFields).collect(toImmutableList());
+  }
+
+  @Override
+  public <T> Stream<T> loadAllOfSortedStream(Class<T> clazz, String... sortFields) {
     checkArgumentNotNull(clazz, "clazz must be specified");
+    checkArgumentNotNull(sortFields, "sortFields must not be null");
     assertInTransaction();
+    StringBuilder queryString =
+        new StringBuilder(String.format("FROM %s", getEntityType(clazz).getName()));
+    if (sortFields.length > 0) {
+      for (String field : sortFields) {
+        checkArgument(
+            VALID_SORT_FIELD_PATTERN.matcher(field).matches(),
+            "Invalid sort field name: %s",
+            field);
+      }
+      queryString.append(" ORDER BY ");
+      queryString.append(String.join(", ", sortFields));
+    }
     return getEntityManager()
-        .createQuery(String.format("FROM %s", getEntityType(clazz).getName()), clazz)
+        .createQuery(queryString.toString(), clazz)
         .getResultStream()
         .map(this::detach);
   }
