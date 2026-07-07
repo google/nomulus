@@ -258,8 +258,18 @@ public class DelegatingReplicaJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
+  public <T> ImmutableList<T> loadAllOfSorted(Class<T> clazz, String... sortFields) {
+    return getReplica().loadAllOfSorted(clazz, sortFields);
+  }
+
+  @Override
   public <T> Stream<T> loadAllOfStream(Class<T> clazz) {
     return getReplica().loadAllOfStream(clazz);
+  }
+
+  @Override
+  public <T> Stream<T> loadAllOfSortedStream(Class<T> clazz, String... sortFields) {
+    return getReplica().loadAllOfSortedStream(clazz, sortFields);
   }
 
   @Override

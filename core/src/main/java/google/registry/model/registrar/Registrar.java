@@ -1030,6 +1030,11 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return tm().transact(() -> tm().loadAllOf(Registrar.class));
   }
 
+  /** Loads all registrar entities directly from the database, sorted by the given field names. */
+  public static Iterable<Registrar> loadAllSorted(String... sortFields) {
+    return tm().transact(() -> tm().loadAllOfSorted(Registrar.class, sortFields));
+  }
+
   /** Loads all registrar entities using an in-memory cache. */
   public static Iterable<Registrar> loadAllCached() {
     return CACHE_BY_REGISTRAR_ID.get().values();
