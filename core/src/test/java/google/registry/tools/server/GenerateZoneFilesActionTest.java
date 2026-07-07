@@ -182,4 +182,34 @@ class GenerateZoneFilesActionTest {
     // The remaining lines can be in any order.
     assertThat(generatedFileLines).containsExactlyElementsIn(goldenFileLines);
   }
+
+  @Test
+  void testGenerate_deletedNameserver_ignoresAndLogsSevere() throws Exception {
+    createTlds("tld");
+    Instant now = Instant.parse("2024-03-27T00:00:00Z");
+    Host deletedHost = persistResource(newHost("ns.deleted.tld"));
+    // Delete the host before exportTime
+    persistResource(deletedHost.asBuilder().setDeletionTime(now.minusSeconds(3600)).build());
+
+    persistResource(
+        DatabaseHelper.newDomain("example.tld")
+            .asBuilder()
+            .addNameservers(ImmutableSet.of(deletedHost.createVKey()))
+            .build());
+
+    GenerateZoneFilesAction action = new GenerateZoneFilesAction();
+    action.bucket = "zonefiles-bucket";
+    action.gcsUtils = gcsUtils;
+    action.databaseRetention = Duration.ofDays(29);
+    action.dnsDefaultATtl = Duration.ofSeconds(11);
+    action.dnsDefaultNsTtl = Duration.ofSeconds(222);
+    action.dnsDefaultDsTtl = Duration.ofSeconds(3333);
+    action.clock = new FakeClock(plusMinutes(now, 2));
+
+    Map<String, Object> response =
+        action.handleJsonRequest(
+            ImmutableMap.<String, Object>of("tlds", ImmutableList.of("tld"), "exportTime", now));
+    assertThat(response)
+        .containsEntry("filenames", ImmutableList.of("gs://zonefiles-bucket/tld-" + now + ".zone"));
+  }
 }

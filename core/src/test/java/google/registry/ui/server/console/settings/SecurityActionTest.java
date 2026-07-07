@@ -114,6 +114,31 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
+  void testSuccess_postRegistrarInfo_nullIpAllowList() throws IOException {
+    CertificateChecker lenientChecker =
+        new CertificateChecker(
+            ImmutableSortedMap.of(START_INSTANT, 20825, Instant.parse("2020-09-01T00:00:00Z"), 398),
+            30,
+            15,
+            2048,
+            ImmutableSet.of("secp256r1", "secp384r1"),
+            clock);
+
+    clock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
+    String jsonWithNullIp =
+        String.format(
+            "{\"registrarId\": \"registrarId\", \"clientCertificate\": \"%s\","
+                + " \"ipAddressAllowList\": null}",
+            SAMPLE_CERT2);
+    SecurityAction action =
+        createAction(testRegistrar.getRegistrarId(), jsonWithNullIp, lenientChecker);
+    action.run();
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    Registrar r = loadRegistrar(testRegistrar.getRegistrarId());
+    assertThat(r.getIpAddressAllowList()).isEmpty();
+  }
+
+  @Test
   void testFailure_validityPeriodTooLong_returnsSpecificError() throws IOException {
     CertificateChecker strictChecker =
         new CertificateChecker(

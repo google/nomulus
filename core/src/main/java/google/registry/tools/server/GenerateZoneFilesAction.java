@@ -235,15 +235,20 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     String domainLabel = stripTld(domain.getDomainName(), domain.getTld());
     Tld tld = Tld.get(domain.getTld());
     for (Host nameserver : tm().loadByKeys(domain.getNameservers()).values()) {
+      // Load the nameservers at the export time in case they've been renamed or deleted
+      Host host = loadAtPointInTime(nameserver, exportTime);
+      if (host == null) {
+        log.atSevere().log(
+            "Domain %s contained nameserver %s that didn't exist at time %s",
+            domain.getRepoId(), nameserver.getRepoId(), exportTime);
+        continue;
+      }
       result.append(
           String.format(
               NS_FORMAT,
               domainLabel,
-              tld.getDnsNsTtl()
-                  .orElse(dnsDefaultNsTtl)
-                  .toSeconds(),
-              // Load the nameservers at the export time in case they've been renamed or deleted.
-              loadAtPointInTime(nameserver, exportTime).getHostName()));
+              tld.getDnsNsTtl().orElse(dnsDefaultNsTtl).toSeconds(),
+              host.getHostName()));
     }
     for (DomainDsData dsData : domain.getDsData()) {
       result.append(

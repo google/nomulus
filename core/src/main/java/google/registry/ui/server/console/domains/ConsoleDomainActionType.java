@@ -87,6 +87,6 @@ public abstract class ConsoleDomainActionType {
   }
 
   private String replaceValue(String xml, String key, String value) {
-    return xml.replaceAll("%" + key + "%", XML_ESCAPER.escape(value));
+    return xml.replace("%" + key + "%", XML_ESCAPER.escape(value));
   }
 }

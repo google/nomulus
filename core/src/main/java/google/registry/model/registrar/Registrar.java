@@ -871,7 +871,10 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     }
 
     public Builder setIpAddressAllowList(Iterable<CidrAddressBlock> ipAddressAllowList) {
-      getInstance().ipAddressAllowList = ImmutableList.copyOf(ipAddressAllowList);
+      getInstance().ipAddressAllowList =
+          ipAddressAllowList == null
+              ? ImmutableList.of()
+              : ImmutableList.copyOf(ipAddressAllowList);
       return this;
     }
 

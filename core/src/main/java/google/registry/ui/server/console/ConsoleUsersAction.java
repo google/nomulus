@@ -102,7 +102,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   @Override
   protected void postHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-    tm().transact(this::runPostInTransaction);
+    tm().transact(() -> runPostInTransaction(user));
   }
 
   @Override
@@ -135,16 +135,16 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     tm().transact(this::runDeleteInTransaction);
   }
 
-  private void runPostInTransaction() throws IOException {
+  private void runPostInTransaction(User callingUser) throws IOException {
     validateRequestParams();
     if (!tm().exists(VKey.create(User.class, this.userData.get().emailAddress))) {
       this.runCreate();
     } else {
-      this.runAppendUserToExistingRegistrar();
+      this.runAppendUserToExistingRegistrar(callingUser);
     }
   }
 
-  private void runAppendUserToExistingRegistrar() {
+  private void runAppendUserToExistingRegistrar(User callingUser) {
     ImmutableList<User> allRegistrarUsers = getAllRegistrarUsers(registrarId);
     if (allRegistrarUsers.size() >= 4) {
       throw new BadRequestException("Total users amount per registrar is limited to 4");
@@ -155,6 +155,9 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         || !userToAppend.getUserRoles().getGlobalRole().equals(GlobalRole.NONE)) {
       throw new BadRequestException(
           "Cannot append a global administrator or user with a global role to a registrar");
+    }
+    for (String existingRegistrarId : userToAppend.getUserRoles().getRegistrarRoles().keySet()) {
+      checkPermission(callingUser, existingRegistrarId, ConsolePermission.MANAGE_USERS);
     }
 
     updateUserRegistrarRoles(
@@ -263,10 +266,15 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       return;
     }
 
+    User userToUpdate = verifyUserExists(this.userData.get().emailAddress);
+    if (userToUpdate.getUserRoles().isAdmin()
+        || !userToUpdate.getUserRoles().getGlobalRole().equals(GlobalRole.NONE)) {
+      throw new BadRequestException(
+          "Cannot update a global administrator or user with a global role");
+    }
+
     updateUserRegistrarRoles(
-        verifyUserExists(this.userData.get().emailAddress),
-        registrarId,
-        requestRoleToAllowedRoles(this.userData.get().role));
+        userToUpdate, registrarId, requestRoleToAllowedRoles(this.userData.get().role));
 
     sendConfirmationEmail(registrarId, this.userData.get().emailAddress, "Updated user");
     consoleApiParams.response().setStatus(SC_OK);

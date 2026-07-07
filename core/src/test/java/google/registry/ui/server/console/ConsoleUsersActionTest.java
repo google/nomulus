@@ -425,6 +425,51 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
+  void testFailure_appendUser_crossTenantNoPermission() throws IOException {
+    User callingUser = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    AuthResult authResult = AuthResult.createUser(callingUser);
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("POST"),
+            Optional.of(
+                new UserData("test3@test.com", null, RegistrarRole.TECH_CONTACT.name(), null)));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  @Test
+  void testSuccess_appendUser_crossTenantWithPermission() throws IOException {
+    User callingUser =
+        DatabaseHelper.persistResource(
+            new User.Builder()
+                .setEmailAddress("multitenant@test.com")
+                .setUserRoles(
+                    new UserRoles()
+                        .asBuilder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of(
+                                "TheRegistrar",
+                                RegistrarRole.PRIMARY_CONTACT,
+                                "NewRegistrar",
+                                RegistrarRole.PRIMARY_CONTACT))
+                        .build())
+                .build());
+    AuthResult authResult = AuthResult.createUser(callingUser);
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("POST"),
+            Optional.of(
+                new UserData("test3@test.com", null, RegistrarRole.TECH_CONTACT.name(), null)));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    User appendedUser = DatabaseHelper.loadByKey(VKey.create(User.class, "test3@test.com"));
+    assertThat(appendedUser.getUserRoles().getRegistrarRoles().get("TheRegistrar"))
+        .isEqualTo(RegistrarRole.TECH_CONTACT);
+  }
+
+  @Test
   void testFailure_appendUser_globalAdmin() throws IOException {
     User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(user);
@@ -502,6 +547,62 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload())
         .contains("Cannot delete a global administrator or user with a global role");
+  }
+
+  @Test
+  void testFailure_updateUser_globalAdmin() throws IOException {
+    User user = DatabaseHelper.createAdminUser("email@email.com");
+    AuthResult authResult = AuthResult.createUser(user);
+    // Historically associated global admin
+    DatabaseHelper.persistResource(
+        new User.Builder()
+            .setEmailAddress("globaladmin@test.com")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setIsAdmin(true)
+                    .setGlobalRole(GlobalRole.NONE)
+                    .setRegistrarRoles(
+                        ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                    .build())
+            .build());
+
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("PUT"),
+            Optional.of(
+                new UserData(
+                    "globaladmin@test.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("Cannot update a global administrator or user with a global role");
+  }
+
+  @Test
+  void testFailure_updateUser_globalRole() throws IOException {
+    User user = DatabaseHelper.createAdminUser("email@email.com");
+    AuthResult authResult = AuthResult.createUser(user);
+    // Historically associated user with global role
+    DatabaseHelper.persistResource(
+        new User.Builder()
+            .setEmailAddress("support@test.com")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setIsAdmin(false)
+                    .setGlobalRole(GlobalRole.SUPPORT_AGENT)
+                    .build())
+            .build());
+
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("PUT"),
+            Optional.of(
+                new UserData(
+                    "support@test.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   private ConsoleUsersAction createAction(
