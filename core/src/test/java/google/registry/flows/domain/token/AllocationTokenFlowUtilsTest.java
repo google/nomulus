@@ -36,6 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.net.InternetDomainName;
@@ -54,6 +55,7 @@ import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,7 +75,12 @@ class AllocationTokenFlowUtilsTest {
       mock(AllocationTokenExtension.class);
 
   private final DomainPricingLogic domainPricingLogic =
-      new DomainPricingLogic(new DomainPricingCustomLogic(null, null, null));
+      new DomainPricingLogic(
+          new DomainPricingCustomLogic(null, null, null),
+          Duration.ofDays(30),
+          Duration.ofDays(1),
+          ImmutableMap.of(),
+          ImmutableMap.of());
 
   private Tld tld;
 
