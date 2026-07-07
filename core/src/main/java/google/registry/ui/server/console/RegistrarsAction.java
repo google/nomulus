@@ -59,6 +59,7 @@ public class RegistrarsAction extends ConsoleApiAction {
       """
             SELECT * FROM "Registrar"
             WHERE registrar_id in :registrarIds
+            ORDER BY registrar_name ASC, registrar_id ASC
       """;
   static final String PATH = "/console-api/registrars";
   private final Optional<Registrar> registrar;
@@ -83,7 +84,7 @@ public class RegistrarsAction extends ConsoleApiAction {
       ImmutableSet<Registrar.Type> allowedRegistrarTypes =
           user.getUserRoles().isAdmin() ? TYPES_ALLOWED_FOR_ADMINS : TYPES_ALLOWED_FOR_USERS;
       ImmutableList<Registrar> registrars =
-          Streams.stream(Registrar.loadAll())
+          Streams.stream(Registrar.loadAllSorted("registrarName", "registrarId"))
               .filter(r -> allowedRegistrarTypes.contains(r.getType()))
               .collect(ImmutableList.toImmutableList());
       consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(registrars));

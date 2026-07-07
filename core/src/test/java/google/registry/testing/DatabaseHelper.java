@@ -1174,6 +1174,16 @@ public final class DatabaseHelper {
   }
 
   /**
+   * Loads all the entities of the specified type from the DB, sorted by the given field names.
+   *
+   * <p>This creates an inner wrapping transaction for convenience, so you don't need to wrap it in
+   * a transaction at the call site.
+   */
+  public static <T> ImmutableList<T> loadAllOfSorted(Class<T> clazz, String... sortFields) {
+    return tm().transact(() -> tm().loadAllOfSorted(clazz, sortFields));
+  }
+
+  /**
    * Loads the set of entities by their keys from the DB.
    *
    * <p>This creates an inner wrapping transaction for convenience, so you don't need to wrap it in

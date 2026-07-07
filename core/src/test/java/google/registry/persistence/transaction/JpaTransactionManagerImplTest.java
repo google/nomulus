@@ -405,6 +405,39 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
+  void loadAllOfSorted() {
+    TestEntity entityB = new TestEntity("b_entity", "gamma");
+    TestEntity entityC = new TestEntity("c_entity", "alpha");
+    TestEntity entityA = new TestEntity("a_entity", "beta");
+    persistResources(ImmutableList.of(entityB, entityC, entityA));
+
+    assertThat(tm().transact(() -> tm().loadAllOfSorted(TestEntity.class, "name")))
+        .containsExactly(entityA, entityB, entityC)
+        .inOrder();
+
+    assertThat(tm().transact(() -> tm().loadAllOfSorted(TestEntity.class, "data")))
+        .containsExactly(entityC, entityA, entityB)
+        .inOrder();
+
+    assertThat(tm().transact(() -> tm().loadAllOfSorted(TestEntity.class, "data", "name")))
+        .containsExactly(entityC, entityA, entityB)
+        .inOrder();
+  }
+
+  @Test
+  void loadAllOfSorted_invalidFieldName_throwsException() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                tm().transact(
+                        () ->
+                            tm().loadAllOfSorted(
+                                    TestEntity.class, "name; DROP TABLE TestEntity;")));
+    assertThat(thrown).hasMessageThat().contains("Invalid sort field name");
+  }
+
+  @Test
   void saveAllNew_rollsBackWhenFailure() {
     moreEntities.forEach(entity -> assertThat(tm().transact(() -> tm().exists(entity))).isFalse());
     persistResource(moreEntities.get(0));
