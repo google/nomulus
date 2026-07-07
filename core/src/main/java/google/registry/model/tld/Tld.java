@@ -966,10 +966,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setCreateBillingCostTransitions(
         ImmutableSortedMap<Instant, Money> createCostsMap) {
-      checkArgumentNotNull(createCostsMap, "Create billing costs map cannot be null");
-      checkArgument(
-          createCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
-          "Create billing cost cannot be negative");
       getInstance().createBillingCostTransitions =
           TimedTransitionProperty.fromValueMap(createCostsMap);
       return this;
@@ -1012,17 +1008,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setRestoreBillingCost(Money amount) {
-      checkArgument(amount.isPositiveOrZero(), "restoreBillingCost cannot be negative");
       getInstance().restoreBillingCost = amount;
       return this;
     }
 
     public Builder setRenewBillingCostTransitions(
         ImmutableSortedMap<Instant, Money> renewCostsMap) {
-      checkArgumentNotNull(renewCostsMap, "Renew billing costs map cannot be null");
-      checkArgument(
-          renewCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
-          "Renew billing cost cannot be negative");
       getInstance().renewBillingCostTransitions =
           TimedTransitionProperty.fromValueMap(renewCostsMap);
       return this;
@@ -1030,10 +1021,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     /** Sets the EAP fee schedule for the TLD. */
     public Builder setEapFeeSchedule(ImmutableSortedMap<Instant, Money> eapFeeSchedule) {
-      checkArgumentNotNull(eapFeeSchedule, "EAP fee schedule cannot be null");
-      checkArgument(
-          eapFeeSchedule.values().stream().allMatch(Money::isPositiveOrZero),
-          "EAP fee cannot be negative");
       getInstance().eapFeeSchedule = TimedTransitionProperty.fromValueMap(eapFeeSchedule);
       return this;
     }
@@ -1051,14 +1038,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setServerStatusChangeBillingCost(Money amount) {
-      checkArgument(
-          amount.isPositiveOrZero(), "Server status change billing cost cannot be negative");
       getInstance().serverStatusChangeBillingCost = amount;
       return this;
     }
 
     public Builder setRegistryLockOrUnlockBillingCost(Money amount) {
-      checkArgument(amount.isPositiveOrZero(), "Registry lock/unlock cost cannot be negative");
       getInstance().registryLockOrUnlockBillingCost = amount;
       return this;
     }
@@ -1139,26 +1123,27 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       instance.eapFeeSchedule.checkValidity();
       // All costs must be in the expected currency.
       checkArgumentNotNull(instance.getCurrency(), "Currency must be set");
-      checkArgument(
-          instance.getRestoreBillingCost().getCurrencyUnit().equals(instance.currency),
-          "Restore cost must be in the TLD's currency");
-      checkArgument(
-          instance.getServerStatusChangeBillingCost().getCurrencyUnit().equals(instance.currency),
-          "Server status change cost must be in the TLD's currency");
-      checkArgument(
-          instance.getRegistryLockOrUnlockBillingCost().getCurrencyUnit().equals(instance.currency),
-          "Registry lock/unlock cost must be in the TLD's currency");
       Predicate<Money> currencyCheck =
-          (Money money) -> money.getCurrencyUnit().equals(instance.currency);
+          (Money money) ->
+              money.getCurrencyUnit().equals(instance.currency) && money.isPositiveOrZero();
+      checkArgument(
+          currencyCheck.test(instance.getRestoreBillingCost()),
+          "Restore cost is negative or in the wrong currency");
+      checkArgument(
+          currencyCheck.test(instance.getServerStatusChangeBillingCost()),
+          "Server status change cost is negative or in the wrong currency");
+      checkArgument(
+          currencyCheck.test(instance.getRegistryLockOrUnlockBillingCost()),
+          "Registry lock/unlock cost is negative or in the wrong currency");
       checkArgument(
           instance.getRenewBillingCostTransitions().values().stream().allMatch(currencyCheck),
-          "Renew cost must be in the TLD's currency");
+          "Some renew cost(s) are negative or in the wrong currency");
       checkArgument(
           instance.getCreateBillingCostTransitions().values().stream().allMatch(currencyCheck),
-          "Create cost must be in the TLD's currency");
+          "Some create cost(s) are negative or in the wrong currency");
       checkArgument(
           instance.eapFeeSchedule.toValueMap().values().stream().allMatch(currencyCheck),
-          "All EAP fees must be in the TLD's currency");
+          "Some EAP fee cost(s) are negative or in the wrong currency'");
       checkArgumentNotNull(
           instance.pricingEngineClassName, "All registries must have a configured pricing engine");
       checkArgument(

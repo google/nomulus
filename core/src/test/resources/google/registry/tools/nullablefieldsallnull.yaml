@@ -16,6 +16,7 @@ tldStateTransitions:
 creationTime: "2022-09-01T00:00:00.000Z"
 reservedListNames: null
 premiumListName: null
+pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 escrowEnabled: false
 dnsPaused: false
 addGracePeriodLength: "PT720H"

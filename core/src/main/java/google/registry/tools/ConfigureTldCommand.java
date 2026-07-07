@@ -164,6 +164,8 @@ public class ConfigureTldCommand extends MutatingCommand {
     if (Boolean.TRUE.equals(breakGlass)) {
       newTld = newTld.asBuilder().setBreakglassMode(true).build();
     }
+    // Enforce any builder restrictions, e.g. "no negative fees"
+    newTld = newTld.asBuilder().build();
     stageEntityChange(oldTld, newTld);
   }
 
