@@ -21,6 +21,7 @@ import static google.registry.util.DateTimeUtils.parseInstant;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.KeyDeserializer;
@@ -38,6 +39,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.tld.Tld.ExpiryAccessPeriodMode;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.VKey;
 import java.io.IOException;
@@ -336,7 +338,8 @@ public class EntityYamlUtils {
     @Override
     public TimedTransitionProperty<TldState> deserialize(
         JsonParser jp, DeserializationContext context) throws IOException {
-      SortedMap<String, String> valueMap = jp.readValueAs(SortedMap.class);
+      SortedMap<String, String> valueMap =
+          jp.readValueAs(new TypeReference<SortedMap<String, String>>() {});
       return TimedTransitionProperty.fromValueMap(
           valueMap.keySet().stream()
               .collect(
@@ -344,6 +347,37 @@ public class EntityYamlUtils {
                       natural(),
                       key -> parseInstant(key),
                       key -> TldState.valueOf(valueMap.get(key)))));
+    }
+  }
+
+  /**
+   * A custom JSON deserializer for a {@link TimedTransitionProperty} of {@link
+   * ExpiryAccessPeriodMode}.
+   */
+  public static class TimedTransitionPropertyExpiryAccessPeriodModeDeserializer
+      extends StdDeserializer<TimedTransitionProperty<ExpiryAccessPeriodMode>> {
+
+    public TimedTransitionPropertyExpiryAccessPeriodModeDeserializer() {
+      this(null);
+    }
+
+    public TimedTransitionPropertyExpiryAccessPeriodModeDeserializer(
+        Class<TimedTransitionProperty<ExpiryAccessPeriodMode>> t) {
+      super(t);
+    }
+
+    @Override
+    public TimedTransitionProperty<ExpiryAccessPeriodMode> deserialize(
+        JsonParser jp, DeserializationContext context) throws IOException {
+      SortedMap<String, String> valueMap =
+          jp.readValueAs(new TypeReference<SortedMap<String, String>>() {});
+      return TimedTransitionProperty.fromValueMap(
+          valueMap.keySet().stream()
+              .collect(
+                  toImmutableSortedMap(
+                      natural(),
+                      key -> parseInstant(key),
+                      key -> ExpiryAccessPeriodMode.valueOf(valueMap.get(key)))));
     }
   }
 
@@ -362,7 +396,8 @@ public class EntityYamlUtils {
     @Override
     public TimedTransitionProperty<Money> deserialize(JsonParser jp, DeserializationContext context)
         throws IOException {
-      SortedMap<String, LinkedHashMap<String, Object>> valueMap = jp.readValueAs(SortedMap.class);
+      SortedMap<String, LinkedHashMap<String, Object>> valueMap =
+          jp.readValueAs(new TypeReference<SortedMap<String, LinkedHashMap<String, Object>>>() {});
       return TimedTransitionProperty.fromValueMap(
           valueMap.keySet().stream()
               .collect(
@@ -392,7 +427,8 @@ public class EntityYamlUtils {
     @Override
     public TimedTransitionProperty<FeatureStatus> deserialize(
         JsonParser jp, DeserializationContext context) throws IOException {
-      SortedMap<String, String> valueMap = jp.readValueAs(SortedMap.class);
+      SortedMap<String, String> valueMap =
+          jp.readValueAs(new TypeReference<SortedMap<String, String>>() {});
       return TimedTransitionProperty.fromValueMap(
           valueMap.keySet().stream()
               .collect(

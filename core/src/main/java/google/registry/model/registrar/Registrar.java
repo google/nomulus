@@ -265,6 +265,18 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   @Column(nullable = false)
   boolean blockPremiumNames;
 
+  /**
+   * Whether this registrar has opted into participating in the Expiry Access Period (XAP).
+   *
+   * <p>If this is false, any domain currently in XAP will appear as reserved/unavailable on checks
+   * and creates.
+   *
+   * <p>TODO(mcilwain): Drop the temporary database default for expiry_access_period_enabled in a
+   * subsequent schema migration once this code is deployed.
+   */
+  @Column(nullable = false)
+  boolean expiryAccessPeriodEnabled;
+
   // Authentication.
 
   /** X.509 PEM client certificate(s) used to authenticate registrar to EPP service. */
@@ -560,6 +572,10 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return blockPremiumNames;
   }
 
+  public boolean getExpiryAccessPeriodEnabled() {
+    return expiryAccessPeriodEnabled;
+  }
+
   public boolean getContactsRequireSyncing() {
     return contactsRequireSyncing;
   }
@@ -654,6 +670,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
         .put("whoisServer", getWhoisServer())
         .putListOfStrings("rdapBaseUrls", getRdapBaseUrls())
         .put("blockPremiumNames", blockPremiumNames)
+        .put("expiryAccessPeriodEnabled", expiryAccessPeriodEnabled)
         .put("url", url)
         .put("icannReferralEmail", getIcannReferralEmail())
         .put("driveFolderId", driveFolderId)
@@ -915,6 +932,11 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
 
     public Builder setBlockPremiumNames(boolean blockPremiumNames) {
       getInstance().blockPremiumNames = blockPremiumNames;
+      return this;
+    }
+
+    public Builder setExpiryAccessPeriodEnabled(boolean expiryAccessPeriodEnabled) {
+      getInstance().expiryAccessPeriodEnabled = expiryAccessPeriodEnabled;
       return this;
     }
 
