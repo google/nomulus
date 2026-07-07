@@ -31,6 +31,7 @@ import static google.registry.flows.domain.DomainFlowUtils.isValidReservedCreate
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWithIdnTables;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
+import static google.registry.flows.domain.DomainFlowUtils.wasDeletedDuringAddGracePeriod;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 import static google.registry.model.tld.label.ReservationType.getTypeOfHighestSeverity;
@@ -75,6 +76,7 @@ import google.registry.model.eppoutput.CheckData.DomainCheck;
 import google.registry.model.eppoutput.CheckData.DomainCheckData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
+import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
@@ -82,6 +84,7 @@ import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
@@ -137,6 +140,10 @@ public final class DomainCheckFlow implements TransactionalFlow {
   @Inject
   @Config("maxChecks")
   int maxChecks;
+
+  @Inject
+  @Config("domainExpiryAccessPeriodTotalLength")
+  Duration domainExpiryAccessPeriodTotalLength;
 
   @Inject @Superuser boolean isSuperuser;
   @Inject Clock clock;
@@ -249,7 +256,21 @@ public final class DomainCheckFlow implements TransactionalFlow {
       return Optional.of(e.getMessage());
     }
     return getMessageForCheckWithToken(
-        idn, existingDomains, bsaBlockedDomainNames, tldStates, token);
+        idn, existingDomains, bsaBlockedDomainNames, tldStates, token, now);
+  }
+
+  private static Optional<Domain> loadDomainIfInXap(
+      String domainName, Instant now, Duration domainExpiryAccessPeriodTotalLength) {
+    Optional<Domain> recentlyDeletedDomain =
+        ForeignKeyUtils.loadResource(
+            Domain.class, domainName, now.minus(domainExpiryAccessPeriodTotalLength));
+    if (recentlyDeletedDomain.isPresent()
+        && recentlyDeletedDomain.get().getDeletionTime().isBefore(now)
+        && !wasDeletedDuringAddGracePeriod(
+            recentlyDeletedDomain.get(), Tld.get(recentlyDeletedDomain.get().getTld()))) {
+      return recentlyDeletedDomain;
+    }
+    return Optional.empty();
   }
 
   private Optional<String> getMessageForCheckWithToken(
@@ -257,9 +278,17 @@ public final class DomainCheckFlow implements TransactionalFlow {
       ImmutableMap<String, VKey<Domain>> existingDomains,
       ImmutableSet<InternetDomainName> bsaBlockedDomains,
       ImmutableMap<String, TldState> tldStates,
-      Optional<AllocationToken> allocationToken) {
+      Optional<AllocationToken> allocationToken,
+      Instant now) {
     if (existingDomains.containsKey(domainName.toString())) {
       return Optional.of("In use");
+    }
+    Tld tld = Tld.get(domainName.parent().toString());
+    if (tld.getExpiryAccessPeriodModeAt(now) == Tld.ExpiryAccessPeriodMode.ENABLED
+        && !Registrar.loadByRegistrarIdCached(registrarId).get().getExpiryAccessPeriodEnabled()
+        && loadDomainIfInXap(domainName.toString(), now, domainExpiryAccessPeriodTotalLength)
+            .isPresent()) {
+      return Optional.of("Reserved");
     }
     TldState tldState = tldStates.get(domainName.parent().toString());
     if (isReserved(domainName, START_DATE_SUNRISE.equals(tldState))) {
@@ -339,16 +368,27 @@ public final class DomainCheckFlow implements TransactionalFlow {
                   .build());
           continue;
         }
+        Optional<Domain> domainForFee = domain;
+        boolean isAvailable = availableDomains.contains(domainName);
+        if (isAvailable
+            && feeCheckItem.getCommandName().equals(FeeQueryCommandExtensionItem.CommandName.CREATE)
+            && tld.getExpiryAccessPeriodModeAt(now) == Tld.ExpiryAccessPeriodMode.ENABLED) {
+          Optional<Domain> recentlyDeletedDomain =
+              loadDomainIfInXap(domainName, now, domainExpiryAccessPeriodTotalLength);
+          if (recentlyDeletedDomain.isPresent()) {
+            domainForFee = recentlyDeletedDomain;
+          }
+        }
         handleFeeRequest(
             feeCheckItem,
             builder,
             domainNames.get(domainName),
-            domain,
+            domainForFee,
             feeCheck.getCurrency(),
             now,
             pricingLogic,
             token,
-            availableDomains.contains(domainName),
+            isAvailable,
             recurrences.getOrDefault(domainName, null));
         // In the case of a registrar that is running a tiered pricing promotion, we issue two
         // responses for the CREATE fee check command: one (the default response) with the

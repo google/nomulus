@@ -642,6 +642,7 @@ public class DomainFlowUtils {
                       tld,
                       domainNameString,
                       now,
+                      domain,
                       years,
                       isAnchorTenant(domainName, allocationToken, Optional.empty()),
                       isSunrise,
@@ -764,6 +765,9 @@ public class DomainFlowUtils {
     if (feeCommand.isEmpty()) {
       if (!feesAndCredits.getEapCost().isZero()) {
         throw new FeesRequiredDuringEarlyAccessProgramException(feesAndCredits.getEapCost());
+      }
+      if (!feesAndCredits.getXapCost().isZero()) {
+        throw new FeesRequiredDuringExpiryAccessPeriodException(feesAndCredits.getXapCost());
       }
       if (feesAndCredits.getTotalCost().isZero() || !feesAndCredits.isFeeExtensionRequired()) {
         return;
@@ -1168,6 +1172,24 @@ public class DomainFlowUtils {
         .getResultList();
   }
 
+  /**
+   * Returns true if the domain was deleted during its Add Grace Period (AGP).
+   *
+   * <p>Per policy, domains deleted during AGP are not subject to Expiry Access Period (XAP) fees or
+   * reservation restrictions upon subsequent re-registration.
+   */
+  public static boolean wasDeletedDuringAddGracePeriod(Domain domain, Tld tld) {
+    if (domain == null || domain.getCreationTime() == null || domain.getDeletionTime() == null) {
+      return false;
+    }
+    Duration agpLength = tld.getAddGracePeriodLength();
+    if (tld.getAnchorTenantAddGracePeriodLength() != null
+        && tld.getAnchorTenantAddGracePeriodLength().compareTo(agpLength) > 0) {
+      agpLength = tld.getAnchorTenantAddGracePeriodLength();
+    }
+    return !domain.getDeletionTime().isAfter(domain.getCreationTime().plus(agpLength));
+  }
+
   /** Resource linked to this domain does not exist. */
   static class LinkedResourcesDoNotExistException extends ObjectDoesNotExistException {
     public LinkedResourcesDoNotExistException(Class<?> type, ImmutableSet<String> resourceIds) {
@@ -1351,6 +1373,18 @@ public class DomainFlowUtils {
       super(
           "Fees must be explicitly acknowledged when creating domains "
               + "during the Early Access Program. The EAP fee is: "
+              + expectedFee);
+    }
+  }
+
+  /** Fees must be explicitly acknowledged when creating domains during the Expiry Access Period. */
+  static class FeesRequiredDuringExpiryAccessPeriodException
+      extends RequiredParameterMissingException {
+
+    public FeesRequiredDuringExpiryAccessPeriodException(Money expectedFee) {
+      super(
+          "Fees must be explicitly acknowledged when creating domains "
+              + "during the Expiry Access Period. The XAP fee is: "
               + expectedFee);
     }
   }
