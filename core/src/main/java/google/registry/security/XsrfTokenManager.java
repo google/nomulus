@@ -104,8 +104,7 @@ public final class XsrfTokenManager {
     // Reconstruct the token to verify validity.
     String reconstructedToken = encodeToken(ServerSecret.get().asBytes(), email, timestampMillis);
     if (!MessageDigest.isEqual(token.getBytes(UTF_8), reconstructedToken.getBytes(UTF_8))) {
-      logger.atWarning().log(
-          "Reconstructed XSRF mismatch (got != expected): %s != %s", token, reconstructedToken);
+      logger.atWarning().log("Token %s didn't match expected reconstructed token", token);
       return false;
     }
     return true;
