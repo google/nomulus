@@ -40,10 +40,9 @@ import javax.annotation.Nullable;
  * An authentication mechanism that verifies the OIDC token.
  *
  * <p>Currently, two flavors are supported: one that checks for the OIDC token as a regular bearer
- * token, and another that checks for the OIDC token passed by IAP. In both cases, the {@link
- * AuthResult} with the highest {@link AuthLevel} possible is returned. So, if the email address for
- * which the token is minted exists both as a {@link User} and as a service account, the returned
- * {@link AuthResult} is at {@link AuthLevel#USER}.
+ * token, and another that checks for the OIDC token passed by IAP. In the case where the email
+ * address for which the token is minted exists both as a {link User} and as a service account, the
+ * returned {@link AuthResult} is at {@link AuthLevel#APP} to avoid database lookups when possible.
  *
  * @see <a href="https://developers.google.com/identity/openid-connect/openid-connect">OpenID
  *     Connect </a>
