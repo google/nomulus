@@ -24,11 +24,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -99,5 +102,40 @@ public class MultilayerDomainCacheTest {
     assertThat(cache.loadByDomainName("nonexistent.tld")).isEmpty();
     verify(cacheMetrics).recordLookup("Domain", CacheMetrics.CacheHitType.MISS_NONEXISTENT);
     verifyNoMoreInteractions(cacheMetrics);
+  }
+
+  @Test
+  void testLoad_filtersOutDeletedDomain() {
+    Domain domain =
+        persistActiveDomain("example.tld")
+            .asBuilder()
+            .setDeletionTime(clock.now().plus(Duration.ofDays(1)))
+            .build();
+    when(jedisClient.get(Domain.class, "example.tld")).thenReturn(Optional.of(domain));
+    assertThat(cache.loadByDomainName("example.tld")).hasValue(domain);
+
+    clock.advanceBy(Duration.ofDays(2));
+    assertThat(cache.loadByDomainName("example.tld")).isEmpty();
+  }
+
+  @Test
+  void testLoad_projectsToCurrentTime() {
+    Domain domain =
+        persistActiveDomain("example.tld")
+            .asBuilder()
+            .addGracePeriod(
+                GracePeriod.create(
+                    GracePeriodStatus.ADD,
+                    "example.tld",
+                    clock.now().plus(Duration.ofDays(5)),
+                    "TheRegistrar",
+                    null))
+            .build();
+    when(jedisClient.get(Domain.class, "example.tld")).thenReturn(Optional.of(domain));
+    assertThat(cache.loadByDomainName("example.tld").get().getGracePeriods())
+        .containsExactlyElementsIn(domain.getGracePeriods());
+
+    clock.advanceBy(Duration.ofDays(10));
+    assertThat(cache.loadByDomainName("example.tld").get().getGracePeriods()).isEmpty();
   }
 }

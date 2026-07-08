@@ -73,7 +73,10 @@ class RdapTestHelper {
             "We reserve the right to modify this agreement at any time.");
     rdapJsonFormatter.rdapTosStaticUrl = "https://www.example.tld/about/rdap/tos.html";
     rdapJsonFormatter.hostCache =
-        (repoId) -> Optional.ofNullable(EppResource.loadByCache(VKey.create(Host.class, repoId)));
+        (repoId) ->
+            Optional.ofNullable(EppResource.loadByCache(VKey.create(Host.class, repoId)))
+                .filter(host -> clock.now().isBefore(host.getDeletionTime()))
+                .map(host -> (Host) host.cloneProjectedAtTime(clock.now()));
     return rdapJsonFormatter;
   }
 

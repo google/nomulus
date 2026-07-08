@@ -38,6 +38,7 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -106,12 +107,16 @@ public final class CacheModule {
   @Provides
   @Singleton
   public static HostCache provideHostCache(
-      Optional<SimplifiedJedisClient> jedisClient, CacheMetrics cacheMetrics) {
+      Optional<SimplifiedJedisClient> jedisClient, Clock clock, CacheMetrics cacheMetrics) {
     if (jedisClient.isEmpty()) {
-      return repoId ->
-          Optional.ofNullable(EppResource.loadByCache(VKey.create(Host.class, repoId)));
+      return repoId -> {
+        Instant now = clock.now();
+        return Optional.ofNullable(EppResource.loadByCache(VKey.create(Host.class, repoId)))
+            .filter(host -> now.isBefore(host.getDeletionTime()))
+            .map(host -> (Host) host.cloneProjectedAtTime(now));
+      };
     }
-    return new MultilayerHostCache(jedisClient.get(), cacheMetrics);
+    return new MultilayerHostCache(jedisClient.get(), clock, cacheMetrics);
   }
 
   private static SSLSocketFactory createValkeySslSocketFactory(String valkeyCertificateAuthority) {

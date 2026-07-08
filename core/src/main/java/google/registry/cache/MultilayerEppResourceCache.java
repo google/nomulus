@@ -18,7 +18,9 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import google.registry.config.RegistryConfig;
 import google.registry.model.EppResource;
+import google.registry.util.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -36,11 +38,13 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
           .build();
 
   private final SimplifiedJedisClient jedisClient;
+  private final Clock clock;
   private final CacheMetrics cacheMetrics;
 
   protected MultilayerEppResourceCache(
-      SimplifiedJedisClient jedisClient, CacheMetrics cacheMetrics) {
+      SimplifiedJedisClient jedisClient, Clock clock, CacheMetrics cacheMetrics) {
     this.jedisClient = jedisClient;
+    this.clock = clock;
     this.cacheMetrics = cacheMetrics;
   }
 
@@ -50,7 +54,16 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
     return true;
   }
 
+  @SuppressWarnings("unchecked")
   protected Optional<V> loadFromCaches(Class<V> clazz, String key) {
+    Instant now = clock.now();
+    return (Optional<V>)
+        loadFromCachesInternal(clazz, key)
+            .filter(v -> now.isBefore(v.getDeletionTime()))
+            .map(v -> v.cloneProjectedAtTime(now));
+  }
+
+  private Optional<V> loadFromCachesInternal(Class<V> clazz, String key) {
     // hopefully the resource is in the local cache
     Optional<V> possibleValue = Optional.ofNullable(localCache.getIfPresent(key));
     if (possibleValue.isPresent()) {

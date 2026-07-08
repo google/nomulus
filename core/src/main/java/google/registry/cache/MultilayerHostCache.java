@@ -18,6 +18,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
+import google.registry.util.Clock;
 import java.util.Optional;
 
 /**
@@ -27,8 +28,9 @@ import java.util.Optional;
  */
 public class MultilayerHostCache extends MultilayerEppResourceCache<Host> implements HostCache {
 
-  public MultilayerHostCache(SimplifiedJedisClient jedisClient, CacheMetrics cacheMetrics) {
-    super(jedisClient, cacheMetrics);
+  public MultilayerHostCache(
+      SimplifiedJedisClient jedisClient, Clock clock, CacheMetrics cacheMetrics) {
+    super(jedisClient, clock, cacheMetrics);
   }
 
   @Override

@@ -19,7 +19,6 @@ import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
 import google.registry.util.Clock;
-import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -30,12 +29,9 @@ import java.util.Optional;
 public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
     implements DomainCache {
 
-  private final Clock clock;
-
   public MultilayerDomainCache(
       SimplifiedJedisClient jedisClient, Clock clock, CacheMetrics cacheMetrics) {
-    super(jedisClient, cacheMetrics);
-    this.clock = clock;
+    super(jedisClient, clock, cacheMetrics);
   }
 
   @Override
@@ -46,15 +42,10 @@ public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
   @Override
   protected Optional<Domain> loadFromDatabase(String domainName) {
     // Don't use the cache (avoid caching the same domain twice). Do use the replica SQL instance.
-    Optional<Domain> possibleDomain =
-        Optional.ofNullable(
-            ForeignKeyUtils.loadMostRecentResourceObjects(
-                    Domain.class, ImmutableList.of(domainName), true)
-                .get(domainName));
-    Instant now = clock.now();
-    return possibleDomain
-        .filter(domain -> now.isBefore(domain.getDeletionTime()))
-        .map(domain -> domain.cloneProjectedAtTime(now));
+    return Optional.ofNullable(
+        ForeignKeyUtils.loadMostRecentResourceObjects(
+                Domain.class, ImmutableList.of(domainName), true)
+            .get(domainName));
   }
 
   @Override

@@ -25,6 +25,8 @@ import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,12 +40,13 @@ public class MultilayerHostCacheTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final SimplifiedJedisClient jedisClient = mock(SimplifiedJedisClient.class);
+  private final FakeClock clock = new FakeClock();
   private final CacheMetrics cacheMetrics = mock(CacheMetrics.class);
   private MultilayerHostCache cache;
 
   @BeforeEach
   void beforeEach() {
-    cache = new MultilayerHostCache(jedisClient, cacheMetrics);
+    cache = new MultilayerHostCache(jedisClient, clock, cacheMetrics);
   }
 
   @Test
@@ -79,5 +82,19 @@ public class MultilayerHostCacheTest {
     assertThat(cache.loadByRepoId("nonexistent")).isEmpty();
     verify(cacheMetrics).recordLookup("Host", CacheMetrics.CacheHitType.MISS_NONEXISTENT);
     verifyNoMoreInteractions(cacheMetrics);
+  }
+
+  @Test
+  void testLoad_filtersOutDeletedHost() {
+    Host host =
+        persistActiveHost("ns1.example.tld")
+            .asBuilder()
+            .setDeletionTime(clock.now().plus(Duration.ofDays(1)))
+            .build();
+    when(jedisClient.get(Host.class, host.getRepoId())).thenReturn(Optional.of(host));
+    assertThat(cache.loadByRepoId(host.getRepoId())).hasValue(host);
+
+    clock.advanceBy(Duration.ofDays(2));
+    assertThat(cache.loadByRepoId(host.getRepoId())).isEmpty();
   }
 }
