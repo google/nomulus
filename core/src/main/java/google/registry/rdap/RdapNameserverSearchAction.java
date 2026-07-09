@@ -185,7 +185,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       throw new UnprocessableEntityException(
           "A suffix after a wildcard in a nameserver lookup must be an in-bailiwick domain");
     }
-    List<Host> hostList = new ArrayList<>();
+    List<String> matchingFqhns = new ArrayList<>();
     for (String fqhn : ImmutableSortedSet.copyOf(domain.get().getSubordinateHosts())) {
       if (cursorString.isPresent() && (fqhn.compareTo(cursorString.get()) <= 0)) {
         continue;
@@ -193,10 +193,22 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       // We can't just check that the host name starts with the initial query string, because
       // then the query ns.exam*.example.com would match against nameserver ns.example.com.
       if (partialStringQuery.matches(fqhn)) {
-        Optional<Host> host =
-            ForeignKeyUtils.loadResourceByCache(Host.class, fqhn, getRequestTime());
-        if (shouldBeVisible(host)) {
-          hostList.add(host.get());
+        matchingFqhns.add(fqhn);
+      }
+    }
+    List<Host> hostList = new ArrayList<>();
+    int chunkSize = getStandardQuerySizeLimit();
+    // Batch load from cache in chunks to avoid sequential N+1 database queries on cache misses.
+    for (List<String> fqhnChunk : Iterables.partition(matchingFqhns, chunkSize)) {
+      if (hostList.size() > rdapResultSetMaxSize) {
+        break;
+      }
+      ImmutableMap<String, Host> cachedHosts =
+          ForeignKeyUtils.loadResourcesByCache(Host.class, fqhnChunk, getRequestTime());
+      for (String fqhn : fqhnChunk) {
+        Host host = cachedHosts.get(fqhn);
+        if (host != null && shouldBeVisible(host)) {
+          hostList.add(host);
           if (hostList.size() > rdapResultSetMaxSize) {
             break;
           }
@@ -204,10 +216,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       }
     }
     return makeSearchResults(
-        hostList,
-        IncompletenessWarningType.COMPLETE,
-        domain.get().getSubordinateHosts().size(),
-        CursorType.NAME);
+        hostList, IncompletenessWarningType.COMPLETE, hostList.size(), CursorType.NAME);
   }
 
   /**
