@@ -144,4 +144,17 @@ class ForeignKeyUtilsTest {
                 fakeClock.now()))
         .containsExactlyEntriesIn(ImmutableMap.of("ns1.example.com", host1.createVKey()));
   }
+
+  @Test
+  void testSuccess_loadResourcesByCache_skipsDeletedAndNonexistent() {
+    Host host1 = persistActiveHost("ns1.example.com");
+    Host host2 = persistActiveHost("ns2.example.com");
+    persistResource(host2.asBuilder().setDeletionTime(minusDays(fakeClock.now(), 1)).build());
+    assertThat(
+            ForeignKeyUtils.loadResourcesByCache(
+                Host.class,
+                ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
+                fakeClock.now()))
+        .containsExactlyEntriesIn(ImmutableMap.of("ns1.example.com", host1));
+  }
 }
