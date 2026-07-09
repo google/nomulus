@@ -44,8 +44,8 @@ import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Result;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
@@ -62,7 +62,7 @@ public class XmlTransformer {
   private static final String SYSTEM_ID = "<default system id>";
 
   /** A transformer factory for the {@link #prettyPrint} method. */
-  private static final TransformerFactory transformerFactory = TransformerFactory.newInstance();
+  private static final TransformerFactory transformerFactory = createTransformerFactory();
 
   /** A {@link JAXBContext} (thread-safe) to use for marshaling and unmarshaling. */
   private final JAXBContext jaxbContext;
@@ -156,21 +156,24 @@ public class XmlTransformer {
       // Plain old parsing exceptions have a SAXParseException with no further cause.
       if (e.getLinkedException() instanceof SAXParseException sae
           && e.getLinkedException().getCause() == null) {
-        throw new XmlException(String.format(
-            "Syntax error at line %d, column %d: %s",
-            sae.getLineNumber(),
-            sae.getColumnNumber(),
-            nullToEmpty(sae.getMessage()).replaceAll("&quot;", "")));
+        throw new XmlException(
+            String.format(
+                "Syntax error at line %d, column %d: %s",
+                sae.getLineNumber(),
+                sae.getColumnNumber(),
+                nullToEmpty(sae.getMessage()).replace("&quot;", "")));
       }
       // These get thrown for attempted XXE attacks.
       if (e.getLinkedException() instanceof XMLStreamException xse) {
-        throw new XmlException(String.format(
-            "Syntax error at line %d, column %d: %s",
-            xse.getLocation().getLineNumber(),
-            xse.getLocation().getColumnNumber(),
-            nullToEmpty(xse.getMessage())
-                .replaceAll("^.*\nMessage: ", "")  // Strip an ugly prefix from XMLStreamException.
-                .replaceAll("&quot;", "")));
+        throw new XmlException(
+            String.format(
+                "Syntax error at line %d, column %d: %s",
+                xse.getLocation().getLineNumber(),
+                xse.getLocation().getColumnNumber(),
+                nullToEmpty(xse.getMessage())
+                    .replaceAll(
+                        "^.*\nMessage: ", "") // Strip an ugly prefix from XMLStreamException.
+                    .replace("&quot;", "")));
       }
       throw new XmlException(e);
     } catch (JAXBException | XMLStreamException | IOException e) {
@@ -225,27 +228,6 @@ public class XmlTransformer {
           STRICT.equals(validation) ? schema : null,
           ImmutableMap.of(Marshaller.JAXB_ENCODING, charset.toString())).marshal(
               checkNotNull(root, "root"), checkNotNull(out, "out"));
-    } catch (JAXBException e) {
-      throw new XmlException(e);
-    }
-  }
-
-  /**
-   * Validates and streams {@code root} as characters, always using strict validation.
-   *
-   * <p>The root object must be annotated with {@link jakarta.xml.bind.annotation.XmlRootElement}.
-   * This method will verify that your object strictly conforms to {@link #schema}. Because the
-   * output is streamed, {@link XmlException} will most likely be thrown <i>after</i> output has
-   * been written.
-   *
-   * @param root the object to write
-   * @param result to write the output to
-   * @throws XmlException to rethrow {@link JAXBException}.
-   */
-  public void marshalStrict(Object root, Result result) throws XmlException {
-    try {
-      getMarshaller(schema, ImmutableMap.of())
-          .marshal(checkNotNull(root, "root"), checkNotNull(result, "result"));
     } catch (JAXBException e) {
       throw new XmlException(e);
     }
@@ -326,5 +308,15 @@ public class XmlTransformer {
   /** Pretty print XML bytes. */
   public static String prettyPrint(byte[] xmlBytes) {
     return prettyPrint(new String(xmlBytes, UTF_8));
+  }
+
+  private static TransformerFactory createTransformerFactory() {
+    TransformerFactory transformerFactory = TransformerFactory.newInstance();
+    try {
+      transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+    } catch (TransformerConfigurationException e) {
+      throw new RuntimeException(e); // this should never happen
+    }
+    return transformerFactory;
   }
 }
