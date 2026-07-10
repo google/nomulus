@@ -14,7 +14,7 @@
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from '../registrar/registrar.service';
 import { UserDataService } from '../shared/services/userData.service';
@@ -42,11 +42,11 @@ export class RegistryLockComponent {
   ];
 
   lockDomain = new FormGroup({
-    password: new FormControl(''),
+    password: new FormControl('', [Validators.required]),
   });
 
   unlockDomain = new FormGroup({
-    password: new FormControl(''),
+    password: new FormControl('', [Validators.required]),
     relockTime: new FormControl(undefined),
   });
 

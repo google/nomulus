@@ -67,8 +67,10 @@ export default class NewRegistrarComponent {
   onBillingAccountMapChange(val: String) {
     const billingAccountMap: { [key: string]: string } = {};
     this.newRegistrar.billingAccountMap = val.split('\n').reduce((acc, val) => {
-      const [currency, billingCode] = val.split('=');
-      acc[currency] = billingCode;
+      const [currency, billingCode] = val.split('=').map((s) => s?.trim());
+      if (currency && billingCode) {
+        acc[currency] = billingCode;
+      }
       return acc;
     }, billingAccountMap);
   }

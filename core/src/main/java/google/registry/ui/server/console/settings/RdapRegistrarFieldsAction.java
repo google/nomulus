@@ -93,7 +93,7 @@ public class RdapRegistrarFieldsAction extends ConsoleApiAction {
       newRegistrarBuilder.setPhoneNumber(providedRegistrar.getPhoneNumber());
       updates.add("PHONE");
     }
-    if (!providedRegistrar.getFaxNumber().equals(savedRegistrar.getPhoneNumber())) {
+    if (!providedRegistrar.getFaxNumber().equals(savedRegistrar.getFaxNumber())) {
       newRegistrarBuilder.setFaxNumber(providedRegistrar.getFaxNumber());
       updates.add("FAX");
     }

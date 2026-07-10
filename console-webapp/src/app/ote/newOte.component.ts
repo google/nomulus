@@ -50,7 +50,10 @@ export class NewOteComponent {
 
   createOte = new FormGroup({
     registrarId: new FormControl('', [Validators.required]),
-    registrarEmail: new FormControl('', [Validators.required]),
+    registrarEmail: new FormControl('', [
+      Validators.required,
+      Validators.email,
+    ]),
   });
 
   constructor(
