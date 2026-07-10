@@ -21,10 +21,13 @@ import com.google.gson.Gson;
 import google.registry.model.console.User;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.auth.AuthResult;
+import google.registry.security.JsonHttpTestUtils;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
+import jakarta.servlet.ServletInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -50,5 +53,9 @@ public abstract class ConsoleActionBaseTestCase {
     AuthResult authResult = AuthResult.createUser(fteUser);
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     response = (FakeResponse) consoleApiParams.response();
+  }
+
+  protected static ServletInputStream createServletInputStream(String data) {
+    return JsonHttpTestUtils.createServletInputStream(data.getBytes(StandardCharsets.UTF_8));
   }
 }

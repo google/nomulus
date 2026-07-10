@@ -23,7 +23,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,9 +46,7 @@ import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordDat
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -167,16 +164,13 @@ class ConsoleEppPasswordActionTest extends ConsoleActionBaseTestCase {
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of("TheRegistrar", OWNER));
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    doReturn(
-            new BufferedReader(
-                new StringReader(
-                    String.format(
-                        eppPostData, registrarId, oldPassword, newPassword, newPasswordRepeat))))
-        .when(consoleApiParams.request())
-        .getReader();
     Optional<EppPasswordData> maybePasswordChangeRequest =
         ConsoleModule.provideEppPasswordChangeRequest(
-            GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
+            GSON,
+            RequestModule.provideJsonBody(
+                String.format(
+                    eppPostData, registrarId, oldPassword, newPassword, newPasswordRepeat),
+                GSON));
 
     return new ConsoleEppPasswordAction(
         consoleApiParams, authenticatedRegistrarAccessor, maybePasswordChangeRequest);
