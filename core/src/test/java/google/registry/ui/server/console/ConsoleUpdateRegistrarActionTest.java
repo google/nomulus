@@ -21,7 +21,6 @@ import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,9 +42,7 @@ import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -219,12 +216,8 @@ class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
 
   private ConsoleUpdateRegistrarAction createAction(String requestData) throws IOException {
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    doReturn(new BufferedReader(new StringReader(requestData)))
-        .when(consoleApiParams.request())
-        .getReader();
     Optional<Registrar> maybeRegistrarUpdateData =
-        ConsoleModule.provideRegistrar(
-            GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
+        ConsoleModule.provideRegistrar(GSON, RequestModule.provideJsonBody(requestData, GSON));
     return new ConsoleUpdateRegistrarAction(consoleApiParams, maybeRegistrarUpdateData);
   }
 }

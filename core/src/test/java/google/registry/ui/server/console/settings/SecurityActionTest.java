@@ -22,7 +22,6 @@ import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
@@ -37,9 +36,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.console.ConsoleActionBaseTestCase;
 import google.registry.ui.server.console.ConsoleModule;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -170,12 +167,8 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
       String registrarId, String jsonBody, CertificateChecker certificateChecker)
       throws IOException {
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    doReturn(new BufferedReader(new StringReader(jsonBody)))
-        .when(consoleApiParams.request())
-        .getReader();
     Optional<Registrar> maybeRegistrar =
-        ConsoleModule.provideRegistrar(
-            GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
+        ConsoleModule.provideRegistrar(GSON, RequestModule.provideJsonBody(jsonBody, GSON));
     return new SecurityAction(
         consoleApiParams, certificateChecker, registrarAccessor, registrarId, maybeRegistrar);
   }

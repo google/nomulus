@@ -37,6 +37,8 @@ import org.apache.commons.compress.utils.IOUtils;
 /** Utilities for common functionality relating to {@link URLConnection}s. */
 public final class UrlConnectionUtils {
 
+  public static final int MAX_PAYLOAD_BYTES = 50 * 1024 * 1024;
+
   private UrlConnectionUtils() {}
 
   /**
@@ -48,10 +50,22 @@ public final class UrlConnectionUtils {
    * @see HttpURLConnection#getErrorStream()
    */
   public static byte[] getResponseBytes(HttpURLConnection connection) throws IOException {
-    int responseCode = connection.getResponseCode();
-    try (InputStream is =
-        responseCode < 400 ? connection.getInputStream() : connection.getErrorStream()) {
-      return ByteStreams.toByteArray(is);
+    try {
+      if (connection.getContentLengthLong() > MAX_PAYLOAD_BYTES) {
+        throw new IOException(
+            String.format(
+                "Response size %d exceeds limit of %d bytes",
+                connection.getContentLengthLong(), MAX_PAYLOAD_BYTES));
+      }
+      int responseCode = connection.getResponseCode();
+      try (InputStream is =
+          responseCode < 400 ? connection.getInputStream() : connection.getErrorStream()) {
+        byte[] bytes = ByteStreams.toByteArray(ByteStreams.limit(is, MAX_PAYLOAD_BYTES + 1));
+        if (bytes.length > MAX_PAYLOAD_BYTES) {
+          throw new IOException("Response exceeds maximum allowed size");
+        }
+        return bytes;
+      }
     } catch (NullPointerException e) {
       return new byte[] {};
     }

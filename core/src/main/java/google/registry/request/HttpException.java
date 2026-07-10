@@ -119,6 +119,18 @@ public abstract class HttpException extends RuntimeException {
     }
   }
 
+  /** Exception that causes a 413 response. */
+  public static final class PayloadTooLargeException extends HttpException {
+    public PayloadTooLargeException(String message) {
+      super(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, message, null);
+    }
+
+    @Override
+    public String getResponseCodeString() {
+      return "Payload Too Large";
+    }
+  }
+
   /** Exception that causes a 404 response. */
   public static final class NotFoundException extends HttpException {
     public NotFoundException() {

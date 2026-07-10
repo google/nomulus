@@ -15,14 +15,23 @@
 package google.registry.request;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.request.RequestModule.provideJsonBody;
 import static google.registry.request.RequestModule.provideJsonPayload;
+import static google.registry.request.RequestModule.providePayloadAsBytes;
+import static google.registry.request.RequestModule.providePayloadAsString;
+import static google.registry.security.JsonHttpTestUtils.createServletInputStream;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import google.registry.request.HttpException.BadRequestException;
+import google.registry.request.HttpException.PayloadTooLargeException;
 import google.registry.request.HttpException.UnsupportedMediaTypeException;
 import google.registry.tools.GsonUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RequestModule}. */
@@ -71,5 +80,47 @@ final class RequestModuleTest {
     assertThrows(
         UnsupportedMediaTypeException.class,
         () -> provideJsonPayload(MediaType.JSON_UTF_8.withParameter("omg", "handel"), "{}", GSON));
+  }
+
+  @Test
+  void testProvidePayloadAsBytes_contentLengthExceedsLimit_throws413() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
+    when(req.getContentLengthLong()).thenReturn((long) RequestModule.MAX_PAYLOAD_BYTES + 1);
+    PayloadTooLargeException thrown =
+        assertThrows(PayloadTooLargeException.class, () -> providePayloadAsBytes(req));
+    assertThat(thrown).hasMessageThat().contains("exceeds limit");
+  }
+
+  @Test
+  void testProvidePayloadAsBytes_streamExceedsLimit_throws413() throws Exception {
+    HttpServletRequest req = mock(HttpServletRequest.class);
+    when(req.getContentLengthLong()).thenReturn(-1L);
+    when(req.getInputStream())
+        .thenReturn(createServletInputStream(new byte[RequestModule.MAX_PAYLOAD_BYTES + 1]));
+    PayloadTooLargeException thrown =
+        assertThrows(PayloadTooLargeException.class, () -> providePayloadAsBytes(req));
+    assertThat(thrown).hasMessageThat().contains("exceeds maximum allowed size");
+  }
+
+  @Test
+  void testProvidePayloadAsString_invalidCharset_throws415() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
+    when(req.getCharacterEncoding()).thenReturn("invalid-charset-name");
+    UnsupportedMediaTypeException thrown =
+        assertThrows(
+            UnsupportedMediaTypeException.class,
+            () -> providePayloadAsString("hello".getBytes(UTF_8), req));
+    assertThat(thrown).hasMessageThat().contains("Unsupported charset: invalid-charset-name");
+  }
+
+  @Test
+  void testProvideJsonBody_contentLengthExceedsLimit_throws413() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
+    when(req.getContentLengthLong()).thenReturn((long) RequestModule.MAX_PAYLOAD_BYTES + 1);
+    PayloadTooLargeException thrown =
+        assertThrows(
+            PayloadTooLargeException.class,
+            () -> provideJsonBody(providePayloadAsString(providePayloadAsBytes(req), req), GSON));
+    assertThat(thrown).hasMessageThat().contains("exceeds limit");
   }
 }

@@ -24,7 +24,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import google.registry.tools.GsonUtils;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Map;
@@ -83,5 +86,33 @@ public final class JsonHttpTestUtils {
   public static Supplier<Map<String, Object>> createJsonResponseSupplier(
       final StringWriter writer) {
     return memoize(() -> getJsonResponse(writer));
+  }
+
+  public static ServletInputStream createServletInputStream(byte[] data) {
+    ByteArrayInputStream bais = new ByteArrayInputStream(data);
+    return new ServletInputStream() {
+      @Override
+      public boolean isFinished() {
+        return bais.available() == 0;
+      }
+
+      @Override
+      public boolean isReady() {
+        return true;
+      }
+
+      @Override
+      public void setReadListener(ReadListener listener) {}
+
+      @Override
+      public int read() {
+        return bais.read();
+      }
+
+      @Override
+      public int read(byte[] b, int off, int len) {
+        return bais.read(b, off, len);
+      }
+    };
   }
 }
