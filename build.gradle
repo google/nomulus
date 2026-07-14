@@ -395,7 +395,7 @@ subprojects {
   // expose to users.
   if (project.name != 'jetty' && !services.contains(project.path)) {
     javadocSource << project.sourceSets.main.allJava
-    javadocClasspath << { project.sourceSets.main.runtimeClasspath.files }
+    javadocClasspath << { project.sourceSets.main.compileClasspath.files }
     javadocClasspath << "${buildDir}/generated/sources/annotationProcessor/java/main"
     if (project.tasks.findByName('compileJava')) {
       javadocDependentTasks << project.tasks.compileJava

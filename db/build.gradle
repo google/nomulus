@@ -162,7 +162,7 @@ dependencies {
 
   implementation deps['org.flywaydb:flyway-core']
   implementation deps['org.flywaydb:flyway-database-postgresql']
-  implementation deps['org.testcontainers:testcontainers']
+  compileOnly deps['org.testcontainers:testcontainers']
 
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   runtimeOnly deps['org.postgresql:postgresql']
