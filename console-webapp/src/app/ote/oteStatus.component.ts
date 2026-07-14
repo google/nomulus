@@ -13,7 +13,13 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  OnInit,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from '../registrar/registrar.service';
 import { MaterialModule } from '../material.module';
@@ -33,6 +39,7 @@ export interface OteStatusResponse {
   selector: 'app-ote-status',
   imports: [MaterialModule, SnackBarModule],
   templateUrl: './oteStatus.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./oteStatus.component.scss'],
 })
 export class OteStatusComponent implements OnInit {

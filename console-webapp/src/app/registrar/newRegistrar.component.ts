@@ -18,6 +18,7 @@ import {
   ElementRef,
   ViewChild,
   ViewEncapsulation,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Registrar, RegistrarService } from './registrar.service';
@@ -33,6 +34,7 @@ interface LocalizedAddressStreet {
   templateUrl: './newRegistrar.component.html',
   styleUrls: ['./newRegistrar.component.scss'],
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export default class NewRegistrarComponent {

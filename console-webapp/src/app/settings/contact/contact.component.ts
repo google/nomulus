@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, effect, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  effect,
+  ViewEncapsulation,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { take } from 'rxjs';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
@@ -23,6 +28,7 @@ import { ContactService, ViewReadyContact } from './contact.service';
   templateUrl: './contact.component.html',
   styleUrls: ['./contact.component.scss'],
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export default class ContactComponent {

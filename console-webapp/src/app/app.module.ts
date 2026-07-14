@@ -27,6 +27,7 @@ import {
   HttpClientXsrfModule,
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { BillingInfoComponent } from './billingInfo/billingInfo.component';
