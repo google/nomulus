@@ -91,10 +91,11 @@ public class ShellCommand implements Command {
    * flags aren't available in the constructor, so we have to do it in the {@link #run} function.
    */
   private final CommandRunner originalRunner;
-
-  private final LineReader lineReader;
   private final Clock clock;
 
+  private LineReader lineReader;
+  private Terminal terminal;
+  private JCommander jcommanderForCompletions;
   private String prompt = null;
 
   @Parameter(
@@ -118,21 +119,22 @@ public class ShellCommand implements Command {
           """)
   boolean encapsulateOutput = false;
 
-  ShellCommand(CommandRunner runner) throws IOException {
-    this(TerminalBuilder.terminal(), new SystemClock(), runner);
-    prompt = "nom > ";
-    lineReader.variable(LineReader.HISTORY_FILE, Path.of(USER_HOME.value(), HISTORY_FILE));
+  ShellCommand(CommandRunner runner) {
+    this.originalRunner = runner;
+    this.clock = new SystemClock();
+    this.prompt = "nom > ";
   }
 
   ShellCommand(Terminal terminal, Clock clock, CommandRunner runner) {
     this.originalRunner = runner;
+    this.terminal = terminal;
     this.lineReader = LineReaderBuilder.builder().terminal(terminal).build();
     this.clock = clock;
   }
 
   private void setPrompt(RegistryToolEnvironment environment, boolean alert) {
     // Do not set the prompt in tests.
-    if (lineReader.getTerminal() instanceof DumbTerminal) {
+    if (lineReader == null || lineReader.getTerminal() instanceof DumbTerminal) {
       return;
     }
     prompt =
@@ -143,7 +145,10 @@ public class ShellCommand implements Command {
   }
 
   public ShellCommand buildCompletions(JCommander jcommander) {
-    ((LineReaderImpl) lineReader).setCompleter(new JCommanderCompleter(jcommander));
+    this.jcommanderForCompletions = jcommander;
+    if (lineReader != null) {
+      ((LineReaderImpl) lineReader).setCompleter(new JCommanderCompleter(jcommander));
+    }
     return this;
   }
 
@@ -209,6 +214,19 @@ public class ShellCommand implements Command {
   /** Run the shell until the user presses "Ctrl-D". */
   @Override
   public void run() {
+    if (lineReader == null) {
+      try {
+        this.terminal = TerminalBuilder.terminal();
+        this.lineReader = LineReaderBuilder.builder().terminal(terminal).build();
+        lineReader.variable(LineReader.HISTORY_FILE, Path.of(USER_HOME.value(), HISTORY_FILE));
+        if (jcommanderForCompletions != null) {
+          ((LineReaderImpl) lineReader)
+              .setCompleter(new JCommanderCompleter(jcommanderForCompletions));
+        }
+      } catch (IOException e) {
+        throw new RuntimeException("Failed to initialize terminal", e);
+      }
+    }
     // Wrap standard output and error if requested. We have to do so here in run because the flags
     // haven't been processed in the constructor.
     CommandRunner runner =
