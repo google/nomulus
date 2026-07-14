@@ -35,6 +35,19 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
 
   static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  @Parameter(
+      names = {"-d", "--dry_run"},
+      description = "Does not execute the entity mutation")
+  boolean dryRun;
+
+  @Parameter(
+      names = {"--build_environment"},
+      description =
+          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
+              + " by the build environment tools. This flag should never be used by a human user"
+              + " from the command line.")
+  boolean buildEnv;
+
   @Nullable
   @Parameter(
       names = {"-n", "--name"},
@@ -73,5 +86,10 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
             .map(rle -> String.format("(%s)", rle.toString()))
             .collect(Collectors.joining(", "))
         + "]";
+  }
+
+  @Override
+  protected boolean dontRunCommand() {
+    return dryRun;
   }
 }

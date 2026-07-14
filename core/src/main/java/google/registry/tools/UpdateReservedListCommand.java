@@ -19,7 +19,6 @@ import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
 import google.registry.model.tld.label.ReservedList;
@@ -29,19 +28,6 @@ import java.util.List;
 /** Command to safely update {@link ReservedList}. */
 @Parameters(separators = " =", commandDescription = "Update a ReservedList.")
 final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand {
-
-  @Parameter(
-      names = {"-d", "--dry_run"},
-      description = "Does not execute the entity mutation")
-  boolean dryRun;
-
-  @Parameter(
-      names = {"--build_environment"},
-      description =
-          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
-              + " by the build environment tools. This flag should never be used by a human user"
-              + " from the command line.")
-  boolean buildEnv;
 
   // indicates if there is a new change made by this command
   private boolean newChange = true;

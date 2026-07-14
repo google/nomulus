@@ -44,6 +44,10 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
 
   @Override
   protected String prompt() throws Exception {
+    checkArgument(
+        !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
+        "The --build_environment flag must be used when running create_premium_list"
+            + " in production");
     currency = CurrencyUnit.of(currencyUnit);
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
     checkArgument(

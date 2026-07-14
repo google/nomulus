@@ -39,6 +39,19 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand {
   protected List<String> inputData;
   protected CurrencyUnit currency;
 
+  @Parameter(
+      names = {"-d", "--dry_run"},
+      description = "Does not execute the entity mutation")
+  boolean dryRun;
+
+  @Parameter(
+      names = {"--build_environment"},
+      description =
+          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
+              + " by the build environment tools. This flag should never be used by a human user"
+              + " from the command line.")
+  boolean buildEnv;
+
   @Nullable
   @Parameter(
       names = {"-n", "--name"},
@@ -67,5 +80,10 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand {
       logger.atSevere().withCause(e).log(message);
     }
     return message;
+  }
+
+  @Override
+  protected boolean dontRunCommand() {
+    return dryRun;
   }
 }

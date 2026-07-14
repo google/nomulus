@@ -45,6 +45,10 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
 
   @Override
   protected String prompt() throws Exception {
+    checkArgument(
+        !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
+        "The --build_environment flag must be used when running create_reserved_list"
+            + " in production");
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
     checkArgument(ReservedList.get(name).isEmpty(), "A reserved list already exists by this name");
     if (!override) {
