@@ -72,10 +72,19 @@ This document outlines foundational mandates, architectural patterns, and projec
 - **No CodeSearch:** This project is hosted on GitHub, not Google3. Do NOT use `mcp_Coding_search_for_files_codesearch` or other internal Google3 search tools.
 - **Local Grep:** Use local shell commands like `git grep` or `grep` via `run_shell_command` to search the codebase.
 
+### 8. Git Operation Boundaries & Remote Push Prohibition
+- **Zero-Bundling Rule for Remote Transfers:** NEVER bundle remote transfer commands (`git push`, `repo upload`, `g4 upload`, `g4 mail`, `hg push`, `jj git push`) inside compound bash pipelines (`&&`, `||`, `;`) with local staging or commit commands (e.g., `git commit --amend && git push ...`). Every remote transfer command MUST be executed as a standalone, single-command `run_command` invocation.
+- **Mandatory Two-Step Handover Protocol:** When working on pull requests, changelists, or branches, strictly halt right at the local repository boundary (`git commit` / `g4 change`). Report the local commit SHA, `git status`, and `git diff` verification to the user, stop calling tools, and explicitly prompt: *"Local commit `[SHA]` is verified. Do you authorize running `git push origin [branch]` (or `--force-with-lease` when force-pushing an amended branch) to update the remote repository?"*
+- **Absolute Prohibition on Unsolicited Pushes:** NEVER propose or run any remote synchronization or push command (`git push`, `repo upload`, `g4 upload`) on your own volition without explicit, unambiguous textual authorization in the immediate turn from the user.
+- **Mandatory GitHub PR Description & Reviewable Synchronization:** Whenever pushing an amended commit to a branch associated with an active pull request, the agent MUST immediately synchronize the PR description on GitHub (`gh pr edit`). To do this safely:
+    1. Check `gh pr view --json body` first to inspect existing content.
+    2. Explicitly preserve any existing Reviewable bot links (`This change is https://reviewable.io/reviews/...`) when updating the body rather than blindly overwriting the entire description.
+
 ## Performance and Efficiency
 - **Turn Minimization:** Aim for "perfect" code in the first iteration. Iterative fixes for checkstyle or compilation errors consume significant context and time.
 - **Context Management:** Use sub-agents for batch refactoring or high-volume output tasks to keep the main session history lean and efficient.
 - **Code Formatting:** Do not write custom Python scripts or manual regex replacements to fix code formatting issues (e.g., unused imports, import ordering, line length). Instead, use the project's built-in formatting tools: run `./gradlew spotlessApply` to fix unused/unordered imports and `./gradlew javaIncrementalFormatApply` (or `google-java-format --replace <files>`) to automatically fix Java formatting and indentation errors.
+- **Programmatic Measurement for Markdown:** When writing Markdown files (`.md`)—and especially when formatting or line-wrapping them—you **MUST** explicitly use programmatic functions (such as `awk '{print length($0)}'` or Python `len(line)`) to measure the exact string length of every line from column 1, rather than making assumptions based on what appears in your context window.
 
 ## General Code Review Lessons & Avoidable Mistakes
 Based on historical PR reviews, avoid the following common mistakes:
