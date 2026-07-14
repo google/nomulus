@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.4
--- Dumped by pg_dump version 17.4
+-- Dumped from database version 17.10
+-- Dumped by pg_dump version 17.10
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2609,6 +2609,13 @@ CREATE INDEX spec11threatmatch_registrar_id_idx ON public."Spec11ThreatMatch" US
 --
 
 CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree (tld);
+
+
+--
+-- Name: user_registry_lock_email_address_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_registry_lock_email_address_idx ON public."User" USING hash (registry_lock_email_address);
 
 
 --

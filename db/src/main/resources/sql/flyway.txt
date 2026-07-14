@@ -222,3 +222,4 @@ V221__remove_contact_history.sql
 V222__remove_contact.sql
 V223__tld_change_xap_enabled_to_transitions.sql
 V224__add_registrar_expiry_access_period_enabled.sql
+V225__user_registry_lock_email_address_index.sql
