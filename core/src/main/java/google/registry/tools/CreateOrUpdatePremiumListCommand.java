@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
@@ -38,6 +39,19 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   protected List<String> inputData;
   protected CurrencyUnit currency;
+
+  @Parameter(
+      names = {"-d", "--dry_run"},
+      description = "Does not execute the entity mutation")
+  boolean dryRun;
+
+  @Parameter(
+      names = {"--build_environment"},
+      description =
+          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
+              + " by the build environment tools. This flag should never be used by a human user"
+              + " from the command line.")
+  boolean buildEnv;
 
   @Nullable
   @Parameter(
@@ -67,5 +81,18 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand {
       logger.atSevere().withCause(e).log(message);
     }
     return message;
+  }
+
+  @Override
+  protected boolean dontRunCommand() {
+    return dryRun;
+  }
+
+  @Override
+  protected boolean checkExecutionState() {
+    checkArgument(
+        !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
+        "The --build_environment flag must be used when running in production");
+    return super.checkExecutionState();
   }
 }

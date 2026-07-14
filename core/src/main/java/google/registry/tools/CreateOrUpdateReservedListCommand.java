@@ -14,6 +14,8 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.beust.jcommander.Parameter;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.tld.label.ReservedList;
@@ -34,6 +36,19 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
   @Inject Clock clock;
 
   static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  @Parameter(
+      names = {"-d", "--dry_run"},
+      description = "Does not execute the entity mutation")
+  boolean dryRun;
+
+  @Parameter(
+      names = {"--build_environment"},
+      description =
+          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
+              + " by the build environment tools. This flag should never be used by a human user"
+              + " from the command line.")
+  boolean buildEnv;
 
   @Nullable
   @Parameter(
@@ -73,5 +88,18 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
             .map(rle -> String.format("(%s)", rle.toString()))
             .collect(Collectors.joining(", "))
         + "]";
+  }
+
+  @Override
+  protected boolean dontRunCommand() {
+    return dryRun;
+  }
+
+  @Override
+  protected boolean checkExecutionState() {
+    checkArgument(
+        !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
+        "The --build_environment flag must be used when running in production");
+    return super.checkExecutionState();
   }
 }

@@ -180,4 +180,11 @@ class CreateReservedListCommandTest
     command.init();
     assertThat(command.prompt()).contains("reservedListMap=[]");
   }
+
+  @Test
+  void testDryRun_doesNotCreateList() throws Exception {
+    runCommandForced(
+        "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--dry_run");
+    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isEmpty();
+  }
 }

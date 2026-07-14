@@ -139,9 +139,7 @@ class UpdateReservedListCommandTest
                     "--name=xn--q9jyb4c_common-reserved",
                     "--input=" + reservedTermsPath));
     assertThat(thrown.getMessage())
-        .isEqualTo(
-            "The --build_environment flag must be used when running update_reserved_list in"
-                + " production");
+        .isEqualTo("The --build_environment flag must be used when running in production");
   }
 
   @Test

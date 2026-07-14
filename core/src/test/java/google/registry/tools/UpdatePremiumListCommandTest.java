@@ -209,9 +209,7 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
                     "--name=" + TLD_TEST,
                     "--input=" + Paths.get(tmpFile.getPath())));
     assertThat(thrown.getMessage())
-        .isEqualTo(
-            "The --build_environment flag must be used when running update_premium_list in"
-                + " production");
+        .isEqualTo("The --build_environment flag must be used when running in production");
   }
 
   @Test

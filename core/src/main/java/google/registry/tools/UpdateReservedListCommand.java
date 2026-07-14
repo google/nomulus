@@ -14,12 +14,10 @@
 
 package google.registry.tools;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
 import google.registry.model.tld.label.ReservedList;
@@ -30,28 +28,11 @@ import java.util.List;
 @Parameters(separators = " =", commandDescription = "Update a ReservedList.")
 final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand {
 
-  @Parameter(
-      names = {"-d", "--dry_run"},
-      description = "Does not execute the entity mutation")
-  boolean dryRun;
-
-  @Parameter(
-      names = {"--build_environment"},
-      description =
-          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
-              + " by the build environment tools. This flag should never be used by a human user"
-              + " from the command line.")
-  boolean buildEnv;
-
   // indicates if there is a new change made by this command
   private boolean newChange = true;
 
   @Override
   protected String prompt() throws Exception {
-    checkArgument(
-        !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
-        "The --build_environment flag must be used when running update_reserved_list in"
-            + " production");
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
     ReservedList existingReservedList =
         ReservedList.get(name)
