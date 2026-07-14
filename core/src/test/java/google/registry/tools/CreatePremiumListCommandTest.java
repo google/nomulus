@@ -119,4 +119,11 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
                     + "yet TLD %s does not exist",
                 fileName));
   }
+
+  @Test
+  void testDryRun_doesNotCreateList() throws Exception {
+    runCommandForced(
+        "--name=" + TLD_TEST, "--input=" + premiumTermsPath, "--currency=USD", "--dry_run");
+    assertThat(PremiumListDao.getLatestRevision(TLD_TEST)).isEmpty();
+  }
 }
