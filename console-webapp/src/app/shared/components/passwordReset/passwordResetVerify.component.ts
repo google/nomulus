@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { take } from 'rxjs';
@@ -34,6 +34,7 @@ export interface PasswordResetVerifyResponse {
 @Component({
   selector: 'app-password-reset-verify',
   templateUrl: './passwordResetVerify.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class PasswordResetVerifyComponent {

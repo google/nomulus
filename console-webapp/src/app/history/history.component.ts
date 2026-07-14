@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, effect } from '@angular/core';
+import { Component, effect, ChangeDetectionStrategy } from '@angular/core';
 import { UserDataService } from '../shared/services/userData.service';
 import { BackendService } from '../shared/services/backend.service';
 import { RegistrarService } from '../registrar/registrar.service';
@@ -30,6 +30,7 @@ import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.dir
   templateUrl: './history.component.html',
   styleUrls: ['./history.component.scss'],
   providers: [HistoryService],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class HistoryComponent implements GlobalLoader {

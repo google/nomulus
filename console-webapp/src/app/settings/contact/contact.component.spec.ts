@@ -14,7 +14,7 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { MaterialModule } from 'src/app/material.module';
 import { BackendService } from 'src/app/shared/services/backend.service';
@@ -30,7 +30,7 @@ describe('ContactComponent', () => {
       imports: [MaterialModule],
       providers: [
         BackendService,
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
       ],
     }).compileComponents();

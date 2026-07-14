@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed } from '@angular/core';
+import { Component, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from '../registrar/registrar.service';
@@ -25,6 +25,7 @@ import { RegistryLockService } from './registryLock.service';
   selector: 'app-registry-lock',
   templateUrl: './registryLock.component.html',
   styleUrls: ['./registryLock.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class RegistryLockComponent {

@@ -21,7 +21,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AppModule, SelectedRegistrarModule } from '../app.module';
 import { AppRoutingModule } from '../app-routing.module';
 import { BackendService } from '../shared/services/backend.service';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('HeaderComponent', () => {
@@ -40,7 +40,7 @@ describe('HeaderComponent', () => {
       providers: [
         BackendService,
         { provide: ActivatedRoute, useValue: {} as ActivatedRoute },
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
       ],
       declarations: [HeaderComponent],

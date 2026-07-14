@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 
 @Component({
@@ -31,6 +31,7 @@ import { RegistrarService } from 'src/app/registrar/registrar.service';
     </div>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class SelectedRegistrarWrapper {

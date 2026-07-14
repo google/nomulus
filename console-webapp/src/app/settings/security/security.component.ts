@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, effect } from '@angular/core';
+import { Component, effect, ChangeDetectionStrategy } from '@angular/core';
 import {
   RegistrarService,
   SecuritySettings,
@@ -23,6 +23,7 @@ import { SecurityService, apiToUiConverter } from './security.service';
   selector: 'app-security',
   templateUrl: './security.component.html',
   styleUrls: ['./security.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export default class SecurityComponent {

@@ -18,7 +18,7 @@ import { HomeComponent } from './home.component';
 import { MaterialModule } from '../material.module';
 import { AppModule } from '../app.module';
 import { BackendService } from '../shared/services/backend.service';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('HomeComponent', () => {
@@ -31,7 +31,7 @@ describe('HomeComponent', () => {
       declarations: [HomeComponent],
       providers: [
         BackendService,
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
       ],
     }).compileComponents();

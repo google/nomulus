@@ -20,7 +20,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { AppModule, SelectedRegistrarModule } from '../app.module';
 import { BackendService } from '../shared/services/backend.service';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { AppRoutingModule } from '../app-routing.module';
 
@@ -40,7 +40,7 @@ describe('SettingsComponent', () => {
       providers: [
         BackendService,
         { provide: ActivatedRoute, useValue: {} as ActivatedRoute },
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
       ],
       declarations: [SettingsComponent],
