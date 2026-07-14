@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, computed } from '@angular/core';
+import { Component, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RegistrarService } from '../registrar/registrar.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -20,6 +20,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   selector: 'app-billingInfo',
   templateUrl: './billingInfo.component.html',
   styleUrls: ['./billingInfo.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class BillingInfoComponent {

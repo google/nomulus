@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, effect, ViewChild, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  effect,
+  ViewChild,
+  ViewEncapsulation,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
@@ -78,6 +84,7 @@ export const columns = [
   templateUrl: './registrarsTable.component.html',
   styleUrls: ['./registrarsTable.component.scss'],
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class RegistrarComponent {

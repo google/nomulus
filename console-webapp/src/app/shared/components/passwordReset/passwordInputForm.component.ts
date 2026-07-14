@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, EventEmitter, input, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  input,
+  Output,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { AbstractControl, FormGroup, ValidatorFn } from '@angular/forms';
 
 type errorCode = 'required' | 'maxlength' | 'minlength' | 'passwordsDontMatch';
@@ -29,6 +35,7 @@ export interface PasswordResults {
   selector: 'password-input-form-component',
   templateUrl: './passwordInputForm.component.html',
   styleUrls: ['./passwordInputForm.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class PasswordInputForm {

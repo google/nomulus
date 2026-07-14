@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { first } from 'rxjs';
@@ -27,6 +27,7 @@ import {
   selector: 'app-contact-details',
   templateUrl: './contactDetails.component.html',
   styleUrls: ['./contactDetails.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ContactDetailsComponent {
