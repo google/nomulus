@@ -52,6 +52,7 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
 import google.registry.persistence.converter.AllocationTokenStatusTransitionUserType;
+import google.registry.util.NonFinalForTesting;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
@@ -61,6 +62,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -374,28 +376,39 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return ALLOCATION_TOKENS_CACHE.getAll(keys);
   }
 
-  /** A cache that loads the {@link AllocationToken} object for a given AllocationToken VKey. */
-  private static final LoadingCache<VKey<AllocationToken>, Optional<AllocationToken>>
-      ALLOCATION_TOKENS_CACHE =
-          CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
-              .build(
-                  new CacheLoader<>() {
-                    @Override
-                    public Optional<AllocationToken> load(VKey<AllocationToken> key) {
-                      return tm().reTransact(() -> tm().loadByKeyIfPresent(key));
-                    }
+  @VisibleForTesting
+  public static void setCacheForTest(Optional<Duration> expiry) {
+    Duration effectiveExpiry = expiry.orElse(getSingletonCacheRefreshDuration());
+    ALLOCATION_TOKENS_CACHE = createAllocationTokensCache(effectiveExpiry);
+  }
 
-                    @Override
-                    public Map<? extends VKey<AllocationToken>, ? extends Optional<AllocationToken>>
-                        loadAll(Set<? extends VKey<AllocationToken>> keys) {
-                      return tm().reTransact(
-                              () ->
-                                  keys.stream()
-                                      .collect(
-                                          toImmutableMap(
-                                              key -> key, key -> tm().loadByKeyIfPresent(key))));
-                    }
-                  });
+  /** A cache that loads the {@link AllocationToken} object for a given AllocationToken VKey. */
+  @NonFinalForTesting
+  private static LoadingCache<VKey<AllocationToken>, Optional<AllocationToken>>
+      ALLOCATION_TOKENS_CACHE = createAllocationTokensCache(getSingletonCacheRefreshDuration());
+
+  private static LoadingCache<VKey<AllocationToken>, Optional<AllocationToken>>
+      createAllocationTokensCache(Duration expiry) {
+    return CacheUtils.newCacheBuilder(expiry)
+        .build(
+            new CacheLoader<>() {
+              @Override
+              public Optional<AllocationToken> load(VKey<AllocationToken> key) {
+                return tm().reTransact(() -> tm().loadByKeyIfPresent(key));
+              }
+
+              @Override
+              public Map<? extends VKey<AllocationToken>, ? extends Optional<AllocationToken>>
+                  loadAll(Set<? extends VKey<AllocationToken>> keys) {
+                return tm().reTransact(
+                        () ->
+                            keys.stream()
+                                .collect(
+                                    toImmutableMap(
+                                        key -> key, key -> tm().loadByKeyIfPresent(key))));
+              }
+            });
+  }
 
   @Override
   public VKey<AllocationToken> createVKey() {

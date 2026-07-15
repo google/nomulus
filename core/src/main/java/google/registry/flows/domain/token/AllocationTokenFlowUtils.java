@@ -277,11 +277,14 @@ public class AllocationTokenFlowUtils {
       return maybeTokenEntity.get();
     }
 
-    maybeTokenEntity = AllocationToken.get(VKey.create(AllocationToken.class, token));
-    if (maybeTokenEntity.isEmpty()) {
-      throw new NonexistentAllocationTokenException();
+    VKey<AllocationToken> tokenKey = VKey.create(AllocationToken.class, token);
+    AllocationToken tokenEntity =
+        AllocationToken.get(tokenKey).orElseThrow(NonexistentAllocationTokenException::new);
+    if (tokenEntity.getTokenType().equals(AllocationToken.TokenType.SINGLE_USE)) {
+      // Reload the token to avoid possible cache race conditions where the token may have already
+      // been redeemed
+      tokenEntity = tm().loadByKey(tokenKey);
     }
-    AllocationToken tokenEntity = maybeTokenEntity.get();
     validateTokenEntity(tokenEntity, registrarId, domainName, now);
     return tokenEntity;
   }

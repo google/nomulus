@@ -17,6 +17,7 @@ package google.registry.testing;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tmch.ClaimsListDao;
 import java.time.Duration;
@@ -77,6 +78,11 @@ public class TestCacheExtension implements BeforeEachCallback, AfterEachCallback
 
     public Builder withClaimsListCache(Duration expiry) {
       cacheHandlers.add(new TestCacheHandler(ClaimsListDao::setCacheForTest, expiry));
+      return this;
+    }
+
+    public Builder withAllocationTokenCache(Duration expiry) {
+      cacheHandlers.add(new TestCacheHandler(AllocationToken::setCacheForTest, expiry));
       return this;
     }
 

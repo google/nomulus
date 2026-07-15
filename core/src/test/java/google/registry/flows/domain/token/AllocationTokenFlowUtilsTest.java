@@ -22,6 +22,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.VAL
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -45,6 +46,7 @@ import google.registry.flows.custom.DomainPricingCustomLogic;
 import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.NonexistentAllocationTokenException;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
@@ -55,6 +57,7 @@ import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TestCacheExtension;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -70,6 +73,10 @@ class AllocationTokenFlowUtilsTest {
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
+
+  @RegisterExtension
+  final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withAllocationTokenCache(Duration.ofMinutes(10)).build();
 
   private final AllocationTokenExtension allocationTokenExtension =
       mock(AllocationTokenExtension.class);
@@ -131,8 +138,13 @@ class AllocationTokenFlowUtilsTest {
                 .build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
-            AllocationTokenFlowUtils.loadAllocationTokenFromExtension(
-                "TheRegistrar", "example.tld", clock.now(), Optional.of(allocationTokenExtension)))
+            tm().transact(
+                    () ->
+                        AllocationTokenFlowUtils.loadAllocationTokenFromExtension(
+                            "TheRegistrar",
+                            "example.tld",
+                            clock.now(),
+                            Optional.of(allocationTokenExtension))))
         .hasValue(token);
   }
 
@@ -148,15 +160,17 @@ class AllocationTokenFlowUtilsTest {
                 .build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
-            AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
-                "TheRegistrar",
-                clock.now(),
-                Optional.of(allocationTokenExtension),
-                tld,
-                "example.tld",
-                CommandName.CREATE,
-                Optional.of(1),
-                domainPricingLogic))
+            tm().transact(
+                    () ->
+                        AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
+                            "TheRegistrar",
+                            clock.now(),
+                            Optional.of(allocationTokenExtension),
+                            tld,
+                            "example.tld",
+                            CommandName.CREATE,
+                            Optional.of(1),
+                            domainPricingLogic)))
         .hasValue(token);
   }
 
@@ -188,15 +202,17 @@ class AllocationTokenFlowUtilsTest {
             .build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
-            AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
-                "TheRegistrar",
-                clock.now(),
-                Optional.of(allocationTokenExtension),
-                tld,
-                "example.tld",
-                CommandName.CREATE,
-                Optional.of(1),
-                domainPricingLogic))
+            tm().transact(
+                    () ->
+                        AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
+                            "TheRegistrar",
+                            clock.now(),
+                            Optional.of(allocationTokenExtension),
+                            tld,
+                            "example.tld",
+                            CommandName.CREATE,
+                            Optional.of(1),
+                            domainPricingLogic)))
         .hasValue(defaultToken);
   }
 
@@ -266,6 +282,29 @@ class AllocationTokenFlowUtilsTest {
   void testFailure_loadFromExtension_nullToken() {
     when(allocationTokenExtension.getAllocationToken()).thenReturn(null);
     assertLoadTokenFromExtensionThrowsException(NonexistentAllocationTokenException.class);
+  }
+
+  @Test
+  void testFailure_loadFromExtension_alreadyRedeemedToken() {
+    persistResource(
+        singleUseTokenBuilder().setRedemptionHistoryId(new HistoryEntryId("repoId", 1L)).build());
+    assertLoadTokenFromExtensionThrowsException(AlreadyRedeemedAllocationTokenException.class);
+  }
+
+  @Test
+  void testFailure_loadFromExtension_singleUseTokenStaleCacheReloadsFromDatabase() {
+    AllocationToken token = persistResource(singleUseTokenBuilder().build());
+    assertThat(AllocationToken.get(token.createVKey())).hasValue(token);
+    tm().transact(
+            () ->
+                tm().put(
+                        token
+                            .asBuilder()
+                            .setRedemptionHistoryId(new HistoryEntryId("repoId", 1L))
+                            .build()));
+    // cache still returns the old un-redeemed token
+    assertThat(AllocationToken.get(token.createVKey()).get().isRedeemed()).isFalse();
+    assertLoadTokenFromExtensionThrowsException(AlreadyRedeemedAllocationTokenException.class);
   }
 
   @Test
@@ -341,18 +380,20 @@ class AllocationTokenFlowUtilsTest {
     // Tokens tied to a domain should throw a catastrophic exception if used for a different domain
     persistResource(singleUseTokenBuilder().setDomainName("someotherdomain.tld").build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
-    assertThrows(
-        AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException.class,
-        () ->
-            AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
-                "TheRegistrar",
-                clock.now(),
-                Optional.of(allocationTokenExtension),
-                tld,
-                "example.tld",
-                CommandName.CREATE,
-                Optional.of(1),
-                domainPricingLogic));
+    tm().transact(
+            () ->
+                assertThrows(
+                    AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException.class,
+                    () ->
+                        AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
+                            "TheRegistrar",
+                            clock.now(),
+                            Optional.of(allocationTokenExtension),
+                            tld,
+                            "example.tld",
+                            CommandName.CREATE,
+                            Optional.of(1),
+                            domainPricingLogic)));
   }
 
   @Test
@@ -458,17 +499,19 @@ class AllocationTokenFlowUtilsTest {
   }
 
   private void assertLoadTokenFromExtensionThrowsException(Class<? extends EppException> clazz) {
-    assertAboutEppExceptions()
-        .that(
-            assertThrows(
-                clazz,
-                () ->
-                    AllocationTokenFlowUtils.loadAllocationTokenFromExtension(
-                        "TheRegistrar",
-                        "example.tld",
-                        clock.now(),
-                        Optional.of(allocationTokenExtension))))
-        .marshalsToXml();
+    tm().transact(
+            () ->
+                assertAboutEppExceptions()
+                    .that(
+                        assertThrows(
+                            clazz,
+                            () ->
+                                AllocationTokenFlowUtils.loadAllocationTokenFromExtension(
+                                    "TheRegistrar",
+                                    "example.tld",
+                                    tm().getTxTime(),
+                                    Optional.of(allocationTokenExtension))))
+                    .marshalsToXml());
   }
 
   private AllocationToken.Builder singleUseTokenBuilder() {
