@@ -323,4 +323,14 @@
     <schedule>*/5 * * * *</schedule>
   </task>
 
+  <task>
+    <url><![CDATA[/_dr/task/syncRemoteCache]]></url>
+    <name>syncRemoteCache</name>
+    <description>
+      Syncs remote (Valkey/Redis) EPP resource caches with changes made recently.
+    </description>
+    <!-- Runs every 5 minutes. RDAP needs to be updated within 60 minutes of changes. -->
+    <schedule>*/5 * * * *</schedule>
+  </task>
+
 </entries>
