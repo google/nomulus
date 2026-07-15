@@ -513,6 +513,71 @@ public final class DomainLockUtilsTest {
   }
 
   @Test
+  void testFailure_applyUnlock_supersededByNewerLock() {
+    domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
+    RegistryLock unlockRequest =
+        domainLockUtils.saveNewRegistryUnlockRequest(
+            DOMAIN_NAME, "TheRegistrar", false, Optional.empty());
+    clock.advanceOneMilli();
+    domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", null, true);
+
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                domainLockUtils.verifyVerificationCode(
+                    unlockRequest.getVerificationCode(), NON_ADMIN_USER));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "The pending unlock on example.tld has been superseded; please request a new unlock");
+  }
+
+  @Test
+  void testFailure_applyUnlock_supersededByInterleavedUnlockAndLock() {
+    // Lock the domain initially
+    domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", null, true);
+
+    // 1. Unlock A requested
+    clock.advanceOneMilli();
+    RegistryLock unlockA =
+        domainLockUtils.saveNewRegistryUnlockRequest(
+            DOMAIN_NAME, "TheRegistrar", true, Optional.empty());
+
+    // 2. Unlock B requested
+    clock.advanceOneMilli();
+    RegistryLock unlockB =
+        domainLockUtils.saveNewRegistryUnlockRequest(
+            DOMAIN_NAME, "TheRegistrar", true, Optional.empty());
+
+    // 3. Unlock B completed
+    clock.advanceOneMilli();
+    domainLockUtils.verifyVerificationCode(unlockB.getVerificationCode(), ADMIN_USER);
+
+    // 4. Lock C requested
+    clock.advanceOneMilli();
+    RegistryLock lockC =
+        domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
+
+    // 5. Lock C applied
+    clock.advanceOneMilli();
+    domainLockUtils.verifyVerificationCode(lockC.getVerificationCode(), ADMIN_USER);
+
+    // 6. Unlock A completion attempt should fail since it has been superseded -- the second unlock
+    // request rewrote the verification code
+    clock.advanceOneMilli();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                domainLockUtils.verifyVerificationCode(unlockA.getVerificationCode(), ADMIN_USER));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            String.format("Invalid verification code \"%s\"", unlockA.getVerificationCode()));
+  }
+
+  @Test
   void testFailure_applyLock_alreadyLocked() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);

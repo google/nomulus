@@ -241,6 +241,15 @@ public final class DomainLockUtils {
         lock.getRegistrarId());
     checkArgument(!lock.isSuperuser() || isAdmin, "Non-admin user cannot complete admin unlock");
 
+    // The pending unlock must still be the most recent RegistryLock for this domain. If a newer
+    // lock exists (e.g. an admin/superuser lock applied after this unlock was requested or a
+    // different unlock+relock), the verification code being redeemed is for a superseded row and
+    // must not be allowed to strip the lock statuses that the newer row applied.
+    Optional<RegistryLock> mostRecent = RegistryLockDao.getMostRecentByRepoId(lock.getRepoId());
+    checkArgument(
+        mostRecent.isPresent() && mostRecent.get().getRevisionId().equals(lock.getRevisionId()),
+        "The pending unlock on %s has been superseded; please request a new unlock",
+        lock.getDomainName());
     RegistryLock newLock =
         RegistryLockDao.save(lock.asBuilder().setUnlockCompletionTime(now).build());
     removeLockStatuses(newLock, isAdmin, now);
