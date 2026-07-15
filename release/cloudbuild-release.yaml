@@ -272,7 +272,8 @@ steps:
       remote_md5=$(gcloud storage hash -h gs://${gcs_loc}/${gradle_bin} | grep md5 | awk '{print $3}')
       if [[ ${local_md5} != ${remote_md5} ]]
       then
-        echo "${gradle_bin} HAS CHANGED ON GRADLE WEBSITE, USING THE BINARY ON GCS."
+        echo "ERROR: MD5 hash mismatch for ${gradle_bin}! Local (official): ${local_md5}, Remote (GCS cache): ${remote_md5}. Aborting build." >&2
+        exit 1
       fi
     else
       gcloud storage cp $gradle_bin gs://${gcs_loc}/
