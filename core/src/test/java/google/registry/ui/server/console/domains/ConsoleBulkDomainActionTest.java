@@ -16,6 +16,7 @@ package google.registry.ui.server.console.domains;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -40,6 +41,7 @@ import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.registrar.Registrar;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
@@ -237,6 +239,40 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
+  @Test
+  void testFailure_disabledRegistrar() {
+    persistResource(
+        loadRegistrar("TheRegistrar").asBuilder().setState(Registrar.State.DISABLED).build());
+    JsonElement payload =
+        GSON.toJsonTree(
+            ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test"));
+    ConsoleBulkDomainAction action = createAction("DELETE", payload);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  @Test
+  void testFailure_pendingRegistrar() {
+    persistResource(
+        loadRegistrar("TheRegistrar").asBuilder().setState(Registrar.State.PENDING).build());
+    JsonElement payload =
+        GSON.toJsonTree(
+            ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test"));
+    ConsoleBulkDomainAction action = createAction("DELETE", payload);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  @Test
+  void testFailure_nonexistentRegistrar() {
+    JsonElement payload =
+        GSON.toJsonTree(
+            ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test"));
+    ConsoleBulkDomainAction action = createAction("nonexistentRegistrar", "DELETE", payload);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
   // @ptkach - reenable with suspend change
   // @Test
   // void testFailure_suspend_nonAdmin() {
@@ -258,20 +294,30 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
   // }
 
   private ConsoleBulkDomainAction createAction(String action, JsonElement payload) {
-    return createAction(action, payload, fteUser, 500);
+    return createAction("TheRegistrar", action, payload, fteUser, 500);
+  }
+
+  private ConsoleBulkDomainAction createAction(
+      String registrarId, String action, JsonElement payload) {
+    return createAction(registrarId, action, payload, fteUser, 500);
   }
 
   private ConsoleBulkDomainAction createAction(String action, JsonElement payload, User user) {
-    return createAction(action, payload, user, 500);
+    return createAction("TheRegistrar", action, payload, user, 500);
   }
 
   private ConsoleBulkDomainAction createAction(
       String action, JsonElement payload, User user, int limit) {
+    return createAction("TheRegistrar", action, payload, user, limit);
+  }
+
+  private ConsoleBulkDomainAction createAction(
+      String registrarId, String action, JsonElement payload, User user, int limit) {
     AuthResult authResult = AuthResult.createUser(user);
     ConsoleApiParams params = ConsoleApiParamsUtils.createFake(authResult);
     when(params.request().getMethod()).thenReturn("POST");
     response = (FakeResponse) params.response();
     return new ConsoleBulkDomainAction(
-        params, eppController, limit, "TheRegistrar", action, Optional.ofNullable(payload));
+        params, eppController, limit, registrarId, action, Optional.ofNullable(payload));
   }
 }
