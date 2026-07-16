@@ -107,6 +107,17 @@ public abstract class ConsoleApiAction implements Runnable {
 
   protected static void checkPermission(
       User user, String registrarId, ConsolePermission permission) {
+    Registrar registrar =
+        Registrar.loadByRegistrarIdCached(registrarId)
+            .orElseThrow(
+                () ->
+                    new ConsolePermissionForbiddenException(
+                        String.format("No registrar %s", registrarId)));
+    if (!registrar.isLive()) {
+      throw new ConsolePermissionForbiddenException(
+          String.format(
+              "Registrar %s is currently in status %s", registrarId, registrar.getState()));
+    }
     if (!user.getUserRoles().hasPermission(registrarId, permission)) {
       throw new ConsolePermissionForbiddenException(
           String.format(
