@@ -15,9 +15,9 @@
 package google.registry.flows;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.flows.domain.DomainFlowUtils.toLogSafeLabel;
 import static java.util.Collections.EMPTY_LIST;
 
-import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -90,9 +90,7 @@ public class FlowReporter {
    */
   private static Optional<String> extractTld(String domainName) {
     int index = domainName.indexOf('.');
-    return index == -1
-        ? Optional.empty()
-        : Optional.of(Ascii.toLowerCase(domainName.substring(index + 1)));
+    return index == -1 ? Optional.empty() : toLogSafeLabel(domainName.substring(index + 1));
   }
 
   /**

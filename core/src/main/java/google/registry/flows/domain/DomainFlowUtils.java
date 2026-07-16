@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static com.google.common.base.Ascii.toLowerCase;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.emptyToNull;
@@ -174,6 +175,27 @@ public class DomainFlowUtils {
 
   /** Maximum number of characters in a domain label, from RFC 2181. */
   private static final int MAX_LABEL_SIZE = 63;
+
+  /// Given a tld name or domain label, returns a label that can be safely logged, or
+  /// `Optional.empty()` if `label` is null or blank.
+  ///
+  /// If `label` contains disallowed characters, they are replaced with '-'. If the resulting
+  /// string has a valid length, it is returned as is; if not, the first {@link #MAX_LABEL_SIZE}
+  ///  chars plus a suffix of `...` is returned.
+  ///
+  /// This method is mainly for use by `FlowReporter#recordToLogs()` to ensure that the logs
+  /// can be safely and correctly queried by SQL queries. See b/534931586 for more information.
+  public static Optional<String> toLogSafeLabel(String label) {
+    if (label == null || label.isBlank()) {
+      return Optional.empty();
+    }
+    var newLabel = ALLOWED_CHARS.negate().replaceFrom(toLowerCase(label), '-');
+    if (newLabel.length() <= MAX_LABEL_SIZE) {
+      return Optional.of(newLabel);
+    } else {
+      return Optional.of(newLabel.substring(0, MAX_LABEL_SIZE) + "...");
+    }
+  }
 
   /**
    * Returns parsed version of {@code name} if domain name label follows our naming rules and is
