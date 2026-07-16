@@ -14,10 +14,11 @@
 
 package google.registry.flows;
 
+import static com.google.common.base.Ascii.toLowerCase;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.flows.domain.DomainFlowUtils.toLogSafeLabel;
 import static java.util.Collections.EMPTY_LIST;
 
-import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -92,7 +93,7 @@ public class FlowReporter {
     int index = domainName.indexOf('.');
     return index == -1
         ? Optional.empty()
-        : Optional.of(Ascii.toLowerCase(domainName.substring(index + 1)));
+        : toLogSafeLabel(toLowerCase(domainName.substring(index + 1)));
   }
 
   /**

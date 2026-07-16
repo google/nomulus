@@ -184,16 +184,22 @@ class FlowReporterTest {
 
   @Test
   void testRecordToLogs_metadata_invalidDomainName_stillGuessesTld() throws Exception {
+    var maxLenTld = "a".repeat(63);
+    var domainMaxLenTld = "a." + maxLenTld;
+    var domainTldTooLong = "a." + maxLenTld + "b";
     when(flowReporter.eppInput.isDomainType()).thenReturn(true);
     when(flowReporter.eppInput.getSingleTargetId()).thenReturn(Optional.of("<foo@bar.com>"));
-    when(flowReporter.eppInput.getTargetIds()).thenReturn(ImmutableList.of("<foo@bar.com>"));
+    when(flowReporter.eppInput.getTargetIds())
+        .thenReturn(ImmutableList.of("<foo@bar.com>", domainMaxLenTld, domainTldTooLong));
     flowReporter.recordToLogs();
     Map<String, Object> json =
         parseJsonMap(findFirstLogMessageByPrefix(handler, "FLOW-LOG-SIGNATURE-METADATA: "));
     assertThat(json).containsEntry("targetId", "<foo@bar.com>");
-    assertThat(json).containsEntry("targetIds", ImmutableList.of("<foo@bar.com>"));
-    assertThat(json).containsEntry("tld", "com>");
-    assertThat(json).containsEntry("tlds", ImmutableList.of("com>"));
+    assertThat(json)
+        .containsEntry(
+            "targetIds", ImmutableList.of("<foo@bar.com>", domainMaxLenTld, domainTldTooLong));
+    assertThat(json).containsEntry("tld", "com-");
+    assertThat(json).containsEntry("tlds", ImmutableList.of("com-", maxLenTld, maxLenTld + "..."));
   }
 
   @Test
