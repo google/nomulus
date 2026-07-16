@@ -255,9 +255,11 @@ public class ContactAction extends ConsoleApiAction {
         newContactsByType.get(Type.ADMIN).stream()
             .map(RegistrarPoc::getEmailAddress)
             .collect(toImmutableSet());
-    if (!newAdminEmails.containsAll(oldAdminEmails)) {
-      throw new ContactRequirementException(
-          "Cannot remove or change the email address of primary contacts");
+    // ADMIN (primary) PoC emails are used for EPP password resets and potentially other
+    // security-sensitive tasks. A user with only EDIT_REGISTRAR_DETAILS should not be able to
+    // change this.
+    if (!newAdminEmails.equals(oldAdminEmails)) {
+      throw new ContactRequirementException("Cannot alter the set of primary contacts");
     }
   }
 
