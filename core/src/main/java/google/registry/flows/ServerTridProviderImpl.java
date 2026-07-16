@@ -19,16 +19,20 @@ import static com.google.common.primitives.Longs.BYTES;
 import com.google.common.io.BaseEncoding;
 import jakarta.inject.Inject;
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
-/** A server Trid provider that generates globally incrementing UUIDs. */
+/** A server Trid provider that generates secure random UUID-based transaction IDs. */
 public class ServerTridProviderImpl implements ServerTridProvider {
 
   private static final String SERVER_ID = getServerId();
-  private static final AtomicLong idCounter = new AtomicLong();
+  
+  private final SecureRandom secureRandom;
 
-  @Inject public ServerTridProviderImpl() {}
+  @Inject
+  public ServerTridProviderImpl(SecureRandom secureRandom) {
+    this.secureRandom = secureRandom;
+  }
 
   /** Creates a unique id for this server instance, as a base64 encoded UUID. */
   private static String getServerId() {
@@ -42,9 +46,12 @@ public class ServerTridProviderImpl implements ServerTridProvider {
 
   @Override
   public String createServerTrid() {
-    // The server id can be at most 64 characters. The SERVER_ID is at most 22 characters (128
-    // bits in base64), plus the dash. That leaves 41 characters, so we just append the counter in
-    // hex.
-    return String.format("%s-%x", SERVER_ID, idCounter.incrementAndGet());
+    // The server id can be at most 64 characters. The SERVER_ID is at most 24 characters (128
+    // bits in base64), plus the dash. That leaves 39 characters, so we generate a random 15-byte
+    // (120-bit) suffix, base64url-encoded without padding (20 characters).
+    byte[] randomBytes = new byte[15];
+    secureRandom.nextBytes(randomBytes);
+    String randomSuffix = BaseEncoding.base64Url().omitPadding().encode(randomBytes);
+    return String.format("%s-%s", SERVER_ID, randomSuffix);
   }
 }
