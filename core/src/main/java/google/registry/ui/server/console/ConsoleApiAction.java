@@ -48,6 +48,7 @@ import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -107,6 +108,11 @@ public abstract class ConsoleApiAction implements Runnable {
 
   protected static void checkPermission(
       User user, String registrarId, ConsolePermission permission) {
+    Optional<Registrar> maybeRegistrar = Registrar.loadByRegistrarIdCached(registrarId);
+    if (maybeRegistrar.isEmpty() || !maybeRegistrar.get().isLive()) {
+      throw new ConsolePermissionForbiddenException(
+          String.format("No active registrar %s", registrarId));
+    }
     if (!user.getUserRoles().hasPermission(registrarId, permission)) {
       throw new ConsolePermissionForbiddenException(
           String.format(
