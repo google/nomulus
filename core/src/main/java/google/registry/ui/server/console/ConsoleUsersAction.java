@@ -33,6 +33,7 @@ import com.google.api.services.directory.model.UserName;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
@@ -58,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
@@ -69,6 +71,7 @@ import javax.annotation.Nullable;
 public class ConsoleUsersAction extends ConsoleApiAction {
   static final String PATH = "/console-api/users";
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final int PASSWORD_LENGTH = 16;
 
   private final String registrarId;
@@ -184,11 +187,20 @@ public class ConsoleUsersAction extends ConsoleApiAction {
 
     // User has no registrars assigned
     if (updatedUser.getUserRoles().getRegistrarRoles().isEmpty()) {
-      try {
-        directory.users().delete(email).execute();
-      } catch (IOException e) {
-        setFailedResponse("Failed to delete the user workspace account", SC_INTERNAL_SERVER_ERROR);
-        throw e;
+      // Only delete the Workspace account if runCreate() provably minted it. Addresses that
+      // reached this row via CLI create_user, OteAccountBuilder, or other means must survive
+      if (isConsoleMintedAddress(email)) {
+        try {
+          directory.users().delete(email).execute();
+        } catch (IOException e) {
+          setFailedResponse(
+              "Failed to delete the user workspace account", SC_INTERNAL_SERVER_ERROR);
+          throw e;
+        }
+      } else {
+        logger.atInfo().log(
+            "Skipping Workspace deletion for %s because the console did not mint the account",
+            email);
       }
 
       VKey<User> key = VKey.create(User.class, email);
@@ -366,6 +378,22 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         registrar.get(),
         ImmutableSet.of());
     return true;
+  }
+
+  /**
+   * True iff {@code email} matches the exact shape produced by {@link #runCreate()} for the current
+   * {@code registrarId}: {@code <3 alnum>.<registrarId>@<gSuiteDomainName>}.
+   *
+   * <p>Addresses of any other shape were provisioned outside this action and should not be passed
+   * to {@code directory.users().delete()}.
+   */
+  private boolean isConsoleMintedAddress(String email) {
+    return email.endsWith("@" + gSuiteDomainName)
+        && Pattern.matches(
+            String.format(
+                "^[a-zA-Z0-9]{3}\\.%s@%s$",
+                Pattern.quote(registrarId), Pattern.quote(gSuiteDomainName)),
+            email);
   }
 
   public record UserData(

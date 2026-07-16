@@ -20,7 +20,10 @@ import static jakarta.servlet.http.HttpServletResponse.SC_CREATED;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.api.services.directory.Directory;
@@ -243,7 +246,8 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
-  void testSuccess_deletesUser() throws IOException {
+  void testSuccess_deletesUser_nonConsoleMintedAddress_skipsWorkspaceAccountDeletion()
+      throws IOException {
     User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult =
         AuthResult.createUser(
@@ -265,6 +269,44 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(DatabaseHelper.loadByKeyIfPresent(VKey.create(User.class, "test2@test.com")))
         .isEmpty();
+    verify(users, never()).delete(anyString());
+  }
+
+  @Test
+  void testSuccess_deletesUser_consoleMintedAddress_deletesWorkspaceAccount() throws IOException {
+    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    AuthResult authResult =
+        AuthResult.createUser(
+            user1
+                .asBuilder()
+                .setUserRoles(user1.getUserRoles().asBuilder().setIsAdmin(true).build())
+                .build());
+    String mintedEmail = "abc.TheRegistrar@email.com";
+    DatabaseHelper.persistResource(
+        new User.Builder()
+            .setEmailAddress(mintedEmail)
+            .setUserRoles(
+                new UserRoles()
+                    .asBuilder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                    .build())
+            .build());
+
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("DELETE"),
+            Optional.of(
+                new UserData(mintedEmail, null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    when(directory.users()).thenReturn(users);
+    when(users.delete(mintedEmail)).thenReturn(delete);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(DatabaseHelper.loadByKeyIfPresent(VKey.create(User.class, mintedEmail))).isEmpty();
+    verify(users).delete(mintedEmail);
+    verify(delete).execute();
   }
 
   @Test
