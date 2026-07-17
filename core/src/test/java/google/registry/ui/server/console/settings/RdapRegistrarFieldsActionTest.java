@@ -19,6 +19,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
@@ -47,103 +48,110 @@ import org.junit.jupiter.api.Test;
 /** Tests for {@link RdapRegistrarFieldsAction}. */
 public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
 
-  private final AuthenticatedRegistrarAccessor registrarAccessor =
-      AuthenticatedRegistrarAccessor.createForTesting(
-          ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
+    private final AuthenticatedRegistrarAccessor registrarAccessor = AuthenticatedRegistrarAccessor.createForTesting(
+            ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
 
-  private final HashMap<String, Object> uiRegistrarMap =
-      Maps.newHashMap(
-          ImmutableMap.of(
-              "registrarId",
-              "TheRegistrar",
-              "whoisServer",
-              "whois.nic.google",
-              "type",
-              "REAL",
-              "emailAddress",
-              "the.registrar@example.com",
-              "state",
-              "ACTIVE",
-              "url",
-              "\"http://my.fake.url\"",
-              "localizedAddress",
-              "{\"street\": [\"123 Example Boulevard\"], \"city\": \"Williamsburg\", \"state\":"
-                  + " \"NY\", \"zip\": \"11201\", \"countryCode\": \"US\"}"));
+    private final HashMap<String, Object> uiRegistrarMap = Maps.newHashMap(
+            ImmutableMap.of(
+                    "registrarId",
+                    "TheRegistrar",
+                    "whoisServer",
+                    "whois.nic.google",
+                    "type",
+                    "REAL",
+                    "emailAddress",
+                    "the.registrar@example.com",
+                    "state",
+                    "ACTIVE",
+                    "url",
+                    "\"http://my.fake.url\"",
+                    "localizedAddress",
+                    "{\"street\": [\"123 Example Boulevard\"], \"city\": \"Williamsburg\", \"state\":"
+                            + " \"NY\", \"zip\": \"11201\", \"countryCode\": \"US\"}"));
 
-  @Test
-  void testSuccess_setsAllFields() throws Exception {
-    Registrar oldRegistrar = Registrar.loadRequiredRegistrarCached("TheRegistrar");
-    ImmutableMap<String, Object> addressMap =
-        ImmutableMap.of(
-            "street",
-            ImmutableList.of("123 Fake St"),
-            "city",
-            "Fakeville",
-            "state",
-            "NL",
-            "zip",
-            "10011",
-            "countryCode",
-            "CA");
-    uiRegistrarMap.putAll(
-        ImmutableMap.of(
-            "icannReferralEmail",
-            "lol@sloth.test",
-            "phoneNumber",
-            "+1.4155552671",
-            "faxNumber",
-            "+1.4155552672",
-            "localizedAddress",
-            "{\"street\": [\"123 Fake St\"], \"city\": \"Fakeville\", \"state\":"
-                + " \"NL\", \"zip\": \"10011\", \"countryCode\": \"CA\"}"));
-    RdapRegistrarFieldsAction action = createAction();
-    action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_OK);
-    Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get(); // skip cache
-    assertThat(newRegistrar.getLocalizedAddress().toJsonMap()).isEqualTo(addressMap);
-    assertThat(newRegistrar.getPhoneNumber()).isEqualTo("+1.4155552671");
-    assertThat(newRegistrar.getFaxNumber()).isEqualTo("+1.4155552672");
-    // the non-changed fields should be the same
-    assertAboutImmutableObjects()
-        .that(newRegistrar)
-        .isEqualExceptFields(oldRegistrar, "localizedAddress", "phoneNumber", "faxNumber");
-    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
-    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE);
-    assertThat(history.getDescription()).hasValue("TheRegistrar|ADDRESS,PHONE,FAX");
-  }
+    @Test
+    void testSuccess_setsAllFields() throws Exception {
+        Registrar oldRegistrar = Registrar.loadRequiredRegistrarCached("TheRegistrar");
+        ImmutableMap<String, Object> addressMap = ImmutableMap.of(
+                "street",
+                ImmutableList.of("123 Fake St"),
+                "city",
+                "Fakeville",
+                "state",
+                "NL",
+                "zip",
+                "10011",
+                "countryCode",
+                "CA");
+        uiRegistrarMap.putAll(
+                ImmutableMap.of(
+                        "icannReferralEmail",
+                        "lol@sloth.test",
+                        "phoneNumber",
+                        "+1.4155552671",
+                        "faxNumber",
+                        "+1.4155552672",
+                        "localizedAddress",
+                        "{\"street\": [\"123 Fake St\"], \"city\": \"Fakeville\", \"state\":"
+                                + " \"NL\", \"zip\": \"10011\", \"countryCode\": \"CA\"}"));
+        RdapRegistrarFieldsAction action = createAction();
+        action.run();
+        assertThat(response.getStatus()).isEqualTo(SC_OK);
+        Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get(); // skip cache
+        assertThat(newRegistrar.getLocalizedAddress().toJsonMap()).isEqualTo(addressMap);
+        assertThat(newRegistrar.getPhoneNumber()).isEqualTo("+1.4155552671");
+        assertThat(newRegistrar.getFaxNumber()).isEqualTo("+1.4155552672");
+        // the non-changed fields should be the same
+        assertAboutImmutableObjects()
+                .that(newRegistrar)
+                .isEqualExceptFields(oldRegistrar, "localizedAddress", "phoneNumber", "faxNumber");
+        ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+        assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE);
+        assertThat(history.getDescription()).hasValue("TheRegistrar|ADDRESS,PHONE,FAX");
+    }
 
-  @Test
-  void testFailure_noAccessToRegistrar() throws Exception {
-    Registrar newRegistrar = Registrar.loadByRegistrarIdCached("NewRegistrar").get();
-    User onlyTheRegistrar =
-        new User.Builder()
-            .setEmailAddress("email@email.example")
-            .setUserRoles(
-                new UserRoles.Builder()
-                    .setRegistrarRoles(
-                        ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
-                    .build())
-            .build();
-    uiRegistrarMap.put("registrarId", "NewRegistrar");
-    RdapRegistrarFieldsAction action = createAction(onlyTheRegistrar);
-    action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
-    // should be no change
-    assertThat(DatabaseHelper.loadByEntity(newRegistrar)).isEqualTo(newRegistrar);
-  }
+    @Test
+    void testFailure_noAccessToRegistrar() throws Exception {
+        Registrar newRegistrar = Registrar.loadByRegistrarIdCached("NewRegistrar").get();
+        User onlyTheRegistrar = new User.Builder()
+                .setEmailAddress("email@email.example")
+                .setUserRoles(
+                        new UserRoles.Builder()
+                                .setRegistrarRoles(
+                                        ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                                .build())
+                .build();
+        uiRegistrarMap.put("registrarId", "NewRegistrar");
+        RdapRegistrarFieldsAction action = createAction(onlyTheRegistrar);
+        action.run();
+        assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+        // should be no change
+        assertThat(DatabaseHelper.loadByEntity(newRegistrar)).isEqualTo(newRegistrar);
+    }
 
-  private RdapRegistrarFieldsAction createAction() throws IOException {
-    return createAction(fteUser);
-  }
+    @Test
+    void testFailure_zipTooLong() throws Exception {
+        uiRegistrarMap.put(
+                "localizedAddress",
+                "{\"street\": [\"123 Fake St\"], \"city\": \"Fakeville\", \"state\":"
+                        + " \"NL\", \"zip\": \"12345678901234567\", \"countryCode\": \"CA\"}");
+        RdapRegistrarFieldsAction action = createAction();
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action::run);
+        assertThat(exception).hasMessageThat().contains("Zip cannot be longer than 16 characters");
+    }
 
-  private RdapRegistrarFieldsAction createAction(User user) throws IOException {
-    consoleApiParams = ConsoleApiParamsUtils.createFake(AuthResult.createUser(user));
-    response = (FakeResponse) consoleApiParams.response();
-    when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    return new RdapRegistrarFieldsAction(
-        consoleApiParams,
-        registrarAccessor,
-        ConsoleModule.provideRegistrar(
-            GSON, RequestModule.provideJsonBody(uiRegistrarMap.toString(), GSON)));
-  }
+    private RdapRegistrarFieldsAction createAction() throws IOException {
+        return createAction(fteUser);
+    }
+
+    private RdapRegistrarFieldsAction createAction(User user) throws IOException {
+        consoleApiParams = ConsoleApiParamsUtils.createFake(AuthResult.createUser(user));
+        response = (FakeResponse) consoleApiParams.response();
+        when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
+        return new RdapRegistrarFieldsAction(
+                consoleApiParams,
+                registrarAccessor,
+                ConsoleModule.provideRegistrar(
+                        GSON, RequestModule.provideJsonBody(uiRegistrarMap.toString(), GSON)));
+    }
 }
