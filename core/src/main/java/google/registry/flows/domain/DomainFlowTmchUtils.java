@@ -101,8 +101,9 @@ public final class DomainFlowTmchUtils {
       throw new SignedMarkRevokedErrorException();
     }
 
+    String signedElementId;
     try {
-      tmchXmlSignature.verify(signedMarkData);
+      signedElementId = tmchXmlSignature.verify(signedMarkData);
     } catch (CertificateExpiredException e) {
       throw new SignedMarkCertificateExpiredException(e);
     } catch (CertificateNotYetValidException e) {
@@ -120,6 +121,10 @@ public final class DomainFlowTmchUtils {
         | SAXException
         | ParserConfigurationException e) {
       throw new SignedMarkParsingErrorException(e);
+    }
+
+    if (!signedElementId.equals(signedMark.getXsdId())) {
+      throw new SignedMarkSignatureException(new Exception("Signature reference ID mismatch."));
     }
 
     if (now.isBefore(signedMark.getCreationTime())) {
