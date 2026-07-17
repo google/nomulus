@@ -21,10 +21,16 @@ import static org.mockito.Mockito.mock;
 
 import java.security.SecureRandom;
 import java.util.regex.Pattern;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ServerTridProviderImpl}. */
 class ServerTridProviderImplTest {
+
+  @AfterEach
+  void tearDown() {
+    ServerTridProviderImpl.secureRandom.remove();
+  }
 
   @Test
   void testCreateServerTrid_generatesCorrectFormat() {
@@ -42,7 +48,8 @@ class ServerTridProviderImplTest {
         .when(mockSecureRandom)
         .nextBytes(any(byte[].class));
 
-    ServerTridProviderImpl provider = new ServerTridProviderImpl(mockSecureRandom);
+    ServerTridProviderImpl.secureRandom.set(mockSecureRandom);
+    ServerTridProviderImpl provider = new ServerTridProviderImpl();
     String trid = provider.createServerTrid();
 
     // The expected suffix for bytes 0 to 14 in base64url is "AAECAwQFBgcICQoLDA0O"
@@ -71,7 +78,8 @@ class ServerTridProviderImplTest {
         .when(mockSecureRandom)
         .nextBytes(any(byte[].class));
 
-    ServerTridProviderImpl provider = new ServerTridProviderImpl(mockSecureRandom);
+    ServerTridProviderImpl.secureRandom.set(mockSecureRandom);
+    ServerTridProviderImpl provider = new ServerTridProviderImpl();
     String trid = provider.createServerTrid();
 
     // The expected suffix for 15 bytes of 0xFF in base64url is 20 underscores

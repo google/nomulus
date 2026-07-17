@@ -16,9 +16,11 @@ package google.registry.flows;
 
 import static com.google.common.primitives.Longs.BYTES;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.BaseEncoding;
 import jakarta.inject.Inject;
 import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.UUID;
 
@@ -26,13 +28,20 @@ import java.util.UUID;
 public class ServerTridProviderImpl implements ServerTridProvider {
 
   private static final String SERVER_ID = getServerId();
-  
-  private final SecureRandom secureRandom;
+
+  @VisibleForTesting
+  static final ThreadLocal<SecureRandom> secureRandom =
+      ThreadLocal.withInitial(
+          () -> {
+            try {
+              return SecureRandom.getInstance("NativePRNG");
+            } catch (NoSuchAlgorithmException e) {
+              throw new RuntimeException(e);
+            }
+          });
 
   @Inject
-  public ServerTridProviderImpl(SecureRandom secureRandom) {
-    this.secureRandom = secureRandom;
-  }
+  public ServerTridProviderImpl() {}
 
   /** Creates a unique id for this server instance, as a base64 encoded UUID. */
   private static String getServerId() {
@@ -50,7 +59,7 @@ public class ServerTridProviderImpl implements ServerTridProvider {
     // bits in base64), plus the dash. That leaves 39 characters, so we generate a random 15-byte
     // (120-bit) suffix, base64url-encoded without padding (20 characters).
     byte[] randomBytes = new byte[15];
-    secureRandom.nextBytes(randomBytes);
+    secureRandom.get().nextBytes(randomBytes);
     String randomSuffix = BaseEncoding.base64Url().omitPadding().encode(randomBytes);
     return String.format("%s-%s", SERVER_ID, randomSuffix);
   }
