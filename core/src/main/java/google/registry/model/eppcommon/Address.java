@@ -155,12 +155,28 @@ public class Address extends ImmutableObject
 
   @Override
   public void postProcess() {
+    validateState();
     if (street == null || street.isEmpty()) {
       return;
     }
     streetLine1 = street.get(0);
     streetLine2 = street.size() >= 2 ? street.get(1) : null;
     streetLine3 = street.size() >= 3 ? street.get(2) : null;
+  }
+
+  public void validateState() {
+    checkArgument(
+        street == null || (!street.isEmpty() && street.size() <= 3),
+        "Street address must have [1-3] lines: %s",
+        street);
+    //noinspection ConstantConditions
+    checkArgument(
+        street == null || street.stream().noneMatch(String::isEmpty),
+        "Street address cannot contain empty string: %s",
+        street);
+    checkArgument(
+        countryCode == null || countryCode.length() == 2,
+        "Country code should be a 2 character string");
   }
 
   /** A builder for constructing {@link Address}. */
@@ -172,16 +188,13 @@ public class Address extends ImmutableObject
       super(instance);
     }
 
+    @Override
+    public T build() {
+      getInstance().validateState();
+      return super.build();
+    }
+
     public Builder<T> setStreet(ImmutableList<String> street) {
-      checkArgument(
-          street == null || (!street.isEmpty() && street.size() <= 3),
-          "Street address must have [1-3] lines: %s",
-          street);
-      //noinspection ConstantConditions
-      checkArgument(
-          street.stream().noneMatch(String::isEmpty),
-          "Street address cannot contain empty string: %s",
-          street);
       getInstance().street = street;
       getInstance().streetLine1 = street.get(0);
       getInstance().streetLine2 = street.size() >= 2 ? street.get(1) : null;
