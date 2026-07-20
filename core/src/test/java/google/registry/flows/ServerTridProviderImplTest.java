@@ -52,7 +52,6 @@ class ServerTridProviderImplTest {
     ServerTridProviderImpl provider = new ServerTridProviderImpl();
     String trid = provider.createServerTrid();
 
-    // The expected suffix for bytes 0 to 14 in base64url is "AAECAwQFBgcICQoLDA0O"
     String expectedSuffix = "AAECAwQFBgcICQoLDA0O";
 
     // The trid is of the form SERVER_ID-SUFFIX
@@ -82,8 +81,19 @@ class ServerTridProviderImplTest {
     ServerTridProviderImpl provider = new ServerTridProviderImpl();
     String trid = provider.createServerTrid();
 
-    // The expected suffix for 15 bytes of 0xFF in base64url is 20 underscores
     String expectedSuffix = "____________________";
     assertThat(trid).endsWith("-" + expectedSuffix);
+  }
+
+  @Test
+  void testCreateServerTrid_realInitializationWorks() {
+    ServerTridProviderImpl provider = new ServerTridProviderImpl();
+    String trid1 = provider.createServerTrid();
+    String trid2 = provider.createServerTrid();
+
+    Pattern tridPattern = Pattern.compile("^[A-Za-z0-9+/=]{24}-[A-Za-z0-9_-]{20}$");
+    assertThat(trid1).matches(tridPattern);
+    assertThat(trid2).matches(tridPattern);
+    assertThat(trid1).isNotEqualTo(trid2);
   }
 }

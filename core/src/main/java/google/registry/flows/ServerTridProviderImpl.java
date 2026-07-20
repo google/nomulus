@@ -34,7 +34,7 @@ public class ServerTridProviderImpl implements ServerTridProvider {
       ThreadLocal.withInitial(
           () -> {
             try {
-              return SecureRandom.getInstance("NativePRNG");
+              return SecureRandom.getInstance("DRBG");
             } catch (NoSuchAlgorithmException e) {
               throw new RuntimeException(e);
             }
