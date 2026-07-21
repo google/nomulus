@@ -20,6 +20,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist
 import static google.registry.flows.host.HostFlowUtils.lookupSuperordinateDomain;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotInPendingDelete;
+import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotServerUpdateProhibited;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_CREATE;
@@ -73,6 +74,7 @@ import java.util.Optional;
  * @error {@link HostFlowUtils.HostNameNotPunyCodedException}
  * @error {@link HostFlowUtils.SuperordinateDomainDoesNotExistException}
  * @error {@link HostFlowUtils.SuperordinateDomainInPendingDeleteException}
+ * @error {@link HostFlowUtils.SuperordinateDomainServerUpdateProhibitedException}
  * @error {@link SubordinateHostMustHaveIpException}
  * @error {@link UnexpectedExternalHostIpException}
  */
@@ -107,6 +109,7 @@ public final class HostCreateFlow implements MutatingFlow {
     Optional<Domain> superordinateDomain =
         lookupSuperordinateDomain(validateHostName(targetId), now);
     verifySuperordinateDomainNotInPendingDelete(superordinateDomain.orElse(null));
+    verifySuperordinateDomainNotServerUpdateProhibited(superordinateDomain.orElse(null));
     verifySuperordinateDomainOwnership(registrarId, superordinateDomain.orElse(null));
     boolean willBeSubordinate = superordinateDomain.isPresent();
     boolean hasIpAddresses = !isNullOrEmpty(command.getInetAddresses());

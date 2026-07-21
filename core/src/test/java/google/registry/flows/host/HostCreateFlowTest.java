@@ -51,6 +51,7 @@ import google.registry.flows.host.HostFlowUtils.InvalidHostNameException;
 import google.registry.flows.host.HostFlowUtils.IpAddressNotRoutableException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainInPendingDeleteException;
+import google.registry.flows.host.HostFlowUtils.SuperordinateDomainServerUpdateProhibitedException;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
@@ -411,6 +412,22 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     assertAboutEppExceptions()
         .that(assertThrows(IpAddressNotRoutableException.class, this::runFlow))
         .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_superordinateDomainIsServerUpdateProhibited() {
+    createTld("tld");
+    persistResource(
+        DatabaseHelper.newDomain("example.tld")
+            .asBuilder()
+            .setStatusValues(ImmutableSet.of(StatusValue.SERVER_UPDATE_PROHIBITED))
+            .build());
+    setEppHostCreateInputWithIps("ns1.example.tld");
+    SuperordinateDomainServerUpdateProhibitedException thrown =
+        assertThrows(SuperordinateDomainServerUpdateProhibitedException.class, this::runFlow);
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Superordinate domain for this hostname has serverUpdateProhibited status");
   }
 
   @Test
