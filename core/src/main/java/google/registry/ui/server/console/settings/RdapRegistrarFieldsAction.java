@@ -86,15 +86,14 @@ public class RdapRegistrarFieldsAction extends ConsoleApiAction {
     var newRegistrarBuilder = savedRegistrar.asBuilder();
 
     if (!providedRegistrar.getLocalizedAddress().equals(savedRegistrar.getLocalizedAddress())) {
-      newRegistrarBuilder.setLocalizedAddress(
-          providedRegistrar.getLocalizedAddress().asBuilder().build());
+      newRegistrarBuilder.setLocalizedAddress(providedRegistrar.getLocalizedAddress());
       updates.add("ADDRESS");
     }
     if (!providedRegistrar.getPhoneNumber().equals(savedRegistrar.getPhoneNumber())) {
       newRegistrarBuilder.setPhoneNumber(providedRegistrar.getPhoneNumber());
       updates.add("PHONE");
     }
-    if (!providedRegistrar.getFaxNumber().equals(savedRegistrar.getFaxNumber())) {
+    if (!providedRegistrar.getFaxNumber().equals(savedRegistrar.getPhoneNumber())) {
       newRegistrarBuilder.setFaxNumber(providedRegistrar.getFaxNumber());
       updates.add("FAX");
     }

@@ -26,10 +26,10 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostLoad;
 import google.registry.tools.GsonUtils.GsonPostProcessable;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.MappedSuperclass;
-import google.registry.persistence.EntityCallbacksListener.RecursivePostLoad;
 import jakarta.persistence.Transient;
 import jakarta.xml.bind.Unmarshaller;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -50,8 +50,8 @@ import java.util.stream.Stream;
  * href="http://tools.ietf.org/html/draft-lozano-tmch-smd">Mark and Signed Mark Objects Mapping</a>.
  *
  * <p>The lengths of the fields are limited to match the constraints defined in XSD schemas like
- * {@code rde-registrar.xsd}. Specifically, {@code zip} is limited to 16 characters and {@code city},
- * {@code state}, and each {@code street} line are limited to 255 characters.
+ * {@code rde-registrar.xsd}. Specifically, {@code zip} is limited to 16 characters and {@code
+ * city}, {@code state}, and each {@code street} line are limited to 255 characters.
  *
  * @see google.registry.model.contact.ContactAddress
  * @see google.registry.model.mark.MarkAddress
