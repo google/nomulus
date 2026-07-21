@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -37,6 +38,7 @@ import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
+import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
@@ -54,8 +56,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
 
   private Registrar registrar;
-
-  private User user;
 
   private static String registrarPostData =
       "{\"registrarId\":\"%s\",\"allowedTlds\":[%s],\"registryLockAllowed\":%s,"
@@ -76,12 +76,6 @@ class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
             .setAllowedTlds(ImmutableSet.of())
             .setRegistryLockAllowed(false)
             .build());
-    user =
-        persistResource(
-            new User.Builder()
-                .setEmailAddress("user@registrarId.com")
-                .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-                .build());
   }
 
   @Test
@@ -209,15 +203,123 @@ class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
                 .build());
   }
 
-  private ConsoleApiParams createParams() {
-    AuthResult authResult = AuthResult.createUser(user);
-    return ConsoleApiParamsUtils.createFake(authResult);
+  @Test
+  void testFailure_registrarNotFound() throws IOException {
+    var action =
+        createAction(
+            String.format(
+                registrarPostData,
+                "nonexistent",
+                "app, dev",
+                false,
+                "\"2023-12-12T00:00:00.000Z\""));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
-  private ConsoleUpdateRegistrarAction createAction(String requestData) throws IOException {
+  @Test
+  void testSuccess_supportAgentCanUpdateAllowedTlds() throws IOException {
+    User supportAgentUser =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("agent@registrarId.com")
+                .setUserRoles(
+                    new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
+                .build());
+    var action =
+        createAction(
+            supportAgentUser,
+            String.format(
+                registrarPostData,
+                "TheRegistrar",
+                "app, dev",
+                false,
+                "\"2023-12-12T00:00:00.000Z\""));
+    action.run();
+    Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
+    assertThat(newRegistrar.getAllowedTlds()).containsExactly("app", "dev");
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+  }
+
+  @Test
+  void testFailure_supportAgentCannotUpdateRegistryLock() throws IOException {
+    User supportAgentUser =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("agent@registrarId.com")
+                .setUserRoles(
+                    new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
+                .build());
+    var action =
+        createAction(
+            supportAgentUser,
+            String.format(
+                registrarPostData,
+                "TheRegistrar",
+                "app, dev",
+                true,
+                "\"2023-12-12T00:00:00.000Z\""));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+    Registrar unupdatedRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
+    assertThat(unupdatedRegistrar.isRegistryLockAllowed()).isFalse();
+  }
+
+  @Test
+  void testFailure_userWithoutEditRegistrarDetailsCannotUpdateAllowedTlds() throws IOException {
+    User normalUser =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("normal@registrarId.com")
+                .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.NONE).build())
+                .build());
+    var action =
+        createAction(
+            normalUser,
+            String.format(
+                registrarPostData,
+                "TheRegistrar",
+                "app, dev",
+                false,
+                "\"2023-12-12T00:00:00.000Z\""));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+    Registrar unupdatedRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
+    assertThat(unupdatedRegistrar.getAllowedTlds()).isEmpty();
+  }
+
+  @Test
+  void testSuccess_supportLeadCanUpdateRegistryLock() throws IOException {
+    User supportLeadUser =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("lead@registrarId.com")
+                .setUserRoles(
+                    new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_LEAD).build())
+                .build());
+    var action =
+        createAction(
+            supportLeadUser,
+            String.format(
+                registrarPostData, "TheRegistrar", "", true, "\"2023-12-12T00:00:00.000Z\""));
+    action.run();
+    Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
+    assertThat(newRegistrar.isRegistryLockAllowed()).isTrue();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+  }
+
+  private ConsoleUpdateRegistrarAction createAction(User actionUser, String requestData)
+      throws IOException {
+    AuthResult authResult = AuthResult.createUser(actionUser);
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
+    response = (FakeResponse) consoleApiParams.response();
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     Optional<Registrar> maybeRegistrarUpdateData =
         ConsoleModule.provideRegistrar(GSON, RequestModule.provideJsonBody(requestData, GSON));
     return new ConsoleUpdateRegistrarAction(consoleApiParams, maybeRegistrarUpdateData);
+  }
+
+  private ConsoleUpdateRegistrarAction createAction(String requestData) throws IOException {
+    return createAction(fteUser, requestData);
   }
 }
