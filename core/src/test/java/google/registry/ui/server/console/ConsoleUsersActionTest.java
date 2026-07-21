@@ -663,6 +663,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
         iamClient,
         "email.com",
         Optional.of("someRandomString"),
+        Optional.of("consoleIapServiceId"),
         passwordGenerator,
         userData,
         "TheRegistrar");

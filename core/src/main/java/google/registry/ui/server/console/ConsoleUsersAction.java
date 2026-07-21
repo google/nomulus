@@ -79,6 +79,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   private final StringGenerator passwordGenerator;
   private final Optional<UserData> userData;
   private final Optional<String> maybeGroupEmailAddress;
+  private final Optional<String> consoleIapServiceId;
   private final IamClient iamClient;
   private final String gSuiteDomainName;
 
@@ -89,6 +90,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       IamClient iamClient,
       @Config("gSuiteDomainName") String gSuiteDomainName,
       @Config("gSuiteConsoleUserGroupEmailAddress") Optional<String> maybeGroupEmailAddress,
+      @Config("consoleIapServiceId") Optional<String> consoleIapServiceId,
       @Named("base58StringGenerator") StringGenerator passwordGenerator,
       @Parameter("userData") Optional<UserData> userData,
       @Parameter("registrarId") String registrarId) {
@@ -98,6 +100,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     this.passwordGenerator = passwordGenerator;
     this.userData = userData;
     this.maybeGroupEmailAddress = maybeGroupEmailAddress;
+    this.consoleIapServiceId = consoleIapServiceId;
     this.iamClient = iamClient;
     this.gSuiteDomainName = gSuiteDomainName;
   }
@@ -256,7 +259,8 @@ public class ConsoleUsersAction extends ConsoleApiAction {
 
     User.Builder builder = new User.Builder().setUserRoles(userRoles).setEmailAddress(newEmail);
     tm().put(builder.build());
-    User.grantIapPermission(newEmail, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
+    User.grantIapPermission(
+        newEmail, maybeGroupEmailAddress, consoleIapServiceId, cloudTasksUtils, null, iamClient);
     sendConfirmationEmail(registrarId, newEmail, "Created user");
     consoleApiParams.response().setStatus(SC_CREATED);
     consoleApiParams

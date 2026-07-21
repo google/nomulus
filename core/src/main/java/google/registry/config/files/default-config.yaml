@@ -390,6 +390,11 @@ rde:
   sshIdentityEmailAddress: rde@example.com
 
 registrarConsole:
+  # IAP service ID of the HTTP(s) load balancer that serves the console-api backend.
+  # Users created in the console will be bound only to this service to limit access.
+  # This is only applicable to non-group-based auth (if there is no consoleUserGroupEmailAddress)
+  consoleIapServiceId: null
+
   # DUM download file name, excluding the extension
   dumFileName: dum_file_name
 

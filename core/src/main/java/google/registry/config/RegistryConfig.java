@@ -165,6 +165,12 @@ public final class RegistryConfig {
       return config.misc.isEmailSendingEnabled;
     }
 
+    @Provides
+    @Config("consoleIapServiceId")
+    public static Optional<String> provideConsoleIapServiceId(RegistryConfigSettings config) {
+      return Optional.ofNullable(config.registrarConsole.consoleIapServiceId);
+    }
+
     /**
      * The e-mail address for general support. Used in the "contact-us" section of the registrar
      * console.

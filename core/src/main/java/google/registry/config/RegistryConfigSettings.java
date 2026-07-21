@@ -186,6 +186,7 @@ public class RegistryConfigSettings {
 
   /** Configuration for the web-based registrar console. */
   public static class RegistrarConsole {
+    public String consoleIapServiceId;
     public String dumFileName;
     public String supportPhoneNumber;
     public String supportEmailAddress;

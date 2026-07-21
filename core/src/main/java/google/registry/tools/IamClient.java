@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import com.google.api.services.cloudresourcemanager.CloudResourceManager;
 import com.google.api.services.cloudresourcemanager.model.Binding;
+import com.google.api.services.cloudresourcemanager.model.Expr;
 import com.google.api.services.cloudresourcemanager.model.GetIamPolicyRequest;
 import com.google.api.services.cloudresourcemanager.model.Policy;
 import com.google.api.services.cloudresourcemanager.model.SetIamPolicyRequest;
@@ -31,7 +32,10 @@ import java.util.Optional;
 
 @Singleton
 public class IamClient {
+
   private static final String MEMBER_FORMAT = "user:%s";
+  private static final String IAP_ACCESS_EXPRESSION_FORMAT =
+      "resource.name == 'projects/%s/iap_web/compute/services/%s'";
 
   private final CloudResourceManager resourceManager;
   private final String projectId;
@@ -60,7 +64,7 @@ public class IamClient {
    *
    * <p>No-op if the role is already bound to the account.
    */
-  public void addBinding(String account, String role) {
+  public void addBinding(String account, String role, String consoleIapServiceId) {
     String member = String.format(MEMBER_FORMAT, account);
     Policy policy = getPolicy();
     Binding binding =
@@ -69,7 +73,21 @@ public class IamClient {
             .findFirst()
             .orElseGet(
                 () -> {
-                  Binding newBinding = new Binding().setRole(role).setMembers(new ArrayList<>());
+                  Binding newBinding =
+                      new Binding()
+                          .setRole(role)
+                          .setMembers(new ArrayList<>())
+                          .setCondition(
+                              new Expr()
+                                  .setTitle("Registrar Console IAP access")
+                                  .setDescription(
+                                      "Restrict IAP access only to the Registrar Console HTTP(s)"
+                                          + " load balancer")
+                                  .setExpression(
+                                      String.format(
+                                          IAP_ACCESS_EXPRESSION_FORMAT,
+                                          projectId,
+                                          consoleIapServiceId)));
                   policy.getBindings().add(newBinding);
                   return newBinding;
                 });
