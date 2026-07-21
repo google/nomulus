@@ -52,7 +52,8 @@ final class DeleteDomainCommand extends MutatingEppToolCommand {
 
   @Parameter(
       names = {"--registrar_request"},
-      description = "Whether the change was requested by a registrar.")
+      description = "Whether the change was requested by a registrar.",
+      arity = 1)
   private boolean requestedByRegistrar = false;
 
   @Override

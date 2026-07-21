@@ -165,4 +165,32 @@ public class BulkDomainTransferCommandTest extends CommandTestCase<BulkDomainTra
         .isEqualTo(
             "Must specify exactly one input method, either --domains or --domain_names_file");
   }
+
+  @Test
+  void testSuccess_registrarRequestExplicit() throws Exception {
+    runCommandForced(
+        "--gaining_registrar_id",
+        "NewRegistrar",
+        "--losing_registrar_id",
+        "TheRegistrar",
+        "--reason",
+        "someReason",
+        "--domains",
+        "foo.tld,bar.tld",
+        "--registrar_request=false");
+    verify(connection)
+        .sendPostRequest(
+            "/_dr/task/bulkDomainTransfer",
+            ImmutableMap.of(
+                "gainingRegistrarId",
+                "NewRegistrar",
+                "losingRegistrarId",
+                "TheRegistrar",
+                "requestedByRegistrar",
+                false,
+                "reason",
+                "someReason"),
+            MediaType.PLAIN_TEXT_UTF_8,
+            "[\"foo.tld\",\"bar.tld\"]".getBytes(UTF_8));
+  }
 }

@@ -53,8 +53,18 @@ class DeleteDomainCommandTest extends EppToolCommandTestCase<DeleteDomainCommand
         "--client=NewRegistrar",
         "--domain_name=example.tld",
         "--reason=Test",
-        "--registrar_request");
+        "--registrar_request=true");
     eppVerifier.verifySent("domain_delete_by_registrar.xml");
+  }
+
+  @Test
+  void testSuccess_requestedByRegistrarExplicitFalse() throws Exception {
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--domain_name=example.tld",
+        "--reason=Test",
+        "--registrar_request=false");
+    eppVerifier.verifySent("domain_delete.xml");
   }
 
   @Test
