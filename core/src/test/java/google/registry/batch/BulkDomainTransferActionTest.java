@@ -39,6 +39,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import java.time.Instant;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -127,7 +128,22 @@ public class BulkDomainTransferActionTest {
     assertThat(deletedDomain.getUpdateTimestamp().getTimestamp()).isEqualTo(preRunTime);
   }
 
-  private BulkDomainTransferAction createAction(String... domains) {
+  @Test
+  void testSuccess_withoutLosingRegistrarId() {
+    BulkDomainTransferAction action =
+        createActionWithOptionalLosingRegistrar(
+            Optional.empty(), "active.tld", "alreadytransferred.tld");
+    fakeClock.advanceOneMilli();
+    Instant now = fakeClock.now();
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(200);
+    activeDomain = loadByEntity(activeDomain);
+    assertThat(activeDomain.cloneProjectedAtTime(now).getCurrentSponsorRegistrarId())
+        .isEqualTo("NewRegistrar");
+  }
+
+  private BulkDomainTransferAction createActionWithOptionalLosingRegistrar(
+      Optional<String> losingRegistrarId, String... domains) {
     EppController eppController =
         DaggerEppTestComponent.builder()
             .fakesAndMocksModule(FakesAndMocksModule.create(new FakeClock()))
@@ -140,9 +156,13 @@ public class BulkDomainTransferActionTest {
         rateLimiter,
         ImmutableList.copyOf(domains),
         "NewRegistrar",
-        "TheRegistrar",
+        losingRegistrarId,
         true,
         "reason",
         response);
+  }
+
+  private BulkDomainTransferAction createAction(String... domains) {
+    return createActionWithOptionalLosingRegistrar(Optional.of("TheRegistrar"), domains);
   }
 }
