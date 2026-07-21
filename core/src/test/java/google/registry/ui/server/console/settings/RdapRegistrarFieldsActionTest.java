@@ -135,8 +135,8 @@ public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
                 "localizedAddress",
                 "{\"street\": [\"123 Fake St\"], \"city\": \"Fakeville\", \"state\":"
                         + " \"NL\", \"zip\": \"12345678901234567\", \"countryCode\": \"CA\"}");
-        RdapRegistrarFieldsAction action = createAction();
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action::run);
+        IllegalArgumentException exception =
+            assertThrows(IllegalArgumentException.class, this::createAction);
         assertThat(exception).hasMessageThat().contains("Zip cannot be longer than 16 characters");
     }
 

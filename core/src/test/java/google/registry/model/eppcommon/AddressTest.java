@@ -118,21 +118,21 @@ class AddressTest {
   void testFailure_cityTooLong() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> createAddress("line1").asBuilder().setCity("a".repeat(256)));
+        () -> createAddress("line1").asBuilder().setCity("a".repeat(256)).build());
   }
 
   @Test
   void testFailure_stateTooLong() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> createAddress("line1").asBuilder().setState("a".repeat(256)));
+        () -> createAddress("line1").asBuilder().setState("a".repeat(256)).build());
   }
 
   @Test
   void testFailure_zipTooLong() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> createAddress("line1").asBuilder().setZip("12345678901234567"));
+        () -> createAddress("line1").asBuilder().setZip("12345678901234567").build());
   }
 
   @Test
