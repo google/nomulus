@@ -14,7 +14,7 @@
 
 import { TestBed } from '@angular/core/testing';
 
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BackendService } from 'src/app/shared/services/backend.service';
@@ -51,7 +51,7 @@ describe('SecurityService', () => {
         MatSnackBar,
         SecurityService,
         BackendService,
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
       ],
     });

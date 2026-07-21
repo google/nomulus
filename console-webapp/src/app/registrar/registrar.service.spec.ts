@@ -14,7 +14,7 @@
 
 import { TestBed } from '@angular/core/testing';
 
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BackendService } from '../shared/services/backend.service';
@@ -29,7 +29,7 @@ describe('RegistrarService', () => {
       providers: [
         BackendService,
         MatSnackBar,
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
       ],
     });

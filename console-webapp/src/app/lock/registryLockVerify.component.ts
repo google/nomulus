@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RegistrarService } from '../registrar/registrar.service';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { RegistryLockVerifyService } from './registryLockVerify.service';
@@ -25,6 +25,7 @@ import { DomainListComponent } from '../domains/domainList.component';
   templateUrl: './registryLockVerify.component.html',
   styleUrls: ['./registryLockVerify.component.scss'],
   providers: [RegistryLockVerifyService],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class RegistryLockVerifyComponent {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, effect } from '@angular/core';
+import { Component, effect, ChangeDetectionStrategy } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   Registrar,
@@ -26,6 +26,7 @@ import { RdapService } from './rdap.service';
   selector: 'app-rdap-edit',
   templateUrl: './rdapEdit.component.html',
   styleUrls: ['./rdapEdit.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export default class RdapEditComponent {

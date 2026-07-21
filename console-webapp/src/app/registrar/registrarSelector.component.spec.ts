@@ -14,7 +14,7 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from '../material.module';
@@ -32,7 +32,7 @@ describe('RegistrarSelectorComponent', () => {
       imports: [MaterialModule, BrowserAnimationsModule, FormsModule],
       providers: [
         BackendService,
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
       ],
     }).compileComponents();

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatSnackBar, MatSnackBarRef } from '@angular/material/snack-bar';
 import { RegistrarService } from '../../../registrar/registrar.service';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -21,6 +21,7 @@ import { HttpErrorResponse } from '@angular/common/http';
   selector: 'app-poc-reminder',
   templateUrl: './pocReminder.component.html',
   styleUrls: ['./pocReminder.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class PocReminderComponent {

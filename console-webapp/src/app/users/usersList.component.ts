@@ -19,6 +19,7 @@ import {
   input,
   Output,
   ViewChild,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { MaterialModule } from '../material.module';
 import { User, roleToDescription } from './users.service';
@@ -43,6 +44,7 @@ export const columns = [
   templateUrl: './usersList.component.html',
   styleUrls: ['./usersList.component.scss'],
   imports: [MaterialModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [],
 })
 export class UsersListComponent {

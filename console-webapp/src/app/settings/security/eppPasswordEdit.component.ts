@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
@@ -41,6 +41,7 @@ import {
       <button mat-button color="warn" (click)="onSave()">Confirm</button>
     </mat-dialog-actions>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [MaterialModule],
 })
 export class ResetEppPasswordComponent {
@@ -59,6 +60,7 @@ export class ResetEppPasswordComponent {
   selector: 'app-epp-password-edit',
   templateUrl: './eppPasswordEdit.component.html',
   styleUrls: ['./eppPasswordEdit.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export default class EppPasswordEditComponent {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   IpAllowListItem,
@@ -26,6 +26,7 @@ import { SecurityService, apiToUiConverter } from './security.service';
   selector: 'app-security-edit',
   templateUrl: './securityEdit.component.html',
   styleUrls: ['./securityEdit.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export default class SecurityEditComponent {

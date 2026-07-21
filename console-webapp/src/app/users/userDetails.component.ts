@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, computed } from '@angular/core';
+import { Component, computed, ChangeDetectionStrategy } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SelectedRegistrarModule } from '../app.module';
 import { MaterialModule } from '../material.module';
@@ -33,6 +33,7 @@ import { UserEditFormComponent } from './userEditForm.component';
     SelectedRegistrarModule,
     UserEditFormComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [],
 })
 export class UserDetailsComponent {

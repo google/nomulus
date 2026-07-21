@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { DomainListComponent } from '../domains/domainList.component';
 import { RegistrarComponent } from '../registrar/registrarsTable.component';
@@ -25,6 +25,7 @@ import { BreakPointObserverService } from '../shared/services/breakPoint.service
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class HomeComponent {

@@ -20,7 +20,7 @@ import {
   waitForAsync,
 } from '@angular/core/testing';
 
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -53,7 +53,7 @@ describe('SecurityComponent', () => {
         BackendService,
         { provide: SecurityService, useValue: securityServiceStub },
         { provide: RegistrarService, useValue: MOCK_REGISTRAR_SERVICE },
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
       ],
     }).compileComponents();
