@@ -26,10 +26,10 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
-import google.registry.persistence.EntityCallbacksListener.RecursivePostLoad;
 import google.registry.tools.GsonUtils.GsonPostProcessable;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.MappedSuperclass;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostLoad;
 import jakarta.persistence.Transient;
 import jakarta.xml.bind.Unmarshaller;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -45,19 +45,15 @@ import java.util.stream.Stream;
 /**
  * Container for generic street address.
  *
- * <p>
- * This is the "addrType" type from
- * <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. It
+ * <p>This is the "addrType" type from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. It
  * also matches the "addrType" type from <a
- * href="http://tools.ietf.org/html/draft-lozano-tmch-smd">Mark and Signed Mark
- * Objects Mapping</a>.
+ * href="http://tools.ietf.org/html/draft-lozano-tmch-smd">Mark and Signed Mark Objects Mapping</a>.
  *
- * <p>
- * The lengths of the fields are limited to match the constraints defined in XSD
- * schemas like `rde-registrar.xsd`. Specifically, `zip` is limited to 16
- * characters and `city`, `state`, and each `street` line are limited to 255
- * characters.
+ * <p>The lengths of the fields are limited to match the constraints defined in XSD schemas like
+ * {@code rde-registrar.xsd}. Specifically, {@code zip} is limited to 16 characters and {@code city},
+ * {@code state}, and each {@code street} line are limited to 255 characters.
  *
+ * @see google.registry.model.contact.ContactAddress
  * @see google.registry.model.mark.MarkAddress
  * @see google.registry.model.registrar.RegistrarAddress
  */
@@ -70,63 +66,42 @@ public class Address extends ImmutableObject
   /**
    * At most three lines of addresses parsed from XML elements.
    *
-   * <p>
-   * This field is used to marshal to/unmarshal from XML elements. When persisting
-   * to/from SQL,
-   * the next three separate fields are used. Those lines are <em>only</em> used
-   * for persistence
+   * <p>This field is used to marshal to/unmarshal from XML elements. When persisting to/from SQL,
+   * the next three separate fields are used. Those lines are <em>only</em> used for persistence
    * purpose and should not be directly used in Java.
    *
-   * <p>
-   * We need to keep the list and the three fields in sync in all the following
-   * scenarios when an
+   * <p>We need to keep the list and the three fields in sync in all the following scenarios when an
    * entity containing a {@link Address} is created:
    *
    * <ul>
-   * <li>When creating an {@link Address} directly in java, using the
-   * {@link Builder}: The {@link
-   * Builder#setStreet(ImmutableList)} sets both the list and the fields.
-   * <li>When unmarshalling from XML: The list will be set based on the content of
-   * the XML.
-   * Afterwards, {@link #afterUnmarshal(Unmarshaller, Object)}} will be called to
-   * set the
-   * fields.
-   * <li>When loading from the database: The fields will be set by the values in
-   * SQL. Afterwards,
-   * {@link #postLoad()} will be called to set the list.
+   *   <li>When creating an {@link Address} directly in java, using the {@link Builder}: The {@link
+   *       Builder#setStreet(ImmutableList)} sets both the list and the fields.
+   *   <li>When unmarshalling from XML: The list will be set based on the content of the XML.
+   *       Afterwards, {@link #afterUnmarshal(Unmarshaller, Object)}} will be called to set the
+   *       fields.
+   *   <li>When loading from the database: The fields will be set by the values in SQL. Afterwards,
+   *       {@link #postLoad()} will be called to set the list.
    * </ul>
    *
-   * The syncing is especially important because when merging a detached entity
-   * into a session, JPA
-   * provides no guarantee that transient fields will be preserved. In fact,
-   * Hibernate chooses to
-   * discard them when returning a newly merged entity. This means that it is not
-   * enough to provide
-   * callbacks to populate the fields based on the list before persistence, as
-   * merging does not
-   * invoke the callbacks, and we would lose the address fields if only the list
-   * is set. Instead,
+   * The syncing is especially important because when merging a detached entity into a session, JPA
+   * provides no guarantee that transient fields will be preserved. In fact, Hibernate chooses to
+   * discard them when returning a newly merged entity. This means that it is not enough to provide
+   * callbacks to populate the fields based on the list before persistence, as merging does not
+   * invoke the callbacks, and we would lose the address fields if only the list is set. Instead,
    * the fields must be populated when the list is.
    *
-   * <p>
-   * Schema validation will enforce the 3-line limit.
+   * <p>Schema validation will enforce the 3-line limit.
    */
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
   @Transient
   @Expose
   protected List<String> street;
 
-  @XmlTransient
-  @IgnoredInDiffableMap
-  protected String streetLine1;
+  @XmlTransient @IgnoredInDiffableMap protected String streetLine1;
 
-  @XmlTransient
-  @IgnoredInDiffableMap
-  protected String streetLine2;
+  @XmlTransient @IgnoredInDiffableMap protected String streetLine2;
 
-  @XmlTransient
-  @IgnoredInDiffableMap
-  protected String streetLine3;
+  @XmlTransient @IgnoredInDiffableMap protected String streetLine3;
 
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
   @Expose
@@ -221,8 +196,7 @@ public class Address extends ImmutableObject
   /** A builder for constructing {@link Address}. */
   public static class Builder<T extends Address> extends Buildable.Builder<T> {
 
-    public Builder() {
-    }
+    public Builder() {}
 
     protected Builder(T instance) {
       super(instance);
@@ -236,7 +210,7 @@ public class Address extends ImmutableObject
 
     public Builder<T> setStreet(ImmutableList<String> street) {
       getInstance().street = street;
-      getInstance().streetLine1 = street == null ? null : street.get(0);
+      getInstance().streetLine1 = (street != null && street.size() >= 1) ? street.get(0) : null;
       getInstance().streetLine2 = (street != null && street.size() >= 2) ? street.get(1) : null;
       getInstance().streetLine3 = (street != null && street.size() == 3) ? street.get(2) : null;
       return this;
@@ -258,6 +232,9 @@ public class Address extends ImmutableObject
     }
 
     public Builder<T> setCountryCode(String countryCode) {
+      checkArgument(
+          countryCode == null || countryCode.length() == 2,
+          "Country code should be a 2 character string");
       getInstance().countryCode = countryCode;
       return this;
     }
@@ -266,32 +243,26 @@ public class Address extends ImmutableObject
   /**
    * Sets {@link #street} after loading the entity from Cloud SQL.
    *
-   * <p>
-   * This callback method is used by Hibernate to set the {@link #street} field as
-   * it is not
-   * persisted in Cloud SQL. We are doing this because this field is exposed and
-   * used everywhere in
-   * our code base, whereas the individual {@code streetLine} fields are only used
-   * by Hibernate for
+   * <p>This callback method is used by Hibernate to set the {@link #street} field as it is not
+   * persisted in Cloud SQL. We are doing this because this field is exposed and used everywhere in
+   * our code base, whereas the individual {@code streetLine} fields are only used by Hibernate for
    * persistence. Also, setting/reading a list of strings is more convenient.
    */
   @RecursivePostLoad
   void postLoad() {
-    street = streetLine1 == null
-        ? null
-        : Stream.of(streetLine1, streetLine2, streetLine3)
-            .filter(Objects::nonNull)
-            .collect(toImmutableList());
+    street =
+        streetLine1 == null
+            ? null
+            : Stream.of(streetLine1, streetLine2, streetLine3)
+                .filter(Objects::nonNull)
+                .collect(toImmutableList());
   }
 
   /**
-   * Sets {@link #streetLine1}, {@link #streetLine2} and {@link #streetLine3} when
-   * the entity is
+   * Sets {@link #streetLine1}, {@link #streetLine2} and {@link #streetLine3} when the entity is
    * reconstructed from XML message.
    *
-   * <p>
-   * This is a callback function that JAXB invokes after unmarshalling the XML
-   * message.
+   * <p>This is a callback function that JAXB invokes after unmarshalling the XML message.
    */
   @SuppressWarnings("unused")
   void afterUnmarshal(Unmarshaller unmarshaller, Object parent) {

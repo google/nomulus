@@ -48,7 +48,8 @@ import org.junit.jupiter.api.Test;
 /** Tests for {@link RdapRegistrarFieldsAction}. */
 public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
 
-    private final AuthenticatedRegistrarAccessor registrarAccessor = AuthenticatedRegistrarAccessor.createForTesting(
+    private final AuthenticatedRegistrarAccessor registrarAccessor =
+        AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
 
     private final HashMap<String, Object> uiRegistrarMap = Maps.newHashMap(
@@ -66,7 +67,8 @@ public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
                     "url",
                     "\"http://my.fake.url\"",
                     "localizedAddress",
-                    "{\"street\": [\"123 Example Boulevard\"], \"city\": \"Williamsburg\", \"state\":"
+                    "{\"street\": [\"123 Example Boulevard\"], \"city\":"
+                            + " \"Williamsburg\", \"state\":"
                             + " \"NY\", \"zip\": \"11201\", \"countryCode\": \"US\"}"));
 
     @Test
@@ -118,7 +120,8 @@ public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
                 .setUserRoles(
                         new UserRoles.Builder()
                                 .setRegistrarRoles(
-                                        ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                                        ImmutableMap.of(
+                                            "TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
                                 .build())
                 .build();
         uiRegistrarMap.put("registrarId", "NewRegistrar");
