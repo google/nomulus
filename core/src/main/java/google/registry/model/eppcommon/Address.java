@@ -53,7 +53,6 @@ import java.util.stream.Stream;
  * {@code rde-registrar.xsd}. Specifically, {@code zip} is limited to 16 characters and {@code
  * city}, {@code state}, and each {@code street} line are limited to 255 characters.
  *
- * @see google.registry.model.contact.ContactAddress
  * @see google.registry.model.mark.MarkAddress
  * @see google.registry.model.registrar.RegistrarAddress
  */
