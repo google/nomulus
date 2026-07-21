@@ -24,6 +24,8 @@ import static google.registry.util.DateTimeUtils.plusMonths;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
+import google.registry.model.domain.DomainAuthInfo;
+import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.testing.DatabaseHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -135,5 +137,29 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTItVExE");
     // Deleted
     assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTMtVExE");
+  }
+
+  @Test
+  void testSuccess_censorsAuthcodeByDefault() throws Exception {
+    persistResource(
+        DatabaseHelper.newDomain("example.tld")
+            .asBuilder()
+            .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("secret123")))
+            .build());
+    runCommand("example.tld");
+    assertInStdout("value=[REDACTED]");
+    assertNotInStdout("secret123");
+  }
+
+  @Test
+  void testSuccess_showAuthcode() throws Exception {
+    persistResource(
+        DatabaseHelper.newDomain("example.tld")
+            .asBuilder()
+            .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("secret123")))
+            .build());
+    runCommand("example.tld", "--show_authcode=true");
+    assertInStdout("value=secret123");
+    assertNotInStdout("[REDACTED]");
   }
 }
