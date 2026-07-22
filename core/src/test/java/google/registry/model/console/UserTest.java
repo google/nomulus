@@ -66,13 +66,21 @@ public class UserTest extends EntityTestCase {
   void testFailure_asyncAndSyncModeConflict() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> User.grantIapPermission("email@example.com", Optional.empty(), null, null, null));
+        () ->
+            User.grantIapPermission(
+                "email@example.com",
+                Optional.empty(),
+                Optional.of("consoleIapServiceId"),
+                null,
+                null,
+                null));
     assertThrows(
         IllegalArgumentException.class,
         () ->
             User.grantIapPermission(
                 "email@example.com",
                 Optional.empty(),
+                Optional.of("consoleIapServiceId"),
                 mock(CloudTasksUtils.class),
                 mock(ServiceConnection.class),
                 null));
@@ -88,6 +96,24 @@ public class UserTest extends EntityTestCase {
                 mock(CloudTasksUtils.class),
                 mock(ServiceConnection.class),
                 null));
+  }
+
+  @Test
+  void testGrantIapPermission_neitherGroupNorIapServiceId_fails() {
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                User.grantIapPermission(
+                    "email@example.com",
+                    Optional.empty(),
+                    Optional.empty(),
+                    mock(CloudTasksUtils.class),
+                    null,
+                    mock(IamClient.class)));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo("At least one of groupEmailAddress or consoleIapServiceId must be present");
   }
 
   @Test
@@ -156,13 +182,33 @@ public class UserTest extends EntityTestCase {
 
     // Individual permission.
     User.grantIapPermission(
-        "email@example.com", Optional.empty(), cloudTasksUtils, null, iamClient);
+        "email@example.com",
+        Optional.empty(),
+        Optional.of("consoleIapServiceId"),
+        cloudTasksUtils,
+        null,
+        iamClient);
     cloudTasksHelper.assertNoTasksEnqueued();
-    verify(iamClient).addBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE);
+    verify(iamClient)
+        .addBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE, "consoleIapServiceId");
 
     // Group membership.
     User.grantIapPermission(
-        "email@example.com", Optional.of("console@example.com"), cloudTasksUtils, null, iamClient);
+        "email@example.com",
+        Optional.of("console@example.com"),
+        Optional.empty(),
+        cloudTasksUtils,
+        null,
+        iamClient);
+    // Group membership takes precedence over individual membership
+    User.grantIapPermission(
+        "groupemail@example.com",
+        Optional.of("console@example.com"),
+        Optional.of("consoleIapServiceId"),
+        cloudTasksUtils,
+        null,
+        iamClient);
+
     cloudTasksHelper.assertTasksEnqueued(
         "console-user-group-update",
         new TaskMatcher()
@@ -170,6 +216,13 @@ public class UserTest extends EntityTestCase {
             .method(HttpMethod.POST)
             .path("/_dr/admin/updateUserGroup")
             .param("userEmailAddress", "email@example.com")
+            .param("groupEmailAddress", "console@example.com")
+            .param("groupUpdateMode", "ADD"),
+        new TaskMatcher()
+            .service("BACKEND")
+            .method(HttpMethod.POST)
+            .path("/_dr/admin/updateUserGroup")
+            .param("userEmailAddress", "groupemail@example.com")
             .param("groupEmailAddress", "console@example.com")
             .param("groupUpdateMode", "ADD"));
     verifyNoMoreInteractions(iamClient);
@@ -181,13 +234,25 @@ public class UserTest extends EntityTestCase {
     IamClient iamClient = mock(IamClient.class);
 
     // Individual permission.
-    User.grantIapPermission("email@example.com", Optional.empty(), null, connection, iamClient);
+    User.grantIapPermission(
+        "email@example.com",
+        Optional.empty(),
+        Optional.of("consoleIapServiceId"),
+        null,
+        connection,
+        iamClient);
     verifyNoInteractions(connection);
-    verify(iamClient).addBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE);
+    verify(iamClient)
+        .addBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE, "consoleIapServiceId");
 
     // Group membership.
     User.grantIapPermission(
-        "email@example.com", Optional.of("console@example.com"), null, connection, iamClient);
+        "email@example.com",
+        Optional.of("console@example.com"),
+        Optional.empty(),
+        null,
+        connection,
+        iamClient);
     verify(connection)
         .sendPostRequest(
             UpdateUserGroupAction.PATH,

@@ -73,6 +73,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     command.clock = fakeClock;
     command.passwordGenerator = passwordGenerator;
     command.maybeGroupEmailAddress = Optional.of("group@example.com");
+    command.consoleIapServiceId = Optional.of("consoleIapServiceId");
     command.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     command.iamClient = iamClient;
     persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
@@ -129,7 +130,9 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
       String groupEmailAddress = command.maybeGroupEmailAddress.orElse(null);
       if (groupEmailAddress == null) {
         cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
-        verify(iamClient).addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
+        verify(iamClient)
+            .addBinding(
+                emailAddress, IAP_SECURED_WEB_APP_USER_ROLE, command.consoleIapServiceId.get());
       } else {
         cloudTasksHelper.assertTasksEnqueued(
             "console-user-group-update",
