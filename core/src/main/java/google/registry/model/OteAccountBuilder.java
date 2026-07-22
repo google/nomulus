@@ -197,8 +197,7 @@ public final class OteAccountBuilder {
                         registrars.stream()
                             .collect(
                                 toImmutableMap(
-                                    Registrar::getRegistrarId,
-                                    registrar -> RegistrarRole.ACCOUNT_MANAGER)))
+                                    Registrar::getRegistrarId, _ -> RegistrarRole.ACCOUNT_MANAGER)))
                     .build())
             .build());
     return this;
@@ -265,10 +264,18 @@ public final class OteAccountBuilder {
 
   /** Grants the users permission to pass IAP. */
   public void grantIapPermission(
-      Optional<String> groupEmailAddress, CloudTasksUtils cloudTasksUtils, IamClient iamClient) {
+      Optional<String> groupEmailAddress,
+      Optional<String> consoleIapServiceId,
+      CloudTasksUtils cloudTasksUtils,
+      IamClient iamClient) {
     for (User user : users) {
       User.grantIapPermission(
-          user.getEmailAddress(), groupEmailAddress, cloudTasksUtils, null, iamClient);
+          user.getEmailAddress(),
+          groupEmailAddress,
+          consoleIapServiceId,
+          cloudTasksUtils,
+          null,
+          iamClient);
     }
   }
 
