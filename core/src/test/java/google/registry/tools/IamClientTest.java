@@ -38,6 +38,7 @@ import org.mockito.ArgumentCaptor;
 /** Unit tests for {@link IamClient}. */
 public class IamClientTest {
   private final CloudResourceManager resourceManager = mock(CloudResourceManager.class);
+  private final String consoleIapServiceId = "123456789";
   private final String projectId = "my-project";
   private final String account = "test@example.test";
   private final String role = "roles/fakeRole";
@@ -89,11 +90,17 @@ public class IamClientTest {
   void testSuccess_addBinding_noMatchedBindingExists() throws Exception {
     setupRequests();
     assertThat(bindings.size()).isEqualTo(1);
-    client.addBinding(account, role);
+    client.addBinding(account, role, consoleIapServiceId);
     assertThat(bindings.size()).isEqualTo(2);
     Binding binding = bindings.get(1);
     assertThat(binding.getRole()).isEqualTo(role);
     assertThat(binding.getMembers()).containsExactly("user:" + account);
+    assertThat(binding.getCondition()).isNotNull();
+    assertThat(binding.getCondition().getTitle()).isEqualTo("Registrar Console IAP access");
+    assertThat(binding.getCondition().getDescription())
+        .isEqualTo("Restrict IAP access only to the Registrar Console HTTP(s) load balancer");
+    assertThat(binding.getCondition().getExpression())
+        .isEqualTo("resource.name == 'projects/my-project/iap_web/compute/services/123456789'");
     verifySetPolicyRequest();
   }
 
@@ -107,7 +114,7 @@ public class IamClientTest {
     when(matchedBinding.getMembers()).thenReturn(existingMembers);
     bindings.add(matchedBinding);
     assertThat(bindings.size()).isEqualTo(2);
-    client.addBinding(account, role);
+    client.addBinding(account, role, consoleIapServiceId);
     assertThat(bindings.size()).isEqualTo(2);
     assertThat(existingMembers)
         .containsExactly("serviceAccount:service@example.test", "user:" + account);
@@ -125,7 +132,7 @@ public class IamClientTest {
     when(matchedBinding.getMembers()).thenReturn(existingMembers);
     bindings.add(matchedBinding);
     assertThat(bindings.size()).isEqualTo(2);
-    client.addBinding(account, role);
+    client.addBinding(account, role, consoleIapServiceId);
     assertThat(bindings.size()).isEqualTo(2);
     assertThat(existingMembers)
         .containsExactly("serviceAccount:service@example.test", "user:" + account);

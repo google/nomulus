@@ -269,7 +269,7 @@ steps:
     if gcloud storage objects describe gs://${gcs_loc}/${gradle_bin}
     then
       local_md5=$(md5sum ${gradle_bin} | awk '{print $1}')
-      remote_md5=$(gcloud storage hash -h gs://${gcs_loc}/${gradle_bin} | grep md5 | awk '{print $3}')
+      remote_md5=$(gcloud storage hash --hex gs://${gcs_loc}/${gradle_bin} | grep md5 | awk '{print $2}')
       if [[ ${local_md5} != ${remote_md5} ]]
       then
         echo "ERROR: MD5 hash mismatch for ${gradle_bin}! Local (official): ${local_md5}, Remote (GCS cache): ${remote_md5}. Aborting build." >&2
