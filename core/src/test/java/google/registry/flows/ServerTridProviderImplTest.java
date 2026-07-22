@@ -36,7 +36,7 @@ class ServerTridProviderImplTest {
   void testCreateServerTrid_generatesCorrectFormat() {
     SecureRandom mockSecureRandom = mock(SecureRandom.class);
 
-    // Mock secureRandom to return a deterministic sequence of bytes: 0, 1, 2, ..., 14
+    // Mock secureRandom to return a deterministic sequence of bytes: 0, 1, 2, ..., 23
     doAnswer(
             invocation -> {
               byte[] bytes = invocation.getArgument(0);
@@ -52,13 +52,12 @@ class ServerTridProviderImplTest {
     ServerTridProviderImpl provider = new ServerTridProviderImpl();
     String trid = provider.createServerTrid();
 
-    String expectedSuffix = "AAECAwQFBgcICQoLDA0O";
+    String expectedTrid = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYX";
 
-    // The trid is of the form SERVER_ID-SUFFIX
-    Pattern tridPattern = Pattern.compile("^[A-Za-z0-9+/=]{24}-[A-Za-z0-9_-]{20}$");
+    Pattern tridPattern = Pattern.compile("^[A-Za-z0-9_-]{32}$");
     assertThat(trid).matches(tridPattern);
     assertThat(trid.length()).isAtMost(64);
-    assertThat(trid).endsWith("-" + expectedSuffix);
+    assertThat(trid).isEqualTo(expectedTrid);
   }
 
   @Test
@@ -81,8 +80,8 @@ class ServerTridProviderImplTest {
     ServerTridProviderImpl provider = new ServerTridProviderImpl();
     String trid = provider.createServerTrid();
 
-    String expectedSuffix = "____________________";
-    assertThat(trid).endsWith("-" + expectedSuffix);
+    String expectedTrid = "________________________________";
+    assertThat(trid).isEqualTo(expectedTrid);
   }
 
   @Test
@@ -91,7 +90,7 @@ class ServerTridProviderImplTest {
     String trid1 = provider.createServerTrid();
     String trid2 = provider.createServerTrid();
 
-    Pattern tridPattern = Pattern.compile("^[A-Za-z0-9+/=]{24}-[A-Za-z0-9_-]{20}$");
+    Pattern tridPattern = Pattern.compile("^[A-Za-z0-9_-]{32}$");
     assertThat(trid1).matches(tridPattern);
     assertThat(trid2).matches(tridPattern);
     assertThat(trid1).isNotEqualTo(trid2);

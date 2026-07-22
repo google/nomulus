@@ -14,20 +14,14 @@
 
 package google.registry.flows;
 
-import static com.google.common.primitives.Longs.BYTES;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.BaseEncoding;
 import jakarta.inject.Inject;
-import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.UUID;
 
 /** A server Trid provider that generates secure random UUID-based transaction IDs. */
 public class ServerTridProviderImpl implements ServerTridProvider {
-
-  private static final String SERVER_ID = getServerId();
 
   @VisibleForTesting
   static final ThreadLocal<SecureRandom> secureRandom =
@@ -43,24 +37,14 @@ public class ServerTridProviderImpl implements ServerTridProvider {
   @Inject
   public ServerTridProviderImpl() {}
 
-  /** Creates a unique id for this server instance, as a base64 encoded UUID. */
-  private static String getServerId() {
-    UUID uuid = UUID.randomUUID();
-    ByteBuffer buffer =
-        ByteBuffer.allocate(BYTES * 2)
-            .putLong(uuid.getMostSignificantBits())
-            .putLong(uuid.getLeastSignificantBits());
-    return BaseEncoding.base64().encode(buffer.array());
-  }
-
   @Override
   public String createServerTrid() {
-    // The server id can be at most 64 characters. The SERVER_ID is at most 24 characters (128
-    // bits in base64), plus the dash. That leaves 39 characters, so we generate a random 15-byte
-    // (120-bit) suffix, base64url-encoded without padding (20 characters).
-    byte[] randomBytes = new byte[15];
+    // The server TRID can be at most 64 characters. We generate 24 random bytes
+    // (192 bits), which base64url-encodes without padding to 32 characters.
+    // This provides an unpredictable TRID that does not leak pod identity or
+    // command volume.
+    byte[] randomBytes = new byte[24];
     secureRandom.get().nextBytes(randomBytes);
-    String randomSuffix = BaseEncoding.base64Url().omitPadding().encode(randomBytes);
-    return String.format("%s-%s", SERVER_ID, randomSuffix);
+    return BaseEncoding.base64Url().omitPadding().encode(randomBytes);
   }
 }
