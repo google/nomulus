@@ -36,7 +36,9 @@ class CspFilterTest {
 
     verify(response)
         .setHeader(
-            "Content-Security-Policy", "default-src 'self'; object-src 'none'; base-uri 'self';");
+            "Content-Security-Policy",
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri"
+                + " 'self';");
     verify(response).setHeader("X-Content-Type-Options", "nosniff");
     verify(response).setHeader("X-Frame-Options", "DENY");
     verify(chain).doFilter(request, response);

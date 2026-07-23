@@ -26,7 +26,7 @@ import java.io.IOException;
 public class CspFilter implements Filter {
 
   private static final String CSP_POLICY =
-      "default-src 'self'; object-src 'none'; base-uri 'self';";
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self';";
 
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
