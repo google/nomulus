@@ -16,24 +16,22 @@ package google.registry.batch;
 
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.api.services.gmail.Gmail;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import com.google.common.net.MediaType;
-import dagger.Lazy;
-import google.registry.config.RegistryConfig.Config;
-import google.registry.groups.GmailClient;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
+import google.registry.request.UrlConnectionService;
+import google.registry.request.UrlConnectionUtils;
 import google.registry.request.auth.Auth;
-import google.registry.util.EmailMessage;
-import google.registry.util.Retrier;
 import jakarta.inject.Inject;
-import jakarta.mail.internet.AddressException;
-import jakarta.mail.internet.InternetAddress;
-import java.util.Optional;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.UnknownHostException;
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Action that executes a canned script specified by the caller.
@@ -42,9 +40,11 @@ import java.util.Optional;
  * Sandbox and Production environments new features that depend on environment-specific
  * configurations.
  *
+ * <p>The URL is validated to prevent server-side request forgery (SSRF). Only HTTPS URLs pointing
+ * to public (non-private, non-loopback, non-link-local) IP addresses are allowed.
+ *
  * <p>This action can be invoked using the Nomulus CLI command: {@code nomulus -e ${env} curl
- * --service BACKEND -X POST -d 'sender=sender@example.com' -d 'receiver=receiver@example.com' -u
- * '/_dr/task/executeCannedScript'}
+ * --service BACKEND -X POST -u '/_dr/task/executeCannedScript?url=https://example.com/path'}
  */
 @Action(
     service = Action.Service.BACKEND,
@@ -55,69 +55,108 @@ import java.util.Optional;
 public class CannedScriptExecutionAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject Lazy<Gmail> gmail;
-  @Inject Retrier retrier;
+  private static final ImmutableSet<String> BLOCKED_HOSTS =
+      ImmutableSet.of(
+          "localhost",
+          "metadata",
+          "metadata.google.internal",
+          "metadata.google.internal.",
+          "kubernetes",
+          "kubernetes.default",
+          "kubernetes.default.svc",
+          "kubernetes.default.svc.cluster.local",
+          "kubernetes.default.svc.cluster.local.");
 
-  @Inject
-  @Config("isEmailSendingEnabled")
-  boolean isEmailSendingEnabled;
-
+  @Inject UrlConnectionService urlConnectionService;
   @Inject Response response;
 
   @Inject
-  @Parameter("replyTo")
-  String replyTo;
-
-  @Inject
-  @Parameter("receiver")
-  String receiver;
-
-  @Config("invoiceReplyToEmailAddress")
-  Optional<InternetAddress> replyToEmailAddressFromConfig;
+  @Parameter("url")
+  String url;
 
   @Inject
   CannedScriptExecutionAction() {}
 
   @Override
   public void run() {
-    // For b/510340944, validating a new G Workspace user can send email. Code below can be
-    // removed or changed afterward.
+    Integer responseCode = null;
+    String responseContent = null;
     try {
-      logger.atInfo().log("Sending email to %s with replyTo %s", receiver, replyTo);
-      GmailClient gmailClient =
-          new GmailClient(gmail, retrier, isEmailSendingEnabled, new InternetAddress(replyTo));
-      gmailClient.sendEmail(
-          EmailMessage.newBuilder()
-              .addRecipient(new InternetAddress(receiver))
-              .setSubject(String.format("Email with manually set replyTo header %s", replyTo))
-              .setBody("See subject")
-              .build());
-
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-
-      gmailClient.sendEmail(
-          EmailMessage.newBuilder()
-              .setSubject(
-                  String.format(
-                      "Email with injected replyTo header %s", replyToEmailAddressFromConfig))
-              .setBody("See header")
-              .setRecipients(ImmutableList.of(new InternetAddress(receiver)))
-              .setReplyToEmailAddress(replyToEmailAddressFromConfig)
-              .setContentType(MediaType.HTML_UTF_8)
-              .build());
-      response.setPayload("Emails sent successfully.");
-    } catch (AddressException e) {
-      logger.atWarning().withCause(e).log(
-          "Invalid email address: sender=%s, receiver=%s", replyTo, receiver);
+      logger.atInfo().log("Connecting to: %s", url);
+      URL parsedUrl = new URL(url);
+      validateUrl(parsedUrl);
+      HttpsURLConnection connection =
+          (HttpsURLConnection) urlConnectionService.createConnection(parsedUrl);
+      responseCode = connection.getResponseCode();
+      logger.atInfo().log("Code: %d", responseCode);
+      logger.atInfo().log("Headers: %s", connection.getHeaderFields());
+      responseContent = new String(UrlConnectionUtils.getResponseBytes(connection), UTF_8);
+      logger.atInfo().log("Response: %s", responseContent);
+    } catch (SecurityException e) {
+      logger.atWarning().withCause(e).log("URL validation failed for: %s", url);
       response.setStatus(400);
-      response.setPayload("Invalid email address provided.");
+      response.setPayload("Invalid URL: " + e.getMessage());
     } catch (Exception e) {
-      logger.atSevere().withCause(e).log("Failed to send email");
+      logger.atWarning().withCause(e).log("Connection to %s failed", url);
       throw new RuntimeException(e);
+    } finally {
+      if (responseCode != null) {
+        response.setStatus(responseCode);
+      }
+      if (responseContent != null) {
+        response.setPayload(responseContent);
+      }
+    }
+  }
+
+  private void validateUrl(URL url) {
+    if (!"https".equals(url.getProtocol())) {
+      throw new SecurityException("Only HTTPS URLs are allowed");
+    }
+
+    String host = url.getHost();
+    if (host == null || host.isEmpty()) {
+      throw new SecurityException("URL must have a host");
+    }
+
+    String lowerHost = host.toLowerCase();
+    if (BLOCKED_HOSTS.contains(lowerHost)) {
+      throw new SecurityException(
+          "Connections to internal hostnames are not allowed: " + host);
+    }
+
+    InetAddress address;
+    try {
+      address = InetAddress.getByName(host);
+    } catch (UnknownHostException e) {
+      throw new SecurityException("Could not resolve host: " + host, e);
+    }
+
+    if (address.isLoopbackAddress()) {
+      throw new SecurityException("Connections to loopback addresses are not allowed");
+    }
+    if (address.isSiteLocalAddress()) {
+      throw new SecurityException("Connections to private (site-local) addresses are not allowed");
+    }
+    if (address.isLinkLocalAddress()) {
+      throw new SecurityException("Connections to link-local addresses are not allowed");
+    }
+    if (address instanceof Inet6Address
+        && ((Inet6Address) address).isIPv4CompatibleAddress()) {
+      throw new SecurityException(
+          "Connections to IPv4-compatible IPv6 addresses are not allowed");
+    }
+    // Block the unspecified address (0.0.0.0 or ::)
+    byte[] addrBytes = address.getAddress();
+    boolean allZero = true;
+    for (byte b : addrBytes) {
+      if (b != 0) {
+        allZero = false;
+        break;
+      }
+    }
+    if (allZero) {
+      throw new SecurityException("Connections to the unspecified address are not allowed");
     }
   }
 }
