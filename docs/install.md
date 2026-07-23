@@ -158,4 +158,4 @@ Deployment of the Beam pipelines to Cloud Dataflow in the testing environments
 ```
 
 Pipeline deployment in other environments are through CloudBuild. Please refer
-to the [release folder](http://github.com/google/nomulus/release) for details.
+to the [release folder](https://github.com/google/nomulus/releases) for details.
