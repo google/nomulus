@@ -110,6 +110,32 @@ class AddressTest {
   }
 
   @Test
+  void testFailure_streetLineTooLong() {
+    assertThrows(IllegalArgumentException.class, () -> createAddress("a".repeat(256)));
+  }
+
+  @Test
+  void testFailure_cityTooLong() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> createAddress("line1").asBuilder().setCity("a".repeat(256)).build());
+  }
+
+  @Test
+  void testFailure_stateTooLong() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> createAddress("line1").asBuilder().setState("a".repeat(256)).build());
+  }
+
+  @Test
+  void testFailure_zipTooLong() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> createAddress("line1").asBuilder().setZip("12345678901234567").build());
+  }
+
+  @Test
   void testSuccess_pojoToAndFromXml() throws Exception {
     JAXBContext jaxbContext = JAXBContext.newInstance(TestEntity.class);
     // POJO to XML
