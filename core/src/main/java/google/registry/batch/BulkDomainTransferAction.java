@@ -109,7 +109,7 @@ public class BulkDomainTransferAction implements Runnable {
   private final RateLimiter rateLimiter;
   private final ImmutableList<String> bulkTransferDomainNames;
   private final String gainingRegistrarId;
-  private final String losingRegistrarId;
+  private final Optional<String> losingRegistrarId;
   private final boolean requestedByRegistrar;
   private final String reason;
   private final Response response;
@@ -127,7 +127,7 @@ public class BulkDomainTransferAction implements Runnable {
       @Named("standardRateLimiter") RateLimiter rateLimiter,
       @Parameter("bulkTransferDomainNames") ImmutableList<String> bulkTransferDomainNames,
       @Parameter("gainingRegistrarId") String gainingRegistrarId,
-      @Parameter("losingRegistrarId") String losingRegistrarId,
+      @Parameter("losingRegistrarId") Optional<String> losingRegistrarId,
       @Parameter("requestedByRegistrar") boolean requestedByRegistrar,
       @Parameter("reason") String reason,
       Response response) {
@@ -225,7 +225,7 @@ public class BulkDomainTransferAction implements Runnable {
       alreadyTransferred++;
       return true;
     }
-    if (!currentRegistrarId.equals(losingRegistrarId)) {
+    if (losingRegistrarId.isPresent() && !currentRegistrarId.equals(losingRegistrarId.get())) {
       logger.atWarning().log(
           "Domain '%s' had unexpected registrar '%s'", domainName, currentRegistrarId);
       errors++;

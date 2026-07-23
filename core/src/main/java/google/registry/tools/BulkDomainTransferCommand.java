@@ -33,6 +33,7 @@ import google.registry.util.DomainNameUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A command to bulk-transfer any number of domains from one registrar to another.
@@ -76,8 +77,7 @@ public class BulkDomainTransferCommand extends ConfirmingCommand implements Comm
 
   @Parameter(
       names = {"-l", "--losing_registrar_id"},
-      description = "The ID of the registrar from which domains should be transferred",
-      required = true)
+      description = "The ID of the registrar from which domains should be transferred")
   private String losingRegistrarId;
 
   @Parameter(
@@ -118,14 +118,17 @@ public class BulkDomainTransferCommand extends ConfirmingCommand implements Comm
         Registrar.loadByRegistrarIdCached(gainingRegistrarId).isPresent(),
         "Gaining registrar %s doesn't exist",
         gainingRegistrarId);
-    checkArgument(
-        Registrar.loadByRegistrarIdCached(losingRegistrarId).isPresent(),
-        "Losing registrar %s doesn't exist",
-        losingRegistrarId);
+    if (losingRegistrarId != null) {
+      checkArgument(
+          Registrar.loadByRegistrarIdCached(losingRegistrarId).isPresent(),
+          "Losing registrar %s doesn't exist",
+          losingRegistrarId);
+    }
 
     ImmutableMap.Builder<String, Object> paramsBuilder = new ImmutableMap.Builder<>();
     paramsBuilder.put("gainingRegistrarId", gainingRegistrarId);
-    paramsBuilder.put("losingRegistrarId", losingRegistrarId);
+    Optional.ofNullable(losingRegistrarId)
+        .ifPresent(id -> paramsBuilder.put("losingRegistrarId", id));
     paramsBuilder.put("requestedByRegistrar", requestedByRegistrar);
     paramsBuilder.put("reason", reason);
     if (maxQps > 0) {
