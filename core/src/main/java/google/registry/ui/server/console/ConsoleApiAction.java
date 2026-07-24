@@ -127,6 +127,14 @@ public abstract class ConsoleApiAction implements Runnable {
     }
   }
 
+  protected static void checkGlobalPermission(User user, ConsolePermission permission) {
+    if (!user.getUserRoles().hasGlobalPermission(permission)) {
+      throw new ConsolePermissionForbiddenException(
+          String.format(
+              "User %s does not have global permission %s", user.getEmailAddress(), permission));
+    }
+  }
+
   protected void postHandler(User user) {
     throw new UnsupportedOperationException("Console API POST handler not implemented");
   }
