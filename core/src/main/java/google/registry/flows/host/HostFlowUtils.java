@@ -174,6 +174,31 @@ public class HostFlowUtils {
     }
   }
 
+  /**
+   * Ensure that the superordinate domain does not have {@code serverUpdateProhibited} status.
+   *
+   * <p>Subordinate hosts publish glue A/AAAA records in the TLD zone on behalf of their
+   * superordinate domain. If the superordinate domain is registry-locked (carries {@link
+   * StatusValue#SERVER_UPDATE_PROHIBITED}), non-superuser modifications to its subordinate hosts
+   * must be rejected as well; otherwise a compromised sponsoring registrar could hijack DNS for a
+   * locked domain by swapping the glue addresses of its in-bailiwick nameservers.
+   */
+  static void verifySuperordinateDomainNotServerUpdateProhibited(Domain superordinateDomain)
+      throws EppException {
+    if ((superordinateDomain != null)
+        && superordinateDomain.getStatusValues().contains(StatusValue.SERVER_UPDATE_PROHIBITED)) {
+      throw new SuperordinateDomainServerUpdateProhibitedException();
+    }
+  }
+
+  /** Superordinate domain for this hostname has serverUpdateProhibited status. */
+  static class SuperordinateDomainServerUpdateProhibitedException
+      extends StatusProhibitsOperationException {
+    public SuperordinateDomainServerUpdateProhibitedException() {
+      super("Superordinate domain for this hostname has serverUpdateProhibited status");
+    }
+  }
+
   /** Host names are limited to 253 characters. */
   static class HostNameTooLongException extends ParameterValueRangeErrorException {
     public HostNameTooLongException() {
