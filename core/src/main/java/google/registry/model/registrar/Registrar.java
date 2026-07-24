@@ -631,7 +631,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   /**
-   * Returns the {@link RegistrarPoc} that is the RDAP abuse contact for this registrar, or empty if
+   * Returns a {@link RegistrarPoc} that is the RDAP abuse contact for this registrar, or empty if
    * one does not exist.
    */
   public Optional<RegistrarPoc> getRdapAbuseContact() {

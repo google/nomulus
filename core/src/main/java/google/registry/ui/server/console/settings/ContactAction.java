@@ -228,17 +228,23 @@ public class ContactAction extends ConsoleApiAction {
 
     enforcePrimaryContactRestrictions(oldContactsByType, newContactsByType);
     ensurePhoneNumberNotRemovedForContactTypes(oldContactsByType, newContactsByType, Type.TECH);
-    Optional<RegistrarPoc> domainRdapAbuseContact =
-        getDomainRdapVisibleAbuseContact(updatedContacts);
-    // If the new set has a domain RDAP abuse contact, it must have a phone number.
-    if (domainRdapAbuseContact.isPresent()
-        && domainRdapAbuseContact.get().getPhoneNumber() == null) {
-      throw new ContactRequirementException(
-          "The abuse contact visible in domain RDAP query must have a phone number");
-    }
+
+    ImmutableSet<RegistrarPoc> abusePocs =
+        updatedContacts.stream()
+            .filter(RegistrarPoc::getVisibleInDomainRdapAsAbuse)
+            .collect(toImmutableSet());
+
+    // All abuse POCs must have a phone number attached
+    abusePocs.forEach(
+        poc -> {
+          if (poc.getPhoneNumber() == null) {
+            throw new ContactRequirementException(
+                "The abuse contact visible in domain RDAP query must have a phone number");
+          }
+        });
     // If there was a domain RDAP abuse contact in the old set, the new set must have one.
-    if (getDomainRdapVisibleAbuseContact(existingContacts).isPresent()
-        && domainRdapAbuseContact.isEmpty()) {
+    if (existingContacts.stream().anyMatch(RegistrarPoc::getVisibleInDomainRdapAsAbuse)
+        && abusePocs.isEmpty()) {
       throw new ContactRequirementException(
           "An abuse contact visible in domain RDAP query must be designated");
     }
@@ -261,20 +267,6 @@ public class ContactAction extends ConsoleApiAction {
     if (!newAdminEmails.equals(oldAdminEmails)) {
       throw new ContactRequirementException("Cannot alter the set of primary contacts");
     }
-  }
-
-  /**
-   * Retrieves the registrar contact whose phone number and email address is visible in domain RDAP
-   * query as abuse contact (if any).
-   *
-   * <p>Frontend processing ensures that only one contact can be set as abuse contact in domain RDAP
-   * record.
-   *
-   * <p>Therefore, it is possible to return inside the loop once one such contact is found.
-   */
-  private static Optional<RegistrarPoc> getDomainRdapVisibleAbuseContact(
-      Set<RegistrarPoc> contacts) {
-    return contacts.stream().filter(RegistrarPoc::getVisibleInDomainRdapAsAbuse).findFirst();
   }
 
   /**
