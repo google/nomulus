@@ -5,6 +5,15 @@
 # to override some of these values to configure and enable some services used in
 # production environments.
 
+
+
+
+
+
+
+
+
+
 gcpProject:
   # Globally unique GCP project ID
   projectId: registry-project-id
