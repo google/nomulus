@@ -59,28 +59,31 @@ public class ConsoleOteAction extends ConsoleApiAction {
   private static final String STAT_TYPE_DESCRIPTION_PARAM = "description";
   private static final String STAT_TYPE_REQUIREMENT_PARAM = "requirement";
   private static final String STAT_TYPE_TIMES_PERFORMED_PARAM = "timesPerformed";
+  private final IamClient iamClient;
   private final StringGenerator passwordGenerator;
   private final Optional<OteCreateData> oteCreateData;
   private final Optional<String> maybeGroupEmailAddress;
   private final Optional<String> consoleIapServiceId;
-  private final IamClient iamClient;
+  private final String gSuiteDomainName;
   private final String registrarId;
 
   @Inject
   public ConsoleOteAction(
       ConsoleApiParams consoleApiParams,
       IamClient iamClient,
-      @Parameter("registrarId") String registrarId, // Get request param
+      @Named("base58StringGenerator") StringGenerator passwordGenerator,
+      @Parameter("oteCreateData") Optional<OteCreateData> oteCreateData,
       @Config("gSuiteConsoleUserGroupEmailAddress") Optional<String> maybeGroupEmailAddress,
       @Config("consoleIapServiceId") Optional<String> consoleIapServiceId,
-      @Named("base58StringGenerator") StringGenerator passwordGenerator,
-      @Parameter("oteCreateData") Optional<OteCreateData> oteCreateData) {
+      @Config("gSuiteDomainName") String gSuiteDomainName,
+      @Parameter("registrarId") String registrarId) {
     super(consoleApiParams);
+    this.iamClient = iamClient;
     this.passwordGenerator = passwordGenerator;
     this.oteCreateData = oteCreateData;
     this.maybeGroupEmailAddress = maybeGroupEmailAddress;
     this.consoleIapServiceId = consoleIapServiceId;
-    this.iamClient = iamClient;
+    this.gSuiteDomainName = gSuiteDomainName;
     this.registrarId = registrarId;
   }
 
@@ -97,8 +100,11 @@ public class ConsoleOteAction extends ConsoleApiAction {
         this.oteCreateData.isPresent()
             && !this.oteCreateData.get().registrarId.isEmpty()
             && !this.oteCreateData.get().registrarEmail.isEmpty();
-
     checkArgument(isBodyValid, "OT&E create body is invalid");
+    checkArgument(
+        this.oteCreateData.get().registrarEmail.endsWith("@" + gSuiteDomainName),
+        "Email address must exist in the %s domain",
+        gSuiteDomainName);
 
     String password = passwordGenerator.createString(PASSWORD_LENGTH);
 
