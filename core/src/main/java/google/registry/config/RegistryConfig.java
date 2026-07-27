@@ -1588,15 +1588,21 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("eppServerPreLoginReadTimeoutSeconds")
+    public static int provideEppServerPreLoginReadTimeoutSeconds(RegistryConfigSettings config) {
+      return config.eppServer.preLoginReadTimeoutSeconds;
+    }
+
+    @Provides
     @Config("eppServerMaxConnectionsPerIp")
     public static int provideEppServerMaxConnectionsPerIp(RegistryConfigSettings config) {
       return config.eppServer.maxConnectionsPerIp;
     }
 
     @Provides
-    @Config("eppServerMaxConnectionsPerCert")
-    public static int provideEppServerMaxConnectionsPerCert(RegistryConfigSettings config) {
-      return config.eppServer.maxConnectionsPerCert;
+    @Config("eppServerMaxConnectionsPerRegistrar")
+    public static int provideEppServerMaxConnectionsPerRegistrar(RegistryConfigSettings config) {
+      return config.eppServer.maxConnectionsPerRegistrar;
     }
 
     @Provides

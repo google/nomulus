@@ -17,10 +17,13 @@ package google.registry.eppserver.handler;
 import static google.registry.eppserver.handler.EppProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,13 +45,17 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.Attribute;
 import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.ScheduledFuture;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -61,6 +68,8 @@ class EppServiceHandlerTest {
   @Mock private Supplier<String> idTokenSupplier;
   @Mock private ChannelHandlerContext ctx;
   @Mock private Channel channel;
+  @Mock private EventExecutor executor;
+  @Mock private ScheduledFuture<?> scheduledFuture;
   @Mock private RequestHandler<?> requestHandler;
 
   @Mock private Attribute<Promise<X509Certificate>> certPromiseAttr;
@@ -80,12 +89,31 @@ class EppServiceHandlerTest {
             localConnectionLimiter,
             commandQuotaManager,
             idTokenSupplier,
-            "test-project");
+            "test-project",
+            10); // preLoginReadTimeoutSeconds
 
     handler.requestHandler = requestHandler;
 
     when(ctx.channel()).thenReturn(channel);
-    when(ctx.executor()).thenReturn(ImmediateEventExecutor.INSTANCE);
+    when(ctx.executor()).thenReturn(executor);
+
+    doAnswer(
+            invocation -> {
+              Runnable runnable = invocation.getArgument(0);
+              runnable.run();
+              return null;
+            })
+        .when(executor)
+        .execute(any(Runnable.class));
+
+    lenient()
+        .doReturn(scheduledFuture)
+        .when(executor)
+        .schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+
+    lenient()
+        .when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
+        .thenReturn(new QuotaResponse(true));
   }
 
   private void setUpSuccessfulHandshake() throws Exception {
@@ -101,7 +129,6 @@ class EppServiceHandlerTest {
     when(certificate.getEncoded()).thenReturn(new byte[] {1, 2, 3});
 
     when(localConnectionLimiter.acquireIp(any(String.class))).thenReturn(true);
-    when(localConnectionLimiter.acquireCert(any(String.class))).thenReturn(true);
 
     certPromise.setSuccess(certificate);
   }
@@ -156,24 +183,31 @@ class EppServiceHandlerTest {
   }
 
   @Test
-  void testChannelActive_certQuotaRejected() throws Exception {
-    certPromise = new DefaultPromise<>(ImmediateEventExecutor.INSTANCE);
-    when(channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY)).thenReturn(certPromiseAttr);
-    when(certPromiseAttr.get()).thenReturn(certPromise);
+  void testChannelRead0_registrarQuotaRejected() throws Exception {
+    setUpSuccessfulHandshake();
 
-    handler.channelActive(ctx);
+    when(idTokenSupplier.get()).thenReturn("fake_id_token");
+    when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
+        .thenReturn(new QuotaResponse(true));
 
-    when(channel.attr(REMOTE_ADDRESS_KEY)).thenReturn(remoteAddressAttr);
-    when(remoteAddressAttr.get()).thenReturn("192.168.1.1");
-    when(channel.attr(EppServiceHandler.CLIENT_CERTIFICATE_HASH_KEY)).thenReturn(certHashAttr);
-    when(certificate.getEncoded()).thenReturn(new byte[] {1, 2, 3});
+    String eppLoginXml = "<epp><command><login><clID>RegistrarA</clID></login></command></epp>";
+    ByteBuf inFrame = Unpooled.wrappedBuffer(eppLoginXml.getBytes(UTF_8));
 
-    when(localConnectionLimiter.acquireIp(any(String.class))).thenReturn(true);
-    when(localConnectionLimiter.acquireCert(any(String.class))).thenReturn(false);
+    doAnswer(
+            invocation -> {
+              FakeHttpServletResponse rsp = invocation.getArgument(1);
+              rsp.setHeader(ProxyHttpHeaders.LOGGED_IN_REGISTRAR, "RegistrarA");
+              rsp.getWriter().write("<epp><response>success</response></epp>");
+              return null;
+            })
+        .when(requestHandler)
+        .handleRequest(any(FakeHttpServletRequest.class), any(FakeHttpServletResponse.class));
 
-    certPromise.setSuccess(certificate);
+    when(localConnectionLimiter.acquireRegistrar("RegistrarA")).thenReturn(false);
 
-    verify(metrics).registerQuotaRejection(eq("epp_connection"), any(String.class));
+    handler.channelRead0(ctx, inFrame);
+
+    verify(metrics).registerQuotaRejection(eq("epp_connection_registrar"), eq("RegistrarA"));
     verify(ctx).close();
   }
 
@@ -194,17 +228,23 @@ class EppServiceHandlerTest {
               FakeHttpServletRequest req = invocation.getArgument(0);
               FakeHttpServletResponse rsp = invocation.getArgument(1);
 
-              rsp.setHeader("Set-Cookie", "SESSION_INFO=xyz123");
+              rsp.setHeader("Set-Cookie", "SESSION_INFO=Y2xpZW50SWQ9UmVnaXN0cmFyQQ==");
+              rsp.setHeader(ProxyHttpHeaders.LOGGED_IN_REGISTRAR, "RegistrarA");
               rsp.getWriter().write("<epp><response>success</response></epp>");
               return null;
             })
         .when(requestHandler)
         .handleRequest(any(FakeHttpServletRequest.class), any(FakeHttpServletResponse.class));
 
+    // Mock successful registrar connection acquisition
+    when(localConnectionLimiter.acquireRegistrar("RegistrarA")).thenReturn(true);
+
     handler.channelRead0(ctx, inFrame);
 
     // Verify command quota was requested for the extracted clID "RegistrarA"
     verify(commandQuotaManager).acquireQuota(eq(new QuotaRequest("RegistrarA")));
+    verify(localConnectionLimiter).acquireRegistrar("RegistrarA");
+    verify(scheduledFuture).cancel(eq(false));
 
     // Verify the response from the servlet was written back to the channel
     verify(ctx)
@@ -223,7 +263,7 @@ class EppServiceHandlerTest {
             invocation -> {
               FakeHttpServletRequest req = invocation.getArgument(0);
               // Verify the cookie was properly propagated
-              if (!"SESSION_INFO=xyz123".equals(req.getHeader("Cookie"))) {
+              if (!"SESSION_INFO=Y2xpZW50SWQ9UmVnaXN0cmFyQQ==".equals(req.getHeader("Cookie"))) {
                 throw new AssertionError("Missing or incorrect cookie");
               }
               // Verify the registrar ID was properly propagated
@@ -285,13 +325,64 @@ class EppServiceHandlerTest {
   }
 
   @Test
-  void testChannelInactive_releasesQuotas() throws Exception {
+  void testChannelInactive_releasesIp() throws Exception {
     setUpSuccessfulHandshake();
 
     handler.channelInactive(ctx);
 
-    // Verify the in-memory limiter releases both IP and Cert
+    // Verify the in-memory limiter releases IP
     verify(localConnectionLimiter).releaseIp(eq("192.168.1.1"));
-    verify(localConnectionLimiter).releaseCert(any(String.class));
+  }
+
+  @Test
+  void testChannelInactive_postLogin_releasesIpAndRegistrar() throws Exception {
+    setUpSuccessfulHandshake();
+
+    when(idTokenSupplier.get()).thenReturn("fake_id_token");
+    when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
+        .thenReturn(new QuotaResponse(true));
+    when(localConnectionLimiter.acquireRegistrar("RegistrarA")).thenReturn(true);
+
+    String eppLoginXml = "<epp><command><login><clID>RegistrarA</clID></login></command></epp>";
+    ByteBuf inFrame = Unpooled.wrappedBuffer(eppLoginXml.getBytes(UTF_8));
+
+    doAnswer(
+            invocation -> {
+              FakeHttpServletResponse rsp = invocation.getArgument(1);
+              rsp.setHeader("Set-Cookie", "SESSION_INFO=Y2xpZW50SWQ9UmVnaXN0cmFyQQ==");
+              rsp.setHeader(ProxyHttpHeaders.LOGGED_IN_REGISTRAR, "RegistrarA");
+              rsp.getWriter().write("<epp><response>success</response></epp>");
+              return null;
+            })
+        .when(requestHandler)
+        .handleRequest(any(FakeHttpServletRequest.class), any(FakeHttpServletResponse.class));
+
+    handler.channelRead0(ctx, inFrame);
+
+    handler.channelInactive(ctx);
+
+    // Verify the in-memory limiter releases both IP and Registrar
+    verify(localConnectionLimiter).releaseIp(eq("192.168.1.1"));
+    verify(localConnectionLimiter).releaseRegistrar(eq("RegistrarA"));
+  }
+
+  @Test
+  void testChannelActive_loginTimeoutTriggered() throws Exception {
+    ArgumentCaptor<Runnable> timeoutTaskCaptor = ArgumentCaptor.forClass(Runnable.class);
+    when(executor.schedule(timeoutTaskCaptor.capture(), eq(10L), eq(TimeUnit.SECONDS)))
+        .thenReturn(null);
+
+    setUpSuccessfulHandshake();
+
+    Runnable timeoutTask = timeoutTaskCaptor.getValue();
+    assertNotNull(timeoutTask);
+
+    ChannelFuture closeFuture = mock(ChannelFuture.class);
+    when(ctx.close()).thenReturn(closeFuture);
+
+    timeoutTask.run();
+
+    verify(metrics).registerQuotaRejection("epp_login_timeout", "192.168.1.1");
+    verify(ctx).close();
   }
 }

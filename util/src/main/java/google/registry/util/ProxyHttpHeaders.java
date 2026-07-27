@@ -33,14 +33,11 @@ public final class ProxyHttpHeaders {
   /** HTTP header name used to pass the Registrar Id from the proxy to Nomulus. */
   public static final String REGISTRAR_ID = "Nomulus-Registrar-Id";
 
-  /**
-   * Fallback HTTP header name used to pass the client IP address from the proxy to Nomulus.
-   *
-   * <p>Note that Java 17's servlet implementation may inject some seemingly unrelated addresses
-   * into this header. We only use this as a fallback so the proxy can transition to use the above
-   * header that should not be interfered with.
-   */
+  /** Fallback HTTP header name used to pass the client IP address from the proxy to Nomulus. */
   public static final String FALLBACK_IP_ADDRESS = HttpHeaders.X_FORWARDED_FOR;
+
+  /** HTTP header name used to pass the authenticated Registrar Id from Nomulus to GKE. */
+  public static final String LOGGED_IN_REGISTRAR = "Nomulus-Logged-In-Registrar";
 
   private ProxyHttpHeaders() {}
 }

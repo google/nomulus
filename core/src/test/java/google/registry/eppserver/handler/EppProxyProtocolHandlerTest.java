@@ -19,10 +19,22 @@ import static com.google.common.truth.Truth.assertThat;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 class EppProxyProtocolHandlerTest {
+
+  private EmbeddedChannel createChannel(EppProxyProtocolHandler handler) {
+    return new EmbeddedChannel(handler) {
+      @Override
+      public SocketAddress remoteAddress() {
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(), 12345);
+      }
+    };
+  }
 
   @Test
   void testProxyProtocol_parsesValidHeader() {
@@ -36,6 +48,21 @@ class EppProxyProtocolHandlerTest {
 
     String remoteAddress = channel.attr(EppProxyProtocolHandler.REMOTE_ADDRESS_KEY).get();
     assertThat(remoteAddress).isEqualTo("192.168.1.1");
+    assertThat(channel.pipeline().get(EppProxyProtocolHandler.class)).isNull();
+  }
+
+  @Test
+  void testProxyProtocol_invalidIP_fallsBackToSource() {
+    EppProxyProtocolHandler handler = new EppProxyProtocolHandler();
+    EmbeddedChannel channel = createChannel(handler);
+
+    String proxyHeader = "PROXY TCP4 invalid_ip_address 10.0.0.1 50000 443\r\n";
+    ByteBuf buffer = Unpooled.wrappedBuffer(proxyHeader.getBytes(StandardCharsets.US_ASCII));
+
+    channel.writeInbound(buffer);
+
+    String remoteAddress = channel.attr(EppProxyProtocolHandler.REMOTE_ADDRESS_KEY).get();
+    assertThat(remoteAddress).isEqualTo("127.0.0.1"); // Falls back to mocked remoteAddress
     assertThat(channel.pipeline().get(EppProxyProtocolHandler.class)).isNull();
   }
 
@@ -57,7 +84,7 @@ class EppProxyProtocolHandlerTest {
   @Test
   void testProxyProtocol_noHeader_notProxied() {
     EppProxyProtocolHandler handler = new EppProxyProtocolHandler();
-    EmbeddedChannel channel = new EmbeddedChannel(handler);
+    EmbeddedChannel channel = createChannel(handler);
 
     String normalData = "NOT_A_PROXY_HEADER";
     ByteBuf buffer = Unpooled.wrappedBuffer(normalData.getBytes(StandardCharsets.US_ASCII));
@@ -65,8 +92,7 @@ class EppProxyProtocolHandlerTest {
     channel.writeInbound(buffer);
 
     String remoteAddress = channel.attr(EppProxyProtocolHandler.REMOTE_ADDRESS_KEY).get();
-    // In EmbeddedChannel without remoteAddress mock, getSourceIP returns null
-    assertThat(remoteAddress).isNull();
+    assertThat(remoteAddress).isEqualTo("127.0.0.1"); // Falls back to mocked remoteAddress
     assertThat(channel.pipeline().get(EppProxyProtocolHandler.class)).isNull();
 
     ByteBuf passedOn = channel.readInbound();
