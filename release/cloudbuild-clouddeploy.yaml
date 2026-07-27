@@ -80,10 +80,12 @@ steps:
           artifact_storage=$(sed -n 's/^artifactStorage: //p' "$config_file")
           service_account=$(sed -n 's/^serviceAccount: //p' "$config_file")
           cluster_val=$(sed -n 's/^cluster: //p' "$config_file")
+          worker_pool=$(sed -n 's/^workerPool: //p' "$config_file")
           
           sed -i "s|artifactStorage: artifactStorage|artifactStorage: $artifact_storage|" "$target_file"
           sed -i "s|serviceAccount: serviceAccount|serviceAccount: $service_account|" "$target_file"
           sed -i "s|cluster: cluster|cluster: $cluster_val|" "$target_file"
+          sed -i "s|workerPool: workerPool|workerPool: $worker_pool|" "$target_file"
         fi
       fi
     done

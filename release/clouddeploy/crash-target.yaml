@@ -7,11 +7,20 @@ requireApproval: true
 executionConfigs:
 - usages:
   - RENDER
-  - DEPLOY
   - ANALYSIS
   - POSTDEPLOY
   executionTimeout: 3600s
   defaultPool:
+    # Placeholder: Replace with artifact bucket name.
+    artifactStorage: artifactStorage
+    # Placeholder: Replace with project number.
+    serviceAccount: serviceAccount
+- usages:
+  - DEPLOY
+  executionTimeout: 3600s
+  privatePool:
+    # Placeholder: Replace with worker pool name.
+    workerPool: workerPool
     # Placeholder: Replace with artifact bucket name.
     artifactStorage: artifactStorage
     # Placeholder: Replace with project number.
