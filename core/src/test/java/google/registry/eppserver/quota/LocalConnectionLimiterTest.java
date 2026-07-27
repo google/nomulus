@@ -65,37 +65,37 @@ class LocalConnectionLimiterTest {
   }
 
   @Test
-  void testAcquireCert_successUpToLimit() {
-    assertThat(limiter.acquireCert("cert_hash_1")).isTrue();
-    assertThat(limiter.acquireCert("cert_hash_1")).isTrue();
+  void testAcquireRegistrar_successUpToLimit() {
+    assertThat(limiter.acquireRegistrar("registrar_1")).isTrue();
+    assertThat(limiter.acquireRegistrar("registrar_1")).isTrue();
   }
 
   @Test
-  void testAcquireCert_rejectsOverLimit() {
-    assertThat(limiter.acquireCert("cert_hash_1")).isTrue();
-    assertThat(limiter.acquireCert("cert_hash_1")).isTrue();
-    // 3rd attempt from same cert should be rejected
-    assertThat(limiter.acquireCert("cert_hash_1")).isFalse();
+  void testAcquireRegistrar_rejectsOverLimit() {
+    assertThat(limiter.acquireRegistrar("registrar_1")).isTrue();
+    assertThat(limiter.acquireRegistrar("registrar_1")).isTrue();
+    // 3rd attempt from same registrar should be rejected
+    assertThat(limiter.acquireRegistrar("registrar_1")).isFalse();
   }
 
   @Test
-  void testAcquireCert_independentAcrossCerts() {
-    assertThat(limiter.acquireCert("cert_hash_1")).isTrue();
-    assertThat(limiter.acquireCert("cert_hash_1")).isTrue();
-    assertThat(limiter.acquireCert("cert_hash_1")).isFalse();
+  void testAcquireRegistrar_independentAcrossRegistrars() {
+    assertThat(limiter.acquireRegistrar("registrar_1")).isTrue();
+    assertThat(limiter.acquireRegistrar("registrar_1")).isTrue();
+    assertThat(limiter.acquireRegistrar("registrar_1")).isFalse();
 
-    // A different cert should still be allowed
-    assertThat(limiter.acquireCert("cert_hash_2")).isTrue();
+    // A different registrar should still be allowed
+    assertThat(limiter.acquireRegistrar("registrar_2")).isTrue();
   }
 
   @Test
-  void testReleaseCert_freesSlot() {
-    assertThat(limiter.acquireCert("cert_hash_1")).isTrue();
-    assertThat(limiter.acquireCert("cert_hash_1")).isTrue();
-    assertThat(limiter.acquireCert("cert_hash_1")).isFalse();
+  void testReleaseRegistrar_freesSlot() {
+    assertThat(limiter.acquireRegistrar("registrar_1")).isTrue();
+    assertThat(limiter.acquireRegistrar("registrar_1")).isTrue();
+    assertThat(limiter.acquireRegistrar("registrar_1")).isFalse();
 
-    limiter.releaseCert("cert_hash_1");
+    limiter.releaseRegistrar("registrar_1");
     // Now we should be able to acquire again
-    assertThat(limiter.acquireCert("cert_hash_1")).isTrue();
+    assertThat(limiter.acquireRegistrar("registrar_1")).isTrue();
   }
 }

@@ -457,20 +457,22 @@ eppServer:
   headerLengthBytes: 4
   # Time after which an idle connection will be closed.
   readTimeoutSeconds: 3600
+  # Time after which an idle connection will be closed before login.
+  preLoginReadTimeoutSeconds: 10
   # Max concurrent connections per IP address.
   maxConnectionsPerIp: 10
-  # Max concurrent connections per authenticated certificate.
-  maxConnectionsPerCert: 10
+  # Max concurrent connections per authenticated registrar.
+  maxConnectionsPerRegistrar: 10
   # Server certificate cache duration.
   serverCertificateCacheSeconds: 1800
 
   # Quota configuration for EPP
   quota:
-    refreshSeconds: 0
+    # Default quota applies individually to any IP or registrar NOT listed in customQuota
     defaultQuota:
       userId: []
       tokenAmount: 100
-      refillSeconds: 0
+      refillSeconds: 10
     # To implement a shared quota group across multiple registrars, place a virtual 
     # group name as the FIRST element of the userId list. 
     # e.g., userId: ["my_group", "registrar1", "registrar2"]

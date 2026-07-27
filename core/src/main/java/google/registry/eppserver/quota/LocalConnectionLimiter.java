@@ -22,24 +22,24 @@ import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * Thread-safe, in-memory rate limiter for restricting the number of concurrent connections allowed
- * per IP address and per authenticated certificate.
+ * per IP address and per authenticated registrar.
  */
 @ThreadSafe
 @Singleton
 public class LocalConnectionLimiter {
 
   private final int maxConnectionsPerIp;
-  private final int maxConnectionsPerCert;
+  private final int maxConnectionsPerRegistrar;
 
   private final ConcurrentHashMap<String, Integer> ipConnections = new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<String, Integer> certConnections = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, Integer> registrarConnections = new ConcurrentHashMap<>();
 
   @Inject
   public LocalConnectionLimiter(
       @Config("eppServerMaxConnectionsPerIp") int maxConnectionsPerIp,
-      @Config("eppServerMaxConnectionsPerCert") int maxConnectionsPerCert) {
+      @Config("eppServerMaxConnectionsPerRegistrar") int maxConnectionsPerRegistrar) {
     this.maxConnectionsPerIp = maxConnectionsPerIp;
-    this.maxConnectionsPerCert = maxConnectionsPerCert;
+    this.maxConnectionsPerRegistrar = maxConnectionsPerRegistrar;
   }
 
   /** Attempts to acquire a slot for the given IP address. */
@@ -52,14 +52,14 @@ public class LocalConnectionLimiter {
     release(ipAddress, ipConnections);
   }
 
-  /** Attempts to acquire a slot for the given certificate hash. */
-  public boolean acquireCert(String certHash) {
-    return acquire(certHash, certConnections, maxConnectionsPerCert);
+  /** Attempts to acquire a slot for the given registrar ID. */
+  public boolean acquireRegistrar(String registrarId) {
+    return acquire(registrarId, registrarConnections, maxConnectionsPerRegistrar);
   }
 
-  /** Releases a slot for the given certificate hash. */
-  public void releaseCert(String certHash) {
-    release(certHash, certConnections);
+  /** Releases a slot for the given registrar ID. */
+  public void releaseRegistrar(String registrarId) {
+    release(registrarId, registrarConnections);
   }
 
   private boolean acquire(String key, ConcurrentHashMap<String, Integer> map, int limit) {

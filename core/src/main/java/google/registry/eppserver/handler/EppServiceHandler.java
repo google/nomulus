@@ -42,10 +42,12 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.ScheduledFuture;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.security.cert.X509Certificate;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,14 +75,17 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
   private final QuotaManager commandQuotaManager;
   private final Supplier<String> idTokenSupplier;
   private final String projectId;
+  private final int preLoginReadTimeoutSeconds;
 
   private String sslClientCertificateHash;
   private String clientAddress;
   private String registrarId; // The clID extracted from login
+  private String authenticatedRegistrarId; // The verified registrar ID after successful login
   private String sessionCookie;
 
   private boolean ipAcquired = false;
-  private boolean certAcquired = false;
+  private boolean registrarAcquired = false;
+  private ScheduledFuture<?> preLoginTimeoutTask;
 
   @VisibleForTesting RequestHandler<?> requestHandler = RegistryServlet.component.requestHandler();
 
@@ -91,13 +96,15 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
       LocalConnectionLimiter localConnectionLimiter,
       @CommandQuota QuotaManager commandQuotaManager,
       @Named("idToken") Supplier<String> idTokenSupplier,
-      @Config("projectId") String projectId) {
+      @Config("projectId") String projectId,
+      @Config("eppServerPreLoginReadTimeoutSeconds") int preLoginReadTimeoutSeconds) {
     this.helloBytes = helloBytes.clone();
     this.metrics = metrics;
     this.localConnectionLimiter = localConnectionLimiter;
     this.commandQuotaManager = commandQuotaManager;
     this.idTokenSupplier = idTokenSupplier;
     this.projectId = projectId;
+    this.preLoginReadTimeoutSeconds = preLoginReadTimeoutSeconds;
   }
 
   @Override
@@ -110,8 +117,7 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
               ctx.executor().execute(() -> onSslHandshakeComplete(ctx, promise.getNow()));
             } else {
               logger.atWarning().withCause(promise.cause()).log("SSL handshake failed");
-              @SuppressWarnings("unused")
-              Future<?> unusedFuture = ctx.close();
+              closeConnection(ctx);
             }
           });
     }
@@ -119,26 +125,36 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
   }
 
   private void onSslHandshakeComplete(ChannelHandlerContext ctx, X509Certificate cert) {
+    if (!ctx.channel().isActive()) {
+      return;
+    }
     sslClientCertificateHash = getCertificateHash(cert);
     clientAddress = ctx.channel().attr(REMOTE_ADDRESS_KEY).get();
     ctx.channel().attr(CLIENT_CERTIFICATE_HASH_KEY).set(sslClientCertificateHash);
 
-    // 1. Connection throttling (IP and Certificate)
+    // 1. Connection throttling (IP only pre-login)
     if (!localConnectionLimiter.acquireIp(clientAddress)) {
       metrics.registerQuotaRejection("epp_connection_ip", clientAddress);
-      @SuppressWarnings("unused")
-      Future<?> unusedFuture = ctx.close();
+      closeConnection(ctx);
       return;
     }
     ipAcquired = true;
 
-    if (!localConnectionLimiter.acquireCert(sslClientCertificateHash)) {
-      metrics.registerQuotaRejection("epp_connection", sslClientCertificateHash);
-      @SuppressWarnings("unused")
-      Future<?> unusedFuture = ctx.close();
-      return;
-    }
-    certAcquired = true;
+    // Schedule login timeout
+    preLoginTimeoutTask =
+        ctx.executor()
+            .schedule(
+                () -> {
+                  if (!registrarAcquired) {
+                    logger.atWarning().log(
+                        "EPP login timeout expired for channel %s, closing connection",
+                        ctx.channel());
+                    metrics.registerQuotaRejection("epp_login_timeout", clientAddress);
+                    closeConnection(ctx);
+                  }
+                },
+                preLoginReadTimeoutSeconds,
+                TimeUnit.SECONDS);
 
     metrics.registerActiveConnection("epp", sslClientCertificateHash, ctx.channel());
 
@@ -154,7 +170,32 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
   private void handleEppFrame(ChannelHandlerContext ctx, ByteBuf frame) {
     String xml = frame.toString(UTF_8);
 
-    // 1. Maturing Identity: If we don't have clID yet, try to extract it from a login command.
+    extractRegistrarId(xml);
+
+    if (!acquireCommandQuota(ctx)) {
+      return;
+    }
+
+    FakeHttpServletRequest req = buildServletRequest(xml);
+    FakeHttpServletResponse rsp = new FakeHttpServletResponse();
+    String traceId =
+        String.format(
+            "projects/%s/traces/%s", projectId, UUID.randomUUID().toString().replace("-", ""));
+    setCurrentTraceId(traceId);
+    setCurrentRequest("POST", "/_dr/epp", "Netty-EPP", "EPP/1.0");
+    try {
+      requestHandler.handleRequest(req, rsp);
+      processServletResponse(ctx, rsp);
+    } catch (Exception e) {
+      logger.atSevere().withCause(e).log("Internal EPP processing error");
+      closeConnection(ctx);
+    } finally {
+      setCurrentTraceId(null);
+      unsetCurrentRequest();
+    }
+  }
+
+  private void extractRegistrarId(String xml) {
     if (registrarId == null) {
       Matcher matcher = CLID_PATTERN.matcher(xml);
       if (matcher.find()) {
@@ -162,20 +203,22 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
         logger.atInfo().log("Identified registrar: %s", registrarId);
       }
     }
+  }
 
-    // 2. Command-level rate limiting
-    // Use clID if identified, otherwise fallback to cert hash (for the login command itself).
-    String throttleId = (registrarId != null) ? registrarId : sslClientCertificateHash;
+  private boolean acquireCommandQuota(ChannelHandlerContext ctx) {
+    String throttleId =
+        (authenticatedRegistrarId != null) ? authenticatedRegistrarId : sslClientCertificateHash;
     if (throttleId != null) {
       if (!commandQuotaManager.acquireQuota(new QuotaManager.QuotaRequest(throttleId)).success()) {
         metrics.registerQuotaRejection("epp_command", throttleId);
-        @SuppressWarnings("unused")
-        Future<?> unusedFuture = ctx.close();
-        return;
+        closeConnection(ctx);
+        return false;
       }
     }
+    return true;
+  }
 
-    // 3. Execute command in-process
+  private FakeHttpServletRequest buildServletRequest(String xml) {
     FakeHttpServletRequest req = new FakeHttpServletRequest();
     req.setRequestUri("/_dr/epp");
     req.setBody(xml.getBytes(UTF_8));
@@ -188,42 +231,60 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
       req.setHeader("Cookie", sessionCookie);
     }
     req.setHeader("Authorization", "Bearer " + idTokenSupplier.get());
+    return req;
+  }
 
-    FakeHttpServletResponse rsp = new FakeHttpServletResponse();
-    String traceId =
-        String.format(
-            "projects/%s/traces/%s", projectId, UUID.randomUUID().toString().replace("-", ""));
-    setCurrentTraceId(traceId);
-    setCurrentRequest("POST", "/_dr/epp", "Netty-EPP", "EPP/1.0");
-    try {
-      requestHandler.handleRequest(req, rsp);
-      String setCookie = rsp.getHeader("Set-Cookie");
-      if (setCookie != null) {
-        sessionCookie = setCookie;
-      }
-
-      ByteBuf out = Unpooled.wrappedBuffer(rsp.getPayload());
-      if ("close".equals(rsp.getHeader(ProxyHttpHeaders.EPP_SESSION))) {
-        @SuppressWarnings("unused")
-        Future<?> unusedFuture = ctx.writeAndFlush(out).addListener(ChannelFutureListener.CLOSE);
-      } else {
-        @SuppressWarnings("unused")
-        Future<?> unusedFuture = ctx.writeAndFlush(out);
-      }
-    } catch (Exception e) {
-      logger.atSevere().withCause(e).log("Internal EPP processing error");
-      @SuppressWarnings("unused")
-      Future<?> unusedFuture = ctx.close();
-    } finally {
-      setCurrentTraceId(null);
-      unsetCurrentRequest();
+  private void processServletResponse(ChannelHandlerContext ctx, FakeHttpServletResponse rsp) {
+    String setCookie = rsp.getHeader("Set-Cookie");
+    if (setCookie != null) {
+      sessionCookie = setCookie;
     }
+
+    String authRegistrarId = rsp.getHeader(ProxyHttpHeaders.LOGGED_IN_REGISTRAR);
+    if (authRegistrarId != null && !registrarAcquired) {
+      logger.atInfo().log("Registrar %s successfully authenticated", authRegistrarId);
+      if (!localConnectionLimiter.acquireRegistrar(authRegistrarId)) {
+        logger.atWarning().log(
+            "Registrar %s exceeded concurrent connection limit, closing connection",
+            authRegistrarId);
+        metrics.registerQuotaRejection("epp_connection_registrar", authRegistrarId);
+        closeConnection(ctx);
+        return;
+      }
+      registrarAcquired = true;
+      authenticatedRegistrarId = authRegistrarId;
+      registrarId = authRegistrarId;
+
+      // Cancel pre-login timeout task
+      if (preLoginTimeoutTask != null) {
+        preLoginTimeoutTask.cancel(false);
+        preLoginTimeoutTask = null;
+      }
+    }
+
+    ByteBuf out = Unpooled.wrappedBuffer(rsp.getPayload());
+    if ("close".equals(rsp.getHeader(ProxyHttpHeaders.EPP_SESSION))) {
+      @SuppressWarnings("unused")
+      Future<?> unusedFuture = ctx.writeAndFlush(out).addListener(ChannelFutureListener.CLOSE);
+    } else {
+      @SuppressWarnings("unused")
+      Future<?> unusedFuture = ctx.writeAndFlush(out);
+    }
+  }
+
+  private void closeConnection(ChannelHandlerContext ctx) {
+    @SuppressWarnings("unused")
+    Future<?> unusedFuture = ctx.close();
   }
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-    if (certAcquired) {
-      localConnectionLimiter.releaseCert(sslClientCertificateHash);
+    if (preLoginTimeoutTask != null) {
+      preLoginTimeoutTask.cancel(false);
+      preLoginTimeoutTask = null;
+    }
+    if (registrarAcquired) {
+      localConnectionLimiter.releaseRegistrar(authenticatedRegistrarId);
     }
     if (ipAcquired) {
       localConnectionLimiter.releaseIp(clientAddress);
