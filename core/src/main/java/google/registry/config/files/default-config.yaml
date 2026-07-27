@@ -455,12 +455,14 @@ eppServer:
   maxMessageLengthBytes: 1073741824
   # Length of the header field in bytes (RFC 5734).
   headerLengthBytes: 4
-  # Time after which an idle connection will be closed.
+   # Time after which an idle connection will be closed.
   readTimeoutSeconds: 3600
+  # Time after which an idle connection will be closed before login.
+  preLoginReadTimeoutSeconds: 10
   # Max concurrent connections per IP address.
   maxConnectionsPerIp: 10
-  # Max concurrent connections per authenticated certificate.
-  maxConnectionsPerCert: 10
+  # Max concurrent connections per authenticated registrar.
+  maxConnectionsPerRegistrar: 10
   # Server certificate cache duration.
   serverCertificateCacheSeconds: 1800
 

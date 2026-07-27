@@ -217,8 +217,9 @@ public class RegistryConfigSettings {
     public int maxMessageLengthBytes;
     public int headerLengthBytes;
     public int readTimeoutSeconds;
+    public int preLoginReadTimeoutSeconds;
     public int maxConnectionsPerIp;
-    public int maxConnectionsPerCert;
+    public int maxConnectionsPerRegistrar;
     public int serverCertificateCacheSeconds;
     public Quota quota;
   }

@@ -75,6 +75,9 @@ public class EppRequestHandler {
       // closed by the proxy. Whether the EPP proxy actually terminates the connection with the
       // client is up to its implementation.
       // See: https://tools.ietf.org/html/rfc5734#section-2
+      if (sessionMetadata.getRegistrarId() != null) {
+        response.setHeader(ProxyHttpHeaders.LOGGED_IN_REGISTRAR, sessionMetadata.getRegistrarId());
+      }
       if (eppOutput.isResponse()
           && eppOutput.getResponse().getResult().getCode() == SUCCESS_AND_CLOSE) {
         response.setHeader(ProxyHttpHeaders.EPP_SESSION, "close");

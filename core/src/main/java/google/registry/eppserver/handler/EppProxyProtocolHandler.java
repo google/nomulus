@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.InetAddresses;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -78,9 +79,17 @@ public class EppProxyProtocolHandler extends ByteToMessageDecoder {
         logger.atFine().log("PROXY HEADER for channel %s: %s", ctx.channel(), proxyHeader);
         String[] headerArray = proxyHeader.split(" ", -1);
         if (headerArray.length == 6) {
-          remoteIP = headerArray[2];
-          logger.atFine().log(
-              "Header parsed, using %s as remote IP for channel %s", remoteIP, ctx.channel());
+          String parsedIP = headerArray[2];
+          if (InetAddresses.isInetAddress(parsedIP)) {
+            remoteIP = parsedIP;
+            logger.atFine().log(
+                "Header parsed, using %s as remote IP for channel %s", remoteIP, ctx.channel());
+          } else {
+            logger.atWarning().log(
+                "Invalid IP address in PROXY header: %s, falling back to source IP for channel %s",
+                parsedIP, ctx.channel());
+            remoteIP = getSourceIP(ctx);
+          }
           // If the header is "PROXY UNKNOWN"
           // (see https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt), likely when the
           // remote connection to the external load balancer is through special means, make it
