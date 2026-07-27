@@ -28,6 +28,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -98,5 +99,29 @@ public class RefreshDnsOnHostRenameActionTest {
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
         .isEqualTo("Host to refresh is already deleted: ns1.example.tld");
+  }
+
+  @Test
+  void testSuccess_multipleBatches() {
+    Host host = persistActiveHost("ns1.example.tld");
+    ImmutableSet.Builder<String> domainNamesBuilder = new ImmutableSet.Builder<>();
+    for (int i = 1; i <= 1001; i++) {
+      String domainName = "example" + i + ".tld";
+      domainNamesBuilder.add(domainName);
+      persistResource(newDomain(domainName, host));
+    }
+    createAction(host.createVKey().stringify());
+    action.run();
+    assertDomainDnsRequests(Iterables.toArray(domainNamesBuilder.build(), String.class));
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+  }
+
+  @Test
+  void testSuccess_noLinkedDomains() {
+    Host host = persistActiveHost("ns1.example.tld");
+    createAction(host.createVKey().stringify());
+    action.run();
+    assertNoDnsRequests();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 }

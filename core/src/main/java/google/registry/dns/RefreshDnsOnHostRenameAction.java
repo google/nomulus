@@ -14,14 +14,18 @@
 
 package google.registry.dns;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.PATH;
 import static google.registry.model.EppResourceUtils.getLinkedDomainKeys;
+import static google.registry.model.EppResourceUtils.isDeleted;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.net.MediaType;
-import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
@@ -31,6 +35,7 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.util.List;
 
 @Action(
     service = Action.Service.BACKEND,
@@ -43,6 +48,8 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
   public static final String PARAM_HOST_KEY = "hostKey";
   public static final String PATH = "/_dr/task/refreshDnsOnHostRename";
 
+  private static final int DNS_REFRESH_BATCH_SIZE = 1000;
+
   private final VKey<Host> hostKey;
   private final Response response;
 
@@ -54,34 +61,53 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
 
   @Override
   public void run() {
-    tm().transact(
-            () -> {
-              Instant now = tm().getTxTime();
-              Host host = tm().loadByKeyIfPresent(hostKey).orElse(null);
-              boolean hostValid = true;
-              String failureMessage = null;
-              if (host == null) {
-                hostValid = false;
-                failureMessage = String.format("Host to refresh does not exist: %s", hostKey);
-              } else if (EppResourceUtils.isDeleted(host, now)) {
-                hostValid = false;
-                failureMessage =
-                    String.format("Host to refresh is already deleted: %s", host.getHostName());
-              } else {
-                getLinkedDomainKeys(
-                        host.createVKey(), host.getUpdateTimestamp().getTimestamp(), null)
-                    .stream()
-                    .map(domainKey -> tm().loadByKey(domainKey))
-                    .filter(Domain::shouldPublishToDns)
-                    .forEach(domain -> requestDomainDnsRefresh(domain.getDomainName()));
-              }
+    try {
+      runDnsRefresh();
+      response.setStatus(SC_OK);
+    } catch (RefreshDnsNonRetryableException e) {
+      // Set the response status code to be 204 so to not retry.
+      response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
+      response.setStatus(SC_NO_CONTENT);
+      response.setPayload(e.getMessage());
+    }
+  }
 
-              if (!hostValid) {
-                // Set the response status code to be 204 so to not retry.
-                response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
-                response.setStatus(SC_NO_CONTENT);
-                response.setPayload(failureMessage);
-              }
-            });
+  private void runDnsRefresh() {
+    ImmutableSet<VKey<Domain>> linkedDomainKeys =
+        tm().transact(
+                () -> {
+                  Instant now = tm().getTxTime();
+                  Host host =
+                      tm().loadByKeyIfPresent(hostKey)
+                          .orElseThrow(
+                              () ->
+                                  new RefreshDnsNonRetryableException(
+                                      String.format(
+                                          "Host to refresh does not exist: %s", hostKey)));
+                  if (isDeleted(host, now)) {
+                    throw new RefreshDnsNonRetryableException(
+                        String.format(
+                            "Host to refresh is already deleted: %s", host.getHostName()));
+                  }
+                  return getLinkedDomainKeys(
+                      hostKey, host.getUpdateTimestamp().getTimestamp(), null);
+                });
+    for (List<VKey<Domain>> batch : Iterables.partition(linkedDomainKeys, DNS_REFRESH_BATCH_SIZE)) {
+      tm().transact(
+              () -> {
+                ImmutableSet<String> domainNames =
+                    tm().loadByKeysIfPresent(batch).values().stream()
+                        .filter(Domain::shouldPublishToDns)
+                        .map(Domain::getDomainName)
+                        .collect(toImmutableSet());
+                requestDomainDnsRefresh(domainNames);
+              });
+    }
+  }
+
+  private static class RefreshDnsNonRetryableException extends RuntimeException {
+    private RefreshDnsNonRetryableException(String message) {
+      super(message);
+    }
   }
 }
