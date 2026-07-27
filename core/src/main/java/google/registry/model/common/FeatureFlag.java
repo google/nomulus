@@ -87,7 +87,10 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     PROHIBIT_CONTACT_OBJECTS_ON_LOGIN(FeatureStatus.INACTIVE),
 
     /** If we're prohibiting insecure algorithms as detailed by RFC 9904. */
-    FORBID_INSECURE_ALGORITHMS_RFC_9904(FeatureStatus.INACTIVE);
+    FORBID_INSECURE_ALGORITHMS_RFC_9904(FeatureStatus.INACTIVE),
+
+    /** If we're using secure random base64 encoded server TRIDs. */
+    USE_RANDOM_SERVER_TRID(FeatureStatus.INACTIVE);
 
     private final FeatureStatus defaultStatus;
 
