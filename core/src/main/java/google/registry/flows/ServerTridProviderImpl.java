@@ -15,20 +15,38 @@
 package google.registry.flows;
 
 import static com.google.common.primitives.Longs.BYTES;
+import static google.registry.model.common.FeatureFlag.FeatureName.USE_RANDOM_SERVER_TRID;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.BaseEncoding;
+import google.registry.model.common.FeatureFlag;
 import jakarta.inject.Inject;
 import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** A server Trid provider that generates globally incrementing UUIDs. */
+/** A server Trid provider that generates transaction IDs. */
 public class ServerTridProviderImpl implements ServerTridProvider {
 
   private static final String SERVER_ID = getServerId();
   private static final AtomicLong idCounter = new AtomicLong();
 
-  @Inject public ServerTridProviderImpl() {}
+  @VisibleForTesting
+  static final ThreadLocal<SecureRandom> secureRandom =
+      ThreadLocal.withInitial(
+          () -> {
+            try {
+              return SecureRandom.getInstance("DRBG");
+            } catch (NoSuchAlgorithmException e) {
+              throw new RuntimeException(e);
+            }
+          });
+
+  @Inject
+  public ServerTridProviderImpl() {}
 
   /** Creates a unique id for this server instance, as a base64 encoded UUID. */
   private static String getServerId() {
@@ -42,6 +60,15 @@ public class ServerTridProviderImpl implements ServerTridProvider {
 
   @Override
   public String createServerTrid() {
+    if (tm().reTransact(() -> FeatureFlag.isActiveNow(USE_RANDOM_SERVER_TRID))) {
+      // The server TRID can be at most 64 characters. We generate 24 random bytes
+      // (192 bits), which base64url-encodes without padding to 32 characters.
+      // This provides an unpredictable TRID that does not leak pod identity or
+      // command volume.
+      byte[] randomBytes = new byte[24];
+      secureRandom.get().nextBytes(randomBytes);
+      return BaseEncoding.base64Url().omitPadding().encode(randomBytes);
+    }
     // The server id can be at most 64 characters. The SERVER_ID is at most 22 characters (128
     // bits in base64), plus the dash. That leaves 41 characters, so we just append the counter in
     // hex.
