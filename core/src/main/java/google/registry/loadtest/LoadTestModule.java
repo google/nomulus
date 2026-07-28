@@ -39,12 +39,6 @@ public final class LoadTestModule {
   }
 
   @Provides
-  @Parameter("delaySeconds")
-  static int provideDelaySeconds(HttpServletRequest req) {
-    return extractOptionalIntParameter(req, "delaySeconds").orElse(60);
-  }
-
-  @Provides
   @Parameter("runSeconds")
   static int provideRunSeconds(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "runSeconds").orElse(60);
