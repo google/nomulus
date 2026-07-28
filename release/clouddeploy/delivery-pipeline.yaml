@@ -14,6 +14,17 @@ serialPipeline:
           - phaseId: "canary-1"
             profiles: ["crash-partial-phase-1"]
             percentage: 10
+            predeploy:
+              tasks:
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
+                  TARGET_ID: ${{ target.id }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud builds submit --config=release/cloudbuild-schema-verify-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -46,6 +57,15 @@ serialPipeline:
                 - |
                   gcloud artifacts docker tags add $DEPLOYED_IMAGE \
                     ${BASE_IMAGE}:live-cd-${TARGET_ID}
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
+                  TARGET_ID: ${{ target.id }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud builds submit --config=release/cloudbuild-schema-deploy-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -60,6 +80,17 @@ serialPipeline:
           - phaseId: "canary-1"
             profiles: ["sandbox-partial-phase-1"]
             percentage: 10
+            predeploy:
+              tasks:
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
+                  TARGET_ID: ${{ target.id }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud builds submit --config=release/cloudbuild-schema-verify-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -92,6 +123,15 @@ serialPipeline:
                 - |
                   gcloud artifacts docker tags add $DEPLOYED_IMAGE \
                     ${BASE_IMAGE}:live-cd-${TARGET_ID}
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
+                  TARGET_ID: ${{ target.id }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud builds submit --config=release/cloudbuild-schema-deploy-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
