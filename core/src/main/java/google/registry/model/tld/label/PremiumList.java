@@ -59,10 +59,13 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
    * Mapping from unqualified domain names to their prices.
    *
    * <p>This field requires special treatment since we want to lazy load it. We have to remove it
-   * from the immutability contract so we can modify it after construction and we have to handle the
-   * database processing on our own so we can detach it after load.
+   * from the immutability contract so we can modify it after construction, and we have to handle
+   * the database processing on our own so we can detach it after load.
    */
-  @Insignificant @Transient ImmutableMap<String, BigDecimal> labelsToPrices;
+  @Insignificant @Transient volatile ImmutableMap<String, BigDecimal> labelsToPrices;
+
+  /** A lock to make sure we don't load the same price map twice. */
+  @Insignificant @Transient private final Object labelsToPricesLock = new Object();
 
   @Column(nullable = false)
   BloomFilter<String> bloomFilter;
@@ -76,18 +79,27 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
    * Returns a {@link Map} of domain labels to prices.
    *
    * <p>Note that this is lazily loaded and thus must be called inside a transaction. You generally
-   * should not be using this anyway as it's inefficient to load all of the PremiumEntry rows if you
+   * should not be using this anyway as it's inefficient to load all the PremiumEntry rows if you
    * don't need them. To check prices, use {@link PremiumListDao#getPremiumPrice} instead.
+   *
+   * <p>We use locking to memoize the resulting object. We cannot use a simple memoizing Supplier
+   * because we need to be able to set this value when creating the lists.
    */
-  public synchronized ImmutableMap<String, BigDecimal> getLabelsToPrices() {
+  public ImmutableMap<String, BigDecimal> getLabelsToPrices() {
     if (labelsToPrices == null) {
-      labelsToPrices =
-          PremiumListDao.loadAllPremiumEntries(name).stream()
-              .collect(
-                  toImmutableMap(
-                      PremiumEntry::getDomainLabel,
-                      // Set the correct amount of precision for the premium list's currency.
-                      premiumEntry -> convertAmountToMoney(premiumEntry.getValue()).getAmount()));
+      synchronized (labelsToPricesLock) {
+        // Extra null check to avoid race conditions
+        if (labelsToPrices == null) {
+          labelsToPrices =
+              PremiumListDao.loadAllPremiumEntries(name).stream()
+                  .collect(
+                      toImmutableMap(
+                          PremiumEntry::getDomainLabel,
+                          // Set the correct amount of precision for the list's currency.
+                          premiumEntry ->
+                              convertAmountToMoney(premiumEntry.getValue()).getAmount()));
+        }
+      }
     }
     return labelsToPrices;
   }

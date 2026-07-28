@@ -23,7 +23,6 @@ import static google.registry.config.RegistryConfig.getDomainLabelListCacheDurat
 import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Splitter;
@@ -69,7 +68,10 @@ public final class ReservedList
    * from the immutability contract so we can modify it after construction and we have to handle the
    * database processing on our own so we can detach it after load.
    */
-  @Insignificant @Transient Map<String, ReservedListEntry> reservedListMap;
+  @Insignificant @Transient volatile ImmutableMap<String, ReservedListEntry> reservedListMap;
+
+  /** A lock to make sure we don't load the reserved list map twice. */
+  @Insignificant @Transient private final Object reservedListMapLoadLock = new Object();
 
   @RecursivePreRemove
   void preRemove() {
@@ -149,7 +151,7 @@ public final class ReservedList
     }
 
     /** A builder for constructing {@link ReservedListEntry} objects, since they are immutable. */
-    private static class Builder
+    public static class Builder
         extends DomainLabelEntry.Builder<ReservedListEntry, ReservedListEntry.Builder> {
 
       Builder() {}
@@ -185,19 +187,27 @@ public final class ReservedList
    *
    * <p>Note that this involves a database fetch of a potentially large number of elements and
    * should be avoided unless necessary.
+   *
+   * <p>We use locking to memoize the resulting object. We cannot use a simple memoizing Supplier
+   * because we need to be able to set this value when creating the lists.
    */
-  public synchronized ImmutableMap<String, ReservedListEntry> getReservedListEntries() {
+  public ImmutableMap<String, ReservedListEntry> getReservedListEntries() {
     if (reservedListMap == null) {
-      reservedListMap =
-          tm().reTransact(
-                  () ->
-                      tm()
-                          .createQueryComposer(ReservedListEntry.class)
-                          .where("revisionId", EQ, revisionId)
-                          .stream()
-                          .collect(toImmutableMap(ReservedListEntry::getDomainLabel, e -> e)));
+      synchronized (reservedListMapLoadLock) {
+        // Extra null check to avoid race conditions
+        if (reservedListMap == null) {
+          reservedListMap =
+              tm().reTransact(
+                      () ->
+                          tm()
+                              .createQueryComposer(ReservedListEntry.class)
+                              .where("revisionId", EQ, revisionId)
+                              .stream()
+                              .collect(toImmutableMap(ReservedListEntry::getDomainLabel, e -> e)));
+        }
+      }
     }
-    return ImmutableMap.copyOf(nullToEmpty(reservedListMap));
+    return reservedListMap;
   }
 
   /**
@@ -220,7 +230,7 @@ public final class ReservedList
    */
   public static ImmutableSet<ReservationType> getReservationTypes(String label, String tld) {
     checkNotNull(label, "label");
-    if (label.length() == 0) {
+    if (label.isEmpty()) {
       return ImmutableSet.of(FULLY_BLOCKED);
     }
     return getReservedListEntries(label, tld).stream()
