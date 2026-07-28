@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Lists.partition;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableList;
@@ -39,10 +40,14 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
 /**
  * Simple load test action that can generate configurable QPSes of various EPP actions.
+ *
+ * <p>This is not an end-to-end test. It exercises the Nomulus EPP service and the database, but
+ * does not cover the proxy.
  *
  * <p>All aspects of the load test are configured via URL parameters that are specified when the
  * loadtest URL is being POSTed to. The {@code clientId} and {@code tld} parameters are required.
@@ -60,7 +65,7 @@ public class LoadTestAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final int NUM_QUEUES = 10;
+  private static final int NUM_QUEUES = 20;
   private static final int MAX_TASKS_PER_LOAD = 100;
   private static final int ARBITRARY_VALID_HOST_LENGTH = 40;
   private static final int MAX_DOMAIN_LABEL_LENGTH = 63;
@@ -72,19 +77,16 @@ public class LoadTestAction implements Runnable {
 
   public static final String PATH = "/_dr/loadtest";
 
+  // Average task insertion rate with a dedicated thread enqueuing to one queue. This is used to
+  // calculate the EPP request dispatch time. This value is based on observation and needs not to
+  // be accurate. However, it should be low enough so that all EPP tasks are enqueued before the
+  // first task is dispatched.
+  private static final int TASK_INSERTIONS_PER_QUEUE_PER_MINUTE = 1000;
+
   /** The ID of the registrar to use for load testing. */
   @Inject
   @Parameter("loadtestClientId")
   String registrarId;
-
-  /**
-   * The number of seconds to delay the execution of the first load testing tasks by. Preparatory
-   * work of creating independent hosts that will be used for later domain creation testing occurs
-   * during this period, so make sure that it is long enough.
-   */
-  @Inject
-  @Parameter("delaySeconds")
-  int delaySeconds;
 
   /**
    * The number of seconds that tasks will be enqueued for. Note that if system QPS cannot handle
@@ -157,9 +159,24 @@ public class LoadTestAction implements Runnable {
     xmlHostInfo = loadXml("host_info").replace("%host%", EXISTING_HOST);
   }
 
+  private int eppTaskCount() {
+    return successfulDomainCreatesPerSecond
+        + runSeconds
+            * (successfulHostCreatesPerSecond
+                + failedHostCreatesPerSecond
+                + domainInfosPerSecond
+                + domainChecksPerSecond
+                + hostInfosPerSecond
+                + successfulDomainCreatesPerSecond
+                + failedDomainCreatesPerSecond);
+  }
+
   @Override
   public void run() {
-    validateAndLogRequest();
+    // Delay the EPP request dispatch time to account for queue-insertion time.
+    int delaySeconds =
+        Math.ceilDiv(eppTaskCount(), TASK_INSERTIONS_PER_QUEUE_PER_MINUTE * NUM_QUEUES) * 60;
+    validateAndLogRequest(delaySeconds);
     Instant initialStartSecond = clock.now().plus(Duration.ofSeconds(delaySeconds));
     ImmutableList.Builder<String> preTaskXmls = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> hostPrefixesBuilder = new ImmutableList.Builder<>();
@@ -209,7 +226,7 @@ public class LoadTestAction implements Runnable {
     logger.atInfo().log("Added %d total load test tasks.", taskOptions.size());
   }
 
-  private void validateAndLogRequest() {
+  private void validateAndLogRequest(int delaySeconds) {
     checkArgument(
         RegistryEnvironment.get() != RegistryEnvironment.PRODUCTION,
         "DO NOT RUN LOADTESTS IN PROD!");
@@ -297,9 +314,20 @@ public class LoadTestAction implements Runnable {
 
   private void enqueue(ImmutableList<Task> tasks) {
     List<List<Task>> chunks = partition(tasks, MAX_TASKS_PER_LOAD);
-    // Farm out tasks to multiple queues to work around queue qps quotas.
-    for (int i = 0; i < chunks.size(); i++) {
-      cloudTasksUtils.enqueue("load" + (i % NUM_QUEUES), chunks.get(i));
+    // Farm out tasks to multiple queues to work around queue qps quotas. Use multiple threads to
+    // speed up the enqueuing.
+    try (ExecutorService executorService = newFixedThreadPool(NUM_QUEUES)) {
+      for (int i = 0; i < chunks.size(); i++) {
+        final int index = i;
+        // lgtm[java/local-variable-is-never-read]  Suppress Github CodeQL's outdated warning
+        var _ =
+            executorService.submit(
+                () -> cloudTasksUtils.enqueue(getQueueName(index % NUM_QUEUES), chunks.get(index)));
+      }
     }
+  }
+
+  private static String getQueueName(int queueId) {
+    return String.format("load%d", queueId);
   }
 }
