@@ -127,9 +127,7 @@ public final class TmchCertificateAuthority {
    * @see X509Utils#verifyCertificate
    */
   public void verify(X509Certificate cert) throws GeneralSecurityException {
-    synchronized (TmchCertificateAuthority.class) {
-      X509Utils.verifyCertificate(getAndValidateRoot(), getCrl(), cert, clock.now());
-    }
+    X509Utils.verifyCertificate(getAndValidateRoot(), getCrl(), cert, clock.now());
   }
 
   /**
@@ -157,33 +155,23 @@ public final class TmchCertificateAuthority {
   }
 
   public X509Certificate getAndValidateRoot() throws GeneralSecurityException {
-    try {
-      X509Certificate root = ROOT_CERTS.get(tmchCaMode);
-      // The current production certificate expires on 2023-07-23. Future code monkey be reminded,
-      // if you are looking at this code because the next line throws an exception, ask ICANN for a
-      // new root certificate! (preferably before the current one expires...)
-      root.checkValidity(Date.from(clock.now()));
-      return root;
-    } catch (Exception e) {
-      if (e instanceof GeneralSecurityException generalSecurityException) {
-        throw generalSecurityException;
-      } else if (e instanceof RuntimeException runtimeException) {
-        throw runtimeException;
-      }
-      throw new RuntimeException(e);
-    }
+    X509Certificate root = ROOT_CERTS.get(tmchCaMode);
+    // The current production certificate expires on 2042-11-15. Future code monkey be reminded,
+    // if you are looking at this code because the next line throws an exception, ask ICANN for a
+    // new root certificate! (preferably before the current one expires...)
+    root.checkValidity(Date.from(clock.now()));
+    return root;
   }
 
   public X509CRL getCrl() throws GeneralSecurityException {
     try {
       return CRL_CACHE.get(tmchCaMode);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       if (e.getCause() instanceof GeneralSecurityException generalSecurityException) {
         throw generalSecurityException;
-      } else if (e instanceof RuntimeException runtimeException) {
-        throw runtimeException;
+      } else {
+        throw e;
       }
-      throw new RuntimeException(e);
     }
   }
 }
