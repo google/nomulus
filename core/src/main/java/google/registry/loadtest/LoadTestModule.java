@@ -39,12 +39,6 @@ public final class LoadTestModule {
   }
 
   @Provides
-  @Parameter("delaySeconds")
-  static int provideDelaySeconds(HttpServletRequest req) {
-    return extractOptionalIntParameter(req, "delaySeconds").orElse(60);
-  }
-
-  @Provides
   @Parameter("runSeconds")
   static int provideRunSeconds(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "runSeconds").orElse(60);
@@ -72,24 +66,6 @@ public final class LoadTestModule {
   @Parameter("domainChecks")
   static int provideDomainChecks(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "domainChecks").orElse(0);
-  }
-
-  @Provides
-  @Parameter("successfulContactCreates")
-  static int provideSuccessfulContactCreates(HttpServletRequest req) {
-    return extractOptionalIntParameter(req, "successfulContactCreates").orElse(0);
-  }
-
-  @Provides
-  @Parameter("failedContactCreates")
-  static int provideFailedContactCreates(HttpServletRequest req) {
-    return extractOptionalIntParameter(req, "failedContactCreates").orElse(0);
-  }
-
-  @Provides
-  @Parameter("contactInfos")
-  static int provideContactInfos(HttpServletRequest req) {
-    return extractOptionalIntParameter(req, "contactInfos").orElse(0);
   }
 
   @Provides
