@@ -107,11 +107,31 @@ public abstract class ConsoleApiAction implements Runnable {
 
   protected static void checkPermission(
       User user, String registrarId, ConsolePermission permission) {
+    Registrar registrar =
+        Registrar.loadByRegistrarIdCached(registrarId)
+            .orElseThrow(
+                () ->
+                    new ConsolePermissionForbiddenException(
+                        String.format("Registrar %s does not exist", registrarId)));
+    if (!registrar.isLive()) {
+      throw new ConsolePermissionForbiddenException(
+          String.format(
+              "Permission forbidden because registrar %s is currently %s",
+              registrarId, registrar.getState()));
+    }
     if (!user.getUserRoles().hasPermission(registrarId, permission)) {
       throw new ConsolePermissionForbiddenException(
           String.format(
               "User %s does not have permission %s on registrar %s",
               user.getEmailAddress(), permission, registrarId));
+    }
+  }
+
+  protected static void checkGlobalPermission(User user, ConsolePermission permission) {
+    if (!user.getUserRoles().hasGlobalPermission(permission)) {
+      throw new ConsolePermissionForbiddenException(
+          String.format(
+              "User %s does not have global permission %s", user.getEmailAddress(), permission));
     }
   }
 

@@ -48,6 +48,7 @@ public abstract class BillingBase extends ImmutableObject
     @Deprecated // DO NOT USE THIS REASON. IT REMAINS BECAUSE OF HISTORICAL DATA. SEE b/31676071.
     ERROR(false),
     FEE_EARLY_ACCESS(true),
+    FEE_EXPIRY_ACCESS(true),
     RENEW(true),
     RESTORE(true),
     SERVER_STATUS(false),

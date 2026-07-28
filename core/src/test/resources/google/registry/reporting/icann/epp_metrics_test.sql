@@ -21,15 +21,12 @@
   -- "tld":"","tlds":["a.how"],"icannActivityReportField":"srs-dom-check"}
 
 SELECT
-  -- Remove quotation marks from tld fields.
-  REGEXP_EXTRACT(tld, '^"(.*)"$') AS tld,
+  tld,
   activityReportField AS metricName,
   COUNT(*) AS count
 FROM (
   SELECT
-    -- TODO(b/32486667): Replace with JSON.parse() UDF when available for views
-    SPLIT(
-    REGEXP_EXTRACT(JSON_EXTRACT(json, '$.tlds'), r'^\[(.*)\]$')) AS tlds,
+    JSON_EXTRACT_STRING_ARRAY(json, '$.tlds') AS tlds,
     JSON_EXTRACT_SCALAR(json,
       '$.resourceType') AS resourceType,
     JSON_EXTRACT_SCALAR(json,
@@ -43,10 +40,10 @@ FROM (
     WHERE
       STARTS_WITH(jsonPayload.message, "FLOW-LOG-SIGNATURE-METADATA")
       AND _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')
-  ) AS regexes
+  ) AS json_parsed
 JOIN
   -- Unnest the JSON-parsed tlds.
-  UNNEST(regexes.tlds) AS tld
+  UNNEST(json_parsed.tlds) AS tld
 -- Exclude cases that can't be tabulated correctly, where activityReportField
 -- is null/empty, or TLD is null/empty despite being a domain flow.
 WHERE

@@ -86,6 +86,7 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
   public static void grantIapPermission(
       String emailAddress,
       Optional<String> groupEmailAddress,
+      Optional<String> consoleIapServiceId,
       @Nullable CloudTasksUtils cloudTasksUtils,
       @Nullable ServiceConnection connection,
       IamClient iamClient) {
@@ -93,14 +94,14 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
       return;
     }
     checkArgument(
-        cloudTasksUtils != null || connection != null,
-        "At least one of cloudTasksUtils or connection must be set");
+        cloudTasksUtils == null ^ connection == null,
+        "Precisely one of cloudTasksUtils or connection can be set");
     checkArgument(
-        cloudTasksUtils == null || connection == null,
-        "Only one of cloudTasksUtils or connection can be set");
+        groupEmailAddress.isPresent() || consoleIapServiceId.isPresent(),
+        "At least one of groupEmailAddress or consoleIapServiceId must be present");
     if (groupEmailAddress.isEmpty()) {
       logger.atInfo().log("Granting IAP role to user %s", emailAddress);
-      iamClient.addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
+      iamClient.addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE, consoleIapServiceId.get());
     } else {
       logger.atInfo().log("Adding %s to group %s", emailAddress, groupEmailAddress.get());
       if (cloudTasksUtils != null) {
@@ -129,11 +130,8 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
       return;
     }
     checkArgument(
-        cloudTasksUtils != null || connection != null,
-        "At least one of cloudTasksUtils or connection must be set");
-    checkArgument(
-        cloudTasksUtils == null || connection == null,
-        "Only one of cloudTasksUtils or connection can be set");
+        cloudTasksUtils == null ^ connection == null,
+        "Precisely one of cloudTasksUtils or connection can be set");
     if (groupEmailAddress.isEmpty()) {
       logger.atInfo().log("Removing IAP role from user %s", emailAddress);
       iamClient.removeBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);

@@ -28,6 +28,9 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
@@ -100,16 +103,16 @@ public final class DomainLockUtils {
    *
    * <p>This assumes that the lock object / domain in question has a pending lock or unlock.
    */
-  public RegistryLock verifyVerificationCode(String verificationCode, boolean isAdmin) {
+  public RegistryLock verifyVerificationCode(String verificationCode, User user) {
     RegistryLock result =
         tm().transact(
                 () -> {
                   RegistryLock lock = getByVerificationCode(verificationCode);
                   if (lock.getLockCompletionTime().isEmpty()) {
-                    return verifyAndApplyLock(lock, isAdmin);
+                    return verifyAndApplyLock(lock, user);
                   } else if (lock.getUnlockRequestTime().isPresent()
                       && lock.getUnlockCompletionTime().isEmpty()) {
-                    return verifyAndApplyUnlock(lock, isAdmin);
+                    return verifyAndApplyUnlock(lock, user);
                   } else {
                     throw new IllegalArgumentException(
                         String.format(
@@ -203,11 +206,18 @@ public final class DomainLockUtils {
             countdown));
   }
 
-  private RegistryLock verifyAndApplyLock(RegistryLock lock, boolean isAdmin) {
+  private RegistryLock verifyAndApplyLock(RegistryLock lock, User user) {
     Instant now = tm().getTxTime();
     checkArgument(
         !lock.isLockRequestExpired(now), "The pending lock has expired; please try again");
 
+    UserRoles userRoles = user.getUserRoles();
+    boolean isAdmin = userRoles.isAdmin();
+    checkArgument(
+        userRoles.hasPermission(lock.getRegistrarId(), ConsolePermission.REGISTRY_LOCK),
+        "User %s does not have registry lock permission on registrar %s",
+        user.getEmailAddress(),
+        lock.getRegistrarId());
     checkArgument(!lock.isSuperuser() || isAdmin, "Non-admin user cannot complete admin lock");
 
     RegistryLock newLock =
@@ -217,13 +227,29 @@ public final class DomainLockUtils {
     return newLock;
   }
 
-  private RegistryLock verifyAndApplyUnlock(RegistryLock lock, boolean isAdmin) {
+  private RegistryLock verifyAndApplyUnlock(RegistryLock lock, User user) {
     Instant now = tm().getTxTime();
     checkArgument(
         !lock.isUnlockRequestExpired(now), "The pending unlock has expired; please try again");
 
-    checkArgument(isAdmin || !lock.isSuperuser(), "Non-admin user cannot complete admin unlock");
+    UserRoles userRoles = user.getUserRoles();
+    boolean isAdmin = userRoles.isAdmin();
+    checkArgument(
+        userRoles.hasPermission(lock.getRegistrarId(), ConsolePermission.REGISTRY_LOCK),
+        "User %s does not have registry lock permission on registrar %s",
+        user.getEmailAddress(),
+        lock.getRegistrarId());
+    checkArgument(!lock.isSuperuser() || isAdmin, "Non-admin user cannot complete admin unlock");
 
+    // The pending unlock must still be the most recent RegistryLock for this domain. If a newer
+    // lock exists (e.g. an admin/superuser lock applied after this unlock was requested or a
+    // different unlock+relock), the verification code being redeemed is for a superseded row and
+    // must not be allowed to strip the lock statuses that the newer row applied.
+    Optional<RegistryLock> mostRecent = RegistryLockDao.getMostRecentByRepoId(lock.getRepoId());
+    checkArgument(
+        mostRecent.isPresent() && mostRecent.get().getRevisionId().equals(lock.getRevisionId()),
+        "The pending unlock on %s has been superseded; please request a new unlock",
+        lock.getDomainName());
     RegistryLock newLock =
         RegistryLockDao.save(lock.asBuilder().setUnlockCompletionTime(now).build());
     removeLockStatuses(newLock, isAdmin, now);

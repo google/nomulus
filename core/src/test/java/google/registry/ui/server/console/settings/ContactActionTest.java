@@ -343,10 +343,23 @@ visibleInRdapAsTech=true, visibleInDomainRdapAsAbuse=false}
             testRegistrar.getRegistrarId(),
             adminPoc.asBuilder().setEmailAddress("testemail@example.com").build());
     action.run();
-    FakeResponse fakeResponse = response;
-    assertThat(fakeResponse.getStatus()).isEqualTo(400);
-    assertThat(fakeResponse.getPayload())
-        .isEqualTo("Cannot remove or change the email address of primary contacts");
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).isEqualTo("Cannot alter the set of primary contacts");
+  }
+
+  @Test
+  void testFailure_addsAdminEmail() throws Exception {
+    RegistrarPoc newAdminPoc =
+        adminPoc
+            .asBuilder()
+            .setName("New Admin Contact")
+            .setEmailAddress("new.admin@example.com")
+            .build();
+    ContactAction action =
+        createAction(Action.Method.POST, fteUser, testRegistrar.getRegistrarId(), newAdminPoc);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).isEqualTo("Cannot alter the set of primary contacts");
   }
 
   private ContactAction createAction(

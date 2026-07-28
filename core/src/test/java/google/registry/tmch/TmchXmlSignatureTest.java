@@ -16,6 +16,7 @@ package google.registry.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.tmch.TmchTestData.loadSmd;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
@@ -138,5 +139,140 @@ class TmchXmlSignatureTest {
     CertificateRevokedException e =
         assertThrows(CertificateRevokedException.class, () -> tmchXmlSignature.verify(smdData));
     assertThat(e).hasMessageThat().contains("Certificate has been revoked");
+  }
+
+  // These tests check the structure of the decoded XML (unrelated to the decoding itself)
+  @Test
+  void testVerify_rootElementNotSignedMark_fails() {
+    String xml =
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <container>
+           <smd:signedMark xmlns:smd="urn:ietf:params:xml:ns:signedMark-1.0" id="id-1"/>
+        </container>
+        """;
+    XMLSignatureException e =
+        assertThrows(
+            XMLSignatureException.class, () -> tmchXmlSignature.verify(xml.getBytes(UTF_8)));
+    assertThat(e)
+        .hasMessageThat()
+        .contains(
+            "Root element must be signedMark in namespace urn:ietf:params:xml:ns:signedMark-1.0");
+  }
+
+  @Test
+  void testVerify_xswWrapping_fails() {
+    // By default, the verifier follows the reference from a valid signature wherever it goes. This
+    // could be a second signedMark object hidden elsewhere in the XML (say, inside a ds:Object,
+    // which can contain anything). The SignedMark parser, however, uses the root node. We need to
+    // make sure that the valid signature points to the root node, and not anything else.
+    String xswXml =
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <smd:signedMark xmlns:smd="urn:ietf:params:xml:ns:signedMark-1.0" id="fake-id">
+           <smd:id>fake-id</smd:id>
+           <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+              <ds:SignedInfo>
+                 <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                 <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+                 <ds:Reference URI="#real-id">
+                    <ds:Transforms>
+                       <ds:Transform Algorithm=\
+                       "http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                    </ds:Transforms>
+                    <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                    <ds:DigestValue>dGVzdA==</ds:DigestValue>
+                 </ds:Reference>
+              </ds:SignedInfo>
+              <ds:SignatureValue>dGVzdA==</ds:SignatureValue>
+              <ds:Object>
+                 <smd:signedMark id="real-id">
+                    <smd:id>real-id</smd:id>
+                 </smd:signedMark>
+              </ds:Object>
+           </ds:Signature>
+        </smd:signedMark>
+        """;
+
+    XMLSignatureException e =
+        assertThrows(
+            XMLSignatureException.class, () -> tmchXmlSignature.verify(xswXml.getBytes(UTF_8)));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("Expected exactly one <smd:signedMark> element in the document");
+  }
+
+  @Test
+  void testVerify_signatureDoesNotSignRoot_fails() {
+    // The internal signature reference URI must match the root signed mark ID
+    String xml =
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <smd:signedMark xmlns:smd="urn:ietf:params:xml:ns:signedMark-1.0" id="modified-id">
+           <smd:id>modified-id</smd:id>
+           <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+              <ds:SignedInfo>
+                 <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                 <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+                 <ds:Reference URI="#original-id">
+                    <ds:Transforms>
+                       <ds:Transform Algorithm=\
+                       "http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                    </ds:Transforms>
+                    <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                    <ds:DigestValue>dGVzdA==</ds:DigestValue>
+                 </ds:Reference>
+              </ds:SignedInfo>
+              <ds:SignatureValue>dGVzdA==</ds:SignatureValue>
+           </ds:Signature>
+        </smd:signedMark>
+        """;
+
+    XMLSignatureException e =
+        assertThrows(
+            XMLSignatureException.class, () -> tmchXmlSignature.verify(xml.getBytes(UTF_8)));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("Signature Reference URI does not match the root element ID");
+  }
+
+  @Test
+  void testVerify_multipleSignedMarks_fails() {
+    // Even if the signature does validate the root signed mark, it's sketchy at best to include
+    // another signed mark hidden in the XML. Don't allow it.
+    String xml =
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <smd:signedMark xmlns:smd="urn:ietf:params:xml:ns:signedMark-1.0" id="id-1">
+           <smd:id>id-1</smd:id>
+           <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+              <ds:SignedInfo>
+                 <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                 <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+                 <ds:Reference URI="#id-1">
+                    <ds:Transforms>
+                       <ds:Transform Algorithm=\
+                       "http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                    </ds:Transforms>
+                    <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                    <ds:DigestValue>dGVzdA==</ds:DigestValue>
+                 </ds:Reference>
+              </ds:SignedInfo>
+              <ds:SignatureValue>dGVzdA==</ds:SignatureValue>
+              <ds:Object>
+                 <smd:signedMark id="id-2">
+                    <smd:id>id-2</smd:id>
+                 </smd:signedMark>
+              </ds:Object>
+           </ds:Signature>
+        </smd:signedMark>
+        """;
+
+    XMLSignatureException e =
+        assertThrows(
+            XMLSignatureException.class, () -> tmchXmlSignature.verify(xml.getBytes(UTF_8)));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("Expected exactly one <smd:signedMark> element in the document");
   }
 }

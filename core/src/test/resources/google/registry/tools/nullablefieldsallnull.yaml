@@ -18,6 +18,8 @@ reservedListNames: null
 premiumListName: null
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 escrowEnabled: false
+expiryAccessPeriodTransitions:
+  "1970-01-01T00:00:00.000Z": "DISABLED"
 dnsPaused: false
 addGracePeriodLength: "PT720H"
 anchorTenantAddGracePeriodLength: "PT720H"

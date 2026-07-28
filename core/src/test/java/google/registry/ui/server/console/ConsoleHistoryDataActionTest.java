@@ -157,8 +157,9 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testSuccess_noResults() {
+    DatabaseHelper.persistNewRegistrar("NoHistory");
     ConsoleHistoryDataAction action =
-        createAction(AuthResult.createUser(fteUser), "NoHistoryRegistrar", Optional.empty());
+        createAction(AuthResult.createUser(fteUser), "NoHistory", Optional.empty());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).isEqualTo("[]");

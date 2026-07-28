@@ -200,7 +200,7 @@ public class BillingEvent extends BillingBase {
         checkState(
             instance.reason.hasPeriodYears() == (instance.periodYears != null),
             "Period years must be set if and only if reason is "
-                + "CREATE, FEE_EARLY_ACCESS, RENEW, RESTORE or TRANSFER.");
+                + "CREATE, FEE_EARLY_ACCESS, FEE_EXPIRY_ACCESS, RENEW, RESTORE or TRANSFER.");
       }
       checkState(
           instance.getFlags().contains(Flag.SYNTHETIC) == (instance.syntheticCreationTime != null),

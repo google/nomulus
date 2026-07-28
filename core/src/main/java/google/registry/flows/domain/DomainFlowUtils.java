@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static com.google.common.base.Ascii.toLowerCase;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.emptyToNull;
@@ -174,6 +175,27 @@ public class DomainFlowUtils {
 
   /** Maximum number of characters in a domain label, from RFC 2181. */
   private static final int MAX_LABEL_SIZE = 63;
+
+  /// Given a tld name or domain label, returns a label that can be safely logged, or
+  /// `Optional.empty()` if `label` is null or blank.
+  ///
+  /// If `label` contains disallowed characters, they are replaced with '-'. If the resulting
+  /// string has a valid length, it is returned as is; if not, the first {@link #MAX_LABEL_SIZE}
+  ///  chars plus a suffix of `...` is returned.
+  ///
+  /// This method is mainly for use by `FlowReporter#recordToLogs()` to ensure that the logs
+  /// can be safely and correctly queried by SQL queries. See b/534931586 for more information.
+  public static Optional<String> toLogSafeLabel(String label) {
+    if (label == null || label.isBlank()) {
+      return Optional.empty();
+    }
+    var newLabel = ALLOWED_CHARS.negate().replaceFrom(toLowerCase(label), '-');
+    if (newLabel.length() <= MAX_LABEL_SIZE) {
+      return Optional.of(newLabel);
+    } else {
+      return Optional.of(newLabel.substring(0, MAX_LABEL_SIZE) + "...");
+    }
+  }
 
   /**
    * Returns parsed version of {@code name} if domain name label follows our naming rules and is
@@ -642,6 +664,7 @@ public class DomainFlowUtils {
                       tld,
                       domainNameString,
                       now,
+                      domain,
                       years,
                       isAnchorTenant(domainName, allocationToken, Optional.empty()),
                       isSunrise,
@@ -764,6 +787,9 @@ public class DomainFlowUtils {
     if (feeCommand.isEmpty()) {
       if (!feesAndCredits.getEapCost().isZero()) {
         throw new FeesRequiredDuringEarlyAccessProgramException(feesAndCredits.getEapCost());
+      }
+      if (!feesAndCredits.getXapCost().isZero()) {
+        throw new FeesRequiredDuringExpiryAccessPeriodException(feesAndCredits.getXapCost());
       }
       if (feesAndCredits.getTotalCost().isZero() || !feesAndCredits.isFeeExtensionRequired()) {
         return;
@@ -1168,6 +1194,32 @@ public class DomainFlowUtils {
         .getResultList();
   }
 
+  /**
+   * Returns true if the domain was deleted during its Add Grace Period (AGP).
+   *
+   * <p>Per policy, domains deleted during AGP are not subject to Expiry Access Period (XAP) fees or
+   * reservation restrictions upon subsequent re-registration.
+   */
+  public static boolean wasDeletedDuringAddGracePeriod(Domain domain, Tld tld) {
+    if (domain.getCreationTime() == null || domain.getDeletionTime() == null) {
+      return false;
+    }
+    return !domain
+        .getDeletionTime()
+        .isAfter(domain.getCreationTime().plus(tld.getAddGracePeriodLength()));
+  }
+
+  /**
+   * Returns true if the domain was deleted before {@code now} and is eligible for Expiry Access
+   * Period (XAP) evaluation.
+   */
+  public static boolean isDomainEligibleForXap(Domain domain, Tld tld, Instant now) {
+    if (domain.getDeletionTime() == null || !domain.getDeletionTime().isBefore(now)) {
+      return false;
+    }
+    return !wasDeletedDuringAddGracePeriod(domain, tld);
+  }
+
   /** Resource linked to this domain does not exist. */
   static class LinkedResourcesDoNotExistException extends ObjectDoesNotExistException {
     public LinkedResourcesDoNotExistException(Class<?> type, ImmutableSet<String> resourceIds) {
@@ -1351,6 +1403,18 @@ public class DomainFlowUtils {
       super(
           "Fees must be explicitly acknowledged when creating domains "
               + "during the Early Access Program. The EAP fee is: "
+              + expectedFee);
+    }
+  }
+
+  /** Fees must be explicitly acknowledged when creating domains during the Expiry Access Period. */
+  static class FeesRequiredDuringExpiryAccessPeriodException
+      extends RequiredParameterMissingException {
+
+    public FeesRequiredDuringExpiryAccessPeriodException(Money expectedFee) {
+      super(
+          "Fees must be explicitly acknowledged when creating domains "
+              + "during the Expiry Access Period. The XAP fee is: "
               + expectedFee);
     }
   }

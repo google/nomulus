@@ -38,8 +38,6 @@ import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
 import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.KeyModule;
-import google.registry.module.RegistryComponent.RegistryModule;
-import google.registry.module.RequestComponent.RequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.mosapi.module.MosApiModule;
 import google.registry.persistence.PersistenceModule;
@@ -55,7 +53,7 @@ import google.registry.util.UtilsModule;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-/** Dagger component with instance lifetime. */
+/** Dagger component for the registry servlet. */
 @Singleton
 @Component(
     modules = {
@@ -74,14 +72,13 @@ import jakarta.inject.Singleton;
       GroupsModule.class,
       GroupssettingsModule.class,
       GsonModule.class,
-      MosApiModule.class,
       JSchModule.class,
       KeyModule.class,
       KeyringModule.class,
+      MosApiModule.class,
       NetHttpTransportModule.class,
       PersistenceModule.class,
-      RegistryModule.class,
-      RequestComponentModule.class,
+      RegistryComponent.RegistryModule.class,
       SecretManagerModule.class,
       ServerTridProviderModule.class,
       SheetsServiceModule.class,
@@ -90,15 +87,18 @@ import jakarta.inject.Singleton;
       UtilsModule.class,
       VoidDnsWriterModule.class,
     })
-interface RegistryComponent {
+public interface RegistryComponent {
   RequestHandler<RequestComponent> requestHandler();
+
+  RequestAuthenticator requestAuthenticator();
 
   Lazy<MetricReporter> metricReporter();
 
   @Config("projectId")
   String projectId();
 
-  @Module
+  /** Module for {@link RegistryComponent}. */
+  @Module(subcomponents = RequestComponent.class)
   class RegistryModule {
     @Provides
     static RequestHandler<RequestComponent> provideRequestHandler(

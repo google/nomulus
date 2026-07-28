@@ -37,21 +37,20 @@ public class RegistrarAddress extends Address {
     return new Builder(clone(this));
   }
 
+  @Override
+  public void validateState() {
+    super.validateState();
+    checkNotNull(forceEmptyToNull(getStreet()), "Missing street");
+    checkNotNull(getCity(), "Missing city");
+    checkNotNull(getCountryCode(), "Missing country code");
+  }
+
   /** Builder for {@link RegistrarAddress}. */
   public static class Builder extends Address.Builder<RegistrarAddress> {
     public Builder() {}
 
     private Builder(RegistrarAddress instance) {
       super(instance);
-    }
-
-    @Override
-    public RegistrarAddress build() {
-      RegistrarAddress instance = getInstance();
-      checkNotNull(forceEmptyToNull(instance.getStreet()), "Missing street");
-      checkNotNull(instance.getCity(), "Missing city");
-      checkNotNull(instance.getCountryCode(), "Missing country code");
-      return super.build();
     }
   }
 }

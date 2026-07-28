@@ -25,6 +25,7 @@ import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static org.mockito.Mockito.verify;
 
+import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -111,13 +112,16 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
   @Test
   void testNameserver_tldTithHyphenOn3And4_works() {
     createTld("zz--main-2166");
-    persistResource(makePunycodedHost("ns1.cat.zz--main-2166", "1.2.3.4", null, "TheRegistrar"));
+    Host host =
+        persistResource(
+            makePunycodedHost("ns1.cat.zz--main-2166", "1.2.3.4", null, "TheRegistrar"));
     assertAboutJson()
         .that(generateActualJson("ns1.cat.zz--main-2166"))
         .isEqualTo(
             addPermanentBoilerplateNotices(
                 jsonFileBuilder()
-                    .addNameserver("ns1.cat.zz--main-2166", "ns1.cat.zz--main-2166", "F-ROID")
+                    .addNameserver(
+                        "ns1.cat.zz--main-2166", "ns1.cat.zz--main-2166", host.getRepoId())
                     .putAll("ADDRESSTYPE", "v4", "ADDRESS", "1.2.3.4", "STATUS", "active")
                     .load("rdap_host.json")));
     assertThat(response.getStatus()).isEqualTo(200);

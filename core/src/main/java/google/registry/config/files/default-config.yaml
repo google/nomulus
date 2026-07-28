@@ -88,6 +88,28 @@ registryPolicy:
   # registrar
   registryAdminClientId: TheRegistrar
 
+  # Configuration for the Expiry Access Period (XAP) that occurs immediately
+  # following completion of a domain's deletion. This needs to be enabled on a
+  # per-TLD basis as well.
+  domainExpiryAccessPeriod:
+    # The length of the total expiry access period; defaults to 10 days.
+    totalLengthSeconds: 864000
+    # The length of each tier during the expiry access period; defaults to 1
+    # hour. The XAP fee remains constant for the duration of each tier. The
+    # total length must be evenly divisible by the tier length, i.e. there
+    # should be a whole number of tiers all the same length.
+    tierLengthSeconds: 3600
+    # The initial fee for the first tier when the expiry access period starts,
+    # specified for each currency this registry platform uses.
+    initialFee:
+      USD: 100000
+      JPY: 10000000
+    # The final fee for the last tier when the expiry access period ends,
+    # specified for each currency this registry platform uses.
+    finalFee:
+      USD: 10
+      JPY: 1000
+
   # Disclaimer at the top of the exported premium terms list.
   premiumTermsExportDisclaimer: |
     This list contains domains for the TLD offered at a premium price. This
@@ -368,6 +390,11 @@ rde:
   sshIdentityEmailAddress: rde@example.com
 
 registrarConsole:
+  # IAP service ID of the HTTP(s) load balancer that serves the console-api backend.
+  # Users created in the console will be bound only to this service to limit access.
+  # This is only applicable to non-group-based auth (if there is no consoleUserGroupEmailAddress)
+  consoleIapServiceId: null
+
   # DUM download file name, excluding the extension
   dumFileName: dum_file_name
 
@@ -397,6 +424,57 @@ monitoring:
 
   # How often metrics are exported to BigQuery.
   writeIntervalSeconds: 60
+
+  # What ratio of frontend request metrics should be stochastically recorded
+  # (0.0 means none, 1.0 means all). This is useful for reducing metrics volume,
+  # and thus cost, while still recording some information for performance
+  # monitoring purposes.
+  frontendMetricsRatio: 1.0
+
+  # What ratio of backend request metrics should be stochastically recorded
+  # (0.0 means none, 1.0 means all). This is useful for reducing metrics volume,
+  # and thus cost, while still recording some information for performance
+  # monitoring purposes.
+  backendMetricsRatio: 1.0
+
+eppServer:
+  # The integrated EPP server listens on this port.
+  port: 30002
+  # Health check port used by GCP load balancer.
+  healthCheckPort: 30000
+  # GCS bucket that stores the encrypted PEM file.
+  sslPemBucket: your-gcs-bucket
+  # Name of the encrypted PEM file.
+  sslPemFilename: your-pem-filename
+  # Cloud KMS details for certificate decryption.
+  kmsLocation: your-kms-location
+  kmsKeyRing: your-kms-keyRing
+  kmsCryptoKey: your-kms-cryptoKey
+
+  # Maximum input message length in bytes.
+  maxMessageLengthBytes: 1073741824
+  # Length of the header field in bytes (RFC 5734).
+  headerLengthBytes: 4
+  # Time after which an idle connection will be closed.
+  readTimeoutSeconds: 3600
+  # Max concurrent connections per IP address.
+  maxConnectionsPerIp: 10
+  # Max concurrent connections per authenticated certificate.
+  maxConnectionsPerCert: 10
+  # Server certificate cache duration.
+  serverCertificateCacheSeconds: 1800
+
+  # Quota configuration for EPP
+  quota:
+    refreshSeconds: 0
+    defaultQuota:
+      userId: []
+      tokenAmount: 100
+      refillSeconds: 0
+    # To implement a shared quota group across multiple registrars, place a virtual 
+    # group name as the FIRST element of the userId list. 
+    # e.g., userId: ["my_group", "registrar1", "registrar2"]
+    customQuota: []
 
 misc:
   # The ID of the Google Sheet (as found in the URL) to export registrar details

@@ -20,6 +20,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainAuthInfo;
+import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.util.DomainNameUtils;
 import java.util.List;
@@ -31,6 +33,12 @@ final class GetDomainCommand extends GetEppResourceCommand {
 
   @Parameter(names = "--show_deleted", description = "Include deleted domains in the print out")
   private boolean showDeleted = false;
+
+  @Parameter(
+      names = "--show_authcode",
+      description = "Include domain authentication code in output",
+      arity = 1)
+  private boolean showAuthcode = false;
 
   @Parameter(
       description = "Fully qualified domain name(s)",
@@ -51,14 +59,26 @@ final class GetDomainCommand extends GetEppResourceCommand {
                         .stream()
                         .forEach(
                             d -> {
-                              printResource("Domain", canonicalDomain, Optional.of(d));
+                              printResource(
+                                  "Domain", canonicalDomain, Optional.of(censorAuthcode(d)));
                             }));
       } else {
         printResource(
             "Domain",
             canonicalDomain,
-            ForeignKeyUtils.loadResource(Domain.class, canonicalDomain, readTimestamp));
+            ForeignKeyUtils.loadResource(Domain.class, canonicalDomain, readTimestamp)
+                .map(this::censorAuthcode));
       }
     }
+  }
+
+  private Domain censorAuthcode(Domain domain) {
+    if (showAuthcode || domain.getAuthInfo() == null) {
+      return domain;
+    }
+    return domain
+        .asBuilder()
+        .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("[REDACTED]")))
+        .build();
   }
 }

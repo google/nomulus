@@ -27,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar.Type;
@@ -56,11 +58,17 @@ class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
     command.printStream = System.out;
   }
 
+  private static final User ADMIN_USER =
+      new User.Builder()
+          .setEmailAddress("admin@theregistrar.com")
+          .setUserRoles(new UserRoles.Builder().setIsAdmin(true).build())
+          .build();
+
   private Domain persistLockedDomain(String domainName, String registrarId) {
     Domain domain = persistResource(DatabaseHelper.newDomain(domainName));
     RegistryLock lock =
         command.domainLockUtils.saveNewRegistryLockRequest(domainName, registrarId, null, true);
-    command.domainLockUtils.verifyVerificationCode(lock.getVerificationCode(), true);
+    command.domainLockUtils.verifyVerificationCode(lock.getVerificationCode(), ADMIN_USER);
     return reloadResource(domain);
   }
 

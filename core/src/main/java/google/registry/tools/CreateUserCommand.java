@@ -38,6 +38,10 @@ public class CreateUserCommand extends CreateOrUpdateUserCommand implements Comm
   @Config("gSuiteConsoleUserGroupEmailAddress")
   Optional<String> maybeGroupEmailAddress;
 
+  @Inject
+  @Config("consoleIapServiceId")
+  Optional<String> consoleIapServiceId;
+
   @Nullable
   @Override
   User getExistingUser(String email) {
@@ -49,7 +53,8 @@ public class CreateUserCommand extends CreateOrUpdateUserCommand implements Comm
   @Override
   protected String execute() throws Exception {
     String ret = super.execute();
-    grantIapPermission(email, maybeGroupEmailAddress, null, connection, iamClient);
+    grantIapPermission(
+        email, maybeGroupEmailAddress, consoleIapServiceId, null, connection, iamClient);
     return ret;
   }
 

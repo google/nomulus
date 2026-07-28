@@ -32,7 +32,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -42,6 +41,7 @@ import com.google.protobuf.ByteString;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.request.HttpException.BadRequestException;
+import google.registry.request.HttpException.PayloadTooLargeException;
 import google.registry.request.HttpException.UnsupportedMediaTypeException;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.lock.LockHandler;
@@ -50,12 +50,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Optional;
 
 /** Dagger module for servlets. */
 @Module
 public final class RequestModule {
+
+  public static final int MAX_PAYLOAD_BYTES = 50 * 1024 * 1024;
 
   private final HttpServletRequest req;
   private final HttpServletResponse rsp;
@@ -167,9 +170,37 @@ public final class RequestModule {
 
   @Provides
   @Payload
-  static String providePayloadAsString(HttpServletRequest req) {
+  public static String providePayloadAsString(
+      @Payload byte[] payloadBytes, HttpServletRequest req) {
+    String charsetName = req.getCharacterEncoding();
+    Charset charset;
     try {
-      return CharStreams.toString(req.getReader());
+      charset = (charsetName != null) ? Charset.forName(charsetName) : UTF_8;
+    } catch (IllegalArgumentException e) {
+      throw new UnsupportedMediaTypeException("Unsupported charset: " + charsetName, e);
+    }
+    return new String(payloadBytes, charset);
+  }
+
+  @Provides
+  @Payload
+  public static byte[] providePayloadAsBytes(HttpServletRequest req) {
+    try {
+      if (req.getContentLengthLong() > MAX_PAYLOAD_BYTES) {
+        throw new PayloadTooLargeException(
+            String.format(
+                "Payload size %d exceeds limit of %d bytes",
+                req.getContentLengthLong(), MAX_PAYLOAD_BYTES));
+      }
+      if (req.getInputStream() == null) {
+        return new byte[0];
+      }
+      byte[] bytes =
+          ByteStreams.toByteArray(ByteStreams.limit(req.getInputStream(), MAX_PAYLOAD_BYTES + 1));
+      if (bytes.length > MAX_PAYLOAD_BYTES) {
+        throw new PayloadTooLargeException("Payload exceeds maximum allowed size");
+      }
+      return bytes;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -177,22 +208,8 @@ public final class RequestModule {
 
   @Provides
   @Payload
-  static byte[] providePayloadAsBytes(HttpServletRequest req) {
-    try {
-      return ByteStreams.toByteArray(req.getInputStream());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Provides
-  @Payload
-  static ByteString providePayloadAsByteString(HttpServletRequest req) {
-    try {
-      return ByteString.copyFrom(ByteStreams.toByteArray(req.getInputStream()));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  public static ByteString providePayloadAsByteString(@Payload byte[] payloadBytes) {
+    return ByteString.copyFrom(payloadBytes);
   }
 
   @Provides
@@ -251,12 +268,10 @@ public final class RequestModule {
 
   @Provides
   @OptionalJsonPayload
-  public static Optional<JsonElement> provideJsonBody(HttpServletRequest req, Gson gson) {
-    try {
-      // GET requests return a null reader and thus a null JsonObject, which is fine
-      return Optional.ofNullable(gson.fromJson(req.getReader(), JsonElement.class));
-    } catch (IOException e) {
+  public static Optional<JsonElement> provideJsonBody(@Payload String payloadString, Gson gson) {
+    if (payloadString.isEmpty()) {
       return Optional.empty();
     }
+    return Optional.ofNullable(gson.fromJson(payloadString, JsonElement.class));
   }
 }

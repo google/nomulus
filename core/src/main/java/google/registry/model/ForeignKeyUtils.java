@@ -16,6 +16,7 @@ package google.registry.model;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
@@ -399,5 +400,25 @@ public final class ForeignKeyUtils {
             .get(VKey.create(clazz, foreignKey))
             .filter(e -> now.isBefore(e.getDeletionTime()))
             .map(e -> e.cloneProjectedAtTime(now));
+  }
+
+  /**
+   * Loads the last created version of multiple {@link EppResource}s from the replica database by
+   * foreign keys, using a cache.
+   *
+   * <p>This method ignores the config setting for caching, and is reserved for use cases that can
+   * tolerate slightly stale data.
+   */
+  @SuppressWarnings("unchecked")
+  public static <E extends EppResource> ImmutableMap<String, E> loadResourcesByCache(
+      Class<E> clazz, Collection<String> foreignKeys, Instant now) {
+    ImmutableSet<VKey<? extends EppResource>> vkeys =
+        foreignKeys.stream().map(fk -> VKey.create(clazz, fk)).collect(toImmutableSet());
+    return foreignKeyToResourceCache.getAll(vkeys).entrySet().stream()
+        .filter(e -> e.getValue().isPresent() && now.isBefore(e.getValue().get().getDeletionTime()))
+        .collect(
+            toImmutableMap(
+                e -> (String) e.getKey().getKey(),
+                e -> (E) e.getValue().get().cloneProjectedAtTime(now)));
   }
 }

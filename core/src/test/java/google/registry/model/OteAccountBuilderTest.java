@@ -116,6 +116,7 @@ public final class OteAccountBuilderTest {
   public static void verifyIapPermission(
       @Nullable String emailAddress,
       Optional<String> maybeGroupEmailAddress,
+      Optional<String> consoleIapServiceId,
       CloudTasksHelper cloudTasksHelper,
       IamClient iamClient) {
     if (emailAddress == null) {
@@ -125,7 +126,8 @@ public final class OteAccountBuilderTest {
       String groupEmailAddress = maybeGroupEmailAddress.orElse(null);
       if (groupEmailAddress == null) {
         cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
-        verify(iamClient).addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
+        verify(iamClient)
+            .addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE, consoleIapServiceId.get());
       } else {
         cloudTasksHelper.assertTasksEnqueued(
             "console-user-group-update",
@@ -146,9 +148,32 @@ public final class OteAccountBuilderTest {
     CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     OteAccountBuilder.forRegistrarId("myclientid")
         .addUser("email@example.com")
-        .grantIapPermission(Optional.of("console@example.com"), cloudTasksUtils, iamClient);
+        .grantIapPermission(
+            Optional.of("console@example.com"),
+            Optional.of("consoleIapServiceId"),
+            cloudTasksUtils,
+            iamClient);
     verifyIapPermission(
-        "email@example.com", Optional.of("console@example.com"), cloudTasksHelper, iamClient);
+        "email@example.com",
+        Optional.of("console@example.com"),
+        Optional.of("consoleIapServiceId"),
+        cloudTasksHelper,
+        iamClient);
+  }
+
+  @Test
+  void testUpdateUserGroup_worksWithoutIapServiceId() {
+    CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    OteAccountBuilder.forRegistrarId("myclientid")
+        .addUser("email@example.com")
+        .grantIapPermission(
+            Optional.of("console@example.com"), Optional.empty(), cloudTasksUtils, iamClient);
+    verifyIapPermission(
+        "email@example.com",
+        Optional.of("console@example.com"),
+        Optional.empty(),
+        cloudTasksHelper,
+        iamClient);
   }
 
   @Test
@@ -156,8 +181,14 @@ public final class OteAccountBuilderTest {
     CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     OteAccountBuilder.forRegistrarId("myclientid")
         .addUser("email@example.com")
-        .grantIapPermission(Optional.empty(), cloudTasksUtils, iamClient);
-    verifyIapPermission("email@example.com", Optional.empty(), cloudTasksHelper, iamClient);
+        .grantIapPermission(
+            Optional.empty(), Optional.of("consoleIapServiceId"), cloudTasksUtils, iamClient);
+    verifyIapPermission(
+        "email@example.com",
+        Optional.empty(),
+        Optional.of("consoleIapServiceId"),
+        cloudTasksHelper,
+        iamClient);
   }
 
   @Test

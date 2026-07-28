@@ -51,6 +51,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.validation.Schema;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -84,6 +85,27 @@ public class TmchXmlSignature {
     checkArgument(smdXml.length > 0);
     Document doc = parseSmdDocument(new ByteArrayInputStream(smdXml));
 
+    // Verify root element is <smd:signedMark> in correct namespace
+    Element rootElement = doc.getDocumentElement();
+    if (!"signedMark".equals(rootElement.getLocalName())
+        || !"urn:ietf:params:xml:ns:signedMark-1.0".equals(rootElement.getNamespaceURI())) {
+      throw new XMLSignatureException(
+          "Root element must be signedMark in namespace urn:ietf:params:xml:ns:signedMark-1.0");
+    }
+
+    // Assert exactly one <smd:signedMark> element exists in the DOM to prevent wrapping/nesting
+    NodeList signedMarkNodes =
+        doc.getElementsByTagNameNS("urn:ietf:params:xml:ns:signedMark-1.0", "signedMark");
+    if (signedMarkNodes.getLength() != 1) {
+      throw new XMLSignatureException(
+          "Expected exactly one <smd:signedMark> element in the document.");
+    }
+
+    String rootId = rootElement.getAttribute("id");
+    if (rootId.isEmpty()) {
+      throw new XMLSignatureException("Root signedMark element must have an id attribute.");
+    }
+
     NodeList signatureNodes = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
     if (signatureNodes.getLength() != 1) {
       throw new XMLSignatureException("Expected exactly one <ds:Signature> element.");
@@ -91,7 +113,19 @@ public class TmchXmlSignature {
     XMLSignatureFactory factory = XMLSignatureFactory.getInstance("DOM");
     KeyValueKeySelector selector = new KeyValueKeySelector(tmchCertificateAuthority);
     DOMValidateContext context = new DOMValidateContext(selector, signatureNodes.item(0));
+
+    // Explicitly register the root ID attribute in the validation context just in case
+    context.setIdAttributeNS(rootElement, null, "id");
+
     XMLSignature signature = factory.unmarshalXMLSignature(context);
+
+    // Verify that the signature Reference URI matches the root element ID ("#" + rootId)
+    String expectedUri = String.format("#%s", rootId);
+    List<Reference> references = signature.getSignedInfo().getReferences();
+    if (references.stream().noneMatch(ref -> expectedUri.equals(ref.getURI()))) {
+      throw new XMLSignatureException(
+          "Signature Reference URI does not match the root element ID.");
+    }
 
     boolean isValid;
     try {

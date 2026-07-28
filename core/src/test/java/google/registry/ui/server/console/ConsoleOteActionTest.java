@@ -144,6 +144,7 @@ class ConsoleOteActionTest extends ConsoleActionBaseTestCase {
     verifyIapPermission(
         "contact@registry.example",
         Optional.of("someRandomString@email.test"),
+        Optional.of("consoleIapServiceId"),
         cloudTasksHelper,
         iamClient);
   }
@@ -216,6 +217,7 @@ class ConsoleOteActionTest extends ConsoleActionBaseTestCase {
         iamClient,
         registrarId,
         maybeGroupEmailAddress,
+        Optional.of("consoleIapServiceId"),
         passwordGenerator,
         oteCreateData);
   }

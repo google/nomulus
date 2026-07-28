@@ -86,6 +86,10 @@ final class SetupOteCommand extends ConfirmingCommand {
   @Config("gSuiteConsoleUserGroupEmailAddress")
   Optional<String> maybeGroupEmailAddress;
 
+  @Inject
+  @Config("consoleIapServiceId")
+  Optional<String> consoleIapServiceId;
+
   OteAccountBuilder oteAccountBuilder;
   String password;
 
@@ -138,7 +142,8 @@ you sure you didn't mean to run this against sandbox (e.g. "-e SANDBOX")?\
   @Override
   public String execute() {
     ImmutableMap<String, String> clientIdToTld = oteAccountBuilder.buildAndPersist();
-    oteAccountBuilder.grantIapPermission(maybeGroupEmailAddress, cloudTasksUtils, iamClient);
+    oteAccountBuilder.grantIapPermission(
+        maybeGroupEmailAddress, consoleIapServiceId, cloudTasksUtils, iamClient);
 
     StringBuilder output = new StringBuilder();
 

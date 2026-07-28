@@ -15,13 +15,18 @@
 package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.flows.domain.DomainFlowUtils.isDomainEligibleForXap;
 import static google.registry.flows.domain.DomainFlowUtils.zeroInCurrency;
 import static google.registry.flows.domain.token.AllocationTokenFlowUtils.discountTokenInvalidForPremiumName;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Range;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.custom.DomainPricingCustomLogic;
 import google.registry.flows.custom.DomainPricingCustomLogic.CreatePriceParameters;
@@ -31,6 +36,7 @@ import google.registry.flows.custom.DomainPricingCustomLogic.TransferPriceParame
 import google.registry.flows.custom.DomainPricingCustomLogic.UpdatePriceParameters;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingRecurrence;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.fee.BaseFee;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
@@ -40,7 +46,9 @@ import google.registry.model.domain.token.AllocationToken.TokenBehavior;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
 import google.registry.model.tld.Tld;
 import jakarta.inject.Inject;
+import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -54,11 +62,28 @@ import org.joda.money.Money;
  */
 public final class DomainPricingLogic {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   private final DomainPricingCustomLogic customLogic;
+  private final Duration expiryAccessPeriodTotalLength;
+  private final Duration expiryAccessPeriodTierLength;
+  private final ImmutableMap<CurrencyUnit, BigDecimal> expiryAccessPeriodInitialFee;
+  private final ImmutableMap<CurrencyUnit, BigDecimal> expiryAccessPeriodFinalFee;
 
   @Inject
-  public DomainPricingLogic(DomainPricingCustomLogic customLogic) {
+  public DomainPricingLogic(
+      DomainPricingCustomLogic customLogic,
+      @Config("domainExpiryAccessPeriodTotalLength") Duration expiryAccessPeriodTotalLength,
+      @Config("domainExpiryAccessPeriodTierLength") Duration expiryAccessPeriodTierLength,
+      @Config("domainExpiryAccessPeriodInitialFee")
+          ImmutableMap<CurrencyUnit, BigDecimal> expiryAccessPeriodInitialFee,
+      @Config("domainExpiryAccessPeriodFinalFee")
+          ImmutableMap<CurrencyUnit, BigDecimal> expiryAccessPeriodFinalFee) {
     this.customLogic = customLogic;
+    this.expiryAccessPeriodTotalLength = expiryAccessPeriodTotalLength;
+    this.expiryAccessPeriodTierLength = expiryAccessPeriodTierLength;
+    this.expiryAccessPeriodInitialFee = expiryAccessPeriodInitialFee;
+    this.expiryAccessPeriodFinalFee = expiryAccessPeriodFinalFee;
   }
 
   /**
@@ -71,35 +96,23 @@ public final class DomainPricingLogic {
       Tld tld,
       String domainName,
       Instant dateTime,
+      Optional<Domain> recentlyDeletedDomain,
       int years,
       boolean isAnchorTenant,
       boolean isSunriseCreate,
       Optional<AllocationToken> allocationToken)
       throws EppException {
     CurrencyUnit currency = tld.getCurrency();
-
-    BaseFee createFee;
-    // Domain create cost is always zero for anchor tenants
-    if (isAnchorTenant) {
-      createFee = Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
-    } else {
-      DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
-      if (allocationToken.isPresent()) {
-        // Handle any special NONPREMIUM / SPECIFIED cases configured in the token
-        domainPrices =
-            applyTokenToDomainPrices(domainPrices, tld, dateTime, years, allocationToken.get());
-      }
-      Money domainCreateCost =
-          getDomainCreateCostWithDiscount(domainPrices, years, allocationToken, tld);
-      // Apply a sunrise discount if configured and applicable
-      if (isSunriseCreate) {
-        domainCreateCost =
-            domainCreateCost.multipliedBy(
-                1.0d - RegistryConfig.getSunriseDomainCreateDiscount(), RoundingMode.HALF_EVEN);
-      }
-      createFee =
-          Fee.create(domainCreateCost.getAmount(), FeeType.CREATE, domainPrices.isPremium());
-    }
+    Fee createFee =
+        computeCreateFee(
+            tld,
+            domainName,
+            dateTime,
+            years,
+            isAnchorTenant,
+            isSunriseCreate,
+            allocationToken,
+            currency);
 
     // Create fees for the cost and the EAP fee, if any.
     Fee eapFee = tld.getEapFeeFor(dateTime);
@@ -109,6 +122,7 @@ public final class DomainPricingLogic {
     if (!isAnchorTenant && !eapFee.hasZeroCost()) {
       feesBuilder.addFeeOrCredit(eapFee);
     }
+    maybeAddXapFee(tld, dateTime, recentlyDeletedDomain, currency, feesBuilder);
 
     // Apply custom logic to the create fee, if any.
     return customLogic.customizeCreatePrice(
@@ -119,6 +133,113 @@ public final class DomainPricingLogic {
             .setAsOfDate(dateTime)
             .setYears(years)
             .build());
+  }
+
+  private Fee computeCreateFee(
+      Tld tld,
+      String domainName,
+      Instant dateTime,
+      int years,
+      boolean isAnchorTenant,
+      boolean isSunriseCreate,
+      Optional<AllocationToken> allocationToken,
+      CurrencyUnit currency)
+      throws EppException {
+    // Domain create cost is always zero for anchor tenants
+    if (isAnchorTenant) {
+      return Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
+    }
+    DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
+    if (allocationToken.isPresent()) {
+      // Handle any special NONPREMIUM / SPECIFIED cases configured in the token
+      domainPrices =
+          applyTokenToDomainPrices(domainPrices, tld, dateTime, years, allocationToken.get());
+    }
+    Money domainCreateCost =
+        getDomainCreateCostWithDiscount(domainPrices, years, allocationToken, tld);
+    // Apply a sunrise discount if configured and applicable
+    if (isSunriseCreate) {
+      domainCreateCost =
+          domainCreateCost.multipliedBy(
+              1.0d - RegistryConfig.getSunriseDomainCreateDiscount(), RoundingMode.HALF_EVEN);
+    }
+    return Fee.create(domainCreateCost.getAmount(), FeeType.CREATE, domainPrices.isPremium());
+  }
+
+  private void maybeAddXapFee(
+      Tld tld,
+      Instant dateTime,
+      Optional<Domain> recentlyDeletedDomain,
+      CurrencyUnit currency,
+      FeesAndCredits.Builder feesBuilder) {
+    if (tld.getExpiryAccessPeriodModeAt(dateTime) == Tld.ExpiryAccessPeriodMode.ENABLED
+        && recentlyDeletedDomain.isPresent()
+        && isDomainEligibleForXap(recentlyDeletedDomain.get(), tld, dateTime)) {
+      Optional<Fee> xapFee =
+          getXapFeeFor(dateTime, recentlyDeletedDomain.get().getDeletionTime(), currency);
+      xapFee.ifPresent(
+          fee -> {
+            feesBuilder.addFeeOrCredit(fee);
+            if (!fee.hasZeroCost()) {
+              feesBuilder.setFeeExtensionRequired(true);
+            }
+          });
+    }
+  }
+
+  /**
+   * Calculates and returns the Expiry Access Fee for a recently deleted domain at the given time.
+   */
+  Optional<Fee> getXapFeeFor(Instant dateTime, Instant deletionTime, CurrencyUnit currency) {
+    Duration elapsedTimeInXap = Duration.between(deletionTime, dateTime);
+    if (!expiryAccessPeriodInitialFee.containsKey(currency)
+        || !expiryAccessPeriodFinalFee.containsKey(currency)) {
+      // If the XAP schedule hasn't been configured in YAML for the currency this TLD uses, log the
+      // error and then short-circuit return (to allow the EPP flow to continue normally).
+      logger.atSevere().log(
+          "Expiry Access Period configuration is lacking initial or final fees for currency %s.",
+          currency);
+      return Optional.empty();
+    }
+
+    // Determine which tier the current time falls into (0-indexed).
+    long tier = elapsedTimeInXap.toMillis() / expiryAccessPeriodTierLength.toMillis();
+    long numTiers =
+        expiryAccessPeriodTotalLength.toMillis() / expiryAccessPeriodTierLength.toMillis();
+    if (tier < 0 || tier >= numTiers) {
+      return Optional.empty();
+    }
+
+    // Calculate the parameters for the geometric sequence: XAP fee = initialFee * ratio ^ tier.
+    BigDecimal xapFee;
+    if (expiryAccessPeriodInitialFee.get(currency).signum() == 0 || numTiers <= 1 || tier == 0) {
+      xapFee =
+          expiryAccessPeriodInitialFee
+              .get(currency)
+              .setScale(currency.getDecimalPlaces(), RoundingMode.HALF_EVEN);
+    } else {
+      double base =
+          expiryAccessPeriodFinalFee.get(currency).doubleValue()
+              / expiryAccessPeriodInitialFee.get(currency).doubleValue();
+      double exponent = 1.0 / (numTiers - 1.0);
+      BigDecimal ratio = BigDecimal.valueOf(Math.pow(base, exponent));
+      BigDecimal fee = expiryAccessPeriodInitialFee.get(currency).multiply(ratio.pow((int) tier));
+      xapFee = fee.setScale(currency.getDecimalPlaces(), RoundingMode.HALF_EVEN);
+    }
+
+    Range<Instant> validPeriod =
+        Range.closedOpen(
+            deletionTime.plus(expiryAccessPeriodTierLength.multipliedBy(tier)),
+            deletionTime.plus(expiryAccessPeriodTierLength.multipliedBy(tier + 1)));
+    return Optional.of(
+        Fee.create(
+            xapFee,
+            FeeType.XAP,
+            // An XAP fee does not count as premium -- it's a separate one-time fee, independent of
+            // which the domain is separately considered standard vs premium.
+            false,
+            validPeriod,
+            validPeriod.upperEndpoint()));
   }
 
   /** Returns a new renewal cost for the pricer. */

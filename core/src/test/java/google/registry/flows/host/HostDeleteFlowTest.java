@@ -42,6 +42,7 @@ import google.registry.flows.exceptions.ResourceToDeleteIsReferencedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
+import google.registry.flows.host.HostFlowUtils.SuperordinateDomainServerUpdateProhibitedException;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -358,6 +359,25 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
     setEppInput("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld."));
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_superordinateDomainIsServerUpdateProhibited() {
+    createTld("tld");
+    Domain domain =
+        persistResource(
+            DatabaseHelper.newDomain("example.tld")
+                .asBuilder()
+                .setStatusValues(ImmutableSet.of(StatusValue.SERVER_UPDATE_PROHIBITED))
+                .build());
+    persistResource(
+        newHost("ns1.example.tld").asBuilder().setSuperordinateDomain(domain.createVKey()).build());
+    clock.advanceOneMilli();
+    SuperordinateDomainServerUpdateProhibitedException thrown =
+        assertThrows(SuperordinateDomainServerUpdateProhibitedException.class, this::runFlow);
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Superordinate domain for this hostname has serverUpdateProhibited status");
   }
 
   @Test

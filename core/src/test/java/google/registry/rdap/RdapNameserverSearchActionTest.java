@@ -29,6 +29,7 @@ import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mockito.Mockito.clearInvocations;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -46,6 +47,7 @@ import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FullFieldsTestEntityHelper;
 import java.net.URLDecoder;
+import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -428,7 +430,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     action.registrarParam = Optional.of("unicoderegistrar");
     generateActualJsonWithName("ns*.cat.lol");
     assertThat(response.getStatus()).isEqualTo(404);
-    verifyErrorMetrics(Optional.of(2L), 404);
+    verifyErrorMetrics(Optional.of(0L), 404);
   }
 
   @Test
@@ -446,6 +448,30 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   }
 
   @Test
+  void testNameMatch_star_cat_lol_usesForeignKeyCache() {
+    generateActualJsonWithName("*.cat.lol");
+    assertThat(response.getStatus()).isEqualTo(200);
+    verifyMetrics(2);
+    clearInvocations(rdapMetrics);
+
+    Instant newTransferTime = clock.now();
+    persistResource(hostNs1CatLol.asBuilder().setLastTransferTime(newTransferTime).build());
+    clock.advanceOneMilli();
+
+    action.response = new FakeResponse();
+    generateActualJsonWithName("*.cat.lol");
+    assertThat(response.getStatus()).isEqualTo(200);
+    verifyMetrics(2);
+
+    JsonObject searchResults =
+        parseJsonObject(response.getPayload())
+            .getAsJsonArray("nameserverSearchResults")
+            .get(0)
+            .getAsJsonObject();
+    assertThat(searchResults.toString()).doesNotContain(newTransferTime.toString());
+  }
+
+  @Test
   void testNameMatch_star_cat_lol_found_sameRegistrarRequested() {
     action.registrarParam = Optional.of("TheRegistrar");
     generateActualJsonWithName("*.cat.lol");
@@ -458,7 +484,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     action.registrarParam = Optional.of("unicoderegistrar");
     generateActualJsonWithName("*.cat.lol");
     assertThat(response.getStatus()).isEqualTo(404);
-    verifyErrorMetrics(Optional.of(2L), 404);
+    verifyErrorMetrics(Optional.of(0L), 404);
   }
 
   @Test
@@ -521,7 +547,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
                 "rdap_truncated_hosts.json", "QUERY", "name=nsx*.cat.lol&cursor=bnN4NC5jYXQubG9s"));
     assertThat(response.getStatus()).isEqualTo(200);
     // When searching names, we look for additional matches, in case some are not visible.
-    verifyMetrics(9, IncompletenessWarningType.TRUNCATED);
+    verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
 
   @Test
@@ -536,7 +562,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
                     .putAll("ADDRESSTYPE", "v6", "ADDRESS", "bad:f00d:cafe::15:beef")
                     .load("rdap_host_linked.json")));
     assertThat(response.getStatus()).isEqualTo(200);
-    verifyMetrics(2);
+    verifyMetrics(1);
   }
 
   @Test

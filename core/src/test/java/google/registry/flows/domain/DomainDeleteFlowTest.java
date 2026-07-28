@@ -402,6 +402,36 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_STD_1_0_MAP);
   }
 
+  @Test
+  void testSuccess_addGracePeriodDelete_doesNotRefundXapFee() throws Exception {
+    setUpSuccessfulTest();
+    BillingEvent createBillingEvent =
+        persistResource(createBillingEvent(Reason.CREATE, Money.of(USD, 123)));
+    BillingEvent xapBillingEvent =
+        persistResource(createBillingEvent(Reason.FEE_EXPIRY_ACCESS, Money.of(USD, 100)));
+    setUpGracePeriods(
+        GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), createBillingEvent));
+    assertPollMessages(createAutorenewPollMessage("TheRegistrar").build());
+    clock.advanceOneMilli();
+    runFlowAssertResponse(loadFile("domain_delete_response_fee.xml", FEE_STD_1_0_MAP));
+    assertThat(reloadResourceByForeignKey()).isNull();
+    DomainHistory historyEntryDomainDelete =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE, DomainHistory.class);
+    assertBillingEvents(
+        createAutorenewBillingEvent("TheRegistrar").setRecurrenceEndTime(clock.now()).build(),
+        createBillingEvent,
+        xapBillingEvent,
+        new BillingCancellation.Builder()
+            .setReason(Reason.CREATE)
+            .setTargetId("example.tld")
+            .setRegistrarId("TheRegistrar")
+            .setEventTime(clock.now())
+            .setBillingTime(plusDays(TIME_BEFORE_FLOW, 1))
+            .setBillingEvent(createBillingEvent.createVKey())
+            .setDomainHistory(historyEntryDomainDelete)
+            .build());
+  }
+
   private void doSuccessfulTest_noAddGracePeriod(String responseFilename) throws Exception {
     doSuccessfulTest_noAddGracePeriod(responseFilename, ImmutableMap.of());
   }

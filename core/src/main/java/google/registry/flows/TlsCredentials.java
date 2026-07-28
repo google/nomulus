@@ -260,7 +260,7 @@ public class TlsCredentials implements TransportCredentials {
     static Optional<InetAddress> provideIpAddress(HttpServletRequest req) {
       Optional<String> clientAddress = extractOptionalHeader(req, ProxyHttpHeaders.IP_ADDRESS);
       Optional<String> fallbackClientAddress =
-          extractOptionalHeader(req, ProxyHttpHeaders.IP_ADDRESS);
+          extractOptionalHeader(req, ProxyHttpHeaders.FALLBACK_IP_ADDRESS);
       Optional<InetAddress> clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
       return clientInetAddr.isPresent()
           ? clientInetAddr

@@ -15,6 +15,7 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
@@ -38,7 +39,6 @@ import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Action(
     service = Service.CONSOLE,
@@ -69,22 +69,23 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
 
     tm().transact(
             () -> {
-              Optional<Registrar> existingRegistrar =
-                  Registrar.loadByRegistrarId(registrarParam.getRegistrarId());
-              checkArgument(
-                  !existingRegistrar.isEmpty(),
-                  "Registrar with registrarId %s doesn't exists",
-                  registrarParam.getRegistrarId());
+              Registrar existingRegistrar =
+                  Registrar.loadByRegistrarId(registrarParam.getRegistrarId())
+                      .orElseThrow(
+                          () ->
+                              new IllegalArgumentException(
+                                  String.format(
+                                      "Registrar %s does not exist",
+                                      registrarParam.getRegistrarId())));
 
               // Only allow modifying allowed TLDs if we're in a non-PRODUCTION environment, if the
               // registrar is not REAL, or the registrar has a RDAP abuse contact set.
               if (!registrarParam.getAllowedTlds().isEmpty()) {
-                boolean isRealRegistrar =
-                    Registrar.Type.REAL.equals(existingRegistrar.get().getType());
+                boolean isRealRegistrar = Registrar.Type.REAL.equals(existingRegistrar.getType());
                 if (RegistryEnvironment.PRODUCTION.equals(RegistryEnvironment.get())
                     && isRealRegistrar) {
                   checkArgumentPresent(
-                      existingRegistrar.get().getRdapAbuseContact(),
+                      existingRegistrar.getRdapAbuseContact(),
                       "Cannot modify allowed TLDs if there is no RDAP abuse contact set. Please"
                           + " use the \"nomulus registrar_contact\" command on this registrar to"
                           + " set a RDAP abuse contact.");
@@ -103,20 +104,27 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
 
               var updatedRegistrarBuilder =
                   existingRegistrar
-                      .get()
                       .asBuilder()
                       .setLastPocVerificationDate(newLastPocVerificationDate);
 
-              if (user.getUserRoles()
-                  .hasGlobalPermission(ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
-                updatedRegistrarBuilder =
-                    updatedRegistrarBuilder
-                        .setAllowedTlds(
-                            registrarParam.getAllowedTlds().stream()
-                                .map(DomainNameUtils::canonicalizeHostname)
-                                .collect(Collectors.toSet()))
-                        .setRegistryLockAllowed(registrarParam.isRegistryLockAllowed())
-                        .setLastPocVerificationDate(newLastPocVerificationDate);
+              if (!registrarParam.getAllowedTlds().equals(existingRegistrar.getAllowedTlds())) {
+                // The global permission EDIT_REGISTRAR_DETAILS signifies a support agent who *does*
+                // have the ability to edit allowed TLDs. See support docs 2.19: "Enabling TLD
+                // Access in Production"
+                checkGlobalPermission(user, ConsolePermission.EDIT_REGISTRAR_DETAILS);
+                updatedRegistrarBuilder.setAllowedTlds(
+                    registrarParam.getAllowedTlds().stream()
+                        .map(DomainNameUtils::canonicalizeHostname)
+                        .collect(toImmutableSet()));
+              }
+
+              if (registrarParam.isRegistryLockAllowed()
+                  != existingRegistrar.isRegistryLockAllowed()) {
+                // Enabling registry lock requires a support lead or FTE, which maps to
+                // MANAGE_REGISTRARS. See support docs 2.33: "Registry Lock Onboarding Process"
+                checkGlobalPermission(user, ConsolePermission.MANAGE_REGISTRARS);
+                updatedRegistrarBuilder.setRegistryLockAllowed(
+                    registrarParam.isRegistryLockAllowed());
               }
 
               var updatedRegistrar = updatedRegistrarBuilder.build();
@@ -126,14 +134,11 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
                       .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
                       .setDescription(updatedRegistrar.getRegistrarId()));
 
-              logConsoleChangesIfNecessary(updatedRegistrar, existingRegistrar.get());
+              logConsoleChangesIfNecessary(updatedRegistrar, existingRegistrar);
 
               sendExternalUpdatesIfNecessary(
                   EmailInfo.create(
-                      existingRegistrar.get(),
-                      updatedRegistrar,
-                      ImmutableSet.of(),
-                      ImmutableSet.of()));
+                      existingRegistrar, updatedRegistrar, ImmutableSet.of(), ImmutableSet.of()));
             });
 
     consoleApiParams.response().setStatus(SC_OK);

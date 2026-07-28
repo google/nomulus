@@ -28,6 +28,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.lookupSuperordinateDomain;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotInPendingDelete;
+import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotServerUpdateProhibited;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -98,6 +99,7 @@ import java.util.Optional;
  * @error {@link HostFlowUtils.InvalidHostNameException}
  * @error {@link HostFlowUtils.SuperordinateDomainDoesNotExistException}
  * @error {@link HostFlowUtils.SuperordinateDomainInPendingDeleteException}
+ * @error {@link HostFlowUtils.SuperordinateDomainServerUpdateProhibitedException}
  * @error {@link CannotAddIpToExternalHostException}
  * @error {@link CannotRemoveSubordinateHostLastIpException}
  * @error {@link CannotRenameExternalHostException}
@@ -152,7 +154,12 @@ public final class HostUpdateFlow implements MutatingFlow {
     verifySuperordinateDomainNotInPendingDelete(newSuperordinateDomain.orElse(null));
     EppResource owningResource = firstNonNull(oldSuperordinateDomain, existingHost);
     verifyUpdateAllowed(
-        command, existingHost, newSuperordinateDomain.orElse(null), owningResource, isHostRename);
+        command,
+        existingHost,
+        oldSuperordinateDomain,
+        newSuperordinateDomain.orElse(null),
+        owningResource,
+        isHostRename);
     if (isHostRename && ForeignKeyUtils.loadKey(Host.class, newHostName, now).isPresent()) {
       throw new HostAlreadyExistsException(newHostName);
     }
@@ -211,30 +218,38 @@ public final class HostUpdateFlow implements MutatingFlow {
   private void verifyUpdateAllowed(
       Update command,
       Host existingHost,
+      Domain oldSuperordinateDomain,
       Domain newSuperordinateDomain,
       EppResource owningResource,
       boolean isHostRename)
       throws EppException {
-    if (!isSuperuser) {
-      // Verify that the host belongs to this registrar, either directly or because it is currently
-      // subordinate to a domain owned by this registrar.
-      verifyResourceOwnership(registrarId, owningResource);
-      if (isHostRename && !existingHost.isSubordinate()) {
-        throw new CannotRenameExternalHostException();
-      }
-      // Verify that the new superordinate domain belongs to this registrar.
-      verifySuperordinateDomainOwnership(registrarId, newSuperordinateDomain);
-      ImmutableSet<StatusValue> statusesToAdd = command.getInnerAdd().getStatusValues();
-      ImmutableSet<StatusValue> statusesToRemove = command.getInnerRemove().getStatusValues();
-      // If the resource is marked with clientUpdateProhibited, and this update does not clear that
-      // status, then the update must be disallowed.
-      if (existingHost.getStatusValues().contains(StatusValue.CLIENT_UPDATE_PROHIBITED)
-          && !statusesToRemove.contains(StatusValue.CLIENT_UPDATE_PROHIBITED)) {
-        throw new ResourceHasClientUpdateProhibitedException();
-      }
-      verifyAllStatusesAreClientSettable(union(statusesToAdd, statusesToRemove));
-    }
     verifyNoDisallowedStatuses(existingHost, DISALLOWED_STATUSES);
+    if (isSuperuser) {
+      return;
+    }
+    // Verify that the host belongs to this registrar, either directly or because it is currently
+    // subordinate to a domain owned by this registrar.
+    verifyResourceOwnership(registrarId, owningResource);
+    if (isHostRename && !existingHost.isSubordinate()) {
+      throw new CannotRenameExternalHostException();
+    }
+    // Verify that the new superordinate domain belongs to this registrar.
+    verifySuperordinateDomainOwnership(registrarId, newSuperordinateDomain);
+    // Subordinate hosts inherit the registry-lock protection of their superordinate domain: if
+    // either the current or the target superordinate domain carries SERVER_UPDATE_PROHIBITED,
+    // non-superuser updates (including glue IP changes and renames) must be rejected so that a
+    // compromised sponsoring registrar cannot hijack DNS for a registry-locked domain.
+    verifySuperordinateDomainNotServerUpdateProhibited(oldSuperordinateDomain);
+    verifySuperordinateDomainNotServerUpdateProhibited(newSuperordinateDomain);
+    ImmutableSet<StatusValue> statusesToAdd = command.getInnerAdd().getStatusValues();
+    ImmutableSet<StatusValue> statusesToRemove = command.getInnerRemove().getStatusValues();
+    // If the resource is marked with clientUpdateProhibited, and this update does not clear that
+    // status, then the update must be disallowed.
+    if (existingHost.getStatusValues().contains(StatusValue.CLIENT_UPDATE_PROHIBITED)
+        && !statusesToRemove.contains(StatusValue.CLIENT_UPDATE_PROHIBITED)) {
+      throw new ResourceHasClientUpdateProhibitedException();
+    }
+    verifyAllStatusesAreClientSettable(union(statusesToAdd, statusesToRemove));
   }
 
   private static void verifyHasIpsIffIsExternal(Update command, Host existingHost, Host newHost)

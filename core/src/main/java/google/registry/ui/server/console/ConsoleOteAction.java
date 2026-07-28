@@ -62,6 +62,7 @@ public class ConsoleOteAction extends ConsoleApiAction {
   private final StringGenerator passwordGenerator;
   private final Optional<OteCreateData> oteCreateData;
   private final Optional<String> maybeGroupEmailAddress;
+  private final Optional<String> consoleIapServiceId;
   private final IamClient iamClient;
   private final String registrarId;
 
@@ -71,12 +72,14 @@ public class ConsoleOteAction extends ConsoleApiAction {
       IamClient iamClient,
       @Parameter("registrarId") String registrarId, // Get request param
       @Config("gSuiteConsoleUserGroupEmailAddress") Optional<String> maybeGroupEmailAddress,
+      @Config("consoleIapServiceId") Optional<String> consoleIapServiceId,
       @Named("base58StringGenerator") StringGenerator passwordGenerator,
       @Parameter("oteCreateData") Optional<OteCreateData> oteCreateData) {
     super(consoleApiParams);
     this.passwordGenerator = passwordGenerator;
     this.oteCreateData = oteCreateData;
     this.maybeGroupEmailAddress = maybeGroupEmailAddress;
+    this.consoleIapServiceId = consoleIapServiceId;
     this.iamClient = iamClient;
     this.registrarId = registrarId;
   }
@@ -105,7 +108,8 @@ public class ConsoleOteAction extends ConsoleApiAction {
             .setPassword(password);
 
     ImmutableMap<String, String> registrarIdToTld = oteAccountBuilder.buildAndPersist();
-    oteAccountBuilder.grantIapPermission(maybeGroupEmailAddress, cloudTasksUtils, iamClient);
+    oteAccountBuilder.grantIapPermission(
+        maybeGroupEmailAddress, consoleIapServiceId, cloudTasksUtils, iamClient);
     consoleApiParams.response().setStatus(SC_OK);
     consoleApiParams
         .response()

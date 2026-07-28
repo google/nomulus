@@ -49,6 +49,10 @@ import java.util.stream.Stream;
  * also matches the "addrType" type from <a
  * href="http://tools.ietf.org/html/draft-lozano-tmch-smd">Mark and Signed Mark Objects Mapping</a>.
  *
+ * <p>The lengths of the fields are limited to match the constraints defined in XSD schemas like
+ * {@code rde-registrar.xsd}. Specifically, {@code zip} is limited to 16 characters and {@code
+ * city}, {@code state}, and each {@code street} line are limited to 255 characters.
+ *
  * @see google.registry.model.mark.MarkAddress
  * @see google.registry.model.registrar.RegistrarAddress
  */
@@ -155,12 +159,37 @@ public class Address extends ImmutableObject
 
   @Override
   public void postProcess() {
+    validateState();
     if (street == null || street.isEmpty()) {
       return;
     }
     streetLine1 = street.get(0);
     streetLine2 = street.size() >= 2 ? street.get(1) : null;
     streetLine3 = street.size() >= 3 ? street.get(2) : null;
+  }
+
+  public void validateState() {
+    checkArgument(
+        street == null || (!street.isEmpty() && street.size() <= 3),
+        "Street address must have [1-3] lines: %s",
+        street);
+    if (street != null) {
+      checkArgument(
+          street.stream().noneMatch(String::isEmpty),
+          "Street address cannot contain empty string: %s",
+          street);
+      checkArgument(
+          street.stream().allMatch(s -> s.length() <= 255),
+          "Street address lines cannot be longer than 255 characters");
+    }
+    checkArgument(
+        city == null || city.length() <= 255, "City cannot be longer than 255 characters");
+    checkArgument(
+        state == null || state.length() <= 255, "State cannot be longer than 255 characters");
+    checkArgument(zip == null || zip.length() <= 16, "Zip cannot be longer than 16 characters");
+    checkArgument(
+        countryCode == null || countryCode.length() == 2,
+        "Country code should be a 2 character string");
   }
 
   /** A builder for constructing {@link Address}. */
@@ -172,20 +201,17 @@ public class Address extends ImmutableObject
       super(instance);
     }
 
+    @Override
+    public T build() {
+      getInstance().validateState();
+      return super.build();
+    }
+
     public Builder<T> setStreet(ImmutableList<String> street) {
-      checkArgument(
-          street == null || (!street.isEmpty() && street.size() <= 3),
-          "Street address must have [1-3] lines: %s",
-          street);
-      //noinspection ConstantConditions
-      checkArgument(
-          street.stream().noneMatch(String::isEmpty),
-          "Street address cannot contain empty string: %s",
-          street);
       getInstance().street = street;
-      getInstance().streetLine1 = street.get(0);
-      getInstance().streetLine2 = street.size() >= 2 ? street.get(1) : null;
-      getInstance().streetLine3 = street.size() == 3 ? street.get(2) : null;
+      getInstance().streetLine1 = (street != null && street.size() >= 1) ? street.get(0) : null;
+      getInstance().streetLine2 = (street != null && street.size() >= 2) ? street.get(1) : null;
+      getInstance().streetLine3 = (street != null && street.size() == 3) ? street.get(2) : null;
       return this;
     }
 

@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -80,13 +81,13 @@ public class UrlConnectionUtilsTest {
             "294");
     String payload =
         """
-            --------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r
-            Content-Disposition: form-data; name="lol"; filename="cat"\r
-            Content-Type: text/csv; charset=utf-8\r
-            \r
-            The nice people at the store say hello. ヘ(◕。◕ヘ)\r
-            --------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA--\r
-            """;
+        --------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r
+        Content-Disposition: form-data; name="lol"; filename="cat"\r
+        Content-Type: text/csv; charset=utf-8\r
+        \r
+        The nice people at the store say hello. ヘ(◕。◕ヘ)\r
+        --------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA--\r
+        """;
     verify(connection).setDoOutput(true);
     verify(connection).getOutputStream();
     assertThat(connectionOutputStream.toByteArray()).isEqualTo(payload.getBytes(UTF_8));
@@ -123,5 +124,28 @@ public class UrlConnectionUtilsTest {
     HttpsURLConnection connection = mock(HttpsURLConnection.class);
     when(connection.getResponseCode()).thenReturn(400);
     assertThat(UrlConnectionUtils.getResponseBytes(connection)).isEmpty();
+  }
+
+  @Test
+  void testGetResponseBytes_contentLengthExceedsLimit_throwsException() {
+    HttpsURLConnection connection = mock(HttpsURLConnection.class);
+    when(connection.getContentLengthLong())
+        .thenReturn((long) UrlConnectionUtils.MAX_RESPONSE_PAYLOAD_BYTES + 1);
+    IOException thrown =
+        assertThrows(IOException.class, () -> UrlConnectionUtils.getResponseBytes(connection));
+    assertThat(thrown).hasMessageThat().contains("exceeds limit");
+  }
+
+  @Test
+  void testGetResponseBytes_streamExceedsLimit_throwsException() throws Exception {
+    HttpsURLConnection connection = mock(HttpsURLConnection.class);
+    when(connection.getContentLengthLong()).thenReturn(-1L);
+    when(connection.getResponseCode()).thenReturn(200);
+    when(connection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(new byte[UrlConnectionUtils.MAX_RESPONSE_PAYLOAD_BYTES + 1]));
+    IOException thrown =
+        assertThrows(IOException.class, () -> UrlConnectionUtils.getResponseBytes(connection));
+    assertThat(thrown).hasMessageThat().contains("exceeds maximum allowed size");
   }
 }

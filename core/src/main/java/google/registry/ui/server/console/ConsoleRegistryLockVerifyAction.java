@@ -15,7 +15,7 @@
 package google.registry.ui.server.console;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.request.Action.Method.GET;
+import static google.registry.request.Action.Method.POST;
 
 import com.google.common.base.Ascii;
 import com.google.gson.annotations.Expose;
@@ -34,7 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Action(
     service = Service.CONSOLE,
     path = ConsoleRegistryLockVerifyAction.PATH,
-    method = {GET},
+    method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleRegistryLockVerifyAction extends ConsoleApiAction {
 
@@ -54,9 +54,8 @@ public class ConsoleRegistryLockVerifyAction extends ConsoleApiAction {
   }
 
   @Override
-  protected void getHandler(User user) {
-    RegistryLock lock =
-        domainLockUtils.verifyVerificationCode(lockVerificationCode, user.getUserRoles().isAdmin());
+  protected void postHandler(User user) {
+    RegistryLock lock = domainLockUtils.verifyVerificationCode(lockVerificationCode, user);
     RegistryLockAction action =
         lock.getUnlockCompletionTime().isPresent()
             ? RegistryLockAction.UNLOCKED
@@ -65,20 +64,19 @@ public class ConsoleRegistryLockVerifyAction extends ConsoleApiAction {
         new RegistryLockVerificationResponse(
             Ascii.toLowerCase(action.toString()), lock.getDomainName(), lock.getRegistrarId());
     tm().transact(
-            () -> {
-              finishAndPersistConsoleUpdateHistory(
-                  new ConsoleUpdateHistory.Builder()
-                      .setType(
-                          action == RegistryLockAction.LOCKED
-                              ? ConsoleUpdateHistory.Type.REGISTRY_LOCK
-                              : ConsoleUpdateHistory.Type.REGISTRY_UNLOCK)
-                      .setDescription(
-                          String.format(
-                              "%s%s%s",
-                              lock.getRegistrarId(),
-                              ConsoleUpdateHistory.DESCRIPTION_SEPARATOR,
-                              lockResponse)));
-            });
+            () ->
+                finishAndPersistConsoleUpdateHistory(
+                    new ConsoleUpdateHistory.Builder()
+                        .setType(
+                            action == RegistryLockAction.LOCKED
+                                ? ConsoleUpdateHistory.Type.REGISTRY_LOCK
+                                : ConsoleUpdateHistory.Type.REGISTRY_UNLOCK)
+                        .setDescription(
+                            String.format(
+                                "%s%s%s",
+                                lock.getRegistrarId(),
+                                ConsoleUpdateHistory.DESCRIPTION_SEPARATOR,
+                                lockResponse))));
     consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(lockResponse));
     consoleApiParams.response().setStatus(HttpServletResponse.SC_OK);
   }

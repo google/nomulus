@@ -25,6 +25,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.AddressTest.TestEntity.TestAddress;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import google.registry.tools.GsonUtils;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -109,6 +110,32 @@ class AddressTest {
   }
 
   @Test
+  void testFailure_streetLineTooLong() {
+    assertThrows(IllegalArgumentException.class, () -> createAddress("a".repeat(256)));
+  }
+
+  @Test
+  void testFailure_cityTooLong() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> createAddress("line1").asBuilder().setCity("a".repeat(256)).build());
+  }
+
+  @Test
+  void testFailure_stateTooLong() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> createAddress("line1").asBuilder().setState("a".repeat(256)).build());
+  }
+
+  @Test
+  void testFailure_zipTooLong() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> createAddress("line1").asBuilder().setZip("12345678901234567").build());
+  }
+
+  @Test
   void testSuccess_pojoToAndFromXml() throws Exception {
     JAXBContext jaxbContext = JAXBContext.newInstance(TestEntity.class);
     // POJO to XML
@@ -122,6 +149,38 @@ class AddressTest {
     Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
     TestEntity unmarshalledEntity = (TestEntity) unmarshaller.unmarshal(new StringReader(xml));
     assertAddress(unmarshalledEntity.address, "123 W 14th St", "8th Fl", "Rm 8");
+  }
+
+  @Test
+  void testSuccess_gsonInstantiation() {
+    String json = "{\"street\":[\"123 W 14th St\",\"8th Fl\"],\"countryCode\":\"US\"}";
+    TestAddress address = GsonUtils.provideGson().fromJson(json, TestAddress.class);
+    assertThat(address.getStreet()).containsExactly("123 W 14th St", "8th Fl");
+    assertThat(address.getCountryCode()).isEqualTo("US");
+  }
+
+  @Test
+  void testFailure_gsonInstantiation_tooManyStreetLines() {
+    String json = "{\"street\":[\"123 W 14th St\",\"8th Fl\",\"Rm 8\",\"4th Line\"]}";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> GsonUtils.provideGson().fromJson(json, TestAddress.class));
+  }
+
+  @Test
+  void testFailure_gsonInstantiation_emptyStreetLine() {
+    String json = "{\"street\":[\"123 W 14th St\",\"\"]}";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> GsonUtils.provideGson().fromJson(json, TestAddress.class));
+  }
+
+  @Test
+  void testFailure_gsonInstantiation_invalidCountryCode() {
+    String json = "{\"countryCode\":\"USA\"}";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> GsonUtils.provideGson().fromJson(json, TestAddress.class));
   }
 
   private static TestAddress createAddress(String... streetList) {

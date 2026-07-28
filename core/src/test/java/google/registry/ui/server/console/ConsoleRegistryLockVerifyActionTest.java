@@ -182,6 +182,20 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
   }
 
+  @Test
+  void testFailure_noPermission() {
+    saveRegistryLock(createDefaultLockBuilder().build());
+    user = user.asBuilder().setUserRoles(new UserRoles.Builder().build()).build();
+    action = createAction(DEFAULT_CODE);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            "User user@theregistrar.com does not have registry lock permission on registrar"
+                + " TheRegistrar");
+    assertThat(loadByEntity(defaultDomain).getStatusValues()).containsExactly(StatusValue.INACTIVE);
+  }
+
   private RegistryLock.Builder createDefaultLockBuilder() {
     return new RegistryLock.Builder()
         .setRepoId(defaultDomain.getRepoId())
@@ -194,7 +208,7 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
   private ConsoleRegistryLockVerifyAction createAction(String verificationCode) {
     AuthResult authResult = AuthResult.createUser(user);
     ConsoleApiParams params = ConsoleApiParamsUtils.createFake(authResult);
-    when(params.request().getMethod()).thenReturn("GET");
+    when(params.request().getMethod()).thenReturn("POST");
     when(params.request().getServerName()).thenReturn("registrarconsole.tld");
     DomainLockUtils domainLockUtils =
         new DomainLockUtils(

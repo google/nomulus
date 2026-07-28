@@ -56,6 +56,7 @@ import google.registry.model.EntityYamlUtils.OptionalDurationSerializer;
 import google.registry.model.EntityYamlUtils.OptionalStringSerializer;
 import google.registry.model.EntityYamlUtils.SortedEnumSetSerializer;
 import google.registry.model.EntityYamlUtils.SortedSetSerializer;
+import google.registry.model.EntityYamlUtils.TimedTransitionPropertyExpiryAccessPeriodModeDeserializer;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyMoneyDeserializer;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyTldStateDeserializer;
 import google.registry.model.EntityYamlUtils.TokenVKeyListDeserializer;
@@ -76,6 +77,7 @@ import google.registry.persistence.EntityCallbacksListener.RecursivePostUpdate;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.AllocationTokenVkeyListUserType;
 import google.registry.persistence.converter.BillingCostTransitionUserType;
+import google.registry.persistence.converter.ExpiryAccessPeriodModeTransitionUserType;
 import google.registry.persistence.converter.TldStateTransitionUserType;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Idn;
@@ -120,6 +122,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   public static final boolean DEFAULT_ESCROW_ENABLED = false;
   public static final boolean DEFAULT_DNS_PAUSED = false;
+  public static final ExpiryAccessPeriodMode DEFAULT_EXPIRY_ACCESS_PERIOD_MODE =
+      ExpiryAccessPeriodMode.DISABLED;
   public static final Duration DEFAULT_ADD_GRACE_PERIOD = Duration.ofDays(5);
   public static final Duration DEFAULT_AUTO_RENEW_GRACE_PERIOD = Duration.ofDays(45);
   public static final Duration DEFAULT_REDEMPTION_GRACE_PERIOD = Duration.ofDays(30);
@@ -195,6 +199,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     /** A "fake" state for use in predelegation testing. Acts like {@link #GENERAL_AVAILABILITY}. */
     PDT
+  }
+
+  /** The modes an Expiry Access Period (XAP) can be in at any given point in time. */
+  public enum ExpiryAccessPeriodMode {
+    DISABLED,
+    ENABLED
   }
 
   /** Returns the TLD for a given TLD, throwing if none exists. */
@@ -427,6 +437,19 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   boolean dnsPaused = DEFAULT_DNS_PAUSED;
 
   /**
+   * Whether the Expiry Access Period following domain deletes is enabled for this TLD.
+   *
+   * <p>TODO(mcilwain): Once this Java code has been fully deployed to production, drop the
+   * temporary database-level DEFAULT constraint on the "expiry_access_period_transitions" column in
+   * the "Tld" table in a subsequent schema release.
+   */
+  @Column(nullable = false, columnDefinition = "hstore")
+  @Type(ExpiryAccessPeriodModeTransitionUserType.class)
+  @JsonDeserialize(using = TimedTransitionPropertyExpiryAccessPeriodModeDeserializer.class)
+  TimedTransitionProperty<ExpiryAccessPeriodMode> expiryAccessPeriodTransitions =
+      TimedTransitionProperty.withInitialValue(DEFAULT_EXPIRY_ACCESS_PERIOD_MODE);
+
+  /**
    * The length of the add grace period for this TLD.
    *
    * <p>Domain deletes are free and effective immediately so long as they take place within this
@@ -634,6 +657,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return dnsPaused;
   }
 
+  public ExpiryAccessPeriodMode getExpiryAccessPeriodModeAt(Instant now) {
+    return expiryAccessPeriodTransitions.getValueAtTime(now);
+  }
+
+  public ImmutableSortedMap<Instant, ExpiryAccessPeriodMode> getExpiryAccessPeriodTransitions() {
+    return expiryAccessPeriodTransitions.toValueMap();
+  }
+
   @Nullable
   public String getDriveFolderId() {
     return driveFolderId;
@@ -830,6 +861,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     createBillingCostTransitions.checkValidity();
     renewBillingCostTransitions.checkValidity();
     eapFeeSchedule.checkValidity();
+    expiryAccessPeriodTransitions.checkValidity();
     // All costs must be in the expected currency.
     checkArgumentNotNull(getCurrency(), "Currency must be set");
     Predicate<Money> currencyCheck =
@@ -910,6 +942,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setDnsPaused(boolean paused) {
       getInstance().dnsPaused = paused;
+      return this;
+    }
+
+    public Builder setExpiryAccessPeriodTransitions(
+        ImmutableSortedMap<Instant, ExpiryAccessPeriodMode> transitionsMap) {
+      getInstance().expiryAccessPeriodTransitions =
+          TimedTransitionProperty.fromValueMap(transitionsMap);
       return this;
     }
 

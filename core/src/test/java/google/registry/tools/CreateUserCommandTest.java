@@ -45,6 +45,7 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
   void beforeEach() {
     command.iamClient = iamClient;
     command.maybeGroupEmailAddress = Optional.empty();
+    command.consoleIapServiceId = Optional.of("consoleIapServiceId");
     command.setConnection(connection);
   }
 
@@ -56,7 +57,8 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
     assertThat(onlyUser.getUserRoles().isAdmin()).isFalse();
     assertThat(onlyUser.getUserRoles().getGlobalRole()).isEqualTo(GlobalRole.NONE);
     assertThat(onlyUser.getUserRoles().getRegistrarRoles()).isEmpty();
-    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verify(iamClient)
+        .addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE, "consoleIapServiceId");
     verifyNoMoreInteractions(iamClient);
     verifyNoInteractions(connection);
   }
@@ -87,6 +89,41 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
   }
 
   @Test
+  void testSuccess_addToGroup_noIapServiceId() throws Exception {
+    command.maybeGroupEmailAddress = Optional.of("group@example.test");
+    command.consoleIapServiceId = Optional.empty();
+    runCommandForced("--email", "user@example.test");
+    User onlyUser = Iterables.getOnlyElement(DatabaseHelper.loadAllOf(User.class));
+    assertThat(onlyUser.getEmailAddress()).isEqualTo("user@example.test");
+    verify(connection)
+        .sendPostRequest(
+            UpdateUserGroupAction.PATH,
+            ImmutableMap.of(
+                "userEmailAddress",
+                "user@example.test",
+                "groupEmailAddress",
+                "group@example.test",
+                "groupUpdateMode",
+                "ADD"),
+            MediaType.PLAIN_TEXT_UTF_8,
+            new byte[0]);
+    verifyNoInteractions(iamClient);
+    verifyNoMoreInteractions(connection);
+  }
+
+  @Test
+  void testFailure_neitherGroupNorIapServiceId() {
+    command.maybeGroupEmailAddress = Optional.empty();
+    command.consoleIapServiceId = Optional.empty();
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class, () -> runCommandForced("--email", "user@example.test"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo("At least one of groupEmailAddress or consoleIapServiceId must be present");
+  }
+
+  @Test
   void testSuccess_registryLock() throws Exception {
     runCommandForced(
         "--email",
@@ -107,7 +144,8 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
   void testSuccess_admin() throws Exception {
     runCommandForced("--email", "user@example.test", "--admin", "true");
     assertThat(loadExistingUser("user@example.test").getUserRoles().isAdmin()).isTrue();
-    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verify(iamClient)
+        .addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE, "consoleIapServiceId");
     verifyNoMoreInteractions(iamClient);
     verifyNoInteractions(connection);
   }
@@ -117,7 +155,8 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
     runCommandForced("--email", "user@example.test", "--global_role", "FTE");
     assertThat(loadExistingUser("user@example.test").getUserRoles().getGlobalRole())
         .isEqualTo(GlobalRole.FTE);
-    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verify(iamClient)
+        .addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE, "consoleIapServiceId");
     verifyNoMoreInteractions(iamClient);
     verifyNoInteractions(connection);
   }
@@ -136,7 +175,8 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
                 RegistrarRole.ACCOUNT_MANAGER,
                 "NewRegistrar",
                 RegistrarRole.PRIMARY_CONTACT));
-    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verify(iamClient)
+        .addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE, "consoleIapServiceId");
     verifyNoMoreInteractions(iamClient);
     verifyNoInteractions(connection);
   }
@@ -144,7 +184,8 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
   @Test
   void testFailure_alreadyExists() throws Exception {
     runCommandForced("--email", "user@example.test");
-    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verify(iamClient)
+        .addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE, "consoleIapServiceId");
     verifyNoMoreInteractions(iamClient);
     assertThat(
             assertThrows(

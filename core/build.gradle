@@ -126,6 +126,7 @@ dependencies {
   implementation deps['com.google.api:gax']
   implementation deps['com.google.api.grpc:proto-google-common-protos']
   implementation deps['com.google.api.grpc:proto-google-cloud-secretmanager-v1']
+  implementation deps['com.google.apis:google-api-services-cloudkms']
   implementation deps['com.google.api-client:google-api-client']
   implementation deps['com.google.api-client:google-api-client-servlet']
   implementation deps['com.google.monitoring-client:metrics']
@@ -244,6 +245,7 @@ dependencies {
   implementation project(':common')
   testImplementation project(path: ':common', configuration: 'testing')
   implementation project(':util')
+  implementation project(':networking')
   // Import NomulusPostreSql from ':db' for implementation but exclude dependencies.
   implementation project(path: ':db', configuration: 'implementationApi')
   nonprodRuntimeOnly project(':db')
@@ -276,6 +278,16 @@ dependencies {
   testImplementation deps['org.junit.platform:junit-platform-suite']
   testImplementation deps['org.mockito:mockito-core']
   testImplementation deps['org.mockito:mockito-junit-jupiter']
+
+  implementation deps['io.netty:netty-buffer']
+  implementation deps['io.netty:netty-codec-http']
+  implementation deps['io.netty:netty-codec']
+  implementation deps['io.netty:netty-common']
+  implementation deps['io.netty:netty-handler']
+  implementation deps['io.netty:netty-transport']
+  implementation deps['redis.clients:jedis']
+  runtimeOnly deps['io.netty:netty-tcnative-boringssl-static']
+  implementation deps['org.yaml:snakeyaml']
 
   // Indirect dependency found by undeclared-dependency check. Such
   // dependencies should go after all other implementation and testImplementation

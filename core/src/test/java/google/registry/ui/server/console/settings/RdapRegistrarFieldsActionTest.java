@@ -19,7 +19,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
-import static org.mockito.Mockito.doReturn;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
@@ -41,9 +41,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.console.ConsoleActionBaseTestCase;
 import google.registry.ui.server.console.ConsoleModule;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.HashMap;
 import org.junit.jupiter.api.Test;
 
@@ -70,7 +68,8 @@ public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
               "url",
               "\"http://my.fake.url\"",
               "localizedAddress",
-              "{\"street\": [\"123 Example Boulevard\"], \"city\": \"Williamsburg\", \"state\":"
+              "{\"street\": [\"123 Example Boulevard\"], \"city\":"
+                  + " \"Williamsburg\", \"state\":"
                   + " \"NY\", \"zip\": \"11201\", \"countryCode\": \"US\"}"));
 
   @Test
@@ -135,6 +134,17 @@ public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
     assertThat(DatabaseHelper.loadByEntity(newRegistrar)).isEqualTo(newRegistrar);
   }
 
+  @Test
+  void testFailure_zipTooLong() throws Exception {
+    uiRegistrarMap.put(
+        "localizedAddress",
+        "{\"street\": [\"123 Fake St\"], \"city\": \"Fakeville\", \"state\":"
+            + " \"NL\", \"zip\": \"12345678901234567\", \"countryCode\": \"CA\"}");
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, this::createAction);
+    assertThat(exception).hasMessageThat().contains("Zip cannot be longer than 16 characters");
+  }
+
   private RdapRegistrarFieldsAction createAction() throws IOException {
     return createAction(fteUser);
   }
@@ -143,13 +153,10 @@ public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
     consoleApiParams = ConsoleApiParamsUtils.createFake(AuthResult.createUser(user));
     response = (FakeResponse) consoleApiParams.response();
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    doReturn(new BufferedReader(new StringReader(uiRegistrarMap.toString())))
-        .when(consoleApiParams.request())
-        .getReader();
     return new RdapRegistrarFieldsAction(
         consoleApiParams,
         registrarAccessor,
         ConsoleModule.provideRegistrar(
-            GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON)));
+            GSON, RequestModule.provideJsonBody(uiRegistrarMap.toString(), GSON)));
   }
 }

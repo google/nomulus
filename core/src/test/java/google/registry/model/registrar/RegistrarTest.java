@@ -773,4 +773,20 @@ class RegistrarTest extends EntityTestCase {
     assertThat(Registrar.loadByRegistrarId("registrar").toString())
         .contains("allowedTlds=[bar, baz, foo, gon, tri]");
   }
+
+  @Test
+  void testSuccess_expiryAccessPeriodEnabled() {
+    assertThat(registrar.getExpiryAccessPeriodEnabled()).isFalse();
+    persistResource(registrar.asBuilder().setExpiryAccessPeriodEnabled(true).build());
+    assertThat(
+            Registrar.loadByRegistrarId("registrar").orElseThrow().getExpiryAccessPeriodEnabled())
+        .isTrue();
+  }
+
+  @Test
+  void testSuccess_toJsonMap_includesExpiryAccessPeriodEnabled() {
+    assertThat(registrar.toJsonMap()).containsEntry("expiryAccessPeriodEnabled", false);
+    Registrar modified = registrar.asBuilder().setExpiryAccessPeriodEnabled(true).build();
+    assertThat(modified.toJsonMap()).containsEntry("expiryAccessPeriodEnabled", true);
+  }
 }

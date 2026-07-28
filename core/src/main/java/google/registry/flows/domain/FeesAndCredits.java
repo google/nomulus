@@ -77,6 +77,11 @@ public class FeesAndCredits extends ImmutableObject implements Buildable {
     return getTotalCostForType(FeeType.EAP);
   }
 
+  /** Returns the XAP cost for the event. */
+  public Money getXapCost() {
+    return getTotalCostForType(FeeType.XAP);
+  }
+
   /** Returns the renew cost for the event. */
   public Money getRenewCost() {
     return getTotalCostForType(FeeType.RENEW);

@@ -5,6 +5,8 @@ reservedListNames: []
 dnsPaused: false
 tldType: "REAL"
 escrowEnabled: false
+expiryAccessPeriodTransitions:
+  "1970-01-01T00:00:00.000Z": "DISABLED"
 anchorTenantAddGracePeriodLength: "PT720H"
 dnsNsTtl: null
 tldStr: "outoforderfields"

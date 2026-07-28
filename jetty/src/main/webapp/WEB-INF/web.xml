@@ -2,6 +2,14 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
   version="6.0">
+  <!-- Listeners -->
+  <listener>
+    <listener-class>google.registry.module.MetricsLifecycleListener</listener-class>
+  </listener>
+  <listener>
+    <listener-class>google.registry.module.EppServerLifecycleListener</listener-class>
+  </listener>
+
   <!-- Filters -->
   <filter>
     <filter-name>CspFilter</filter-name>

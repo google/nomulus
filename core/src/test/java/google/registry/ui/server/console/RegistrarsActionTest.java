@@ -23,7 +23,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
@@ -42,9 +41,6 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeResponse;
 import google.registry.util.StringGenerator;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -222,20 +218,9 @@ class RegistrarsActionTest extends ConsoleActionBaseTestCase {
       return new RegistrarsAction(
           consoleApiParams, Optional.ofNullable(null), passwordGenerator, passcodeGenerator);
     } else {
-      try {
-        doReturn(new BufferedReader(new StringReader(registrarParamMap.toString())))
-            .when(consoleApiParams.request())
-            .getReader();
-      } catch (IOException e) {
-        return new RegistrarsAction(
-            consoleApiParams,
-            Optional.ofNullable(null),
-            passwordGenerator,
-            passcodeGenerator);
-      }
       Optional<Registrar> maybeRegistrar =
           ConsoleModule.provideRegistrar(
-              GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
+              GSON, RequestModule.provideJsonBody(registrarParamMap.toString(), GSON));
       return new RegistrarsAction(
           consoleApiParams, maybeRegistrar, passwordGenerator, passcodeGenerator);
     }

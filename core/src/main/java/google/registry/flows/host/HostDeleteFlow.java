@@ -22,6 +22,7 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
+import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotServerUpdateProhibited;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -33,7 +34,7 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
-import google.registry.model.EppResource;
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -62,6 +63,7 @@ import java.time.Instant;
  * @error {@link HostFlowUtils.HostNameNotLowerCaseException}
  * @error {@link HostFlowUtils.HostNameNotNormalizedException}
  * @error {@link HostFlowUtils.HostNameNotPunyCodedException}
+ * @error {@link HostFlowUtils.SuperordinateDomainServerUpdateProhibitedException}
  */
 @ReportingSpec(ActivityReportField.HOST_DELETE)
 public final class HostDeleteFlow implements MutatingFlow {
@@ -90,12 +92,15 @@ public final class HostDeleteFlow implements MutatingFlow {
     if (!isSuperuser) {
       verifyNoDisallowedStatuses(existingHost, DELETE_PROHIBITED_STATUSES);
       // Hosts transfer with their superordinate domains, so for hosts with a superordinate domain,
-      // the client id, needs to be read off of it.
-      EppResource owningResource =
-          existingHost.isSubordinate()
-              ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
-              : existingHost;
-      verifyResourceOwnership(registrarId, owningResource);
+      // the client id needs to be read off of it.
+      if (existingHost.isSubordinate()) {
+        Domain superordinateDomain =
+            tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now);
+        verifyResourceOwnership(registrarId, superordinateDomain);
+        verifySuperordinateDomainNotServerUpdateProhibited(superordinateDomain);
+      } else {
+        verifyResourceOwnership(registrarId, existingHost);
+      }
     }
     Host newHost = existingHost.asBuilder().setStatusValues(null).setDeletionTime(now).build();
     if (existingHost.isSubordinate()) {
