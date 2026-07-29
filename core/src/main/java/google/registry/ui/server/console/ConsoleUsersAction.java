@@ -15,7 +15,6 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.console.RegistrarRole.ACCOUNT_MANAGER;
 import static google.registry.model.console.RegistrarRole.TECH_CONTACT;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -357,12 +356,17 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     return updatedUser;
   }
 
+  @SuppressWarnings("unchecked")
   private ImmutableList<User> getAllRegistrarUsers(String registrarId) {
     return tm().transact(
             () ->
-                tm().loadAllOf(User.class).stream()
-                    .filter(u -> u.getUserRoles().getRegistrarRoles().containsKey(registrarId))
-                    .collect(toImmutableList()));
+                ImmutableList.copyOf(
+                    tm().getEntityManager()
+                        .createNativeQuery(
+                            "SELECT * FROM \"User\" WHERE exist(registrar_roles, :registrarId)",
+                            User.class)
+                        .setParameter("registrarId", registrarId)
+                        .getResultList()));
   }
 
   /** Maps a request role string to a RegistrarRole, using ACCOUNT_MANAGER as the default. */
