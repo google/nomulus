@@ -43,6 +43,24 @@
       "regexes": [
         "[A-Za-z0-9\\-_]+"
       ]
+    },
+    {
+      "name": "historyEntryLoadBatchSize",
+      "label": "History entry load batch size.",
+      "helpText": "The number of history entries to load from the database in one operation.",
+      "is_optional": true,
+      "regexes": [
+        "^[1-9][0-9]*$"
+      ]
+    },
+    {
+      "name": "numHistoryEntryShards",
+      "label": "Number of history entry shards.",
+      "helpText": "The number of shards to split across when batching history entries.",
+      "is_optional": true,
+      "regexes": [
+        "^[1-9][0-9]*$"
+      ]
     }
   ]
 }
