@@ -6,6 +6,7 @@ metadata:
 requireApproval: true
 executionConfigs:
 - usages:
+  - PREDEPLOY
   - RENDER
   - ANALYSIS
   - POSTDEPLOY
