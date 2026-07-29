@@ -16,6 +16,7 @@ package google.registry.beam.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.beam.rde.RdePipeline.TupleTags.DOMAIN_FRAGMENTS;
 import static google.registry.beam.rde.RdePipeline.TupleTags.EXTERNAL_HOST_FRAGMENTS;
@@ -24,17 +25,18 @@ import static google.registry.beam.rde.RdePipeline.TupleTags.PENDING_DEPOSIT;
 import static google.registry.beam.rde.RdePipeline.TupleTags.REFERENCED_HOSTS;
 import static google.registry.beam.rde.RdePipeline.TupleTags.REVISION_ID;
 import static google.registry.beam.rde.RdePipeline.TupleTags.SUPERORDINATE_DOMAINS;
-import static google.registry.model.reporting.HistoryEntryDao.RESOURCE_TYPES_TO_HISTORY_TYPES;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.SafeSerializationUtils.safeDeserializeCollection;
 import static google.registry.util.SafeSerializationUtils.serializeCollection;
 import static google.registry.util.SerializeUtils.decodeBase64;
 import static google.registry.util.SerializeUtils.encodeBase64;
+import static org.apache.beam.sdk.values.TypeDescriptors.integers;
 import static org.apache.beam.sdk.values.TypeDescriptors.kvs;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
@@ -57,7 +59,6 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import google.registry.rde.DepositFragment;
@@ -71,6 +72,8 @@ import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
+import java.util.NoSuchElementException;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -80,15 +83,19 @@ import org.apache.beam.sdk.coders.VarLongCoder;
 import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.transforms.Distinct;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.Filter;
 import org.apache.beam.sdk.transforms.FlatMapElements;
 import org.apache.beam.sdk.transforms.Flatten;
 import org.apache.beam.sdk.transforms.GroupByKey;
+import org.apache.beam.sdk.transforms.GroupIntoBatches;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.WithKeys;
 import org.apache.beam.sdk.transforms.join.CoGbkResult;
 import org.apache.beam.sdk.transforms.join.CoGroupByKey;
 import org.apache.beam.sdk.transforms.join.KeyedPCollectionTuple;
+import org.apache.beam.sdk.util.ShardedKey;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionList;
@@ -96,6 +103,7 @@ import org.apache.beam.sdk.values.PCollectionTuple;
 import org.apache.beam.sdk.values.TupleTag;
 import org.apache.beam.sdk.values.TupleTagList;
 import org.apache.beam.sdk.values.TypeDescriptor;
+import org.hibernate.jpa.AvailableHints;
 
 /**
  * Definition of a Dataflow Flex template, which generates RDE/BRDA deposits.
@@ -182,6 +190,25 @@ public class RdePipeline implements Serializable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  // Metrics counters for tracking pipeline execution.
+  private static final Counter INCLUDED_REGISTRAR_COUNTER =
+      Metrics.counter("RDE", "IncludedRegistrar");
+  private static final Counter REGISTRAR_FRAGMENT_COUNTER =
+      Metrics.counter("RDE", "RegistrarFragment");
+  private static final Counter REFERENCED_HOST_COGBK_COUNTER =
+      Metrics.counter("RDE", "Referenced Host");
+  private static final Counter SUBORDINATE_HOST_COUNTER = Metrics.counter("RDE", "SubordinateHost");
+  private static final Counter EXTERNAL_HOST_COUNTER = Metrics.counter("RDE", "ExternalHost");
+  private static final Counter EXTERNAL_HOST_FRAGMENT_COUNTER =
+      Metrics.counter("RDE", "ExternalHostFragment");
+  private static final Counter SUBORDINATE_HOST_FRAGMENT_COUNTER =
+      Metrics.counter("RDE", "SubordinateHostFragment");
+  private static final Counter REFERENCED_SUBORDINATE_HOST_COUNTER =
+      Metrics.counter("RDE", "ReferencedSubordinateHost");
+  private static final Counter ACTIVE_DOMAIN_COUNTER = Metrics.counter("RDE", "ActiveDomainBase");
+  private static final Counter DOMAIN_FRAGMENT_COUNTER = Metrics.counter("RDE", "DomainFragment");
+  private static final Counter REFERENCED_HOST_COUNTER = Metrics.counter("RDE", "ReferencedHost");
+
   @Inject
   RdePipeline(RdePipelineOptions options, GcsUtils gcsUtils, CloudTasksUtils cloudTasksUtils) {
     this.options = options;
@@ -262,12 +289,6 @@ public class RdePipeline implements Serializable {
   }
 
   private PCollection<KV<PendingDeposit, DepositFragment>> processRegistrars(Pipeline pipeline) {
-    // Note that the namespace in the metric is not being used by Stackdriver, it just has to be
-    // non-empty.
-    // See:
-    // https://stackoverflow.com/questions/48530496/google-dataflow-custom-metrics-not-showing-on-stackdriver
-    Counter includedRegistrarCounter = Metrics.counter("RDE", "IncludedRegistrar");
-    Counter registrarFragmentCounter = Metrics.counter("RDE", "RegistrarFragment");
     return pipeline
         .apply(
             "Read all production Registrars",
@@ -286,14 +307,14 @@ public class RdePipeline implements Serializable {
                 .via(
                     (String registrarRepoId) -> {
                       VKey<Registrar> key = VKey.create(Registrar.class, registrarRepoId);
-                      includedRegistrarCounter.inc();
+                      INCLUDED_REGISTRAR_COUNTER.inc();
                       Registrar registrar = tm().transact(() -> tm().loadByKey(key));
                       DepositFragment fragment = marshaller.marshalRegistrar(registrar);
                       ImmutableSet<KV<PendingDeposit, DepositFragment>> fragments =
                           pendingDeposits.stream()
                               .map(pending -> KV.of(pending, fragment))
                               .collect(toImmutableSet());
-                      registrarFragmentCounter.inc(fragments.size());
+                      REGISTRAR_FRAGMENT_COUNTER.inc(fragments.size());
                       return fragments;
                     }));
   }
@@ -308,37 +329,50 @@ public class RdePipeline implements Serializable {
    */
   private <T extends HistoryEntry> PCollection<KV<String, Long>> getMostRecentHistoryEntries(
       Pipeline pipeline, Class<T> historyClass) {
+    String tldFilter =
+        historyClass == DomainHistory.class
+            ? " AND sub.resource.tld IN (SELECT id FROM Tld WHERE tldType = 'REAL')"
+            : "";
+    String jpql =
+        String.format(
+            """
+            SELECT repoId, revisionId FROM %1$s WHERE (repoId, modificationTime) IN (
+                SELECT sub.repoId, MAX(sub.modificationTime) FROM %1$s sub
+                WHERE sub.modificationTime <= :watermark%2$s
+                GROUP BY sub.repoId
+            )
+            AND resource.deletionTime > :watermark
+            AND COALESCE(resource.creationRegistrarId, '') NOT LIKE 'prober-%%'
+            AND COALESCE(resource.currentSponsorRegistrarId, '') NOT LIKE 'prober-%%'
+            AND COALESCE(resource.lastEppUpdateRegistrarId, '') NOT LIKE 'prober-%%'
+            """,
+            historyClass.getSimpleName(), tldFilter);
     return pipeline.apply(
         String.format("Load most recent %s", historyClass.getSimpleName()),
         RegistryJpaIO.read(
-                ("SELECT repoId, revisionId FROM %entity% WHERE (repoId, modificationTime) IN"
-                     + " (SELECT repoId, MAX(modificationTime) FROM %entity% WHERE modificationTime"
-                     + " <= :watermark GROUP BY repoId) AND resource.deletionTime > :watermark AND"
-                     + " COALESCE(resource.creationRegistrarId, '') NOT LIKE 'prober-%' AND"
-                     + " COALESCE(resource.currentSponsorRegistrarId, '') NOT LIKE 'prober-%' AND"
-                     + " COALESCE(resource.lastEppUpdateRegistrarId, '') NOT LIKE 'prober-%' "
-                        + (historyClass == DomainHistory.class
-                            ? "AND resource.tld IN " + "(SELECT id FROM Tld WHERE tldType = 'REAL')"
-                            : ""))
-                    .replace("%entity%", historyClass.getSimpleName()),
+                jpql,
                 ImmutableMap.of("watermark", watermark),
                 Object[].class,
                 row -> KV.of((String) row[0], (long) row[1]))
             .withCoder(KvCoder.of(StringUtf8Coder.of(), VarLongCoder.of())));
   }
 
-  private <T extends HistoryEntry> EppResource loadResourceByHistoryEntryId(
-      Class<T> historyEntryClazz, String repoId, Iterable<Long> revisionIds) {
+  private static long getSingleRevisionId(
+      Class<? extends HistoryEntry> historyEntryClazz, String repoId, Iterable<Long> revisionIds) {
     ImmutableList<Long> ids = ImmutableList.copyOf(revisionIds);
-    // The size should always be 1 because we are only getting one repo ID -> revision ID pair per
-    // repo ID from the source transform (the JPA query in the method above). But for some reason
-    // after CoGroupByKey (joining the revision IDs and the pending deposits on repo IDs), in
-    // #removedUnreferencedResources, duplicate revision IDs are sometimes introduced. Here we
-    // attempt to deduplicate the iterable. If it contains multiple revision IDs that are NOT the
-    // same, we have a more serious problem as we cannot be sure which one to use. We should use the
-    // highest revision ID, but we don't even know where it comes from, as the query should
-    // definitively only give us one revision ID per repo ID. In this case we have to abort and
-    // require manual intervention.
+    // The SQL query in getMostRecentHistoryEntries guarantees exactly one (repoId, revisionId) pair
+    // per entity. However, after multi-way joins via CoGroupByKey (e.g. when joining pending
+    // deposits or subordinate hosts on repoId), duplicate identical revision IDs can appear in
+    // the resulting Iterable<Long>.
+    //
+    // We deduplicate the iterable here. If it contains multiple revision IDs that are NOT
+    // identical, we have an illegal state because we cannot determine which historical revision is
+    // authoritative at the watermark. In that case, we abort and require manual intervention.
+    checkArgument(
+        !ids.isEmpty(),
+        "No revision IDs found for %s repo ID %s",
+        historyEntryClazz.getSimpleName(),
+        repoId);
     if (ids.size() != 1) {
       ImmutableSet<Long> dedupedIds = ImmutableSet.copyOf(ids);
       checkState(
@@ -347,169 +381,243 @@ public class RdePipeline implements Serializable {
           historyEntryClazz.getSimpleName(),
           repoId,
           ids);
-      logger.atSevere().log(
+      logger.atInfo().log(
           "Duplicate revision IDs detected for %s repo ID %s: %s",
           historyEntryClazz.getSimpleName(), repoId, ids);
     }
-    return loadResourceByHistoryEntryId(historyEntryClazz, repoId, ids.get(0));
+    return ids.getFirst();
   }
 
-  private <T extends HistoryEntry> EppResource loadResourceByHistoryEntryId(
-      Class<T> historyEntryClazz, String repoId, long revisionId) {
-    return tm().transact(
-            () ->
-                tm().loadByKey(
-                        VKey.create(historyEntryClazz, new HistoryEntryId(repoId, revisionId))))
-        .getResourceAtPointInTime()
-        .map(resource -> resource.cloneProjectedAtTime(watermark))
-        .get();
+  static <E extends EppResource, H extends HistoryEntry>
+      ImmutableMap<String, E> loadResourcesByHistoryEntryIds(
+          Iterable<KV<String, Long>> repoAndRevisionIds,
+          Class<E> resourceClass,
+          Class<H> historyEntryClass,
+          Instant watermark) {
+    ImmutableList<KV<String, Long>> ids = ImmutableList.copyOf(repoAndRevisionIds);
+    if (ids.isEmpty()) {
+      return ImmutableMap.of();
+    }
+    String[] repoIdArray = ids.stream().map(KV::getKey).toArray(String[]::new);
+    Long[] revisionIdArray = ids.stream().map(KV::getValue).toArray(Long[]::new);
+    String repoIdColumnName =
+        historyEntryClass.equals(DomainHistory.class) ? "domain_repo_id" : "host_repo_id";
+    // Unfortunately Hibernate doesn't play nice with selecting by composite primary keys. We cannot
+    // directly say "WHERE (repoId, revisionId) IN (repoIdAndRevisionIdPairs)" in any way in HQL.
+    // As a result, we must use the native query format to quickly select against the (repoId,
+    // revisionId) primary key index. Just make sure not to use batch sizes in the tens of thousands
+    // (default is 500), otherwise the query could get too long.
+    String nativeQuerySql =
+        String.format(
+            """
+            SELECT * FROM "%s" WHERE (%s, history_revision_id) IN (
+              SELECT * FROM UNNEST(:repoIds\\:\\:text[], :revisionIds\\:\\:bigint[]))
+            """,
+            historyEntryClass.getSimpleName(), repoIdColumnName);
+    ImmutableMap<String, E> result =
+        tm().transact(
+                () -> {
+                  @SuppressWarnings("unchecked")
+                  List<H> queryResult =
+                      tm().getEntityManager()
+                          .createNativeQuery(nativeQuerySql, historyEntryClass)
+                          .setParameter("repoIds", repoIdArray)
+                          .setParameter("revisionIds", revisionIdArray)
+                          .setHint(AvailableHints.HINT_READ_ONLY, true)
+                          .getResultList();
+                  // Flush the context so we can GC aggressively
+                  tm().getEntityManager().clear();
+                  return queryResult.stream()
+                      .collect(
+                          toImmutableMap(
+                              HistoryEntry::getRepoId,
+                              entry ->
+                                  entry
+                                      .getResourceAtPointInTime()
+                                      .map(r -> r.cloneProjectedAtTime(watermark))
+                                      .map(resourceClass::cast)
+                                      .get()));
+                });
+    // Fail fast on items being missing unexpectedly
+    if (result.size() != ids.size()) {
+      ImmutableSet<String> expectedRepoIds = ids.stream().map(KV::getKey).collect(toImmutableSet());
+      throw new NoSuchElementException(
+          String.format(
+              "Expected to find the following %s history entries but they were missing: %s",
+              historyEntryClass.getSimpleName(),
+              Sets.difference(expectedRepoIds, result.keySet())));
+    }
+    return result;
   }
 
   /**
-   * Remove unreferenced resources by joining the (repoId, pendingDeposit) pair with the (repoId,
+   * Remove unreferenced hosts by joining the (repoId, pendingDeposit) pair with the (repoId,
    * revisionId) on the repoId.
    *
    * <p>The (repoId, pendingDeposit) pairs denote hosts that are referenced from a domain, that are
-   * to be included in the corresponding pending deposit.
-   *
-   * <p>The (repoId, revisionId) pairs come from the most recent history entry query, which can be
-   * used to load the embedded resources themselves.
    *
    * @return a pair of (repoId, ([pendingDeposit], [revisionId])) where neither the pendingDeposit
    *     nor the revisionId list is empty.
    */
-  private static PCollection<KV<String, CoGbkResult>> removeUnreferencedResource(
-      PCollection<KV<String, PendingDeposit>> referencedResources,
-      PCollection<KV<String, Long>> historyEntries,
-      Class<? extends EppResource> resourceClazz) {
-    String resourceName = resourceClazz.getSimpleName();
-    Class<? extends HistoryEntry> historyEntryClazz =
-        RESOURCE_TYPES_TO_HISTORY_TYPES.get(resourceClazz);
-    String historyEntryName = historyEntryClazz.getSimpleName();
-    Counter referencedResourceCounter = Metrics.counter("RDE", "Referenced" + resourceName);
-    return KeyedPCollectionTuple.of(PENDING_DEPOSIT, referencedResources)
-        .and(REVISION_ID, historyEntries)
+  private static PCollection<KV<String, CoGbkResult>> removeUnreferencedHost(
+      PCollection<KV<String, PendingDeposit>> referencedHosts,
+      PCollection<KV<String, Long>> hostHistories) {
+    PCollection<KV<String, PendingDeposit>> uniqueReferencedHosts =
+        referencedHosts
+            .setCoder(KvCoder.of(StringUtf8Coder.of(), PendingDepositCoder.of()))
+            .apply("Deduplicate referenced hosts for grouping", Distinct.create());
+    return KeyedPCollectionTuple.of(PENDING_DEPOSIT, uniqueReferencedHosts)
+        .and(REVISION_ID, hostHistories)
+        .apply("Join PendingDeposit with HostHistory revision ID on Host", CoGroupByKey.create())
         .apply(
-            String.format(
-                "Join PendingDeposit with %s revision ID on %s", historyEntryName, resourceName),
-            CoGroupByKey.create())
-        .apply(
-            String.format("Remove unreferenced %s", resourceName),
+            "Remove unreferenced Host",
             Filter.by(
                 (KV<String, CoGbkResult> kv) -> {
                   boolean toInclude =
-                      // If a resource does not have corresponding pending deposit, it is not
-                      // referenced and should not be included.
-                      kv.getValue().getAll(PENDING_DEPOSIT).iterator().hasNext()
-                          // If a resource does not have revision id (this should not happen, as
-                          // every referenced resource must be valid at watermark time, therefore
+                      // If a host does not have corresponding pending deposit, it is not referenced
+                      // and should not be included.
+                      !Iterables.isEmpty(kv.getValue().getAll(PENDING_DEPOSIT))
+                          // If a host does not have revision id (this should not happen, as
+                          // every referenced host must be valid at watermark time, therefore
                           // be embedded in a history entry valid at watermark time, otherwise
                           // the domain cannot reference it), there is no way for us to find the
-                          // history entry and load the embedded resource. So we ignore the resource
+                          // history entry and load the embedded host. So we ignore the host
                           // to keep the downstream process simple.
-                          && kv.getValue().getAll(REVISION_ID).iterator().hasNext();
+                          && !Iterables.isEmpty(kv.getValue().getAll(REVISION_ID));
                   if (toInclude) {
-                    referencedResourceCounter.inc();
+                    REFERENCED_HOST_COGBK_COUNTER.inc();
                   }
                   return toInclude;
                 }));
   }
 
   private PCollectionTuple processDomainHistories(PCollection<KV<String, Long>> domainHistories) {
-    Counter activeDomainCounter = Metrics.counter("RDE", "ActiveDomainBase");
-    Counter domainFragmentCounter = Metrics.counter("RDE", "DomainFragment");
-    Counter referencedHostCounter = Metrics.counter("RDE", "ReferencedHost");
-    return domainHistories.apply(
-        "Map DomainHistory to DepositFragment and emit referenced Host",
-        ParDo.of(
-                new DoFn<KV<String, Long>, KV<PendingDeposit, DepositFragment>>() {
-                  @ProcessElement
-                  public void processElement(
-                      @Element KV<String, Long> kv, MultiOutputReceiver receiver) {
-                    activeDomainCounter.inc();
-                    Domain domain =
-                        (Domain)
-                            loadResourceByHistoryEntryId(
-                                DomainHistory.class, kv.getKey(), kv.getValue());
-                    pendingDeposits.stream()
-                        .filter(pendingDeposit -> pendingDeposit.tld().equals(domain.getTld()))
-                        .forEach(
-                            pendingDeposit -> {
-                              // Domains are always deposited in both modes.
-                              domainFragmentCounter.inc();
-                              receiver
-                                  .get(DOMAIN_FRAGMENTS)
-                                  .output(
-                                      KV.of(
-                                          pendingDeposit,
-                                          marshaller.marshalDomain(domain, pendingDeposit.mode())));
-                              // Hosts are only deposited in RDE, not BRDA.
-                              if (pendingDeposit.mode() == RdeMode.FULL) {
-                                if (domain.getNsHosts() != null) {
-                                  referencedHostCounter.inc(domain.getNsHosts().size());
-                                  domain
-                                      .getNsHosts()
-                                      .forEach(
-                                          hostKey ->
-                                              receiver
-                                                  .get(REFERENCED_HOSTS)
-                                                  .output(
-                                                      KV.of(
-                                                          (String) hostKey.getKey(),
-                                                          pendingDeposit)));
-                                }
-                              }
-                            });
-                  }
-                })
-            .withOutputTags(DOMAIN_FRAGMENTS, TupleTagList.of(REFERENCED_HOSTS)));
+    int batchSize = options.getHistoryEntryLoadBatchSize();
+    int numShards = options.getNumHistoryEntryShards();
+    return domainHistories
+        .apply(
+            // Batching only combines elements with the same key, so we need to shard
+            "Split domain histories across shards for batched retrieval",
+            WithKeys.<Integer, KV<String, Long>>of(
+                    kv -> Math.floorMod(kv.getKey().hashCode(), numShards))
+                .withKeyType(integers()))
+        .apply(
+            "Group domain histories into batches",
+            GroupIntoBatches.<Integer, KV<String, Long>>ofSize(batchSize).withShardedKey())
+        .apply(
+            "Map DomainHistory to DepositFragment and emit referenced Host",
+            ParDo.of(
+                    new DoFn<
+                        KV<ShardedKey<Integer>, Iterable<KV<String, Long>>>,
+                        KV<PendingDeposit, DepositFragment>>() {
+                      @ProcessElement
+                      public void processElement(
+                          @Element KV<ShardedKey<Integer>, Iterable<KV<String, Long>>> element,
+                          MultiOutputReceiver receiver) {
+                        loadResourcesByHistoryEntryIds(
+                                element.getValue(), Domain.class, DomainHistory.class, watermark)
+                            .values()
+                            .forEach(d -> processSingleDomain(d, receiver));
+                      }
+                    })
+                .withOutputTags(DOMAIN_FRAGMENTS, TupleTagList.of(REFERENCED_HOSTS)));
+  }
+
+  private void processSingleDomain(Domain domain, DoFn.MultiOutputReceiver receiver) {
+    ACTIVE_DOMAIN_COUNTER.inc();
+    pendingDeposits.stream()
+        .filter(pendingDeposit -> pendingDeposit.tld().equals(domain.getTld()))
+        .forEach(
+            pendingDeposit -> {
+              DOMAIN_FRAGMENT_COUNTER.inc();
+              receiver
+                  .get(DOMAIN_FRAGMENTS)
+                  .output(
+                      KV.of(
+                          pendingDeposit, marshaller.marshalDomain(domain, pendingDeposit.mode())));
+
+              if (pendingDeposit.mode() == RdeMode.FULL && domain.getNsHosts() != null) {
+                REFERENCED_HOST_COUNTER.inc(domain.getNsHosts().size());
+                domain
+                    .getNsHosts()
+                    .forEach(
+                        hostKey ->
+                            receiver
+                                .get(REFERENCED_HOSTS)
+                                .output(KV.of((String) hostKey.getKey(), pendingDeposit)));
+              }
+            });
   }
 
   private PCollectionTuple processHostHistories(
       PCollection<KV<String, PendingDeposit>> referencedHosts,
       PCollection<KV<String, Long>> hostHistories) {
-    Counter subordinateHostCounter = Metrics.counter("RDE", "SubordinateHost");
-    Counter externalHostCounter = Metrics.counter("RDE", "ExternalHost");
-    Counter externalHostFragmentCounter = Metrics.counter("RDE", "ExternalHostFragment");
-    return removeUnreferencedResource(referencedHosts, hostHistories, Host.class)
+    int batchSize = options.getHistoryEntryLoadBatchSize();
+    int numShards = options.getNumHistoryEntryShards();
+    return removeUnreferencedHost(referencedHosts, hostHistories)
+        .apply(
+            // Batching only combines elements with the same key, so we need to shard
+            "Split host histories across shards for batched retrieval",
+            WithKeys.<Integer, KV<String, CoGbkResult>>of(
+                    kv -> Math.floorMod(kv.getKey().hashCode(), numShards))
+                .withKeyType(integers()))
+        .apply(
+            "Group referenced hosts into batches",
+            GroupIntoBatches.<Integer, KV<String, CoGbkResult>>ofSize(batchSize).withShardedKey())
         .apply(
             "Map external DomainResource to DepositFragment and process subordinate domains",
             ParDo.of(
-                    new DoFn<KV<String, CoGbkResult>, KV<PendingDeposit, DepositFragment>>() {
+                    new DoFn<
+                        KV<ShardedKey<Integer>, Iterable<KV<String, CoGbkResult>>>,
+                        KV<PendingDeposit, DepositFragment>>() {
                       @ProcessElement
                       public void processElement(
-                          @Element KV<String, CoGbkResult> kv, MultiOutputReceiver receiver) {
-                        Host host =
-                            (Host)
-                                loadResourceByHistoryEntryId(
-                                    HostHistory.class,
-                                    kv.getKey(),
-                                    kv.getValue().getAll(REVISION_ID));
-                        // When a host is subordinate, we need to find its superordinate domain and
-                        // include it in the deposit as well.
-                        if (host.isSubordinate()) {
-                          subordinateHostCounter.inc();
-                          receiver
-                              .get(SUPERORDINATE_DOMAINS)
-                              .output(
-                                  // The output are pairs of
-                                  // (superordinateDomainRepoId,
-                                  //   (subordinateHostRepoId, (pendingDeposit, revisionId))).
-                                  KV.of((String) host.getSuperordinateDomain().getKey(), kv));
-                        } else {
-                          externalHostCounter.inc();
-                          DepositFragment fragment = marshaller.marshalExternalHost(host);
-                          Streams.stream(kv.getValue().getAll(PENDING_DEPOSIT))
-                              // The same host could be used by multiple domains, therefore
-                              // matched to the same pending deposit multiple times.
-                              .distinct()
-                              .forEach(
-                                  pendingDeposit -> {
-                                    externalHostFragmentCounter.inc();
-                                    receiver
-                                        .get(EXTERNAL_HOST_FRAGMENTS)
-                                        .output(KV.of(pendingDeposit, fragment));
-                                  });
+                          @Element
+                              KV<ShardedKey<Integer>, Iterable<KV<String, CoGbkResult>>> element,
+                          MultiOutputReceiver receiver) {
+                        ImmutableList<KV<String, CoGbkResult>> batchElements =
+                            ImmutableList.copyOf(element.getValue());
+                        ImmutableSet<KV<String, Long>> hostKeys =
+                            batchElements.stream()
+                                .map(
+                                    kv ->
+                                        KV.of(
+                                            kv.getKey(),
+                                            getSingleRevisionId(
+                                                HostHistory.class,
+                                                kv.getKey(),
+                                                kv.getValue().getAll(REVISION_ID))))
+                                .collect(toImmutableSet());
+                        ImmutableMap<String, Host> loadedHosts =
+                            loadResourcesByHistoryEntryIds(
+                                hostKeys, Host.class, HostHistory.class, watermark);
+                        for (KV<String, CoGbkResult> kv : batchElements) {
+                          Host host = loadedHosts.get(kv.getKey());
+                          // When a host is subordinate, we need to find its superordinate domain
+                          // and include it in the deposit as well.
+                          if (host.isSubordinate()) {
+                            SUBORDINATE_HOST_COUNTER.inc();
+                            receiver
+                                .get(SUPERORDINATE_DOMAINS)
+                                .output(
+                                    // The output are pairs of (superordinateDomainRepoId,
+                                    // (subordinateHostRepoId, (pendingDeposit, revisionId))).
+                                    KV.of((String) host.getSuperordinateDomain().getKey(), kv));
+                          } else {
+                            EXTERNAL_HOST_COUNTER.inc();
+                            DepositFragment fragment = marshaller.marshalExternalHost(host);
+                            Streams.stream(kv.getValue().getAll(PENDING_DEPOSIT))
+                                // The same host could be used by multiple domains, therefore
+                                // matched to the same pending deposit multiple times.
+                                .distinct()
+                                .forEach(
+                                    pendingDeposit -> {
+                                      EXTERNAL_HOST_FRAGMENT_COUNTER.inc();
+                                      receiver
+                                          .get(EXTERNAL_HOST_FRAGMENTS)
+                                          .output(KV.of(pendingDeposit, fragment));
+                                    });
+                          }
                         }
                       }
                     })
@@ -530,59 +638,95 @@ public class RdePipeline implements Serializable {
   private PCollection<KV<PendingDeposit, DepositFragment>> processSubordinateHosts(
       PCollection<KV<String, KV<String, CoGbkResult>>> superordinateDomains,
       PCollection<KV<String, Long>> domainHistories) {
-    Counter subordinateHostFragmentCounter = Metrics.counter("RDE", "SubordinateHostFragment");
-    Counter referencedSubordinateHostCounter = Metrics.counter("RDE", "ReferencedSubordinateHost");
+    int batchSize = options.getHistoryEntryLoadBatchSize();
+    int numShards = options.getNumHistoryEntryShards();
     return KeyedPCollectionTuple.of(HOST_TO_PENDING_DEPOSIT, superordinateDomains)
         .and(REVISION_ID, domainHistories)
         .apply("Join Host:PendingDeposits with DomainHistory on Domain", CoGroupByKey.create())
         .apply(
-            " Remove unreferenced Domain",
+            "Remove unreferenced Domains",
             Filter.by(
                 kv -> {
                   boolean toInclude =
-                      kv.getValue().getAll(HOST_TO_PENDING_DEPOSIT).iterator().hasNext()
-                          && kv.getValue().getAll(REVISION_ID).iterator().hasNext();
+                      !Iterables.isEmpty(kv.getValue().getAll(HOST_TO_PENDING_DEPOSIT))
+                          && !Iterables.isEmpty(kv.getValue().getAll(REVISION_ID));
                   if (toInclude) {
-                    referencedSubordinateHostCounter.inc();
+                    REFERENCED_SUBORDINATE_HOST_COUNTER.inc();
                   }
                   return toInclude;
                 }))
         .apply(
+            // Batching only combines elements with the same key, so we need to shard
+            "Split subordinate hosts across shards for batched retrieval",
+            WithKeys.<Integer, KV<String, CoGbkResult>>of(
+                    kv -> Math.floorMod(kv.getKey().hashCode(), numShards))
+                .withKeyType(integers()))
+        .apply(
+            "Group subordinate hosts into batches",
+            GroupIntoBatches.<Integer, KV<String, CoGbkResult>>ofSize(batchSize).withShardedKey())
+        .apply(
             "Map subordinate Host to DepositFragment",
-            FlatMapElements.into(
-                    kvs(
-                        TypeDescriptor.of(PendingDeposit.class),
-                        TypeDescriptor.of(DepositFragment.class)))
-                .via(
-                    (KV<String, CoGbkResult> kv) -> {
-                      Domain superordinateDomain =
-                          (Domain)
-                              loadResourceByHistoryEntryId(
-                                  DomainHistory.class,
-                                  kv.getKey(),
-                                  kv.getValue().getAll(REVISION_ID));
-                      ImmutableSet.Builder<KV<PendingDeposit, DepositFragment>> results =
-                          new ImmutableSet.Builder<>();
+            ParDo.of(
+                new DoFn<
+                    KV<ShardedKey<Integer>, Iterable<KV<String, CoGbkResult>>>,
+                    KV<PendingDeposit, DepositFragment>>() {
+                  @ProcessElement
+                  public void processElement(
+                      @Element KV<ShardedKey<Integer>, Iterable<KV<String, CoGbkResult>>> element,
+                      OutputReceiver<KV<PendingDeposit, DepositFragment>> receiver) {
+                    ImmutableList<KV<String, CoGbkResult>> batchElements =
+                        ImmutableList.copyOf(element.getValue());
+                    ImmutableSet<KV<String, Long>> domainKeys =
+                        batchElements.stream()
+                            .map(
+                                kv ->
+                                    KV.of(
+                                        kv.getKey(),
+                                        getSingleRevisionId(
+                                            DomainHistory.class,
+                                            kv.getKey(),
+                                            kv.getValue().getAll(REVISION_ID))))
+                            .collect(toImmutableSet());
+                    ImmutableSet<KV<String, Long>> hostKeys =
+                        batchElements.stream()
+                            .flatMap(
+                                kv ->
+                                    Streams.stream(kv.getValue().getAll(HOST_TO_PENDING_DEPOSIT))
+                                        .map(
+                                            hostToPendingDeposits ->
+                                                KV.of(
+                                                    hostToPendingDeposits.getKey(),
+                                                    getSingleRevisionId(
+                                                        HostHistory.class,
+                                                        hostToPendingDeposits.getKey(),
+                                                        hostToPendingDeposits
+                                                            .getValue()
+                                                            .getAll(REVISION_ID)))))
+                            .collect(toImmutableSet());
+                    ImmutableMap<String, Domain> loadedDomains =
+                        loadResourcesByHistoryEntryIds(
+                            domainKeys, Domain.class, DomainHistory.class, watermark);
+                    ImmutableMap<String, Host> loadedHosts =
+                        loadResourcesByHistoryEntryIds(
+                            hostKeys, Host.class, HostHistory.class, watermark);
+                    for (KV<String, CoGbkResult> kv : batchElements) {
+                      Domain superordinateDomain = loadedDomains.get(kv.getKey());
                       for (KV<String, CoGbkResult> hostToPendingDeposits :
                           kv.getValue().getAll(HOST_TO_PENDING_DEPOSIT)) {
-                        Host host =
-                            (Host)
-                                loadResourceByHistoryEntryId(
-                                    HostHistory.class,
-                                    hostToPendingDeposits.getKey(),
-                                    hostToPendingDeposits.getValue().getAll(REVISION_ID));
+                        Host host = loadedHosts.get(hostToPendingDeposits.getKey());
                         DepositFragment fragment =
                             marshaller.marshalSubordinateHost(host, superordinateDomain);
                         Streams.stream(hostToPendingDeposits.getValue().getAll(PENDING_DEPOSIT))
                             .distinct()
                             .forEach(
                                 pendingDeposit -> {
-                                  subordinateHostFragmentCounter.inc();
-                                  results.add(KV.of(pendingDeposit, fragment));
+                                  SUBORDINATE_HOST_FRAGMENT_COUNTER.inc();
+                                  receiver.output(KV.of(pendingDeposit, fragment));
                                 });
                       }
-                      return results.build();
-                    }));
+                    }
+                  }
+                }));
   }
 
   /**
