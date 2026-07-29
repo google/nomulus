@@ -326,6 +326,7 @@
   <task>
     <url><![CDATA[/_dr/task/syncRemoteCache]]></url>
     <name>syncRemoteCache</name>
+    <method>POST</method>
     <description>
       Syncs remote (Valkey/Redis) EPP resource caches with changes made recently.
     </description>
