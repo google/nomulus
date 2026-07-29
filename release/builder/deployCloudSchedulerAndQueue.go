@@ -71,6 +71,7 @@ type Task struct {
 	Timeout     string `xml:"timeout"`
 	Schedule    string `xml:"schedule"`
 	Name        string `xml:"name"`
+	Method      string `xml:"method"`
 }
 
 type QueuesSyncManager struct {
@@ -191,6 +192,11 @@ func (manager TasksSyncManager) getArgs(task Task, operationType string) []strin
 	var uri string
 	uri = fmt.Sprintf("https://%s.%s%s", service, baseDomain, strings.TrimSpace(task.URL))
 
+	method := "get"
+	if task.Method != "" {
+		method = strings.ToLower(task.Method)
+	}
+
 	args := []string{
 		"--project", projectName,
 		"scheduler", "jobs", operationType,
@@ -199,7 +205,7 @@ func (manager TasksSyncManager) getArgs(task Task, operationType string) []strin
 		"--schedule", task.Schedule,
 		"--uri", uri,
 		"--description", description,
-		"--http-method", "get",
+		"--http-method", method,
 		"--oidc-service-account-email", getCloudSchedulerServiceAccountEmail(),
 		"--oidc-token-audience", clientId,
 	}
