@@ -15,9 +15,10 @@
 package google.registry.beam.rde;
 
 import google.registry.beam.common.RegistryPipelineOptions;
+import org.apache.beam.sdk.options.Default;
 import org.apache.beam.sdk.options.Description;
 
-/** Custom options for running the spec11 pipeline. */
+/** Custom options for running the RDE pipeline. */
 public interface RdePipelineOptions extends RegistryPipelineOptions {
 
   @Description("The Base64-encoded serialized map of TLDs to PendingDeposit.")
@@ -39,4 +40,17 @@ public interface RdePipelineOptions extends RegistryPipelineOptions {
   String getStagingKey();
 
   void setStagingKey(String value);
+
+  @Description(
+      "The number of history entries to batch load from the SQL database in one operation.")
+  @Default.Integer(500)
+  int getHistoryEntryLoadBatchSize();
+
+  void setHistoryEntryLoadBatchSize(int value);
+
+  @Description("The number of shards to use when splitting items into batches")
+  @Default.Integer(1000)
+  int getNumHistoryEntryShards();
+
+  void setNumHistoryEntryShards(int value);
 }
