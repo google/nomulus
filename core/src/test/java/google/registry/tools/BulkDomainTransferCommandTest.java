@@ -193,4 +193,27 @@ public class BulkDomainTransferCommandTest extends CommandTestCase<BulkDomainTra
             MediaType.PLAIN_TEXT_UTF_8,
             "[\"foo.tld\",\"bar.tld\"]".getBytes(UTF_8));
   }
+
+  @Test
+  void testSuccess_noLosingRegistrarId() throws Exception {
+    runCommandForced(
+        "--gaining_registrar_id",
+        "NewRegistrar",
+        "--reason",
+        "someReason",
+        "--domains",
+        "foo.tld,bar.tld");
+    verify(connection)
+        .sendPostRequest(
+            "/_dr/task/bulkDomainTransfer",
+            ImmutableMap.of(
+                "gainingRegistrarId",
+                "NewRegistrar",
+                "requestedByRegistrar",
+                false,
+                "reason",
+                "someReason"),
+            MediaType.PLAIN_TEXT_UTF_8,
+            "[\"foo.tld\",\"bar.tld\"]".getBytes(UTF_8));
+  }
 }

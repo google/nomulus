@@ -169,8 +169,8 @@ public class BatchModule {
 
   @Provides
   @Parameter("losingRegistrarId")
-  static String provideLosingRegistrarId(HttpServletRequest req) {
-    return extractRequiredParameter(req, "losingRegistrarId");
+  static Optional<String> provideLosingRegistrarId(HttpServletRequest req) {
+    return extractOptionalParameter(req, "losingRegistrarId");
   }
 
   @Provides
