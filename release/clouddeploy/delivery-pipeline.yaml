@@ -27,7 +27,7 @@ serialPipeline:
                 - "-c"
                 - |
                   gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-verify-${TARGET_ID}.yaml .
-                  gcloud builds submit --config=cloudbuild-schema-verify-${TARGET_ID}.yaml
+                  gcloud builds submit --no-source --config=cloudbuild-schema-verify-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -71,7 +71,7 @@ serialPipeline:
                 - "-c"
                 - |
                   gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-deploy-${TARGET_ID}.yaml .
-                  gcloud builds submit --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
+                  gcloud builds submit --no-source --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -99,7 +99,7 @@ serialPipeline:
                 - "-c"
                 - |
                   gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-verify-${TARGET_ID}.yaml .
-                  gcloud builds submit --config=cloudbuild-schema-verify-${TARGET_ID}.yaml
+                  gcloud builds submit --no-source --config=cloudbuild-schema-verify-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -143,7 +143,7 @@ serialPipeline:
                 - "-c"
                 - |
                   gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-deploy-${TARGET_ID}.yaml .
-                  gcloud builds submit --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
+                  gcloud builds submit --no-source --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
