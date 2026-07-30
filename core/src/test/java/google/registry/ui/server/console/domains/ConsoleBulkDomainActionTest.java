@@ -252,18 +252,6 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
-  void testFailure_pendingRegistrar() {
-    persistResource(
-        loadRegistrar("TheRegistrar").asBuilder().setState(Registrar.State.PENDING).build());
-    JsonElement payload =
-        GSON.toJsonTree(
-            ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test"));
-    ConsoleBulkDomainAction action = createAction("DELETE", payload);
-    action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
-  }
-
-  @Test
   void testFailure_nonexistentRegistrar() {
     JsonElement payload =
         GSON.toJsonTree(

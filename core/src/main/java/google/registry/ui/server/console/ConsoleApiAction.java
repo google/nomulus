@@ -113,11 +113,10 @@ public abstract class ConsoleApiAction implements Runnable {
                 () ->
                     new ConsolePermissionForbiddenException(
                         String.format("Registrar %s does not exist", registrarId)));
-    if (!registrar.isLive()) {
+    if (registrar.getState().equals(Registrar.State.DISABLED)) {
       throw new ConsolePermissionForbiddenException(
           String.format(
-              "Permission forbidden because registrar %s is currently %s",
-              registrarId, registrar.getState()));
+              "Permission forbidden because registrar %s is currently DISABLED", registrarId));
     }
     if (!user.getUserRoles().hasPermission(registrarId, permission)) {
       throw new ConsolePermissionForbiddenException(
