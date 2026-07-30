@@ -20,11 +20,14 @@ serialPipeline:
                 image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
                 env:
                   TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
                 command: ["/bin/bash"]
                 args:
                 - "-c"
                 - |
-                  gcloud builds submit --config=release/cloudbuild-schema-verify-${TARGET_ID}.yaml
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/release/cloudbuild-schema-verify-${TARGET_ID}.yaml .
+                  gcloud builds submit --config=cloudbuild-schema-verify-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -61,11 +64,14 @@ serialPipeline:
                 image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
                 env:
                   TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
                 command: ["/bin/bash"]
                 args:
                 - "-c"
                 - |
-                  gcloud builds submit --config=release/cloudbuild-schema-deploy-${TARGET_ID}.yaml
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/release/cloudbuild-schema-deploy-${TARGET_ID}.yaml .
+                  gcloud builds submit --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -86,11 +92,14 @@ serialPipeline:
                 image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
                 env:
                   TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
                 command: ["/bin/bash"]
                 args:
                 - "-c"
                 - |
-                  gcloud builds submit --config=release/cloudbuild-schema-verify-${TARGET_ID}.yaml
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/release/cloudbuild-schema-verify-${TARGET_ID}.yaml .
+                  gcloud builds submit --config=cloudbuild-schema-verify-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -127,11 +136,14 @@ serialPipeline:
                 image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
                 env:
                   TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
                 command: ["/bin/bash"]
                 args:
                 - "-c"
                 - |
-                  gcloud builds submit --config=release/cloudbuild-schema-deploy-${TARGET_ID}.yaml
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/release/cloudbuild-schema-deploy-${TARGET_ID}.yaml .
+                  gcloud builds submit --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
