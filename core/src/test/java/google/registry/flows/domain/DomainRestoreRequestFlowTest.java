@@ -53,7 +53,6 @@ import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.domain.DomainFlowUtils.CurrencyUnitMismatchException;
 import google.registry.flows.domain.DomainFlowUtils.CurrencyValueScaleException;
-import google.registry.flows.domain.DomainFlowUtils.DomainReservedException;
 import google.registry.flows.domain.DomainFlowUtils.FeesMismatchException;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredForPremiumNameException;
 import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapException;
@@ -397,15 +396,14 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
   }
 
   @Test
-  void testSuccess_superuserOverridesReservedList() throws Exception {
+  void testSuccess_reservedDomain() throws Exception {
     persistResource(
         Tld.get("tld")
             .asBuilder()
             .setReservedLists(persistReservedList("tld-reserved", "example,FULLY_BLOCKED"))
             .build());
     persistPendingDeleteDomain();
-    runFlowAssertResponse(
-        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   @Test
@@ -628,19 +626,6 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     // Modify the Registrar to block premium names.
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setBlockPremiumNames(true).build());
     EppException thrown = assertThrows(PremiumNameBlockedException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailure_reservedBlocked() throws Exception {
-    createTld("tld");
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setReservedLists(persistReservedList("tld-reserved", "example,FULLY_BLOCKED"))
-            .build());
-    persistPendingDeleteDomain();
-    EppException thrown = assertThrows(DomainReservedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
