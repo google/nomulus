@@ -15,6 +15,9 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.loadByKey;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_CREATED;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -36,6 +39,7 @@ import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
+import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.CloudTasksHelper;
@@ -127,6 +131,23 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
+  void testSuccess_pendingRegistrar() throws Exception {
+    persistResource(
+        loadRegistrar("TheRegistrar").asBuilder().setState(Registrar.State.PENDING).build());
+    AuthResult authResult =
+        AuthResult.createUser(loadByKey(VKey.create(User.class, "test1@test.com")));
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("GET"),
+            Optional.empty());
+
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).contains("test1@test.com");
+  }
+
+  @Test
   void testFailure_noPermission() throws IOException {
     UserRoles userRoles =
         new UserRoles.Builder()
@@ -205,7 +226,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testFailure_noPermissionToDeleteUser() throws IOException {
-    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    User user1 = loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult =
         AuthResult.createUser(
             user1
@@ -248,7 +269,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
   @Test
   void testSuccess_deletesUser_nonConsoleMintedAddress_skipsWorkspaceAccountDeletion()
       throws IOException {
-    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    User user1 = loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult =
         AuthResult.createUser(
             user1
@@ -274,7 +295,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testSuccess_deletesUser_consoleMintedAddress_deletesWorkspaceAccount() throws IOException {
-    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    User user1 = loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult =
         AuthResult.createUser(
             user1
@@ -282,7 +303,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
                 .setUserRoles(user1.getUserRoles().asBuilder().setIsAdmin(true).build())
                 .build());
     String mintedEmail = "abc.TheRegistrar@email.com";
-    DatabaseHelper.persistResource(
+    persistResource(
         new User.Builder()
             .setEmailAddress(mintedEmail)
             .setUserRoles(
@@ -311,14 +332,14 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testSuccess_removesRole() throws IOException {
-    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    User user1 = loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult =
         AuthResult.createUser(
             user1
                 .asBuilder()
                 .setUserRoles(user1.getUserRoles().asBuilder().setIsAdmin(true).build())
                 .build());
-    DatabaseHelper.persistResource(
+    persistResource(
         new User.Builder()
             .setEmailAddress("test4@test.com")
             .setUserRoles(
@@ -355,7 +376,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testFailure_limitedTo4UsersPerRegistrar() throws IOException {
-    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    User user1 = loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult =
         AuthResult.createUser(
             user1
@@ -395,7 +416,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testSuccess_updatesUserRole() throws IOException {
-    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    User user1 = loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult =
         AuthResult.createUser(
             user1
@@ -404,7 +425,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
                 .build());
 
     assertThat(
-            DatabaseHelper.loadByKey(VKey.create(User.class, "test2@test.com"))
+            loadByKey(VKey.create(User.class, "test2@test.com"))
                 .getUserRoles()
                 .getRegistrarRoles()
                 .get("TheRegistrar"))
@@ -420,7 +441,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(
-            DatabaseHelper.loadByKey(VKey.create(User.class, "test2@test.com"))
+            loadByKey(VKey.create(User.class, "test2@test.com"))
                 .getUserRoles()
                 .getRegistrarRoles()
                 .get("TheRegistrar"))
@@ -429,7 +450,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testFailure_noPermissionToUpdateUser() throws IOException {
-    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    User user1 = loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult =
         AuthResult.createUser(
             user1
@@ -461,14 +482,14 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
                 new UserData("test3@test.com", null, RegistrarRole.TECH_CONTACT.name(), null)));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    User appendedUser = DatabaseHelper.loadByKey(VKey.create(User.class, "test3@test.com"));
+    User appendedUser = loadByKey(VKey.create(User.class, "test3@test.com"));
     assertThat(appendedUser.getUserRoles().getRegistrarRoles().get("TheRegistrar"))
         .isEqualTo(RegistrarRole.TECH_CONTACT);
   }
 
   @Test
   void testFailure_appendUser_crossTenantNoPermission() throws IOException {
-    User callingUser = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    User callingUser = loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult = AuthResult.createUser(callingUser);
     ConsoleUsersAction action =
         createAction(
@@ -483,7 +504,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
   @Test
   void testSuccess_appendUser_crossTenantWithPermission() throws IOException {
     User callingUser =
-        DatabaseHelper.persistResource(
+        persistResource(
             new User.Builder()
                 .setEmailAddress("multitenant@test.com")
                 .setUserRoles(
@@ -506,7 +527,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
                 new UserData("test3@test.com", null, RegistrarRole.TECH_CONTACT.name(), null)));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    User appendedUser = DatabaseHelper.loadByKey(VKey.create(User.class, "test3@test.com"));
+    User appendedUser = loadByKey(VKey.create(User.class, "test3@test.com"));
     assertThat(appendedUser.getUserRoles().getRegistrarRoles().get("TheRegistrar"))
         .isEqualTo(RegistrarRole.TECH_CONTACT);
   }
@@ -515,7 +536,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
   void testFailure_appendUser_globalAdmin() throws IOException {
     User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(user);
-    DatabaseHelper.persistResource(
+    persistResource(
         new User.Builder()
             .setEmailAddress("globaladmin@test.com")
             .setUserRoles(
@@ -539,7 +560,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
   void testFailure_appendUser_globalRole() throws IOException {
     User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(user);
-    DatabaseHelper.persistResource(
+    persistResource(
         new User.Builder()
             .setEmailAddress("support@test.com")
             .setUserRoles(
@@ -566,7 +587,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
     User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(user);
     // Historically associated global admin
-    DatabaseHelper.persistResource(
+    persistResource(
         new User.Builder()
             .setEmailAddress("globaladmin@test.com")
             .setUserRoles(
@@ -596,7 +617,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
     User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(user);
     // Historically associated global admin
-    DatabaseHelper.persistResource(
+    persistResource(
         new User.Builder()
             .setEmailAddress("globaladmin@test.com")
             .setUserRoles(
@@ -626,7 +647,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
     User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(user);
     // Historically associated user with global role
-    DatabaseHelper.persistResource(
+    persistResource(
         new User.Builder()
             .setEmailAddress("support@test.com")
             .setUserRoles(

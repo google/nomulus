@@ -25,7 +25,6 @@ import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccoun
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewBillingEvent;
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewPollMessage;
 import static google.registry.flows.domain.DomainFlowUtils.validateFeeChallenge;
-import static google.registry.flows.domain.DomainFlowUtils.verifyNotReserved;
 import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNotBlocked;
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RESTORE;
@@ -35,7 +34,6 @@ import static java.time.ZoneOffset.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
@@ -101,7 +99,6 @@ import org.joda.money.Money;
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
  * @error {@link DomainFlowUtils.CurrencyUnitMismatchException}
  * @error {@link DomainFlowUtils.CurrencyValueScaleException}
- * @error {@link DomainFlowUtils.DomainReservedException}
  * @error {@link DomainFlowUtils.FeesMismatchException}
  * @error {@link DomainFlowUtils.FeesRequiredForPremiumNameException}
  * @error {@link DomainFlowUtils.MissingBillingAccountMapException}
@@ -221,7 +218,6 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     if (!isSuperuser) {
       verifyResourceOwnership(registrarId, existingDomain);
-      verifyNotReserved(InternetDomainName.from(targetId), false);
       verifyPremiumNameIsNotBlocked(targetId, now, registrarId);
       checkAllowedAccessToTld(registrarId, existingDomain.getTld());
       checkHasBillingAccount(registrarId, existingDomain.getTld());
