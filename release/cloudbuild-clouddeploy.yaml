@@ -84,6 +84,7 @@ steps:
           
           sed -i "s|artifactStorage: artifactStorage|artifactStorage: $artifact_storage|" "$target_file"
           sed -i "s|serviceAccount: serviceAccount|serviceAccount: $service_account|" "$target_file"
+          sed -i "s|serviceAccount: serviceAccount|serviceAccount: $service_account|" release/clouddeploy/delivery-pipeline.yaml
           sed -i "s|cluster: cluster|cluster: $cluster_val|" "$target_file"
           sed -i "s|workerPool: workerPool|workerPool: $worker_pool|" "$target_file"
         fi

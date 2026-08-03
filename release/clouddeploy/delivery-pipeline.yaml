@@ -14,17 +14,6 @@ serialPipeline:
           - phaseId: "canary-1"
             profiles: ["crash-partial-phase-1"]
             percentage: 10
-            predeploy:
-              tasks:
-              - type: container
-                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
-                env:
-                  TARGET_ID: ${{ target.id }}
-                command: ["/bin/bash"]
-                args:
-                - "-c"
-                - |
-                  gcloud builds submit --config=release/cloudbuild-schema-verify-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -55,17 +44,20 @@ serialPipeline:
                 args:
                 - "-c"
                 - |
-                  gcloud artifacts docker tags add $DEPLOYED_IMAGE \
-                    ${BASE_IMAGE}:live-cd-${TARGET_ID}
+                  gcloud container images add-tag $DEPLOYED_IMAGE \
+                    ${BASE_IMAGE}:live-cd-${TARGET_ID} --quiet
               - type: container
                 image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
                 env:
                   TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
                 command: ["/bin/bash"]
                 args:
                 - "-c"
                 - |
-                  gcloud builds submit --config=release/cloudbuild-schema-deploy-${TARGET_ID}.yaml
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-deploy-${TARGET_ID}.yaml .
+                  gcloud builds submit --no-source --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -86,11 +78,14 @@ serialPipeline:
                 image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
                 env:
                   TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
                 command: ["/bin/bash"]
                 args:
                 - "-c"
                 - |
-                  gcloud builds submit --config=release/cloudbuild-schema-verify-${TARGET_ID}.yaml
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-verify-${TARGET_ID}.yaml .
+                  gcloud builds submit --no-source --config=cloudbuild-schema-verify-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -121,20 +116,42 @@ serialPipeline:
                 args:
                 - "-c"
                 - |
-                  gcloud artifacts docker tags add $DEPLOYED_IMAGE \
-                    ${BASE_IMAGE}:live-cd-${TARGET_ID}
+                  gcloud container images add-tag $DEPLOYED_IMAGE \
+                    ${BASE_IMAGE}:live-cd-${TARGET_ID} --quiet
               - type: container
                 image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
                 env:
                   TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
                 command: ["/bin/bash"]
                 args:
                 - "-c"
                 - |
-                  gcloud builds submit --config=release/cloudbuild-schema-deploy-${TARGET_ID}.yaml
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-deploy-${TARGET_ID}.yaml .
+                  gcloud builds submit --no-source --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
               googleCloud:
                 alertPolicyChecks:
                     sandboxStableDeploymentAlertPolicyChecks
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Automation
+metadata:
+  name: deploy-nomulus/auto-advance-canary
+description: Automatically advances rollouts through canary-1 phase after successful deployment and analysis.
+# Placeholder: Replace with project service account.
+serviceAccount: serviceAccount
+selector:
+  targets:
+  - id: crash
+  - id: sandbox
+rules:
+- advanceRolloutRule:
+    id: advance-canary-phases
+    sourcePhases:
+    - "canary-1"
+    wait: 0m
+
