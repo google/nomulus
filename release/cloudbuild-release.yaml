@@ -236,11 +236,17 @@ steps:
         # partial phase manifests
         for stage in 1 5
         do
+          if [ ${service} == backend ] || [ ${service} == console ]
+          then
+            replicas=1
+          else
+            replicas=${stage}
+          fi
           awk 'NR==1,/^---$/ {if ($0 != "---") print}' ./jetty/kubernetes/nomulus-${env}-${service}.yaml | \
             sed s/name:\ ${service}/name:\ ${service}-partial-phase/g | \
             sed s/service:\ ${service}/deployment:\ ${service}-partial-phase/g | \
             sed s/value:\ ${service}/value:\ ${service}-partial-phase/g | \
-            sed "/^spec:$/a\  replicas: ${stage}" \
+            sed "/^spec:$/a\  replicas: ${replicas}" \
             > ./jetty/kubernetes/nomulus-${env}-${service}-partial-phase-${stage}.yaml
         done
         # gateway
