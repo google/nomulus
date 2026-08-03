@@ -254,9 +254,11 @@ steps:
             > ./jetty/kubernetes/gateway/nomulus-backend-policy-${env}-${service}-canary.yaml
       done
       # Generate manifests for epp-server (which doesn't use HTTP gateway routing)
+      # Lowercase EPP-v2 to epp-v2 to match reserved static GCE IP names.
       sed s/GCP_PROJECT/${PROJECT_ID}/g ./jetty/kubernetes/nomulus-epp-server.yaml | \
         sed s/latest/${TAG_NAME}/g | \
-        sed s/ENVIRONMENT/${env}/g > ./jetty/kubernetes/nomulus-${env}-epp-server.yaml
+        sed s/ENVIRONMENT/${env}/g | \
+        sed s/EPP-v2/epp-v2/g > ./jetty/kubernetes/nomulus-${env}-epp-server.yaml
     done
 # Upload the Gradle binary to GCS if it does not exist and point URL in Gradle wrapper to it.
 - name: 'gcr.io/cloud-builders/gcloud'
