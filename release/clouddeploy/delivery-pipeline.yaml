@@ -140,8 +140,10 @@ serialPipeline:
 apiVersion: deploy.cloud.google.com/v1
 kind: Automation
 metadata:
-  name: auto-advance-canary
+  name: deploy-nomulus/auto-advance-canary
 description: Automatically advances rollouts through canary-1 phase after successful deployment and analysis.
+# Placeholder: Replace with project service account.
+serviceAccount: serviceAccount
 selector:
   targets:
   - id: crash
@@ -151,4 +153,5 @@ rules:
     id: advance-canary-phases
     sourcePhases:
     - "canary-1"
-    wait: 0s
+    wait: 0m
+
