@@ -15,6 +15,10 @@
 package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
+import static google.registry.batch.SyncRemoteCacheAction.SyncStatus.FAILURE;
+import static google.registry.batch.SyncRemoteCacheAction.SyncStatus.NOT_CONFIGURED;
+import static google.registry.batch.SyncRemoteCacheAction.SyncStatus.SUCCESS;
 import static google.registry.model.common.Cursor.CursorType.REMOTE_CACHE_DOMAIN_SYNC;
 import static google.registry.model.common.Cursor.CursorType.REMOTE_CACHE_HOST_SYNC;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -73,7 +77,15 @@ class SyncRemoteCacheActionTest {
   @BeforeEach
   void beforeEach() {
     createTld("tld");
+    SyncRemoteCacheAction.SYNC_CACHE_RUNS_METRIC.reset();
     action = new SyncRemoteCacheAction(lockHandler, response, Optional.of(jedisClient));
+  }
+
+  private static void verifyMetrics(SyncRemoteCacheAction.SyncStatus status) {
+    assertThat(SyncRemoteCacheAction.SYNC_CACHE_RUNS_METRIC)
+        .hasValueForLabels(1, status.name())
+        .and()
+        .hasNoOtherValues();
   }
 
   @Test
@@ -82,6 +94,7 @@ class SyncRemoteCacheActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload()).contains("No Jedis/Valkey configuration found");
+    verifyMetrics(NOT_CONFIGURED);
   }
 
   @Test
@@ -91,6 +104,7 @@ class SyncRemoteCacheActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload()).contains("Could not acquire lock");
+    verifyMetrics(FAILURE);
   }
 
   @Test
@@ -100,6 +114,7 @@ class SyncRemoteCacheActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(response.getPayload()).contains("Errored out with cause");
+    verifyMetrics(FAILURE);
   }
 
   @Test
@@ -109,6 +124,7 @@ class SyncRemoteCacheActionTest {
     verifyNoInteractions(jedisClient);
     assertThat(DatabaseHelper.loadByKeyIfPresent(Cursor.createGlobalVKey(REMOTE_CACHE_DOMAIN_SYNC)))
         .isEmpty();
+    verifyMetrics(SUCCESS);
   }
 
   @Test
@@ -131,6 +147,7 @@ class SyncRemoteCacheActionTest {
                 .getCursorTime()
                 .toString())
         .isEqualTo("2025-01-01T00:00:00.001Z");
+    verifyMetrics(SUCCESS);
   }
 
   @Test
@@ -146,6 +163,7 @@ class SyncRemoteCacheActionTest {
             ImmutableList.of(
                 new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain)));
     verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("deleted.tld"));
+    verifyMetrics(SUCCESS);
   }
 
   @Test
@@ -166,6 +184,7 @@ class SyncRemoteCacheActionTest {
     verify(jedisClient)
         .setAll(
             ImmutableList.of(new SimplifiedJedisClient.JedisResource<>("example2.tld", domain2)));
+    verifyMetrics(SUCCESS);
   }
 
   @Test
@@ -175,6 +194,7 @@ class SyncRemoteCacheActionTest {
     verifyNoInteractions(jedisClient);
     assertThat(DatabaseHelper.loadByKeyIfPresent(Cursor.createGlobalVKey(REMOTE_CACHE_HOST_SYNC)))
         .isEmpty();
+    verifyMetrics(SUCCESS);
   }
 
   @Test
@@ -197,6 +217,7 @@ class SyncRemoteCacheActionTest {
                 .getCursorTime()
                 .toString())
         .isEqualTo("2025-01-01T00:00:00.001Z");
+    verifyMetrics(SUCCESS);
   }
 
   @Test
@@ -212,5 +233,6 @@ class SyncRemoteCacheActionTest {
             ImmutableList.of(
                 new SimplifiedJedisClient.JedisResource<>(active.getRepoId(), active)));
     verify(jedisClient).deleteAll(Host.class, ImmutableList.of(deleted.getRepoId()));
+    verifyMetrics(SUCCESS);
   }
 }

@@ -28,6 +28,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
+import com.google.monitoring.metrics.IncrementableMetric;
+import com.google.monitoring.metrics.LabelDescriptor;
+import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.cache.SimplifiedJedisClient;
 import google.registry.model.EppResource;
 import google.registry.model.common.Cursor;
@@ -39,6 +42,7 @@ import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
+import google.registry.util.NonFinalForTesting;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
@@ -61,6 +65,25 @@ public class SyncRemoteCacheAction implements Runnable {
   private static final String LOCK_NAME = "syncRemoteCacheAction";
   private static final int BATCH_SIZE = 10000;
 
+  public enum SyncStatus {
+    SUCCESS,
+    FAILURE,
+    NOT_CONFIGURED
+  }
+
+  private static final ImmutableSet<LabelDescriptor> LABEL_DESCRIPTORS =
+      ImmutableSet.of(
+          LabelDescriptor.create("status", "Whether SyncRemoteCacheAction succeeded or failed."));
+
+  @NonFinalForTesting
+  static final IncrementableMetric SYNC_CACHE_RUNS_METRIC =
+      MetricRegistryImpl.getDefault()
+          .newIncrementableMetric(
+              "/batch/sync_remote_cache/runs",
+              "Count of SyncRemoteCacheAction executions",
+              "count",
+              LABEL_DESCRIPTORS);
+
   private final LockHandler lockHandler;
   private final Response response;
   private final Optional<SimplifiedJedisClient> jedisClient;
@@ -79,14 +102,17 @@ public class SyncRemoteCacheAction implements Runnable {
     if (jedisClient.isEmpty()) {
       response.setStatus(SC_NO_CONTENT);
       response.setPayload("No Jedis/Valkey configuration found");
+      SYNC_CACHE_RUNS_METRIC.increment(SyncStatus.NOT_CONFIGURED.name());
       return;
     }
     Callable<Void> runner =
         () -> {
           try {
             runLocked();
+            SYNC_CACHE_RUNS_METRIC.increment(SyncStatus.SUCCESS.name());
             response.setStatus(SC_OK);
           } catch (Exception e) {
+            SYNC_CACHE_RUNS_METRIC.increment(SyncStatus.FAILURE.name());
             logger.atSevere().withCause(e).log("Errored out during execution.");
             response.setStatus(SC_INTERNAL_SERVER_ERROR);
             response.setPayload(String.format("Errored out with cause: %s", e));
@@ -95,6 +121,7 @@ public class SyncRemoteCacheAction implements Runnable {
         };
 
     if (!lockHandler.executeWithLocks(runner, null, Duration.ofHours(1), LOCK_NAME)) {
+      SYNC_CACHE_RUNS_METRIC.increment(SyncStatus.FAILURE.name());
       // Send a 200-series status code to prevent this conflicting action from retrying.
       response.setStatus(SC_NO_CONTENT);
       response.setPayload("Could not acquire lock; already running?");
