@@ -265,6 +265,15 @@ steps:
         sed s/latest/${TAG_NAME}/g | \
         sed s/ENVIRONMENT/${env}/g | \
         sed s/EPP-v2/epp-v2/g > ./jetty/kubernetes/nomulus-${env}-epp-server.yaml
+      # Generate partial-phase manifests for epp-server for Cloud Deploy canary stages
+      for stage in 1 5
+      do
+        awk 'NR==1,/^---$/ {if ($0 != "---") print}' ./jetty/kubernetes/nomulus-${env}-epp-server.yaml | \
+          sed s/name:\ epp-server/name:\ epp-server-partial-phase/g | \
+          sed s/service:\ epp-server/deployment:\ epp-server-partial-phase/g | \
+          sed "/^spec:$/a\  replicas: ${stage}" \
+          > ./jetty/kubernetes/nomulus-${env}-epp-server-partial-phase-${stage}.yaml
+      done
     done
 # Upload the Gradle binary to GCS if it does not exist and point URL in Gradle wrapper to it.
 - name: 'gcr.io/cloud-builders/gcloud'

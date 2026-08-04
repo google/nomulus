@@ -11,6 +11,7 @@ profiles:
     - ../../jetty/kubernetes/nomulus-crash-console.yaml
     - ../../jetty/kubernetes/nomulus-crash-frontend.yaml
     - ../../jetty/kubernetes/nomulus-crash-pubapi.yaml
+    - ../../jetty/kubernetes/nomulus-crash-epp-server.yaml
   deploy:
     kubectl: { }
 - name: crash-partial-phase-1
@@ -20,6 +21,7 @@ profiles:
     - ../../jetty/kubernetes/nomulus-crash-console-partial-phase-1.yaml
     - ../../jetty/kubernetes/nomulus-crash-frontend-partial-phase-1.yaml
     - ../../jetty/kubernetes/nomulus-crash-pubapi-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-crash-epp-server-partial-phase-1.yaml
   deploy:
     kubectl: { }
 - name: crash-partial-phase-5
@@ -29,6 +31,7 @@ profiles:
     - ../../jetty/kubernetes/nomulus-crash-console-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-crash-frontend-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-crash-pubapi-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-crash-epp-server-partial-phase-5.yaml
   deploy:
     kubectl: { }
 - name: sandbox
@@ -38,6 +41,7 @@ profiles:
     - ../../jetty/kubernetes/nomulus-sandbox-console.yaml
     - ../../jetty/kubernetes/nomulus-sandbox-frontend.yaml
     - ../../jetty/kubernetes/nomulus-sandbox-pubapi.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-epp-server.yaml
   deploy:
     kubectl: { }
 - name: sandbox-partial-phase-1
@@ -47,6 +51,7 @@ profiles:
     - ../../jetty/kubernetes/nomulus-sandbox-console-partial-phase-1.yaml
     - ../../jetty/kubernetes/nomulus-sandbox-frontend-partial-phase-1.yaml
     - ../../jetty/kubernetes/nomulus-sandbox-pubapi-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-epp-server-partial-phase-1.yaml
   deploy:
     kubectl: { }
 - name: sandbox-partial-phase-5
@@ -56,5 +61,6 @@ profiles:
     - ../../jetty/kubernetes/nomulus-sandbox-console-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-sandbox-frontend-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-sandbox-pubapi-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-sandbox-epp-server-partial-phase-5.yaml
   deploy:
     kubectl: { }
