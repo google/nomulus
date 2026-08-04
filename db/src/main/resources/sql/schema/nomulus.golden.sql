@@ -1842,6 +1842,13 @@ CREATE UNIQUE INDEX domain_no_duplicate_active ON public."Domain" USING btree (d
 
 
 --
+-- Name: domain_tld_domain_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domain_tld_domain_name_idx ON public."Domain" USING btree (tld, domain_name);
+
+
+--
 -- Name: domaindsdatahistory_domain_history_revision_id_hash; Type: INDEX; Schema: public; Owner: -
 --
 
