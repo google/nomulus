@@ -15,10 +15,12 @@
 package google.registry.eppserver.handler;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.TooLongFrameException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -97,5 +99,33 @@ class EppProxyProtocolHandlerTest {
 
     ByteBuf passedOn = channel.readInbound();
     assertThat(passedOn.toString(StandardCharsets.US_ASCII)).isEqualTo("NOT_A_PROXY_HEADER");
+  }
+
+  @Test
+  void testProxyProtocol_headerExceedsMaxLength_throwsException() {
+    EppProxyProtocolHandler handler = new EppProxyProtocolHandler();
+    EmbeddedChannel channel = new EmbeddedChannel(handler);
+
+    // Create an oversized header prefix (>256 bytes) without a \r\n terminator
+    String oversizedHeader = "PROXY TCP4 " + "A".repeat(300);
+    ByteBuf buffer = Unpooled.wrappedBuffer(oversizedHeader.getBytes(StandardCharsets.US_ASCII));
+
+    assertThat(assertThrows(TooLongFrameException.class, () -> channel.writeInbound(buffer)))
+        .hasMessageThat()
+        .isEqualTo("PROXY header exceeded max length of 256 bytes without CRLF");
+  }
+
+  @Test
+  void testProxyProtocol_headerExceedsMaxLength_evenWithNewline_throwsException() {
+    EppProxyProtocolHandler handler = new EppProxyProtocolHandler();
+    EmbeddedChannel channel = new EmbeddedChannel(handler);
+
+    // Create an oversized header prefix with a \r\n terminator
+    String oversizedHeader = "PROXY TCP4 " + "A".repeat(300) + "\r\n";
+    ByteBuf buffer = Unpooled.wrappedBuffer(oversizedHeader.getBytes(StandardCharsets.US_ASCII));
+
+    assertThat(assertThrows(TooLongFrameException.class, () -> channel.writeInbound(buffer)))
+        .hasMessageThat()
+        .isEqualTo("PROXY header length 311 exceeds max 256");
   }
 }
