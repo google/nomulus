@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         service: epp-server
+        traffic: epp-all
     spec:
       serviceAccountName: nomulus
       nodeSelector:
@@ -98,7 +99,7 @@ spec:
   ipFamilies: [IPv4, IPv6]
   ipFamilyPolicy: RequireDualStack
   selector:
-    service: epp-server
+    traffic: epp-all
   ports:
   - port: 700
     targetPort: epp
