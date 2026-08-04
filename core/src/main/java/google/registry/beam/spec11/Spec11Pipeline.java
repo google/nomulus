@@ -15,7 +15,6 @@
 package google.registry.beam.spec11;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
 import dagger.Component;
@@ -25,11 +24,9 @@ import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.RegistryConfig.ConfigModule;
-import google.registry.model.domain.Domain;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
-import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.UtilsModule;
@@ -39,8 +36,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
-import org.apache.beam.sdk.coders.KvCoder;
-import org.apache.beam.sdk.coders.StringUtf8Coder;
+import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -112,44 +108,22 @@ public class Spec11Pipeline implements Serializable {
   }
 
   static PCollection<DomainNameInfo> readFromCloudSql(Pipeline pipeline) {
-    Read<Object[], KV<String, String>> read =
+    Read<Object[], DomainNameInfo> read =
         RegistryJpaIO.read(
-                "select d.repoId, r.emailAddress from Domain d join Registrar r on"
-                    + " d.currentSponsorRegistrarId = r.registrarId where r.type = 'REAL' and"
-                    + " d.deletionTime > CAST(now() AS timestamp)",
+                """
+                SELECT d.domainName, d.repoId, d.currentSponsorRegistrarId, r.emailAddress FROM
+                Domain d JOIN Registrar r ON d.currentSponsorRegistrarId = r.registrarId WHERE
+                r.type = 'REAL' AND d.deletionTime > CAST(now() AS timestamp)
+                """,
                 false,
                 Spec11Pipeline::parseRow)
-            .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of()));
-
-    return pipeline
-        .apply("Read active domains from Cloud SQL", read)
-        .apply(
-            "Build DomainNameInfo",
-            ParDo.of(
-                new DoFn<KV<String, String>, DomainNameInfo>() {
-                  @ProcessElement
-                  public void processElement(
-                      @Element KV<String, String> input, OutputReceiver<DomainNameInfo> output) {
-                    Domain domain =
-                        tm().transact(
-                                () -> tm().loadByKey(VKey.create(Domain.class, input.getKey())));
-                    String emailAddress = input.getValue();
-                    if (emailAddress == null) {
-                      emailAddress = "";
-                    }
-                    DomainNameInfo domainNameInfo =
-                        DomainNameInfo.create(
-                            domain.getDomainName(),
-                            domain.getRepoId(),
-                            domain.getCurrentSponsorRegistrarId(),
-                            emailAddress);
-                    output.output(domainNameInfo);
-                  }
-                }));
+            .withCoder(SerializableCoder.of(DomainNameInfo.class));
+    return pipeline.apply("Read active domains from Cloud SQL", read);
   }
 
-  private static KV<String, String> parseRow(Object[] row) {
-    return KV.of((String) row[0], (String) row[1]);
+  private static DomainNameInfo parseRow(Object[] row) {
+    String emailAddress = row[3] != null ? (String) row[3] : "";
+    return new DomainNameInfo((String) row[0], (String) row[1], (String) row[2], emailAddress);
   }
 
   static void saveToSql(
