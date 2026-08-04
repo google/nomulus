@@ -170,9 +170,7 @@ class NordnVerifyActionTest {
   void testFailure_badUrl() throws Exception {
     action.url = URI.create("http://example.com/blobio").toURL();
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
-    assertThat(thrown)
-        .hasMessageThat()
-        .isEqualTo("URL http://example.com/blobio must start with ry.marksdb.org");
+    assertThat(thrown).hasMessageThat().isEqualTo("Host example.com must equal ry.marksdb.org");
   }
 
   @Test

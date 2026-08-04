@@ -64,7 +64,7 @@ public final class NordnVerifyAction implements Runnable {
   static final String NORDN_URL_PARAM = "nordnUrl";
   static final String NORDN_LOG_ID_PARAM = "nordnLogId";
 
-  private static final String MARKSDB_URL_BEGINNING = "ry.marksdb.org";
+  private static final String MARKSDB_HOST_NAME = "ry.marksdb.org";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -109,11 +109,7 @@ public final class NordnVerifyAction implements Runnable {
   @VisibleForTesting
   LordnLog verify() throws IOException, GeneralSecurityException {
     String host = Ascii.toLowerCase(url.getHost());
-    checkArgument(
-        host.startsWith(MARKSDB_URL_BEGINNING),
-        "URL %s must start with %s",
-        url,
-        MARKSDB_URL_BEGINNING);
+    checkArgument(host.equals(MARKSDB_HOST_NAME), "Host %s must equal %s", host, MARKSDB_HOST_NAME);
     logger.atInfo().log("LORDN verify task %s: Sending request to URL %s", actionLogId, url);
     HttpURLConnection connection = urlConnectionService.createConnection(url);
     lordnRequestInitializer.initialize(connection, tld);
