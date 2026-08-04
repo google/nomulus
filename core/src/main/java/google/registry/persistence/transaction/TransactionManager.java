@@ -271,7 +271,7 @@ public interface TransactionManager {
    * A runnable that allows for checked exceptions to be thrown.
    *
    * <p>This makes it easier to write lambdas without having to worry about wrapping and re-throwing
-   * checked excpetions as unchecked ones.
+   * checked exceptions as unchecked ones.
    */
   @FunctionalInterface
   interface ThrowingRunnable {
