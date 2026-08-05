@@ -23,7 +23,6 @@ import dagger.multibindings.IntoSet;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfigSettings;
 import google.registry.eppserver.Protocol.FrontendProtocol;
-import google.registry.eppserver.handler.EppProxyProtocolHandler;
 import google.registry.eppserver.handler.EppServiceHandler;
 import google.registry.eppserver.quota.QuotaManager;
 import google.registry.networking.handler.SslServerInitializer;
@@ -78,14 +77,12 @@ public final class EppProtocolModule {
   @Provides
   @EppProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> provideHandlerProviders(
-      Provider<EppProxyProtocolHandler> proxyProtocolHandlerProvider,
       @EppProtocol Provider<SslServerInitializer<NioSocketChannel>> sslServerInitializerProvider,
       @EppProtocol Provider<ReadTimeoutHandler> readTimeoutHandlerProvider,
       Provider<LengthFieldBasedFrameDecoder> lengthFieldBasedFrameDecoderProvider,
       Provider<LengthFieldPrepender> lengthFieldPrependerProvider,
       Provider<EppServiceHandler> eppServiceHandlerProvider) {
     return ImmutableList.of(
-        proxyProtocolHandlerProvider,
         sslServerInitializerProvider,
         readTimeoutHandlerProvider,
         lengthFieldBasedFrameDecoderProvider,
