@@ -14,10 +14,10 @@
 
 package google.registry.eppserver.handler;
 
-import static google.registry.eppserver.handler.EppProxyProtocolHandler.REMOTE_ADDRESS_KEY;
+import static com.google.common.truth.Truth.assertThat;
+import static google.registry.eppserver.handler.EppServiceHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -51,6 +51,8 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.concurrent.ScheduledFuture;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -382,7 +384,7 @@ class EppServiceHandlerTest {
     setUpSuccessfulHandshake();
 
     Runnable timeoutTask = timeoutTaskCaptor.getValue();
-    assertNotNull(timeoutTask);
+    assertThat(timeoutTask).isNotNull();
 
     ChannelFuture closeFuture = mock(ChannelFuture.class);
     when(ctx.close()).thenReturn(closeFuture);
@@ -390,6 +392,71 @@ class EppServiceHandlerTest {
     timeoutTask.run();
 
     verify(metrics).registerQuotaRejection("epp_login_timeout", "192.168.1.1");
+    verify(ctx).close();
+  }
+
+  @Test
+  void testFallbackToSocketIpAddress_whenRemoteAddressKeyIsNull() throws Exception {
+    certPromise = new DefaultPromise<>(ImmediateEventExecutor.INSTANCE);
+    when(channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY)).thenReturn(certPromiseAttr);
+    when(certPromiseAttr.get()).thenReturn(certPromise);
+
+    handler.channelActive(ctx);
+
+    // Mock REMOTE_ADDRESS_KEY to return null
+    when(channel.attr(REMOTE_ADDRESS_KEY)).thenReturn(remoteAddressAttr);
+    when(remoteAddressAttr.get()).thenReturn(null);
+
+    // Mock channel.remoteAddress() to return a socket address
+    InetSocketAddress socketAddress = new InetSocketAddress("10.0.0.1", 12345);
+    when(channel.remoteAddress()).thenReturn(socketAddress);
+
+    when(channel.attr(EppServiceHandler.CLIENT_CERTIFICATE_HASH_KEY)).thenReturn(certHashAttr);
+    when(certificate.getEncoded()).thenReturn(new byte[] {1, 2, 3});
+
+    when(localConnectionLimiter.acquireIp("10.0.0.1")).thenReturn(true);
+    when(idTokenSupplier.get()).thenReturn("fake_id_token");
+
+    // Stub request handler to capture the request
+    ArgumentCaptor<FakeHttpServletRequest> requestCaptor =
+        ArgumentCaptor.forClass(FakeHttpServletRequest.class);
+    doAnswer(
+            invocation -> {
+              FakeHttpServletResponse rsp = invocation.getArgument(1);
+              rsp.getWriter().write("<epp><greeting/></epp>");
+              return null;
+            })
+        .when(requestHandler)
+        .handleRequest(requestCaptor.capture(), any(FakeHttpServletResponse.class));
+
+    certPromise.setSuccess(certificate);
+
+    // Verify it resolved IP to 10.0.0.1
+    verify(localConnectionLimiter).acquireIp("10.0.0.1");
+    FakeHttpServletRequest capturedRequest = requestCaptor.getValue();
+    assertThat(capturedRequest).isNotNull();
+    assertThat(capturedRequest.getHeader(ProxyHttpHeaders.IP_ADDRESS)).isEqualTo("10.0.0.1");
+  }
+
+  @Test
+  void testFallbackToSocketIpAddress_fails_closesConnection() throws Exception {
+    certPromise = new DefaultPromise<>(ImmediateEventExecutor.INSTANCE);
+    when(channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY)).thenReturn(certPromiseAttr);
+    when(certPromiseAttr.get()).thenReturn(certPromise);
+
+    handler.channelActive(ctx);
+
+    // Mock REMOTE_ADDRESS_KEY to return null
+    when(channel.attr(REMOTE_ADDRESS_KEY)).thenReturn(remoteAddressAttr);
+    when(remoteAddressAttr.get()).thenReturn(null);
+
+    // Mock channel.remoteAddress() to return a non-InetSocketAddress (e.g. mock SocketAddress)
+    SocketAddress mockSocketAddress = mock(SocketAddress.class);
+    when(channel.remoteAddress()).thenReturn(mockSocketAddress);
+
+    certPromise.setSuccess(certificate);
+
+    // Verify it logged error and closed connection
     verify(ctx).close();
   }
 }
