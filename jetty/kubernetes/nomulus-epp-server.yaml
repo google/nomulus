@@ -17,7 +17,7 @@ spec:
       nodeSelector:
         cloud.google.com/machine-family: c4
       containers:
-      - name: frontend
+      - name: epp-server
         image: gcr.io/GCP_PROJECT/nomulus
         ports:
         - containerPort: 8080
@@ -61,7 +61,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: CONTAINER_NAME
-          value: frontend
+          value: epp-server
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
