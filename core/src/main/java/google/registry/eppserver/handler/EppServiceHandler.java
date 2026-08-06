@@ -14,7 +14,6 @@
 
 package google.registry.eppserver.handler;
 
-import static google.registry.eppserver.handler.EppProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
 import static google.registry.util.GcpJsonFormatter.setCurrentRequest;
 import static google.registry.util.GcpJsonFormatter.setCurrentTraceId;
@@ -45,6 +44,8 @@ import io.netty.util.concurrent.Promise;
 import io.netty.util.concurrent.ScheduledFuture;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.cert.X509Certificate;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -68,6 +69,9 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   public static final AttributeKey<String> CLIENT_CERTIFICATE_HASH_KEY =
       AttributeKey.valueOf("CLIENT_CERTIFICATE_HASH_KEY");
+
+  public static final AttributeKey<String> REMOTE_ADDRESS_KEY =
+      AttributeKey.valueOf("REMOTE_ADDRESS_KEY");
 
   private final byte[] helloBytes;
   private final FrontendMetrics metrics;
@@ -128,8 +132,22 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
     if (!ctx.channel().isActive()) {
       return;
     }
-    sslClientCertificateHash = getCertificateHash(cert);
+
     clientAddress = ctx.channel().attr(REMOTE_ADDRESS_KEY).get();
+    if (clientAddress == null) {
+      SocketAddress remoteAddress = ctx.channel().remoteAddress();
+      if (remoteAddress instanceof InetSocketAddress inetSocketAddress) {
+        clientAddress = inetSocketAddress.getAddress().getHostAddress();
+      }
+    }
+
+    if (clientAddress == null || clientAddress.isEmpty()) {
+      logger.atSevere().log("Failed to resolve client IP address, closing connection");
+      closeConnection(ctx);
+      return;
+    }
+
+    sslClientCertificateHash = getCertificateHash(cert);
     ctx.channel().attr(CLIENT_CERTIFICATE_HASH_KEY).set(sslClientCertificateHash);
 
     // 1. Connection throttling (IP only pre-login)
