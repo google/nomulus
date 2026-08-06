@@ -76,6 +76,7 @@ steps:
     echo "$nomulus_digest" > /workspace/nomulus_digest
     proxy_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/proxy \
     --format="get(digest)" --filter="tags = ${TAG_NAME}")
+    echo "$proxy_digest" > /workspace/proxy_digest
     gcloud --project=${PROJECT_ID} beta container binauthz attestations \
       sign-and-create --artifact-url=gcr.io/${PROJECT_ID}/nomulus@$nomulus_digest \
       --attestor=build-attestor --attestor-project=${PROJECT_ID} \
@@ -196,11 +197,12 @@ steps:
     echo "============================================="
     # Read the pre-fetched image digest from the workspace file
     nomulus_digest=$(cat /workspace/nomulus_digest)
+    proxy_digest=$(cat /workspace/proxy_digest)
     gcloud deploy releases create "$release_name" \
       --delivery-pipeline="$pipeline" \
       --region="$region" \
       --project=${PROJECT_ID} \
-      --images="gcr.io/${PROJECT_ID}/nomulus=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest}" \
+      --images="gcr.io/${PROJECT_ID}/nomulus=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest},gcr.io/${PROJECT_ID}/proxy=gcr.io/${PROJECT_ID}/proxy@${proxy_digest}" \
       --source=. \
       --skaffold-file=release/clouddeploy/skaffold.yaml \
       --deploy-parameters="deployed_image=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest},base_image=us-docker.pkg.dev/${PROJECT_ID}/gcr.io/nomulus,tag_name=${TAG_NAME},project_id=${PROJECT_ID}"
