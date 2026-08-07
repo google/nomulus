@@ -139,6 +139,11 @@ public abstract class JpaTransactionManagerExtension
   private static JdbcDatabaseContainer<?> create() {
     PostgreSQLContainer<?> container =
         new PostgreSQLContainer<>(NomulusPostgreSql.getDockerImageName())
+            // Locale configs in use on Cloud SQL in all environments
+            .withEnv(
+                "POSTGRES_INITDB_ARGS",
+                "--encoding=UTF8 --lc-collate=en_US.UTF8 --lc-ctype=en_US.UTF8"
+                    + " --locale-provider=libc --no-locale")
             .withDatabaseName(POSTGRES_DB_NAME);
     container.start();
     return container;

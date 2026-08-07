@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.hibernate.transform.Transformers.ALIAS_TO_ENTITY_MAP;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.ImmutableObject;
@@ -25,7 +26,10 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExte
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Tuple;
 import java.util.List;
+import java.util.Map;
+import org.hibernate.query.NativeQuery;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -57,6 +61,39 @@ public class JpaTransactionManagerExtensionTest {
                       .getResultList();
               assertThat(results).isEmpty();
             });
+  }
+
+  @Test
+  void verifyDatabaseEncodingConfig() {
+    String sql =
+        """
+        SELECT
+            pg_encoding_to_char(encoding) AS encoding,
+            datcollate AS collation,
+            datctype AS ctype,
+            datlocprovider AS locale_provider,
+            datlocale AS locale
+        FROM
+            pg_database
+        WHERE
+            datname = 'postgres'
+        """;
+    List<Map<String, Object>> rows =
+        tm().transact(
+                () ->
+                    tm().getEntityManager()
+                        .createNativeQuery(sql, Tuple.class)
+                        .unwrap(NativeQuery.class)
+                        .setResultTransformer(ALIAS_TO_ENTITY_MAP)
+                        .getResultList());
+    assertThat(rows).hasSize(1);
+    assertThat(rows.getFirst())
+        .containsExactly(
+            "encoding", "UTF8",
+            "collation", "en_US.UTF8",
+            "ctype", "en_US.UTF8",
+            "locale_provider", 'c', // c --> libc
+            "locale", null);
   }
 
   @Test
