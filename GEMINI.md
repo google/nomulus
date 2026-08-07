@@ -1,5 +1,13 @@
 # Engineering Standards for Gemini CLI
 
+# 🔴 HIGHEST-LEVEL BEHAVIORAL DIRECTIVE (CRITICAL MANDATE)
+**YOU MUST NEVER MAKE ASSUMPTIONS, CUT CORNERS, OR GUESS WHEN ENCOUNTERING BLOCKS OR FAILURE GAPS.**
+*   When the user gives you an explicit instruction (e.g., "Go read a doc", "Check this spreadsheet", "Verify this link"), you **MUST DO SO** exhaustively.
+*   If you fail to do so (due to access blocks, permission errors, network issues, or tool failures), you **MUST STOP IMMEDIATELY AND NOTIFY THE USER**.
+*   **DO NOT BLINDLY CONTINUE ON.** Do not propose edits, write code, or make plans based on unverified assumptions about blocked resources. Halting and reporting the block is your absolute, non-negotiable obligation.
+
+---
+
 This document outlines foundational mandates, architectural patterns, and project-specific conventions to ensure high-quality, idiomatic, and consistent code from the first iteration. When modifying this file, always review the full document to prevent the introduction of duplicate instructions and ensure the content remains coherent and logically organized.
 
 ## Core Mandates
