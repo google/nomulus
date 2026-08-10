@@ -138,7 +138,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       description =
           "Used together with --cert_file when updating an registrar. "
               + "If set, current cert is saved as failover.")
-  private Boolean rotatePrimaryCert = Boolean.FALSE;
+  private boolean rotatePrimaryCert = false;
 
   @Nullable
   @Parameter(
