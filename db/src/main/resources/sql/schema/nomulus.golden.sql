@@ -1877,6 +1877,13 @@ CREATE INDEX domainhistory_history_revision_id_hash ON public."DomainHistory" US
 
 
 --
+-- Name: domainhistory_repo_id_modification_time; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domainhistory_repo_id_modification_time ON public."DomainHistory" USING btree (domain_repo_id, history_modification_time);
+
+
+--
 -- Name: domainhistoryhost_domain_history_history_revision_id_hash; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1944,6 +1951,13 @@ CREATE INDEX host_host_name_hash ON public."Host" USING hash (host_name);
 --
 
 CREATE INDEX host_repo_id_hash ON public."Host" USING hash (repo_id);
+
+
+--
+-- Name: hosthistory_repo_id_modification_time; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX hosthistory_repo_id_modification_time ON public."HostHistory" USING btree (host_repo_id, history_modification_time);
 
 
 --
