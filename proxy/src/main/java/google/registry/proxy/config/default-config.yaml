@@ -61,13 +61,11 @@ epp:
   #
   # The first 4 bytes in a message is the total length of message, in bytes.
   #
-  # We accept a message up to 1 GB, which should be plentiful, if not over the
-  # top. In fact, we should probably limit this to a more reasonable number, as
-  # a 1 GB message will likely cause the proxy to go out of memory.
+  # We accept a message up to 10 MB, which should be plentiful.
   #
   # See also: RFC 5734 4 Data Unit Format
   # (https://tools.ietf.org/html/rfc5734#section-4).
-  maxMessageLengthBytes: 1073741824
+  maxMessageLengthBytes: 10485760
 
   # Length of the header field in bytes.
   #
