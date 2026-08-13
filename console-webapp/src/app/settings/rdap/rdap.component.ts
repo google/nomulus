@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, computed } from '@angular/core';
+import { Component, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { RdapService } from './rdap.service';
 
@@ -20,6 +20,7 @@ import { RdapService } from './rdap.service';
   selector: 'app-rdap',
   templateUrl: './rdap.component.html',
   styleUrls: ['./rdap.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export default class RdapComponent {

@@ -14,7 +14,13 @@
 
 import { SelectionModel } from '@angular/cdk/collections';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { Component, effect, Inject, ViewChild } from '@angular/core';
+import {
+  Component,
+  effect,
+  Inject,
+  ViewChild,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
@@ -57,6 +63,7 @@ interface DomainData {
       <button mat-button (click)="onClose()">Close</button>
     </mat-dialog-actions>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ResponseDialogComponent {
@@ -95,6 +102,7 @@ enum Operation {
       </button>
     </mat-dialog-actions>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ReasonDialogComponent {
@@ -119,6 +127,7 @@ export class ReasonDialogComponent {
   templateUrl: './domainList.component.html',
   styleUrls: ['./domainList.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [CdkColumnDef],
 })
 export class DomainListComponent {

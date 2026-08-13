@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, effect } from '@angular/core';
+import { Component, effect, ChangeDetectionStrategy } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SelectedRegistrarModule } from '../app.module';
 import { MaterialModule } from '../material.module';
@@ -39,6 +39,7 @@ import { UserEditFormComponent } from './userEditForm.component';
     UserEditFormComponent,
     UserDetailsComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [UsersService],
 })
 export class UsersComponent {

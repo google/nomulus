@@ -13,7 +13,12 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from '../registrar/registrar.service';
@@ -28,6 +33,7 @@ export interface OteCreateResponse extends Map<string, string> {
   selector: 'app-ote',
   imports: [MaterialModule, SnackBarModule],
   templateUrl: './newOte.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./newOte.component.scss'],
 })
 export class NewOteComponent {

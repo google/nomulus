@@ -12,13 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, computed, effect, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RegistrarService } from './registrar.service';
 
 @Component({
   selector: 'app-registrar-selector',
   templateUrl: './registrarSelector.component.html',
   styleUrls: ['./registrarSelector.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class RegistrarSelectorComponent {
