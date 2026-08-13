@@ -10,6 +10,8 @@ steps:
 # Check the out internal repo.
 - name: 'gcr.io/cloud-builders/git'
   entrypoint: /bin/bash
+  env:
+    - '_INTERNAL_REPO_URL=${_INTERNAL_REPO_URL}'
   args:
   - -c
   - |
@@ -17,7 +19,7 @@ steps:
     git clone https://gerrit.googlesource.com/gcompute-tools
     sed -i s@/usr/bin/python@/usr/bin/python3@g ./gcompute-tools/git-cookie-authdaemon
     ./gcompute-tools/git-cookie-authdaemon
-    git clone ${_INTERNAL_REPO_URL} nomulus-internal
+    git clone "$_INTERNAL_REPO_URL" nomulus-internal
 
 # Merge the repos.
 - name: 'gcr.io/cloud-builders/git'

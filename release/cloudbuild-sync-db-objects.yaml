@@ -17,6 +17,8 @@ steps:
 # Check out the internal repo.
 - name: 'gcr.io/cloud-builders/git:latest'
   entrypoint: /bin/bash
+  env:
+    - '_INTERNAL_REPO_URL=${_INTERNAL_REPO_URL}'
   args:
   - -c
   - |
@@ -26,7 +28,7 @@ steps:
       ln -s /usr/bin/python3 /usr/bin/python
     fi
     ./gcompute-tools/git-cookie-authdaemon
-    git clone ${_INTERNAL_REPO_URL} nomulus-internal
+    git clone "$_INTERNAL_REPO_URL" nomulus-internal
 # Download and decrypt the nomulus tool credential
 - name: 'gcr.io/$PROJECT_ID/builder:live'
   entrypoint: /bin/bash
