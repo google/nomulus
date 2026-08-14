@@ -29,6 +29,7 @@ import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
+import google.registry.util.Sleeper;
 import google.registry.util.UtilsModule;
 import jakarta.inject.Singleton;
 import java.io.Serializable;
@@ -238,8 +239,11 @@ public class Spec11Pipeline implements Serializable {
 
     @Provides
     EvaluateSafeBrowsingFn provideSafeBrowsingFn(
-        Spec11PipelineOptions options, Retrier retrier, Clock clock) {
-      return new EvaluateSafeBrowsingFn(options.getSafeBrowsingApiKey(), retrier, clock);
+        Spec11PipelineOptions options, Clock clock, Sleeper sleeper) {
+      // Have a noticeably longer backoff for SafeBrowsing retries to mitigate any 429s
+      Retrier safeBrowsingRetrier = new Retrier(sleeper, 4, 1000L);
+      return new EvaluateSafeBrowsingFn(
+          options.getSafeBrowsingApiKey(), safeBrowsingRetrier, clock);
     }
 
     @Provides

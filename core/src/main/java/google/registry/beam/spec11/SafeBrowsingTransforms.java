@@ -102,12 +102,12 @@ public class SafeBrowsingTransforms {
      * because class methods are generally serializable, especially a static function such as {@link
      * HttpClients#createDefault()}.
      */
-    @SuppressWarnings("unchecked")
     EvaluateSafeBrowsingFn(String apiKey, Retrier retrier, Clock clock) {
-      this.apiKey = apiKey;
-      this.retrier = retrier;
-      this.clock = clock;
-      closeableHttpClientSupplier = (Supplier & Serializable) HttpClients::createDefault;
+      this(
+          apiKey,
+          retrier,
+          clock,
+          (Supplier<CloseableHttpClient> & Serializable) HttpClients::createDefault);
     }
 
     /**
@@ -122,7 +122,7 @@ public class SafeBrowsingTransforms {
       this.apiKey = apiKey;
       this.retrier = retrier;
       this.clock = clock;
-      closeableHttpClientSupplier = clientSupplier;
+      this.closeableHttpClientSupplier = clientSupplier;
     }
 
     /** Evaluates any buffered {@link DomainNameInfo} objects upon completing the bundle. */
