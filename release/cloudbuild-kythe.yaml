@@ -11,14 +11,16 @@ steps:
 # Download Kythe
 - name: 'gcr.io/${PROJECT_ID}/builder:live'
   entrypoint: /bin/bash
+  env:
+    - '_KYTHE_VERSION=${_KYTHE_VERSION}'
   args:
   - -c
   - |
     wget -q \
-      https://github.com/kythe/kythe/releases/download/${_KYTHE_VERSION}/kythe-${_KYTHE_VERSION}.tar.gz
-    tar xvf kythe-${_KYTHE_VERSION}.tar.gz
-    rm kythe-${_KYTHE_VERSION}.tar.gz
-    mv kythe-${_KYTHE_VERSION} kythe
+      "https://github.com/kythe/kythe/releases/download/${_KYTHE_VERSION}/kythe-${_KYTHE_VERSION}.tar.gz"
+    tar xvf "kythe-${_KYTHE_VERSION}.tar.gz"
+    rm "kythe-${_KYTHE_VERSION}.tar.gz"
+    mv "kythe-${_KYTHE_VERSION}" kythe
 # Build Nomulus with the Kythe wrapper
 - name: 'gcr.io/${PROJECT_ID}/builder:live'
   entrypoint: /bin/bash

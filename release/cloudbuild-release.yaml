@@ -14,6 +14,8 @@ steps:
 # Check the out internal repo.
 - name: 'gcr.io/cloud-builders/git'
   entrypoint: /bin/bash
+  env:
+    - '_INTERNAL_REPO_URL=${_INTERNAL_REPO_URL}'
   args:
   - -c
   - |
@@ -21,16 +23,18 @@ steps:
     git clone https://gerrit.googlesource.com/gcompute-tools
     sed -i s@/usr/bin/python@/usr/bin/python3@g ./gcompute-tools/git-cookie-authdaemon
     ./gcompute-tools/git-cookie-authdaemon
-    git clone ${_INTERNAL_REPO_URL} nomulus-internal
+    git clone "$_INTERNAL_REPO_URL" nomulus-internal
 # Tag and push the internal repo.
 - name: 'gcr.io/cloud-builders/git'
   entrypoint: /bin/bash
+  env:
+    - 'TAG_NAME=${TAG_NAME}'
   args:
   - -c
   - |
     set -e
-    git tag ${TAG_NAME}
-    git push origin ${TAG_NAME}
+    git tag "$TAG_NAME"
+    git push origin "$TAG_NAME"
   dir: 'nomulus-internal'
 # Merge the repos.
 - name: 'gcr.io/cloud-builders/git'
@@ -60,38 +64,44 @@ steps:
 # Build the builder image and pull the base images, them upload them to GCR.
 - name: 'gcr.io/cloud-builders/docker'
   entrypoint: /bin/bash
+  env:
+    - 'PROJECT_ID=${PROJECT_ID}'
+    - 'TAG_NAME=${TAG_NAME}'
   args:
   - -c
   - |
     set -e
-    docker build -t gcr.io/${PROJECT_ID}/builder:${TAG_NAME} .
-    docker tag gcr.io/${PROJECT_ID}/builder:${TAG_NAME} gcr.io/${PROJECT_ID}/builder:latest
-    docker push gcr.io/${PROJECT_ID}/builder:${TAG_NAME}
-    docker push gcr.io/${PROJECT_ID}/builder:latest
+    docker build -t "gcr.io/${PROJECT_ID}/builder:${TAG_NAME}" .
+    docker tag "gcr.io/${PROJECT_ID}/builder:${TAG_NAME}" "gcr.io/${PROJECT_ID}/builder:latest"
+    docker push "gcr.io/${PROJECT_ID}/builder:${TAG_NAME}"
+    docker push "gcr.io/${PROJECT_ID}/builder:latest"
     docker pull jetty:12-jdk25
-    docker tag jetty:12-jdk25 gcr.io/${PROJECT_ID}/jetty:${TAG_NAME}
-    docker tag jetty:12-jdk25 gcr.io/${PROJECT_ID}/jetty:latest
-    docker push gcr.io/${PROJECT_ID}/jetty:${TAG_NAME}
-    docker push gcr.io/${PROJECT_ID}/jetty:latest
+    docker tag jetty:12-jdk25 "gcr.io/${PROJECT_ID}/jetty:${TAG_NAME}"
+    docker tag jetty:12-jdk25 "gcr.io/${PROJECT_ID}/jetty:latest"
+    docker push "gcr.io/${PROJECT_ID}/jetty:${TAG_NAME}"
+    docker push "gcr.io/${PROJECT_ID}/jetty:latest"
     docker pull eclipse-temurin:25
-    docker tag eclipse-temurin:25 gcr.io/${PROJECT_ID}/temurin:${TAG_NAME}
-    docker tag eclipse-temurin:25 gcr.io/${PROJECT_ID}/temurin:latest
-    docker push gcr.io/${PROJECT_ID}/temurin:${TAG_NAME}
-    docker push gcr.io/${PROJECT_ID}/temurin:latest
+    docker tag eclipse-temurin:25 "gcr.io/${PROJECT_ID}/temurin:${TAG_NAME}"
+    docker tag eclipse-temurin:25 "gcr.io/${PROJECT_ID}/temurin:latest"
+    docker push "gcr.io/${PROJECT_ID}/temurin:${TAG_NAME}"
+    docker push "gcr.io/${PROJECT_ID}/temurin:latest"
   dir: 'release/builder/'
 # Do text replacement in the merged repo, hardcoding image digests.
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: /bin/bash
+  env:
+    - 'PROJECT_ID=${PROJECT_ID}'
+    - 'TAG_NAME=${TAG_NAME}'
   args:
   - -c
   - |
     set -e
-    builder_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/builder \
-      --format='get(digest)' --filter='tags = ${TAG_NAME}')
-    jetty_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/jetty \
-      --format='get(digest)' --filter='tags = ${TAG_NAME}')
-    temurin_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/temurin \
-      --format='get(digest)' --filter='tags = ${TAG_NAME}')
+    builder_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/builder" \
+      --format='get(digest)' --filter="tags = ${TAG_NAME}")
+    jetty_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/jetty" \
+      --format='get(digest)' --filter="tags = ${TAG_NAME}")
+    temurin_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/temurin" \
+      --format='get(digest)' --filter="tags = ${TAG_NAME}")
     sed -i s%eclipse-temurin:25%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g proxy/Dockerfile
     sed -i s%eclipse-temurin:25%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g core/Dockerfile
     sed -i s%jetty:12-jdk25%gcr.io/${PROJECT_ID}/jetty@$jetty_digest%g jetty/Dockerfile
@@ -143,16 +153,19 @@ steps:
 # Do text replacement in the cloud build YAML files.
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: /bin/bash
+  env:
+    - 'PROJECT_ID=${PROJECT_ID}'
+    - 'TAG_NAME=${TAG_NAME}'
   args:
   - -c
   - |
     set -e
-    builder_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/builder \
-      --format='get(digest)' --filter='tags = ${TAG_NAME}')
-    schema_deployer_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/schema_deployer \
-      --format='get(digest)' --filter='tags = ${TAG_NAME}')
-    schema_verifier_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/schema_verifier \
-      --format='get(digest)' --filter='tags = ${TAG_NAME}')
+    builder_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/builder" \
+      --format='get(digest)' --filter="tags = ${TAG_NAME}")
+    schema_deployer_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/schema_deployer" \
+      --format='get(digest)' --filter="tags = ${TAG_NAME}")
+    schema_verifier_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/schema_verifier" \
+      --format='get(digest)' --filter="tags = ${TAG_NAME}")
     sed -i s/builder:latest/builder@$builder_digest/g \
       release/cloudbuild-schema-deploy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g \
@@ -177,6 +190,9 @@ steps:
 # Do text replacement in the k8s manifests.
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: /bin/bash
+  env:
+    - 'PROJECT_ID=${PROJECT_ID}'
+    - 'TAG_NAME=${TAG_NAME}'
   args:
   - -c
   - |
@@ -305,18 +321,20 @@ steps:
 # Conditionally trigger the appropriate build based on the tag format.
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: 'bash'
+  env:
+    - 'TAG_NAME=${TAG_NAME}'
   args:
   - -c
   - |
     set -e
     # Check for a nomulus release tag (e.g., "v1.2.3")
-    if [[ "${TAG_NAME}" =~ ^nomulus-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
+    if [[ "$TAG_NAME" =~ ^nomulus-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
       echo "Tag format matches a nomulus release. Triggering nomulus build..."
-      gcloud builds submit . --config=release/cloudbuild-nomulus.yaml --substitutions=TAG_NAME=$TAG_NAME
+      gcloud builds submit . --config=release/cloudbuild-nomulus.yaml --substitutions="TAG_NAME=$TAG_NAME"
     # Check for a proxy release tag (e.g., "proxy-v1.2.3")
-    elif [[ "${TAG_NAME}" =~ ^proxy-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
+    elif [[ "$TAG_NAME" =~ ^proxy-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
       echo "Tag format matches a proxy release. Triggering proxy build..."
-      gcloud builds submit . --config=release/cloudbuild-proxy.yaml --substitutions=TAG_NAME=$TAG_NAME
+      gcloud builds submit . --config=release/cloudbuild-proxy.yaml --substitutions="TAG_NAME=$TAG_NAME"
     else
       echo "Tag format '$TAG_NAME' does not match a known release type. Exiting."
       exit 1
@@ -324,15 +342,19 @@ steps:
 # Run the BEAM smoke test, using the builder and pipeline image just created
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
+  env:
+    - 'TAG_NAME=${TAG_NAME}'
+    - 'PROJECT_ID=${PROJECT_ID}'
+    - '_TEST_PROJECT=${_TEST_PROJECT}'
   args:
     - -c
     - |
       set -e
-      if [[ "${TAG_NAME}" =~ ^nomulus-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
+      if [[ "$TAG_NAME" =~ ^nomulus-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
         gcloud secrets versions access latest \
           --secret nomulus-tool-cloudbuild-credential > tool-credential.json
         gcloud auth activate-service-account --key-file=tool-credential.json
-        ./release/run_beam_smoketest.sh "${TAG_NAME}" "${PROJECT_ID}" "${_TEST_PROJECT}"
+        ./release/run_beam_smoketest.sh "$TAG_NAME" "$PROJECT_ID" "$_TEST_PROJECT"
       fi
 timeout: 5400s
 options:
