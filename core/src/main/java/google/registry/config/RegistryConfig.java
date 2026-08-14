@@ -999,6 +999,12 @@ public final class RegistryConfig {
       return config.misc.transientFailureRetries;
     }
 
+    @Provides
+    @Named("transientFailureBaseIntervalMillis")
+    public static long provideTransientFailureBaseIntervalMillis() {
+      return 100L;
+    }
+
     /**
      * Maximum number of results to return for an RDAP search query
      *

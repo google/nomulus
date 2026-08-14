@@ -19,6 +19,7 @@ import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.math.IntMath.pow;
 import static google.registry.util.PredicateUtils.supertypeOf;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import jakarta.inject.Inject;
@@ -41,6 +42,7 @@ public class Retrier implements Serializable {
 
   private final Sleeper sleeper;
   private final int attempts;
+  private final long baseIntervalMillis;
 
   /** Holds functions to call whenever the code being retried fails. */
   public interface FailureReporter {
@@ -55,11 +57,21 @@ public class Retrier implements Serializable {
     void beforeRetry(Throwable thrown, int failures, int maxAttempts);
   }
 
+  @VisibleForTesting
+  public Retrier(Sleeper sleeper, int transientFailureRetries) {
+    this(sleeper, transientFailureRetries, 100L);
+  }
+
   @Inject
-  public Retrier(Sleeper sleeper, @Named("transientFailureRetries") int transientFailureRetries) {
+  public Retrier(
+      Sleeper sleeper,
+      @Named("transientFailureRetries") int transientFailureRetries,
+      @Named("transientFailureBaseIntervalMillis") long baseIntervalMillis) {
     this.sleeper = sleeper;
     checkArgument(transientFailureRetries > 0, "Number of attempts must be positive");
     this.attempts = transientFailureRetries;
+    checkArgument(baseIntervalMillis > 0, "Base interval millis must be positive");
+    this.baseIntervalMillis = baseIntervalMillis;
   }
 
   /**
@@ -160,8 +172,8 @@ public class Retrier implements Serializable {
           throw new RuntimeException(e);
         }
         failureReporter.beforeRetry(e, failures, attempts);
-        // Wait (skewed) 100ms on the first attempt, doubling on each subsequent attempt.
-        long backoffMillis = pow(2, failures) * 100L;
+        // Wait (skewed) baseIntervalMillis on the first attempt, doubling on each attempt
+        long backoffMillis = pow(2, failures) * baseIntervalMillis;
         long sleepDurationMillis = Math.round(randomForSkew.nextDouble(0.8, 1.2) * backoffMillis);
         try {
           sleeper.sleep(Duration.ofMillis(sleepDurationMillis));
