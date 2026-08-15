@@ -29,6 +29,7 @@ import static google.registry.rde.RdeResourceType.DOMAIN;
 import static google.registry.rde.RdeResourceType.HOST;
 import static google.registry.rde.RdeResourceType.REGISTRAR;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
@@ -85,6 +86,7 @@ import google.registry.testing.FakeKeyringModule;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -166,36 +168,42 @@ public class RdePipelineTest {
             .setReportAmount(1)
             .build();
 
-    return persistResource(
-        new DomainHistory.Builder()
-            .setType(HistoryEntry.Type.DOMAIN_CREATE)
-            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(clock.now())
-            .setRegistrarId("TheRegistrar")
-            .setTrid(Trid.create("ABC-123", "server-trid"))
-            .setBySuperuser(false)
-            .setReason("reason")
-            .setRequestedByRegistrar(true)
-            .setDomain(domain)
-            .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
-            .setOtherRegistrarId("otherClient")
-            .setPeriod(Period.create(1, Period.Unit.YEARS))
-            .build());
+    DomainHistory result =
+        persistResource(
+            new DomainHistory.Builder()
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+                .setModificationTime(clock.now())
+                .setRegistrarId("TheRegistrar")
+                .setTrid(Trid.create("ABC-123", "server-trid"))
+                .setBySuperuser(false)
+                .setReason("reason")
+                .setRequestedByRegistrar(true)
+                .setDomain(domain)
+                .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
+                .setOtherRegistrarId("otherClient")
+                .setPeriod(Period.create(1, Period.Unit.YEARS))
+                .build());
+    clock.advanceOneMilli();
+    return result;
   }
 
   private HostHistory persistHostHistory(HostBase hostBase) {
-    return persistResource(
-        new HostHistory.Builder()
-            .setType(HistoryEntry.Type.HOST_CREATE)
-            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(clock.now())
-            .setRegistrarId("TheRegistrar")
-            .setTrid(Trid.create("ABC-123", "server-trid"))
-            .setBySuperuser(false)
-            .setReason("reason")
-            .setRequestedByRegistrar(true)
-            .setHost(hostBase)
-            .build());
+    HostHistory result =
+        persistResource(
+            new HostHistory.Builder()
+                .setType(HistoryEntry.Type.HOST_CREATE)
+                .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+                .setModificationTime(clock.now())
+                .setRegistrarId("TheRegistrar")
+                .setTrid(Trid.create("ABC-123", "server-trid"))
+                .setBySuperuser(false)
+                .setReason("reason")
+                .setRequestedByRegistrar(true)
+                .setHost(hostBase)
+                .build());
+    clock.advanceOneMilli();
+    return result;
   }
 
   @BeforeEach
@@ -252,12 +260,12 @@ public class RdePipelineTest {
                 .build());
     persistDomainHistory(kittyDomain);
     // Should not appear because the TLD is not included in a pending deposit.
-    persistDomainHistory(persistEppResource(newDomain("lol.cat")));
+    persistDomainHistory(persistActiveDomain("lol.cat"));
     // To be deleted.
     Domain deletedDomain = persistActiveDomain("deleted.soy");
     persistDomainHistory(deletedDomain);
 
-    // Advance time
+    // Advance time again just in case
     clock.advanceOneMilli();
     persistDomainHistory(deletedDomain.asBuilder().setDeletionTime(clock.now()).build());
     kittyDomain = kittyDomain.asBuilder().setDomainName("cat.fun").build();
@@ -423,6 +431,81 @@ public class RdePipelineTest {
               return null;
             });
     pipeline.run().waitUntilFinish();
+  }
+
+  @Test
+  void testSuccess_createFragments_smallBatchSize() {
+    options.setHistoryEntryLoadBatchSize(1);
+    testSuccess_createFragments();
+  }
+
+  @Test
+  void testSuccess_createFragments_multiBatch() {
+    options.setHistoryEntryLoadBatchSize(2);
+    testSuccess_createFragments();
+  }
+
+  @Test
+  void testFailure_missingHistoryEntry() {
+    NoSuchElementException thrown =
+        assertThrows(
+            NoSuchElementException.class,
+            () ->
+                rdePipeline.loadResourcesByHistoryEntryIds(
+                    ImmutableList.of(KV.of("nonexistent", 12345L)),
+                    Domain.class,
+                    DomainHistory.class,
+                    clock.now()));
+    assertThat(thrown).hasMessageThat().contains("nonexistent");
+  }
+
+  @Test
+  void testSuccess_loadResourcesByHistoryEntryIds_multipleRevisions() {
+    Domain domain = loadByEntity(persistActiveDomain("multirev.soy"));
+    DomainHistory history1 = persistDomainHistory(domain);
+    clock.advanceOneMilli();
+    Domain updatedDomain =
+        domain.asBuilder().setPersistedCurrentSponsorRegistrarId("NewRegistrar").build();
+    DomainHistory history2 = persistDomainHistory(updatedDomain);
+
+    // Verify loading specific revision 1 returns history1 entity
+    ImmutableMap<String, Domain> loaded1 =
+        rdePipeline.loadResourcesByHistoryEntryIds(
+            ImmutableList.of(KV.of(domain.getRepoId(), history1.getRevisionId())),
+            Domain.class,
+            DomainHistory.class,
+            now);
+    assertThat(loaded1.get(domain.getRepoId()).getCurrentSponsorRegistrarId())
+        .isEqualTo("TheRegistrar");
+
+    // Verify loading specific revision 2 returns history2 entity
+    ImmutableMap<String, Domain> loaded2 =
+        rdePipeline.loadResourcesByHistoryEntryIds(
+            ImmutableList.of(KV.of(domain.getRepoId(), history2.getRevisionId())),
+            Domain.class,
+            DomainHistory.class,
+            now);
+    assertThat(loaded2.get(domain.getRepoId()).getCurrentSponsorRegistrarId())
+        .isEqualTo("NewRegistrar");
+  }
+
+  @Test
+  void testSuccess_loadResourcesByHistoryEntryIds_batchMultipleEntities() {
+    Domain domain1 = persistActiveDomain("batch1.soy");
+    DomainHistory history1 = persistDomainHistory(domain1);
+    Domain domain2 = persistActiveDomain("batch2.soy");
+    DomainHistory history2 = persistDomainHistory(domain2);
+
+    ImmutableMap<String, Domain> loaded =
+        rdePipeline.loadResourcesByHistoryEntryIds(
+            ImmutableList.of(
+                KV.of(domain1.getRepoId(), history1.getRevisionId()),
+                KV.of(domain2.getRepoId(), history2.getRevisionId())),
+            Domain.class,
+            DomainHistory.class,
+            now);
+
+    assertThat(loaded.keySet()).containsExactly(domain1.getRepoId(), domain2.getRepoId());
   }
 
   // The GCS folder listing can be a bit flaky, so retry if necessary
