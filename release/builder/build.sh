@@ -51,9 +51,10 @@ apt-get install python3 -y
 apt-get install npm -y
 npm cache clean -f
 npm install -g n
-# Retrying because fails are possible for node.js intallation. See
+# Retrying because fails are possible for node.js installation. See
 # https://github.com/nodejs/build/issues/1993
-for i in {1..5}; do n 22.12.0 && break || sleep 15; done
+# Keep this version up to date with the node block in the root build.gradle file
+for i in {1..5}; do n 24.19.0 && break || sleep 15; done
 
 # Install gp_dump
 apt-get install postgresql-client-17 procps -y
