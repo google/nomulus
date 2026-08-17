@@ -58,6 +58,7 @@ dependencyLocking {
     lockAllConfigurations()
 }
 
+// Keep this up to date with the node installation in release/builder/build.sh
 node {
   download = false
   version = "24.19.0"
