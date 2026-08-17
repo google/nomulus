@@ -14,12 +14,12 @@ steps:
 - name: 'ubuntu'
   entrypoint: '/bin/bash'
   env:
-    - 'ZFA_SERVER_IP=${_ZFA_SERVER_IP}'
-    - 'TLD=${_TLD}'
+    - '_ZFA_SERVER_IP=${_ZFA_SERVER_IP}'
+    - '_TLD=${_TLD}'
   args:
     - -c
     - |
       set -e
       apt-get update
       apt-get install dnsutils -y
-      dig @"$ZFA_SERVER_IP" "$TLD" axfr | grep "Transfer failed"
+      dig @"$_ZFA_SERVER_IP" "$_TLD" axfr | grep "Transfer failed"
