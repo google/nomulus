@@ -30,10 +30,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import google.registry.eppserver.metric.FrontendMetrics;
+import google.registry.eppserver.quota.EppServerQuotaManager;
 import google.registry.eppserver.quota.LocalConnectionLimiter;
-import google.registry.eppserver.quota.QuotaManager;
-import google.registry.eppserver.quota.QuotaManager.QuotaRequest;
-import google.registry.eppserver.quota.QuotaManager.QuotaResponse;
 import google.registry.request.RequestHandler;
 import google.registry.util.FakeHttpServletRequest;
 import google.registry.util.FakeHttpServletResponse;
@@ -68,7 +66,7 @@ class EppServiceHandlerTest {
 
   @Mock private FrontendMetrics metrics;
   @Mock private LocalConnectionLimiter localConnectionLimiter;
-  @Mock private QuotaManager commandQuotaManager;
+  @Mock private EppServerQuotaManager commandQuotaManager;
   @Mock private Supplier<String> idTokenSupplier;
   @Mock private ChannelHandlerContext ctx;
   @Mock private Channel channel;
@@ -116,9 +114,7 @@ class EppServiceHandlerTest {
         .when(executor)
         .schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
 
-    lenient()
-        .when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
-        .thenReturn(new QuotaResponse(true));
+    lenient().when(commandQuotaManager.acquireQuota(any(String.class))).thenReturn(true);
   }
 
   private void setUpSuccessfulHandshake() throws Exception {
@@ -149,8 +145,7 @@ class EppServiceHandlerTest {
         .when(requestHandler)
         .handleRequest(any(FakeHttpServletRequest.class), any(FakeHttpServletResponse.class));
 
-    when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
-        .thenReturn(new QuotaResponse(true));
+    when(commandQuotaManager.acquireQuota(any(String.class))).thenReturn(true);
     when(idTokenSupplier.get()).thenReturn("fake_id_token");
 
     setUpSuccessfulHandshake();
@@ -192,8 +187,7 @@ class EppServiceHandlerTest {
     setUpSuccessfulHandshake();
 
     when(idTokenSupplier.get()).thenReturn("fake_id_token");
-    when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
-        .thenReturn(new QuotaResponse(true));
+    when(commandQuotaManager.acquireQuota(any(String.class))).thenReturn(true);
 
     String eppLoginXml = "<epp><command><login><clID>RegistrarA</clID></login></command></epp>";
     ByteBuf inFrame = Unpooled.wrappedBuffer(eppLoginXml.getBytes(UTF_8));
@@ -221,8 +215,7 @@ class EppServiceHandlerTest {
     setUpSuccessfulHandshake();
 
     when(idTokenSupplier.get()).thenReturn("fake_id_token");
-    when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
-        .thenReturn(new QuotaResponse(true));
+    when(commandQuotaManager.acquireQuota(any(String.class))).thenReturn(true);
 
     String eppLoginXml = "<epp><command><login><clID>RegistrarA</clID></login></command></epp>";
     ByteBuf inFrame = Unpooled.wrappedBuffer(eppLoginXml.getBytes(UTF_8));
@@ -248,7 +241,7 @@ class EppServiceHandlerTest {
 
     // Verify command quota was requested for the cert hash pre-login
     String certHash = X509Utils.getCertificateHash(certificate);
-    verify(commandQuotaManager, times(2)).acquireQuota(eq(new QuotaRequest(certHash)));
+    verify(commandQuotaManager, times(2)).acquireQuota(eq(certHash));
     verify(localConnectionLimiter).acquireRegistrar("RegistrarA");
     verify(scheduledFuture).cancel(eq(false));
 
@@ -284,15 +277,14 @@ class EppServiceHandlerTest {
     handler.channelRead0(ctx, inFrame2);
 
     // Verify command quota was requested for the authenticated registrar post-login
-    verify(commandQuotaManager).acquireQuota(eq(new QuotaRequest("RegistrarA")));
+    verify(commandQuotaManager).acquireQuota(eq("RegistrarA"));
   }
 
   @Test
   void testChannelRead0_commandQuotaRejected() throws Exception {
     setUpSuccessfulHandshake();
 
-    when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
-        .thenReturn(new QuotaResponse(false));
+    when(commandQuotaManager.acquireQuota(any(String.class))).thenReturn(false);
 
     String eppXml = "<epp><command><check></check></command></epp>";
     ByteBuf inFrame = Unpooled.wrappedBuffer(eppXml.getBytes(UTF_8));
@@ -308,8 +300,7 @@ class EppServiceHandlerTest {
     setUpSuccessfulHandshake();
 
     when(idTokenSupplier.get()).thenReturn("fake_id_token");
-    when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
-        .thenReturn(new QuotaResponse(true));
+    when(commandQuotaManager.acquireQuota(any(String.class))).thenReturn(true);
 
     String eppLogoutXml = "<epp><command><logout/></command></epp>";
     ByteBuf inFrame = Unpooled.wrappedBuffer(eppLogoutXml.getBytes(UTF_8));
@@ -348,8 +339,7 @@ class EppServiceHandlerTest {
     setUpSuccessfulHandshake();
 
     when(idTokenSupplier.get()).thenReturn("fake_id_token");
-    when(commandQuotaManager.acquireQuota(any(QuotaRequest.class)))
-        .thenReturn(new QuotaResponse(true));
+    when(commandQuotaManager.acquireQuota(any(String.class))).thenReturn(true);
     when(localConnectionLimiter.acquireRegistrar("RegistrarA")).thenReturn(true);
 
     String eppLoginXml = "<epp><command><login><clID>RegistrarA</clID></login></command></epp>";

@@ -26,8 +26,8 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.eppserver.EppProtocolModule.CommandQuota;
 import google.registry.eppserver.metric.FrontendMetrics;
+import google.registry.eppserver.quota.EppServerQuotaManager;
 import google.registry.eppserver.quota.LocalConnectionLimiter;
-import google.registry.eppserver.quota.QuotaManager;
 import google.registry.module.RegistryServlet;
 import google.registry.request.RequestHandler;
 import google.registry.util.FakeHttpServletRequest;
@@ -76,7 +76,7 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
   private final byte[] helloBytes;
   private final FrontendMetrics metrics;
   private final LocalConnectionLimiter localConnectionLimiter;
-  private final QuotaManager commandQuotaManager;
+  private final EppServerQuotaManager commandQuotaManager;
   private final Supplier<String> idTokenSupplier;
   private final String projectId;
   private final int preLoginReadTimeoutSeconds;
@@ -98,7 +98,7 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
       @Named("hello") byte[] helloBytes,
       FrontendMetrics metrics,
       LocalConnectionLimiter localConnectionLimiter,
-      @CommandQuota QuotaManager commandQuotaManager,
+      @CommandQuota EppServerQuotaManager commandQuotaManager,
       @Named("idToken") Supplier<String> idTokenSupplier,
       @Config("projectId") String projectId,
       @Config("eppServerPreLoginReadTimeoutSeconds") int preLoginReadTimeoutSeconds) {
@@ -227,7 +227,7 @@ public class EppServiceHandler extends SimpleChannelInboundHandler<ByteBuf> {
     String throttleId =
         (authenticatedRegistrarId != null) ? authenticatedRegistrarId : sslClientCertificateHash;
     if (throttleId != null) {
-      if (!commandQuotaManager.acquireQuota(new QuotaManager.QuotaRequest(throttleId)).success()) {
+      if (!commandQuotaManager.acquireQuota(throttleId)) {
         metrics.registerQuotaRejection("epp_command", throttleId);
         closeConnection(ctx);
         return false;
