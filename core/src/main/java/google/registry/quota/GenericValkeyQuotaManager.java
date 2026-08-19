@@ -15,18 +15,18 @@
 package google.registry.quota;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.flogger.FluentLogger;
 import java.net.URLEncoder;
 import java.time.Duration;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import redis.clients.jedis.UnifiedJedis;
 
 /** Generic quota manager that uses Redis/Valkey as the backing store. */
 @ThreadSafe
-public class GenericValkeyQuotaManager {
+public class GenericValkeyQuotaManager implements QuotaManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -63,16 +63,21 @@ public class GenericValkeyQuotaManager {
   private final UnifiedJedis jedis;
   private final String namespace;
 
-  public GenericValkeyQuotaManager(@Nullable UnifiedJedis jedis, String namespace) {
+  public static GenericValkeyQuotaManager create(UnifiedJedis jedis, String namespace) {
+    // TODO(gbrodman): upload the scripts to Valkey so we can reference them by hash rather than
+    // uploading the whole script each time
+    return new GenericValkeyQuotaManager(jedis, namespace);
+  }
+
+  private GenericValkeyQuotaManager(UnifiedJedis jedis, String namespace) {
+    checkNotNull(jedis, "UnifiedJedis cannot be null");
     this.jedis = jedis;
     this.namespace = namespace;
   }
 
   /** Attempts to acquire a quota token from Valkey. */
+  @Override
   public boolean acquireQuota(String id, int maxTokenAmount, Duration expirationDuration) {
-    if (jedis == null) {
-      return true; // Fail open if no Valkey configured
-    }
     checkArgument(expirationDuration.isPositive(), "Duration must be positive");
     checkArgument(maxTokenAmount >= 0, "Max token amount must be non-negative");
 
@@ -95,10 +100,8 @@ public class GenericValkeyQuotaManager {
   }
 
   /** Refreshes the TTL of an existing quota token. */
+  @Override
   public void refreshQuota(String id, Duration expirationDuration) {
-    if (jedis == null) {
-      return;
-    }
     checkArgument(expirationDuration.isPositive(), "Duration must be positive");
 
     String key = createValkeyKey(id);
@@ -111,10 +114,8 @@ public class GenericValkeyQuotaManager {
   }
 
   /** Returns a token to the pool (used for connection throttling). */
+  @Override
   public void releaseQuota(String id, int maxTokenAmount) {
-    if (jedis == null) {
-      return;
-    }
     checkArgument(maxTokenAmount >= 0, "Max token amount must be non-negative");
 
     String key = createValkeyKey(id);

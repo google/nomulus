@@ -17,7 +17,7 @@ package google.registry.eppserver.quota;
 import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfigSettings.Quota;
 import google.registry.config.RegistryConfigSettings.Quota.QuotaGroup;
-import google.registry.quota.GenericValkeyQuotaManager;
+import google.registry.quota.QuotaManager;
 import java.time.Duration;
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -31,11 +31,11 @@ public class EppServerQuotaManager {
 
   private static final Duration DEFAULT_TTL = Duration.ofHours(1);
 
-  private final GenericValkeyQuotaManager quotaManager;
+  private final QuotaManager quotaManager;
   private final QuotaGroup defaultQuota;
   private final ImmutableMap<String, QuotaGroup> customQuotas;
 
-  public EppServerQuotaManager(Quota quota, GenericValkeyQuotaManager quotaManager) {
+  public EppServerQuotaManager(Quota quota, QuotaManager quotaManager) {
     this.quotaManager = quotaManager;
     this.defaultQuota = quota.defaultQuota;
 
