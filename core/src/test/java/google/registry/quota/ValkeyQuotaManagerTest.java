@@ -28,12 +28,12 @@ import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.RedisClient;
 
 @Testcontainers
-class GenericValkeyQuotaManagerTest {
+class ValkeyQuotaManagerTest {
 
   @Container private static final ValkeyContainer valkey = new ValkeyContainer();
 
   private RedisClient jedis;
-  private GenericValkeyQuotaManager quotaManager;
+  private ValkeyQuotaManager quotaManager;
 
   @BeforeEach
   void setUp() {
@@ -42,7 +42,7 @@ class GenericValkeyQuotaManagerTest {
             .hostAndPort(new HostAndPort(valkey.getHost(), valkey.getFirstMappedPort()))
             .build();
     jedis.flushAll();
-    quotaManager = GenericValkeyQuotaManager.create(jedis, "testQuota");
+    quotaManager = new ValkeyQuotaManager(jedis, "testQuota");
   }
 
   @Test
@@ -76,8 +76,7 @@ class GenericValkeyQuotaManagerTest {
 
   @Test
   void testAcquireQuota_isolatedByNamespaceAndId() {
-    GenericValkeyQuotaManager otherQuotaManager =
-        GenericValkeyQuotaManager.create(jedis, "otherQuota");
+    ValkeyQuotaManager otherQuotaManager = new ValkeyQuotaManager(jedis, "otherQuota");
 
     assertThat(quotaManager.acquireQuota("user1", 1, Duration.ofMinutes(1))).isTrue();
     assertThat(quotaManager.acquireQuota("user1", 1, Duration.ofMinutes(1))).isFalse();
@@ -90,9 +89,13 @@ class GenericValkeyQuotaManagerTest {
   }
 
   @Test
-  void testCreate_nullJedis_throwsNpe() {
-    assertThrows(
-        NullPointerException.class, () -> GenericValkeyQuotaManager.create(null, "testQuota"));
+  void testConstructor_nullJedis_throwsNpe() {
+    assertThrows(NullPointerException.class, () -> new ValkeyQuotaManager(null, "testQuota"));
+  }
+
+  @Test
+  void testConstructor_nullNamespace_throwsNpe() {
+    assertThrows(NullPointerException.class, () -> new ValkeyQuotaManager(jedis, null));
   }
 
   @Test
@@ -155,5 +158,24 @@ class GenericValkeyQuotaManagerTest {
   void testReleaseQuota_jedisException_handled() {
     jedis.close();
     assertDoesNotThrow(() -> quotaManager.releaseQuota("user2", 10));
+  }
+
+  @Test
+  void testScriptFlushed_reloadsScriptAndSucceeds() {
+    assertThat(quotaManager.acquireQuota("user1", 3, Duration.ofMinutes(1))).isTrue();
+    assertThat(jedis.get("testQuota:user1")).isEqualTo("2");
+
+    // Simulate scripts being evicted or server restart
+    jedis.scriptFlush();
+
+    // acquireQuota should reload the scripts and continue working
+    assertThat(quotaManager.acquireQuota("user1", 3, Duration.ofMinutes(1))).isTrue();
+    assertThat(jedis.get("testQuota:user1")).isEqualTo("1");
+
+    jedis.scriptFlush();
+
+    // releaseQuota should also reload the scripts and continue working
+    quotaManager.releaseQuota("user1", 3);
+    assertThat(jedis.get("testQuota:user1")).isEqualTo("2");
   }
 }

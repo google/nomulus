@@ -26,9 +26,9 @@ import google.registry.eppserver.Protocol.FrontendProtocol;
 import google.registry.eppserver.handler.EppServiceHandler;
 import google.registry.eppserver.quota.EppServerQuotaManager;
 import google.registry.networking.handler.SslServerInitializer;
-import google.registry.quota.GenericValkeyQuotaManager;
 import google.registry.quota.NoopQuotaManager;
 import google.registry.quota.QuotaManager;
+import google.registry.quota.ValkeyQuotaManager;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -143,9 +143,7 @@ public final class EppProtocolModule {
   static EppServerQuotaManager provideCommandQuotaManager(
       @Config("eppServerQuota") RegistryConfigSettings.Quota quota, Optional<UnifiedJedis> jedis) {
     QuotaManager quotaManager =
-        jedis.isPresent()
-            ? GenericValkeyQuotaManager.create(jedis.get(), "command")
-            : new NoopQuotaManager();
+        jedis.isPresent() ? new ValkeyQuotaManager(jedis.get(), "command") : new NoopQuotaManager();
     return new EppServerQuotaManager(quota, quotaManager);
   }
 }

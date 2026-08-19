@@ -19,14 +19,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.flogger.FluentLogger;
+import com.google.common.hash.Hashing;
 import java.net.URLEncoder;
 import java.time.Duration;
 import javax.annotation.concurrent.ThreadSafe;
 import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.exceptions.JedisDataException;
 
 /** Generic quota manager that uses Redis/Valkey as the backing store. */
 @ThreadSafe
-public class GenericValkeyQuotaManager implements QuotaManager {
+public class ValkeyQuotaManager implements QuotaManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -60,19 +62,18 @@ public class GenericValkeyQuotaManager implements QuotaManager {
       return nil
       """;
 
+  // Valkey has the capability to upload scripts and refer to them by their SHA-1 hash (SHA-1 is OK
+  // because the point isn't security or encryption, just shortening). This means we don't need to
+  // pass the whole script each time.
+  private static final String DECR_LUA_HASH = Hashing.sha1().hashString(DECR_LUA, UTF_8).toString();
+  private static final String INCR_LUA_HASH = Hashing.sha1().hashString(INCR_LUA, UTF_8).toString();
+
   private final UnifiedJedis jedis;
   private final String namespace;
 
-  public static GenericValkeyQuotaManager create(UnifiedJedis jedis, String namespace) {
-    // TODO(gbrodman): upload the scripts to Valkey so we can reference them by hash rather than
-    // uploading the whole script each time
-    return new GenericValkeyQuotaManager(jedis, namespace);
-  }
-
-  private GenericValkeyQuotaManager(UnifiedJedis jedis, String namespace) {
-    checkNotNull(jedis, "UnifiedJedis cannot be null");
-    this.jedis = jedis;
-    this.namespace = namespace;
+  public ValkeyQuotaManager(UnifiedJedis jedis, String namespace) {
+    this.jedis = checkNotNull(jedis, "jedis must not be null");
+    this.namespace = checkNotNull(namespace, "namespace must not be null");
   }
 
   /** Attempts to acquire a quota token from Valkey. */
@@ -84,9 +85,9 @@ public class GenericValkeyQuotaManager implements QuotaManager {
     String key = createValkeyKey(id);
     try {
       Object result =
-          jedis.eval(
+          runScript(
               DECR_LUA,
-              1,
+              DECR_LUA_HASH,
               key,
               String.valueOf(maxTokenAmount),
               String.valueOf(expirationDuration.toMillis()));
@@ -120,7 +121,7 @@ public class GenericValkeyQuotaManager implements QuotaManager {
 
     String key = createValkeyKey(id);
     try {
-      jedis.eval(INCR_LUA, 1, key, String.valueOf(maxTokenAmount));
+      runScript(INCR_LUA, INCR_LUA_HASH, key, String.valueOf(maxTokenAmount));
     } catch (Exception e) {
       logger.atSevere().withCause(e).log(
           "Valkey error releasing quota for: %s", URLEncoder.encode(key, UTF_8));
@@ -129,5 +130,19 @@ public class GenericValkeyQuotaManager implements QuotaManager {
 
   private String createValkeyKey(String id) {
     return String.format("%s:%s", namespace, id);
+  }
+
+  private Object runScript(String script, String scriptHash, String... params) {
+    try {
+      return jedis.evalsha(scriptHash, 1, params);
+    } catch (JedisDataException e) {
+      // Scripts are technically ephemeral and while they aren't evicted during the normal course of
+      // operations, we can't guarantee that the Valkey server hasn't restarted
+      if (e.getMessage() != null && e.getMessage().startsWith("NOSCRIPT")) {
+        jedis.scriptLoad(script);
+        return jedis.evalsha(scriptHash, 1, params);
+      }
+      throw e;
+    }
   }
 }
