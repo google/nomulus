@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import google.registry.config.RegistryConfigSettings.Quota;
 import google.registry.config.RegistryConfigSettings.Quota.QuotaGroup;
-import google.registry.quota.GenericValkeyQuotaManager;
+import google.registry.quota.QuotaManager;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class EppServerQuotaManagerTest {
 
-  @Mock private GenericValkeyQuotaManager quotaManager;
+  @Mock private QuotaManager quotaManager;
 
   private Quota quotaConfig;
   private EppServerQuotaManager manager;

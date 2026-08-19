@@ -16,6 +16,7 @@ package google.registry.quota;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.ss_bhatt.testcontainers.valkey.ValkeyContainer;
 import java.time.Duration;
@@ -41,7 +42,7 @@ class GenericValkeyQuotaManagerTest {
             .hostAndPort(new HostAndPort(valkey.getHost(), valkey.getFirstMappedPort()))
             .build();
     jedis.flushAll();
-    quotaManager = new GenericValkeyQuotaManager(jedis, "testQuota");
+    quotaManager = GenericValkeyQuotaManager.create(jedis, "testQuota");
   }
 
   @Test
@@ -76,7 +77,7 @@ class GenericValkeyQuotaManagerTest {
   @Test
   void testAcquireQuota_isolatedByNamespaceAndId() {
     GenericValkeyQuotaManager otherQuotaManager =
-        new GenericValkeyQuotaManager(jedis, "otherQuota");
+        GenericValkeyQuotaManager.create(jedis, "otherQuota");
 
     assertThat(quotaManager.acquireQuota("user1", 1, Duration.ofMinutes(1))).isTrue();
     assertThat(quotaManager.acquireQuota("user1", 1, Duration.ofMinutes(1))).isFalse();
@@ -89,9 +90,9 @@ class GenericValkeyQuotaManagerTest {
   }
 
   @Test
-  void testAcquireQuota_nullJedis_failsOpen() {
-    GenericValkeyQuotaManager nullJedisManager = new GenericValkeyQuotaManager(null, "testQuota");
-    assertThat(nullJedisManager.acquireQuota("user2", 10, Duration.ofMinutes(1))).isTrue();
+  void testCreate_nullJedis_throwsNpe() {
+    assertThrows(
+        NullPointerException.class, () -> GenericValkeyQuotaManager.create(null, "testQuota"));
   }
 
   @Test
@@ -112,12 +113,6 @@ class GenericValkeyQuotaManagerTest {
   void testRefreshQuota_nonexistentKey_noop() {
     quotaManager.refreshQuota("nonexistent", Duration.ofMinutes(5));
     assertThat(jedis.exists("testQuota:nonexistent")).isFalse();
-  }
-
-  @Test
-  void testRefreshQuota_nullJedis_noop() {
-    GenericValkeyQuotaManager nullJedisManager = new GenericValkeyQuotaManager(null, "testQuota");
-    assertDoesNotThrow(() -> nullJedisManager.refreshQuota("user2", Duration.ofMinutes(1)));
   }
 
   @Test
@@ -154,12 +149,6 @@ class GenericValkeyQuotaManagerTest {
   void testReleaseQuota_nonexistentKey_noop() {
     quotaManager.releaseQuota("nonexistent", 5);
     assertThat(jedis.exists("testQuota:nonexistent")).isFalse();
-  }
-
-  @Test
-  void testReleaseQuota_nullJedis_noop() {
-    GenericValkeyQuotaManager nullJedisManager = new GenericValkeyQuotaManager(null, "testQuota");
-    assertDoesNotThrow(() -> nullJedisManager.releaseQuota("user2", 10));
   }
 
   @Test
