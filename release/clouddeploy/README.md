@@ -7,10 +7,10 @@ This directory contains the Google Cloud Deploy configuration files for the Nomu
 ### `delivery-pipeline.yaml`
 Defines the `DeliveryPipeline` resource named `deploy-nomulus` and its associated `Automation` resource (`deploy-nomulus/auto-advance-canary`). It sets up the serial pipeline for rolling out changes to different targets and automatically advancing canary rollouts.
 
-### Target Configurations (e.g., `production-target.yaml`)
+### Target Configurations (e.g., `crash-target.yaml`)
 Files matching this format define the `Target` resources for Cloud Deploy. They specify the GKE cluster and other environment-specific settings for deployment.
 
-### Environment Configurations (e.g., `production-config.yaml`)
+### Environment Configurations (e.g., `crash-config.yaml`)
 Configuration files containing environment-specific parameters and SLA-based alert policy checks (such as EPP and RDAP success metrics) used for automated analysis and target population.
 
 ### `skaffold.yaml`
