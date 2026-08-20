@@ -64,3 +64,33 @@ profiles:
     - ../../jetty/kubernetes/nomulus-sandbox-epp-server-partial-phase-5.yaml
   deploy:
     kubectl: { }
+- name: production
+  manifests:
+    rawYaml:
+    - ../../jetty/kubernetes/nomulus-production-backend.yaml
+    - ../../jetty/kubernetes/nomulus-production-console.yaml
+    - ../../jetty/kubernetes/nomulus-production-frontend.yaml
+    - ../../jetty/kubernetes/nomulus-production-pubapi.yaml
+    - ../../jetty/kubernetes/nomulus-production-epp-server.yaml
+  deploy:
+    kubectl: { }
+- name: production-partial-phase-1
+  manifests:
+    rawYaml:
+    - ../../jetty/kubernetes/nomulus-production-backend-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-production-console-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-production-frontend-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-production-pubapi-partial-phase-1.yaml
+    - ../../jetty/kubernetes/nomulus-production-epp-server-partial-phase-1.yaml
+  deploy:
+    kubectl: { }
+- name: production-partial-phase-5
+  manifests:
+    rawYaml:
+    - ../../jetty/kubernetes/nomulus-production-backend-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-production-console-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-production-frontend-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-production-pubapi-partial-phase-5.yaml
+    - ../../jetty/kubernetes/nomulus-production-epp-server-partial-phase-5.yaml
+  deploy:
+    kubectl: { }

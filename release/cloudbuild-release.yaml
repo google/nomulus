@@ -287,6 +287,7 @@ steps:
         awk 'NR==1,/^---$/ {if ($0 != "---") print}' ./jetty/kubernetes/nomulus-${env}-epp-server.yaml | \
           sed s/name:\ epp-server/name:\ epp-server-partial-phase/g | \
           sed s/service:\ epp-server/deployment:\ epp-server-partial-phase/g | \
+          sed s/value:\ epp-server/value:\ epp-server-partial-phase/g | \
           sed "/^spec:$/a\  replicas: ${stage}" \
           > ./jetty/kubernetes/nomulus-${env}-epp-server-partial-phase-${stage}.yaml
       done
