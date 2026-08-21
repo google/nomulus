@@ -40,7 +40,7 @@ steps:
   - -c
   - |
     set -e
-    for env in crash sandbox; do
+    for env in crash sandbox production; do
       config_file="release/clouddeploy/${env}-config.yaml"
       if [ -f "$config_file" ]; then
         echo "Extracting checks from $config_file..."
@@ -100,7 +100,7 @@ steps:
   - -c
   - |
     set -e
-    for env in crash sandbox; do
+    for env in crash sandbox production; do
       target_file="release/clouddeploy/${env}-target.yaml"
       if [ -f "$target_file" ]; then
         echo "Applying target $target_file..."
