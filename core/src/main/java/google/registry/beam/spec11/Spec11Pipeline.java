@@ -241,7 +241,7 @@ public class Spec11Pipeline implements Serializable {
     EvaluateSafeBrowsingFn provideSafeBrowsingFn(
         Spec11PipelineOptions options, Clock clock, Sleeper sleeper) {
       // Have a noticeably longer backoff for SafeBrowsing retries to mitigate any 429s
-      Retrier safeBrowsingRetrier = new Retrier(sleeper, 4, 1000L);
+      Retrier safeBrowsingRetrier = new Retrier(sleeper, 9, 1000L);
       return new EvaluateSafeBrowsingFn(
           options.getSafeBrowsingApiKey(), safeBrowsingRetrier, clock);
     }
