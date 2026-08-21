@@ -15,7 +15,9 @@
 package google.registry.beam.spec11;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.http.HttpHeaders.RETRY_AFTER;
 import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.HttpStatus.SC_TOO_MANY_REQUESTS;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
@@ -33,6 +35,7 @@ import java.util.function.Supplier;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.windowing.GlobalWindow;
 import org.apache.beam.sdk.values.KV;
+import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -229,6 +232,14 @@ public class SafeBrowsingTransforms {
         throws IOException {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != SC_OK) {
+        if (statusCode == SC_TOO_MANY_REQUESTS) {
+          Header retryAfterHeader = response.getFirstHeader(RETRY_AFTER);
+          if (retryAfterHeader != null) {
+            logger.atWarning().log(
+                "SafeBrowsing API returned 429 with Retry-After header: %s",
+                retryAfterHeader.getValue());
+          }
+        }
         throw new IOException(
             String.format("Got unexpected status code %s from response.", statusCode));
       }
