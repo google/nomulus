@@ -108,6 +108,8 @@ public class RegistryConfigSettings {
     public double sunriseDomainCreateDiscount;
     public Set<String> tieredPricingPromotionRegistrarIds;
     public Set<String> noPollMessageOnDeletionRegistrarIds;
+    public int domainCreateThrottleWindowDurationSeconds;
+    public int domainCreateThrottleWindowTokens;
   }
 
   public static class DomainExpiryAccessPeriod {
