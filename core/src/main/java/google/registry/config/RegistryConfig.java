@@ -1159,6 +1159,21 @@ public final class RegistryConfig {
           .collect(toImmutableMap(entry -> CurrencyUnit.of(entry.getKey()), Entry::getValue));
     }
 
+    /** Returns the duration of the throttling window for domain:create requests. */
+    @Provides
+    @Config("domainCreateThrottleWindowDuration")
+    public static Duration provideDomainCreateThrottleWindowDuration(
+        RegistryConfigSettings config) {
+      return Duration.ofSeconds(config.registryPolicy.domainCreateThrottleWindowDurationSeconds);
+    }
+
+    /** Returns the number of tokens allowed per throttling window for domain:create requests. */
+    @Provides
+    @Config("domainCreateThrottleWindowTokens")
+    public static int provideDomainCreateThrottleWindowTokens(RegistryConfigSettings config) {
+      return config.registryPolicy.domainCreateThrottleWindowTokens;
+    }
+
     @Singleton
     @Provides
     static RegistryConfigSettings provideRegistryConfigSettings() {
