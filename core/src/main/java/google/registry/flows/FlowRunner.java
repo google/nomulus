@@ -23,8 +23,10 @@ import google.registry.flows.FlowModule.LogSqlStatements;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.Transactional;
+import google.registry.flows.quota.FlowQuotaManager;
 import google.registry.flows.session.LoginFlow;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
@@ -56,6 +58,8 @@ public class FlowRunner {
   @Inject Trid trid;
   @Inject FlowReporter flowReporter;
   @Inject JpaTransactionManager jpaTransactionManager;
+  @Inject EppInput eppInput;
+  @Inject FlowQuotaManager flowQuotaManager;
 
   @Inject FlowRunner() {}
 
@@ -79,6 +83,11 @@ public class FlowRunner {
     }
     eppMetricBuilder.setCommandNameFromFlow(flowClass.getSimpleName());
     final StopwatchLogger stopwatch = new StopwatchLogger();
+
+    // First, acquire quota if necessary
+    if (!isSuperuser) {
+      flowQuotaManager.acquireQuota(flowClass, eppInput, registrarId);
+    }
 
     // We may already be in a transaction, e.g., when invoked by DeleteExpiredDomainsAction.
     if (!isTransactional || jpaTransactionManager.inTransaction()) {

@@ -21,27 +21,40 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.testing.TestLogHandlerUtils.findFirstLogMessageByPrefix;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.net.InetAddresses;
 import com.google.common.testing.TestLogHandler;
 import google.registry.flows.certs.CertificateChecker;
+import google.registry.flows.quota.FlowQuotaManager;
+import google.registry.flows.quota.FlowQuotaManager.TooManyRequestsException;
+import google.registry.flows.quota.FlowQuotaParameters;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.quota.NoopQuotaManager;
+import google.registry.quota.QuotaManager;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.util.JdkLoggerConfig;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -112,6 +125,9 @@ class FlowRunnerTest {
     flowRunner.trid = Trid.create("client-123", "server-456");
     flowRunner.flowReporter = mock(FlowReporter.class);
     flowRunner.jpaTransactionManager = tm();
+    flowRunner.eppInput = mock(EppInput.class);
+    flowRunner.flowQuotaManager =
+        FlowQuotaManager.create(new NoopQuotaManager(), ImmutableList.of());
   }
 
   @Test
@@ -223,5 +239,52 @@ class FlowRunnerTest {
     assertWithMessage("number of lines in log message").that(lines.size()).isAtLeast(9);
     String xml = Joiner.on('\n').join(lines.subList(3, lines.size() - 4));
     assertThat(xml).isEqualTo(sanitizedDomainCreateXml);
+  }
+
+  @Test
+  void testRun_quotaExceeded_throwsException() {
+    QuotaManager mockQuotaManager = mock(QuotaManager.class);
+    when(mockQuotaManager.acquireQuota(
+            eq("TheRegistrar:test-quota-id"), anyInt(), any(Duration.class)))
+        .thenReturn(false);
+    flowRunner.flowQuotaManager =
+        FlowQuotaManager.create(mockQuotaManager, ImmutableList.of(new TestFlowQuotaParameters()));
+
+    assertThrows(TooManyRequestsException.class, () -> flowRunner.run(eppMetricBuilder));
+  }
+
+  @Test
+  void testRun_quotaAvailable_succeeds() throws Exception {
+    QuotaManager mockQuotaManager = mock(QuotaManager.class);
+    when(mockQuotaManager.acquireQuota(
+            eq("TheRegistrar:test-quota-id"), anyInt(), any(Duration.class)))
+        .thenReturn(true);
+    flowRunner.flowQuotaManager =
+        FlowQuotaManager.create(mockQuotaManager, ImmutableList.of(new TestFlowQuotaParameters()));
+
+    flowRunner.run(eppMetricBuilder);
+    verify(mockQuotaManager).acquireQuota("TheRegistrar:test-quota-id", 10, Duration.ofMinutes(1));
+  }
+
+  private static class TestFlowQuotaParameters implements FlowQuotaParameters {
+    @Override
+    public Class<? extends Flow> getFlowClass() {
+      return TestCommandFlow.class;
+    }
+
+    @Override
+    public String getQuotaId(EppInput eppInput, String registrarId) {
+      return registrarId + ":test-quota-id";
+    }
+
+    @Override
+    public int getMaxQuotaAllowed() {
+      return 10;
+    }
+
+    @Override
+    public Duration getWindowDuration() {
+      return Duration.ofMinutes(1);
+    }
   }
 }

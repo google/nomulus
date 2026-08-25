@@ -14,6 +14,7 @@
 
 package google.registry.flows;
 
+import com.google.common.collect.ImmutableList;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
@@ -27,7 +28,9 @@ import google.registry.flows.custom.CustomLogicFactory;
 import google.registry.flows.custom.TestCustomLogicFactory;
 import google.registry.flows.domain.DomainDeletionTimeCache;
 import google.registry.flows.domain.DomainFlowTmchUtils;
+import google.registry.flows.quota.FlowQuotaManager;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.quota.NoopQuotaManager;
 import google.registry.request.Modules.GsonModule;
 import google.registry.request.RequestScope;
 import google.registry.request.lock.LockHandler;
@@ -60,6 +63,7 @@ public interface EppTestComponent {
     private FakeLockHandler lockHandler;
     private Sleeper sleeper;
     private CloudTasksHelper cloudTasksHelper;
+    private FlowQuotaManager flowQuotaManager;
 
     public CloudTasksHelper getCloudTasksHelper() {
       return cloudTasksHelper;
@@ -67,6 +71,10 @@ public interface EppTestComponent {
 
     public EppMetric.Builder getMetricBuilder() {
       return metricBuilder;
+    }
+
+    public FlowQuotaManager getFlowQuotaManager() {
+      return flowQuotaManager;
     }
 
     public static FakesAndMocksModule create(FakeClock clock) {
@@ -82,6 +90,8 @@ public interface EppTestComponent {
       instance.metricBuilder = EppMetric.builderForRequest(clock);
       instance.lockHandler = new FakeLockHandler(true);
       instance.cloudTasksHelper = cloudTasksHelper;
+      instance.flowQuotaManager =
+          FlowQuotaManager.create(new NoopQuotaManager(), ImmutableList.of());
       return instance;
     }
 
@@ -133,6 +143,11 @@ public interface EppTestComponent {
     @Provides
     DomainDeletionTimeCache provideDomainDeletionTimeCache() {
       return DomainDeletionTimeCache.create();
+    }
+
+    @Provides
+    FlowQuotaManager provideFlowQuotaManager() {
+      return flowQuotaManager;
     }
   }
 
