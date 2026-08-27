@@ -14,11 +14,13 @@
 
 package google.registry.batch;
 
+import static google.registry.flows.domain.DomainFlowUtils.isDomainEligibleForXap;
 import static google.registry.model.common.Cursor.CursorType.REMOTE_CACHE_DOMAIN_SYNC;
 import static google.registry.model.common.Cursor.CursorType.REMOTE_CACHE_HOST_SYNC;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -32,6 +34,7 @@ import com.google.monitoring.metrics.IncrementableMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.cache.SimplifiedJedisClient;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.Domain;
@@ -87,6 +90,10 @@ public class SyncRemoteCacheAction implements Runnable {
   private final LockHandler lockHandler;
   private final Response response;
   private final Optional<SimplifiedJedisClient> jedisClient;
+
+  @Inject
+  @Config("domainExpiryAccessPeriodTotalLength")
+  Duration domainExpiryAccessPeriodTotalLength = Duration.ofDays(10);
 
   @Inject
   public SyncRemoteCacheAction(
@@ -189,7 +196,7 @@ public class SyncRemoteCacheAction implements Runnable {
 
     for (T resource : resources) {
       String key = getKeyFunction.apply(resource);
-      if (resource.getDeletionTime().isAfter(tm().getTxTime())) {
+      if (shouldSaveResourceInRemoteCache(resource, tm().getTxTime())) {
         toSaveBuilder.add(new SimplifiedJedisClient.JedisResource<>(key, resource));
       } else {
         toDeleteBuilder.add(key);
@@ -202,6 +209,19 @@ public class SyncRemoteCacheAction implements Runnable {
     logger.atInfo().log("Invalidated %d from the remote cache", toDelete.size());
     jedisClient.get().setAll(toSave);
     logger.atInfo().log("Set %d in the remote cache", toSave.size());
+  }
+
+  private <T extends EppResource> boolean shouldSaveResourceInRemoteCache(T resource, Instant now) {
+    if (resource.getDeletionTime().isAfter(now)) {
+      return true;
+    }
+    if (resource instanceof Domain domain) {
+      Tld tld = Tld.get(domain.getTld());
+      return tld.getExpiryAccessPeriodModeAt(now) == Tld.ExpiryAccessPeriodMode.ENABLED
+          && isAtOrAfter(domain.getDeletionTime(), now.minus(domainExpiryAccessPeriodTotalLength))
+          && isDomainEligibleForXap(domain, tld, now);
+    }
+    return false;
   }
 
   private Instant getPreviousCursorTime(Cursor.CursorType cursorType) {

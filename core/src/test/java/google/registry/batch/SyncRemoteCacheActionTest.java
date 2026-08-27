@@ -26,6 +26,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -36,10 +37,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.cache.SimplifiedJedisClient;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.ExpiryAccessPeriodMode;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -163,6 +167,51 @@ class SyncRemoteCacheActionTest {
             ImmutableList.of(
                 new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain)));
     verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("deleted.tld"));
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withXapEnabled_keepsDeletedDomainInRemoteCache() {
+    DatabaseHelper.persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Domain activeDomain = persistActiveDomain("active.tld");
+    Domain xapDomain = persistDeletedDomain("xap.tld", minusDays(clock.now(), 1));
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain),
+                new SimplifiedJedisClient.JedisResource<>("xap.tld", xapDomain)));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of());
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withXapEnabled_deletesDomainDeletedOutsideWindow() {
+    DatabaseHelper.persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Domain activeDomain = persistActiveDomain("active.tld");
+    persistDeletedDomain("expired.tld", minusDays(clock.now(), 15));
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain)));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("expired.tld"));
     verifyMetrics(SUCCESS);
   }
 

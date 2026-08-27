@@ -40,6 +40,11 @@ public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
   }
 
   @Override
+  public Optional<Domain> loadMostRecentByDomainName(String domainName) {
+    return loadMostRecentFromCaches(Domain.class, domainName);
+  }
+
+  @Override
   protected Optional<Domain> loadFromDatabase(String domainName) {
     // Don't use the cache (avoid caching the same domain twice). Do use the replica SQL instance.
     return Optional.ofNullable(

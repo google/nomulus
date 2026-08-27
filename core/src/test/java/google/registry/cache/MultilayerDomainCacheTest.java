@@ -138,4 +138,16 @@ public class MultilayerDomainCacheTest {
     clock.advanceBy(Duration.ofDays(10));
     assertThat(cache.loadByDomainName("example.tld").get().getGracePeriods()).isEmpty();
   }
+
+  @Test
+  void testLoadMostRecent_includesDeletedDomain() {
+    Domain domain =
+        persistActiveDomain("example.tld")
+            .asBuilder()
+            .setDeletionTime(clock.now().minus(Duration.ofDays(1)))
+            .build();
+    when(jedisClient.get(Domain.class, "example.tld")).thenReturn(Optional.of(domain));
+    assertThat(cache.loadByDomainName("example.tld")).isEmpty();
+    assertThat(cache.loadMostRecentByDomainName("example.tld")).hasValue(domain);
+  }
 }

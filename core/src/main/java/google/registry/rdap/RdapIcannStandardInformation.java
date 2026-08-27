@@ -80,6 +80,18 @@ public class RdapIcannStandardInformation {
   static final ImmutableList<Notice> DOMAIN_BLOCKED_BY_BSA_BOILERPLATE_NOTICES =
       ImmutableList.of(DOMAIN_BLOCKED_BY_BSA_NOTICE);
 
+  /** Not required, but provided when a domain is in the Expiry Access Period. */
+  private static final Notice DOMAIN_IN_EXPIRY_ACCESS_PERIOD_NOTICE =
+      Notice.builder()
+          .setTitle("Expiry Access Period")
+          .setDescription(
+              "This domain is currently available for registration in the Expiry Access Period")
+          .build();
+
+  /** Boilerplate notice for when a domain is in the Expiry Access Period. */
+  static final ImmutableList<Notice> DOMAIN_IN_EXPIRY_ACCESS_PERIOD_BOILERPLATE_NOTICES =
+      ImmutableList.of(DOMAIN_IN_EXPIRY_ACCESS_PERIOD_NOTICE);
+
   /** Required by the RDAP Technical Implementation Guide 3.6. */
   static final Remark SUMMARY_DATA_REMARK =
       Remark.builder()

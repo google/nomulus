@@ -63,6 +63,12 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
             .map(v -> v.cloneProjectedAtTime(now));
   }
 
+  @SuppressWarnings("unchecked")
+  protected Optional<V> loadMostRecentFromCaches(Class<V> clazz, String key) {
+    Instant now = clock.now();
+    return (Optional<V>) loadFromCachesInternal(clazz, key).map(v -> v.cloneProjectedAtTime(now));
+  }
+
   private Optional<V> loadFromCachesInternal(Class<V> clazz, String key) {
     // hopefully the resource is in the local cache
     Optional<V> possibleValue = Optional.ofNullable(localCache.getIfPresent(key));
