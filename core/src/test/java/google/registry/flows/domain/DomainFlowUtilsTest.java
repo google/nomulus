@@ -16,11 +16,17 @@ package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
+import static google.registry.flows.domain.DomainFlowUtils.isDomainEligibleForXap;
+import static google.registry.flows.domain.DomainFlowUtils.loadDomainIfInXap;
+import static google.registry.flows.domain.DomainFlowUtils.wasDeletedDuringAddGracePeriod;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static org.joda.money.CurrencyUnit.CHF;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -38,8 +44,11 @@ import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapExce
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
+import java.time.Duration;
+import java.time.Instant;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,8 +56,11 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link DomainFlowUtils}. */
 class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
 
+  private static final Instant START_TIME = Instant.parse("2025-01-01T00:00:00Z");
+
   @BeforeEach
   void setup() {
+    clock.setTo(START_TIME);
     setEppInput("domain_info.xml");
     createTld("tld");
     persistResource(JpaTransactionManagerExtension.makeRegistrar1().asBuilder().build());
@@ -195,5 +207,188 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             .setServerStatusChangeBillingCost(Money.ofMajor(CHF, 800))
             .setRestoreBillingCost(Money.ofMajor(CHF, 800))
             .build());
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_activeDomain_returnsFalse() {
+    Domain domain = persistActiveDomain("active.tld");
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isFalse();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedOutsideAgp_returnsTrue() {
+    Domain domain = persistDeletedDomain("deleted.tld", minusDays(START_TIME, 1));
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isTrue();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedDuringAgp_returnsFalse() {
+    Domain domain =
+        persistActiveDomain("agp.tld")
+            .asBuilder()
+            .setCreationTimeForTest(minusDays(START_TIME, 2))
+            .setDeletionTime(minusDays(START_TIME, 1))
+            .build();
+    persistResource(domain);
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isFalse();
+  }
+
+  @Test
+  void testLoadDomainIfInXap_eligibleAndWithinWindow_returnsDomain() {
+    Domain domain = persistDeletedDomain("xap.tld", minusDays(START_TIME, 2));
+    assertThat(loadDomainIfInXap("xap.tld", START_TIME, Duration.ofDays(10))).hasValue(domain);
+  }
+
+  @Test
+  void testLoadDomainIfInXap_deletedOutsideWindow_returnsEmpty() {
+    persistDeletedDomain("expired.tld", minusDays(START_TIME, 15));
+    assertThat(loadDomainIfInXap("expired.tld", START_TIME, Duration.ofDays(10))).isEmpty();
+  }
+
+  @Test
+  void testLoadDomainIfInXap_deletedDuringAgp_returnsEmpty() {
+    Domain domain =
+        persistActiveDomain("agp.tld")
+            .asBuilder()
+            .setCreationTimeForTest(minusDays(START_TIME, 2))
+            .setDeletionTime(minusDays(START_TIME, 1))
+            .build();
+    persistResource(domain);
+    assertThat(loadDomainIfInXap("agp.tld", START_TIME, Duration.ofDays(10))).isEmpty();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedAtNow_returnsTrue() {
+    Domain domain = persistDeletedDomain("deleted-now.tld", START_TIME);
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isTrue();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedInFuture_returnsFalse() {
+    Domain domain = persistDeletedDomain("future.tld", START_TIME.plus(Duration.ofDays(1)));
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isFalse();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_agpBoundaryExact_returnsFalse() {
+    Tld tld = Tld.get("tld");
+    Domain domain =
+        persistActiveDomain("agp-exact.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()))
+            .setDeletionTime(START_TIME)
+            .build();
+    persistResource(domain);
+    assertThat(isDomainEligibleForXap(domain, tld, START_TIME)).isFalse();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedJustAfterAgp_returnsTrue() {
+    Tld tld = Tld.get("tld");
+    Domain domain =
+        persistActiveDomain("agp-after.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()).minusMillis(1))
+            .setDeletionTime(START_TIME)
+            .build();
+    persistResource(domain);
+    assertThat(isDomainEligibleForXap(domain, tld, START_TIME)).isTrue();
+  }
+
+  @Test
+  void testWasDeletedDuringAddGracePeriod_boundaries() {
+    Tld tld = Tld.get("tld");
+    Domain domainExact =
+        persistActiveDomain("agp-exact-fn.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()))
+            .setDeletionTime(START_TIME)
+            .build();
+    persistResource(domainExact);
+    assertThat(wasDeletedDuringAddGracePeriod(domainExact, tld)).isTrue();
+
+    Domain domainAfter =
+        persistActiveDomain("agp-after-fn.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()).minusMillis(1))
+            .setDeletionTime(START_TIME)
+            .build();
+    persistResource(domainAfter);
+    assertThat(wasDeletedDuringAddGracePeriod(domainAfter, tld)).isFalse();
+  }
+
+  @Test
+  void testLoadDomainIfInXap_deletedAtNow_returnsDomain() {
+    Domain domain = persistDeletedDomain("xap-now.tld", START_TIME);
+    assertThat(loadDomainIfInXap("xap-now.tld", START_TIME, Duration.ofDays(10))).hasValue(domain);
+  }
+
+  @Test
+  void testLoadDomainIfInXap_exactWindowBoundary_returnsEmpty() {
+    persistDeletedDomain("expired-exact.tld", minusDays(START_TIME, 10));
+    assertThat(loadDomainIfInXap("expired-exact.tld", START_TIME, Duration.ofDays(10))).isEmpty();
+  }
+
+  @Test
+  void testLoadDomainIfInXap_justInsideWindowBoundary_returnsDomain() {
+    Domain domain =
+        persistDeletedDomain("inside-window.tld", minusDays(START_TIME, 10).plusSeconds(1));
+    assertThat(loadDomainIfInXap("inside-window.tld", START_TIME, Duration.ofDays(10)))
+        .hasValue(domain);
+  }
+
+  @Test
+  void testLoadDomainIfInXap_justOutsideWindowBoundary_returnsEmpty() {
+    persistDeletedDomain("outside-window.tld", minusDays(START_TIME, 10).minusSeconds(1));
+    assertThat(loadDomainIfInXap("outside-window.tld", START_TIME, Duration.ofDays(10))).isEmpty();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedOneMilliInFuture_returnsFalse() {
+    Domain domain = persistDeletedDomain("future-milli.tld", START_TIME.plusMillis(1));
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isFalse();
+  }
+
+  @Test
+  void testLoadDomainIfInXap_oneMilliInsideWindow_returnsDomain() {
+    Domain domain = persistDeletedDomain("inside-milli.tld", START_TIME);
+    Instant queryNow = domain.getDeletionTime().plus(Duration.ofDays(10)).minusMillis(1);
+    assertThat(loadDomainIfInXap("inside-milli.tld", queryNow, Duration.ofDays(10)))
+        .hasValue(domain);
+  }
+
+  @Test
+  void testLoadDomainIfInXap_oneMilliOutsideWindow_returnsEmpty() {
+    Domain domain = persistDeletedDomain("outside-milli.tld", START_TIME);
+    Instant queryNow = domain.getDeletionTime().plus(Duration.ofDays(10)).plusMillis(1);
+    assertThat(loadDomainIfInXap("outside-milli.tld", queryNow, Duration.ofDays(10))).isEmpty();
+  }
+
+  @Test
+  void testLoadDomainIfInXap_exactAgpBoundary_returnsEmpty() {
+    Tld tld = Tld.get("tld");
+    Domain domain =
+        persistActiveDomain("agp-exact-load.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()))
+            .setDeletionTime(START_TIME)
+            .build();
+    persistResource(domain);
+    assertThat(loadDomainIfInXap("agp-exact-load.tld", START_TIME, Duration.ofDays(10))).isEmpty();
+  }
+
+  @Test
+  void testLoadDomainIfInXap_oneMilliAfterAgpBoundary_returnsDomain() {
+    Tld tld = Tld.get("tld");
+    Domain domain =
+        persistResource(
+            persistActiveDomain("agp-after-load.tld")
+                .asBuilder()
+                .setCreationTimeForTest(
+                    START_TIME.minus(tld.getAddGracePeriodLength()).minusMillis(1))
+                .setDeletionTime(START_TIME)
+                .build());
+    assertThat(loadDomainIfInXap("agp-after-load.tld", START_TIME, Duration.ofDays(10)))
+        .hasValue(domain);
   }
 }
