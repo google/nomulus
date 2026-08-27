@@ -26,26 +26,34 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.cache.SimplifiedJedisClient;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.ExpiryAccessPeriodMode;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +70,8 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class SyncRemoteCacheActionTest {
 
-  private final FakeClock clock = new FakeClock(Instant.parse("2025-01-01T00:00:00Z"));
+  private static final Instant START_TIME = Instant.parse("2025-01-01T00:00:00Z");
+  private final FakeClock clock = new FakeClock(START_TIME);
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -78,7 +87,9 @@ class SyncRemoteCacheActionTest {
   void beforeEach() {
     createTld("tld");
     SyncRemoteCacheAction.SYNC_CACHE_RUNS_METRIC.reset();
-    action = new SyncRemoteCacheAction(lockHandler, response, Optional.of(jedisClient));
+    action =
+        new SyncRemoteCacheAction(
+            lockHandler, response, Optional.of(jedisClient), Duration.ofDays(10));
   }
 
   private static void verifyMetrics(SyncRemoteCacheAction.SyncStatus status) {
@@ -90,7 +101,8 @@ class SyncRemoteCacheActionTest {
 
   @Test
   void test_noJedisConfig() {
-    action = new SyncRemoteCacheAction(lockHandler, response, Optional.empty());
+    action =
+        new SyncRemoteCacheAction(lockHandler, response, Optional.empty(), Duration.ofDays(10));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload()).contains("No Jedis/Valkey configuration found");
@@ -100,7 +112,9 @@ class SyncRemoteCacheActionTest {
   @Test
   void test_lockAcquisitionFails() {
     lockHandler = new FakeLockHandler(false);
-    action = new SyncRemoteCacheAction(lockHandler, response, Optional.of(jedisClient));
+    action =
+        new SyncRemoteCacheAction(
+            lockHandler, response, Optional.of(jedisClient), Duration.ofDays(10));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload()).contains("Could not acquire lock");
@@ -153,7 +167,7 @@ class SyncRemoteCacheActionTest {
   @Test
   void test_syncDomains_withDeletedDomains() {
     Domain activeDomain = persistActiveDomain("active.tld");
-    persistDeletedDomain("deleted.tld", minusDays(clock.now(), 1));
+    persistDeletedDomain("deleted.tld", minusDays(START_TIME, 1));
 
     action.run();
 
@@ -163,6 +177,256 @@ class SyncRemoteCacheActionTest {
             ImmutableList.of(
                 new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain)));
     verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("deleted.tld"));
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withXapEnabled_keepsDeletedDomainInRemoteCache() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Domain activeDomain = persistActiveDomain("active.tld");
+    Domain xapDomain = persistDeletedDomain("xap.tld", minusDays(START_TIME, 1));
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    SimplifiedJedisClient.JedisResource<Domain> activeResource =
+        new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain);
+    SimplifiedJedisClient.JedisResource<Domain> xapResource =
+        new SimplifiedJedisClient.JedisResource<>(
+            "xap.tld", xapDomain, xapDomain.getDeletionTime().plus(Duration.ofDays(10)));
+    assertThat(activeResource.getExpirationTime()).isEqualTo(END_INSTANT);
+    assertThat(xapResource.getExpirationTime())
+        .isEqualTo(xapDomain.getDeletionTime().plus(Duration.ofDays(10)));
+    verify(jedisClient).setAll(ImmutableList.of(activeResource, xapResource));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of());
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withCustomXapLength_usesConfiguredDurationForEligibilityAndTtl() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Duration customXapLength = Duration.ofDays(15);
+    action =
+        new SyncRemoteCacheAction(lockHandler, response, Optional.of(jedisClient), customXapLength);
+    Domain withinCustomWindow = persistDeletedDomain("within-15d.tld", minusDays(START_TIME, 12));
+    persistDeletedDomain("outside-15d.tld", minusDays(START_TIME, 16));
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>(
+                    "within-15d.tld",
+                    withinCustomWindow,
+                    withinCustomWindow.getDeletionTime().plus(customXapLength))));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("outside-15d.tld"));
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withXapEnabled_deletedDuringAgp_deletedFromRemoteCache() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Tld tld = Tld.get("tld");
+    persistResource(
+        persistActiveDomain("agp.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()))
+            .setDeletionTime(START_TIME)
+            .build());
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient).setAll(ImmutableList.of());
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("agp.tld"));
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withXapEnabled_atDeletionTime_keepsDomainInRemoteCache() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Domain xapDomain = persistDeletedDomain("xap-now.tld", START_TIME);
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>(
+                    "xap-now.tld",
+                    xapDomain,
+                    xapDomain.getDeletionTime().plus(Duration.ofDays(10)))));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of());
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withXapEnabled_atExactExpiry_deletedFromRemoteCache() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistDeletedDomain("exact-expiry.tld", minusDays(START_TIME, 10));
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient).setAll(ImmutableList.of());
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("exact-expiry.tld"));
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withXapEnabled_insideExpiry_keepsDomainInRemoteCache() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Domain xapDomain =
+        persistDeletedDomain(
+            "inside-expiry.tld", START_TIME.minus(Duration.ofDays(10)).plusMillis(1));
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>(
+                    "inside-expiry.tld",
+                    xapDomain,
+                    xapDomain.getDeletionTime().plus(Duration.ofDays(10)))));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of());
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withXapDisabled_deletedDomainDeletedFromRemoteCache() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.DISABLED))
+            .build());
+    persistDeletedDomain("xap-disabled.tld", minusDays(START_TIME, 1));
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient).setAll(ImmutableList.of());
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("xap-disabled.tld"));
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_cursorAdvances_skipsUnchangedExpiredXapDomain() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+
+    Domain xapDomain = persistDeletedDomain("xap.tld", minusDays(START_TIME, 1));
+
+    // Run 1: Initial synchronization at START_TIME
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>(
+                    "xap.tld", xapDomain, xapDomain.getDeletionTime().plus(Duration.ofDays(10)))));
+    Cursor cursor = DatabaseHelper.loadByKey(Cursor.createGlobalVKey(REMOTE_CACHE_DOMAIN_SYNC));
+    assertThat(cursor.getCursorTime()).isEqualTo(START_TIME);
+
+    // Run 2: Advance clock past 10d XAP window
+    clock.advanceBy(Duration.ofDays(12));
+    clearInvocations(jedisClient);
+    FakeResponse response2 = new FakeResponse();
+    action =
+        new SyncRemoteCacheAction(
+            lockHandler, response2, Optional.of(jedisClient), Duration.ofDays(10));
+
+    action.run();
+
+    assertThat(response2.getStatus()).isEqualTo(SC_OK);
+    assertThat(response2.getPayload()).contains("Synced 0 domains");
+    verifyNoInteractions(jedisClient);
+    assertThat(
+            DatabaseHelper.loadByKey(Cursor.createGlobalVKey(REMOTE_CACHE_DOMAIN_SYNC))
+                .getCursorTime())
+        .isEqualTo(START_TIME);
+
+    // Run 3: Subsequent mutation at new time
+    clock.advanceOneMilli();
+    Domain newActive = persistActiveDomain("newactive.tld");
+    FakeResponse response3 = new FakeResponse();
+    action =
+        new SyncRemoteCacheAction(
+            lockHandler, response3, Optional.of(jedisClient), Duration.ofDays(10));
+
+    action.run();
+
+    assertThat(response3.getStatus()).isEqualTo(SC_OK);
+    assertThat(response3.getPayload()).contains("Synced 1 domains");
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>("newactive.tld", newActive)));
+    assertThat(
+            DatabaseHelper.loadByKey(Cursor.createGlobalVKey(REMOTE_CACHE_DOMAIN_SYNC))
+                .getCursorTime())
+        .isEqualTo(START_TIME.plus(Duration.ofDays(12)).plusMillis(1));
+  }
+
+  @Test
+  void test_syncDomains_withXapEnabled_deletesDomainDeletedOutsideWindow() {
+    DatabaseHelper.persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Domain activeDomain = persistActiveDomain("active.tld");
+    persistDeletedDomain("expired.tld", minusDays(START_TIME, 15));
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain)));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("expired.tld"));
     verifyMetrics(SUCCESS);
   }
 
@@ -223,7 +487,7 @@ class SyncRemoteCacheActionTest {
   @Test
   void test_syncHosts_withDeletedHosts() {
     Host active = persistActiveHost("ns1.example.tld");
-    Host deleted = persistDeletedHost("ns2.example.tld", minusDays(clock.now(), 1));
+    Host deleted = persistDeletedHost("ns2.example.tld", minusDays(START_TIME, 1));
 
     action.run();
 
@@ -234,5 +498,110 @@ class SyncRemoteCacheActionTest {
                 new SimplifiedJedisClient.JedisResource<>(active.getRepoId(), active)));
     verify(jedisClient).deleteAll(Host.class, ImmutableList.of(deleted.getRepoId()));
     verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_withXapEnabled_deletedJustAfterAgp_retainedInCache() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Tld tld = Tld.get("tld");
+    Domain xapDomain =
+        persistResource(
+            persistActiveDomain("agp-outside.tld")
+                .asBuilder()
+                .setCreationTimeForTest(
+                    START_TIME.minus(tld.getAddGracePeriodLength()).minusMillis(1))
+                .setDeletionTime(START_TIME)
+                .build());
+
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>(
+                    "agp-outside.tld",
+                    xapDomain,
+                    xapDomain.getDeletionTime().plus(Duration.ofDays(10)))));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of());
+    verifyMetrics(SUCCESS);
+  }
+
+  @Test
+  void test_syncDomains_rapidRecreationAndDeletion_transitionsCacheState() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+
+    // Run 1: Deleted in XAP at START_TIME - 1d (creation START_TIME - 7d)
+    Instant t1Del = START_TIME.minus(Duration.ofDays(1));
+    Domain v1 =
+        persistResource(
+            persistActiveDomain("cycle-sync.tld")
+                .asBuilder()
+                .setCreationTimeForTest(START_TIME.minus(Duration.ofDays(7)))
+                .setDeletionTime(t1Del)
+                .build());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>(
+                    "cycle-sync.tld", v1, t1Del.plus(Duration.ofDays(10)))));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of());
+
+    // Run 2: Re-registered at START_TIME + 2d (active)
+    clock.advanceBy(Duration.ofDays(2));
+    clearInvocations(jedisClient);
+    Instant t2Create = START_TIME.plus(Duration.ofDays(2));
+    Domain v2 =
+        persistResource(
+            v1.asBuilder().setCreationTimeForTest(t2Create).setDeletionTime(END_INSTANT).build());
+    FakeResponse resp2 = new FakeResponse();
+    new SyncRemoteCacheAction(lockHandler, resp2, Optional.of(jedisClient), Duration.ofDays(10))
+        .run();
+    assertThat(resp2.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(ImmutableList.of(new SimplifiedJedisClient.JedisResource<>("cycle-sync.tld", v2)));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of());
+
+    // Run 3: Deleted again at t2Create + 6d (outside 5d AGP) -> new TTL
+    clock.advanceBy(Duration.ofDays(6));
+    clearInvocations(jedisClient);
+    Instant t3Del = t2Create.plus(Duration.ofDays(6));
+    Domain v3 = persistResource(v2.asBuilder().setDeletionTime(t3Del).build());
+    FakeResponse resp3 = new FakeResponse();
+    new SyncRemoteCacheAction(lockHandler, resp3, Optional.of(jedisClient), Duration.ofDays(10))
+        .run();
+    assertThat(resp3.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient)
+        .setAll(
+            ImmutableList.of(
+                new SimplifiedJedisClient.JedisResource<>(
+                    "cycle-sync.tld", v3, t3Del.plus(Duration.ofDays(10)))));
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of());
+
+    // Run 4: Re-registered at t3Del + 1d and deleted inside AGP -> purged
+    clock.advanceBy(Duration.ofDays(1));
+    clearInvocations(jedisClient);
+    Instant t4Create = t3Del.plus(Duration.ofDays(1));
+    Instant t4Del = t4Create.plus(Duration.ofDays(1)); // inside 5d AGP
+    clock.setTo(t4Del);
+    persistResource(v3.asBuilder().setCreationTimeForTest(t4Create).setDeletionTime(t4Del).build());
+    FakeResponse resp4 = new FakeResponse();
+    new SyncRemoteCacheAction(lockHandler, resp4, Optional.of(jedisClient), Duration.ofDays(10))
+        .run();
+    assertThat(resp4.getStatus()).isEqualTo(SC_OK);
+    verify(jedisClient).setAll(ImmutableList.of());
+    verify(jedisClient).deleteAll(Domain.class, ImmutableList.of("cycle-sync.tld"));
   }
 }
