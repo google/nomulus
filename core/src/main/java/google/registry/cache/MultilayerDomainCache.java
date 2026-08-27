@@ -18,7 +18,10 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.util.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -29,14 +32,25 @@ import java.util.Optional;
 public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
     implements DomainCache {
 
+  private final Duration domainExpiryAccessPeriodTotalLength;
+
   public MultilayerDomainCache(
-      SimplifiedJedisClient jedisClient, Clock clock, CacheMetrics cacheMetrics) {
+      SimplifiedJedisClient jedisClient,
+      Clock clock,
+      CacheMetrics cacheMetrics,
+      Duration domainExpiryAccessPeriodTotalLength) {
     super(jedisClient, clock, cacheMetrics);
+    this.domainExpiryAccessPeriodTotalLength = domainExpiryAccessPeriodTotalLength;
   }
 
   @Override
   public Optional<Domain> loadByDomainName(String domainName) {
     return loadFromCaches(Domain.class, domainName);
+  }
+
+  @Override
+  public Optional<Domain> loadByDomainNameIncludingDeleted(String domainName) {
+    return loadFromCachesIncludingDeleted(Domain.class, domainName);
   }
 
   @Override
@@ -49,7 +63,13 @@ public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
   }
 
   @Override
-  protected boolean shouldPersistToRemoteCache(Domain domain) {
-    return Tld.get(domain.getTld()).getTldType().equals(Tld.TldType.REAL);
+  protected boolean shouldPersistToRemoteCache(Domain domain, Instant now) {
+    return Tld.get(domain.getTld()).getTldType().equals(TldType.REAL)
+        && super.shouldPersistToRemoteCache(domain, now);
+  }
+
+  @Override
+  protected Instant getExpirationTime(Domain domain) {
+    return domain.getDeletionTime().plus(domainExpiryAccessPeriodTotalLength);
   }
 }

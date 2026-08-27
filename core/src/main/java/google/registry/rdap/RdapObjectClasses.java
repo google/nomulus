@@ -136,6 +136,8 @@ final class RdapObjectClasses {
   public enum BoilerplateType {
     DOMAIN(RdapIcannStandardInformation.DOMAIN_BOILERPLATE_NOTICES),
     DOMAIN_BLOCKED_BY_BSA(RdapIcannStandardInformation.DOMAIN_BLOCKED_BY_BSA_BOILERPLATE_NOTICES),
+    DOMAIN_IN_EXPIRY_ACCESS_PERIOD(
+        RdapIcannStandardInformation.DOMAIN_IN_EXPIRY_ACCESS_PERIOD_BOILERPLATE_NOTICES),
     NAMESERVER(ImmutableList.of()),
     ENTITY(ImmutableList.of()),
     OTHER(ImmutableList.of());
@@ -533,10 +535,10 @@ final class RdapObjectClasses {
     }
   }
 
-  /** Specialized error response body for when a domain is blocked by BSA. */
+  /** Base class for specialized 404 Not Found RDAP error responses. */
   @RestrictJsonNames({})
   @SuppressWarnings("UnusedVariable")
-  public static class DomainBlockedByBsaErrorResponse extends ReplyPayloadBase {
+  private abstract static class DomainNotFoundErrorResponse extends ReplyPayloadBase {
 
     @JsonableElement private static final LanguageIdentifier lang = LanguageIdentifier.EN;
 
@@ -546,9 +548,25 @@ final class RdapObjectClasses {
 
     @JsonableElement private final ImmutableList<String> description;
 
-    DomainBlockedByBsaErrorResponse(String message) {
-      super(BoilerplateType.DOMAIN_BLOCKED_BY_BSA);
+    DomainNotFoundErrorResponse(BoilerplateType boilerplateType, String message) {
+      super(boilerplateType);
       this.description = ImmutableList.of(message);
+    }
+  }
+
+  /** Specialized error response body for when a domain is blocked by BSA. */
+  public static class DomainBlockedByBsaErrorResponse extends DomainNotFoundErrorResponse {
+
+    DomainBlockedByBsaErrorResponse(String message) {
+      super(BoilerplateType.DOMAIN_BLOCKED_BY_BSA, message);
+    }
+  }
+
+  /** Specialized error response body for when a domain is in the Expiry Access Period. */
+  public static class DomainInExpiryAccessPeriodErrorResponse extends DomainNotFoundErrorResponse {
+
+    DomainInExpiryAccessPeriodErrorResponse(String message) {
+      super(BoilerplateType.DOMAIN_IN_EXPIRY_ACCESS_PERIOD, message);
     }
   }
 
