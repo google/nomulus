@@ -564,12 +564,28 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   }
 
   @Test
+  void testSuccess_expiryAccessPeriodEnabled() throws Exception {
+    assertThat(loadRegistrar("NewRegistrar").getExpiryAccessPeriodEnabled()).isFalse();
+    runCommandForced("--expiry_access_period_enabled=true", "NewRegistrar");
+    assertThat(loadRegistrar("NewRegistrar").getExpiryAccessPeriodEnabled()).isTrue();
+  }
+
+  @Test
+  void testSuccess_resetExpiryAccessPeriodEnabled() throws Exception {
+    persistResource(
+        loadRegistrar("NewRegistrar").asBuilder().setExpiryAccessPeriodEnabled(true).build());
+    runCommandForced("--expiry_access_period_enabled=false", "NewRegistrar");
+    assertThat(loadRegistrar("NewRegistrar").getExpiryAccessPeriodEnabled()).isFalse();
+  }
+
+  @Test
   void testSuccess_unspecifiedBooleansArentChanged() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
             .setBlockPremiumNames(true)
             .setContactsRequireSyncing(true)
+            .setExpiryAccessPeriodEnabled(true)
             .build());
     // Make some unrelated change where we don't specify the flags for the booleans.
     runCommandForced("NewRegistrar");
@@ -577,6 +593,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     Registrar reloadedRegistrar = loadRegistrar("NewRegistrar");
     assertThat(reloadedRegistrar.getBlockPremiumNames()).isTrue();
     assertThat(reloadedRegistrar.getContactsRequireSyncing()).isTrue();
+    assertThat(reloadedRegistrar.getExpiryAccessPeriodEnabled()).isTrue();
   }
 
   @Test

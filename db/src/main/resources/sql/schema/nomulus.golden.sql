@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.10
--- Dumped by pg_dump version 17.10
+-- Dumped from database version 17.4
+-- Dumped by pg_dump version 17.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -856,7 +856,7 @@ CREATE TABLE public."Registrar" (
     last_expiring_cert_notification_sent_date timestamp with time zone,
     last_expiring_failover_cert_notification_sent_date timestamp with time zone,
     last_poc_verification_date timestamp with time zone,
-    expiry_access_period_enabled boolean DEFAULT false NOT NULL
+    expiry_access_period_enabled boolean NOT NULL
 );
 
 
@@ -1206,7 +1206,7 @@ CREATE TABLE public."Tld" (
     breakglass_mode boolean DEFAULT false NOT NULL,
     bsa_enroll_start_time timestamp with time zone,
     create_billing_cost_transitions public.hstore NOT NULL,
-    expiry_access_period_transitions public.hstore DEFAULT '"1970-01-01T00:00:00.000Z"=>"DISABLED"'::public.hstore NOT NULL
+    expiry_access_period_transitions public.hstore NOT NULL
 );
 
 

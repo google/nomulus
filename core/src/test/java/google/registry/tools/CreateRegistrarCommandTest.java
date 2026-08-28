@@ -104,6 +104,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.getLastUpdateTime()).isEqualTo(registrar.getCreationTime());
     assertThat(registrar.getBlockPremiumNames()).isFalse();
     assertThat(registrar.isRegistryLockAllowed()).isFalse();
+    assertThat(registrar.getExpiryAccessPeriodEnabled()).isFalse();
     assertThat(registrar.getPoNumber()).isEmpty();
     assertThat(registrar.getIcannReferralEmail()).isEqualTo("foo@bar.test");
 
@@ -888,6 +889,50 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().isRegistryLockAllowed()).isFalse();
+  }
+
+  @Test
+  void testSuccess_expiryAccessPeriodEnabled() throws Exception {
+    runCommandForced(
+        "--name=blobio",
+        "--password=some_password",
+        "--registrar_type=REAL",
+        "--iana_id=8",
+        "--expiry_access_period_enabled=true",
+        "--passcode=01234",
+        "--icann_referral_email=foo@bar.test",
+        "--street=\"123 Fake St\"",
+        "--city Fakington",
+        "--state MA",
+        "--zip 00351",
+        "--cc US",
+        "clientz");
+
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
+    assertThat(registrar).isPresent();
+    assertThat(registrar.get().getExpiryAccessPeriodEnabled()).isTrue();
+  }
+
+  @Test
+  void testSuccess_expiryAccessPeriodDisabled() throws Exception {
+    runCommandForced(
+        "--name=blobio",
+        "--password=some_password",
+        "--registrar_type=REAL",
+        "--iana_id=8",
+        "--expiry_access_period_enabled=false",
+        "--passcode=01234",
+        "--icann_referral_email=foo@bar.test",
+        "--street=\"123 Fake St\"",
+        "--city Fakington",
+        "--state MA",
+        "--zip 00351",
+        "--cc US",
+        "clientz");
+
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
+    assertThat(registrar).isPresent();
+    assertThat(registrar.get().getExpiryAccessPeriodEnabled()).isFalse();
   }
 
   @Test

@@ -226,3 +226,5 @@ V225__user_registry_lock_email_address_index.sql
 V226__tld_domain_name_index.sql
 V227__domainhistory_repo_id_mod_time_idx.sql
 V228__hosthistory_repo_id_mod_time_idx.sql
+V229__tld_drop_xap_transitions_default.sql
+V230__registrar_drop_xap_enabled_default.sql
