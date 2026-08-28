@@ -122,6 +122,15 @@
   </task>
 
   <task>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/exportDropList&runInEmpty]]></url>
+    <name>exportDropList</name>
+    <description>
+      This job exports the upcoming domain drop list for all open TLDs to Google Drive once daily.
+    </description>
+    <schedule>0 6 * * *</schedule>
+  </task>
+
+  <task>
     <url><![CDATA[/_dr/task/expandBillingRecurrences?advanceCursor]]></url>
     <name>expandBillingRecurrences</name>
     <description>
