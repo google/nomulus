@@ -80,7 +80,11 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
     /**
      * If we're including the upcoming domain drop date in the exported list of registered domains.
+     *
+     * @deprecated Legacy drop list mode in {@code ExportDomainListsAction} is removed; upcoming
+     *     drops are exported via {@code ExportDropListAction}.
      */
+    @Deprecated
     INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS(FeatureStatus.INACTIVE),
 
     /** If we're prohibiting the inclusion of the contact object URI on login. */

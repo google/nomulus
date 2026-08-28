@@ -110,6 +110,9 @@ registryPolicy:
       USD: 10
       JPY: 1000
 
+  # Google Drive folder ID for exporting the domain drop list.
+  domainDropListDriveFolderId:
+
   # Disclaimer at the top of the exported premium terms list.
   premiumTermsExportDisclaimer: |
     This list contains domains for the TLD offered at a premium price. This
