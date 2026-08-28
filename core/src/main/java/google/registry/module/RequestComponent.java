@@ -42,6 +42,7 @@ import google.registry.dns.RefreshDnsOnHostRenameAction;
 import google.registry.dns.writer.DnsWritersModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateConfigModule;
 import google.registry.export.ExportDomainListsAction;
+import google.registry.export.ExportDropListAction;
 import google.registry.export.ExportPremiumTermsAction;
 import google.registry.export.ExportReservedTermsAction;
 import google.registry.export.SyncGroupMembersAction;
@@ -224,6 +225,8 @@ public interface RequestComponent {
   ExpandBillingRecurrencesAction expandBillingRecurrencesAction();
 
   ExportDomainListsAction exportDomainListsAction();
+
+  ExportDropListAction exportDropListAction();
 
   ExportPremiumTermsAction exportPremiumTermsAction();
 
