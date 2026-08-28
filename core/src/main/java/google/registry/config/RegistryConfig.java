@@ -36,6 +36,7 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
+import google.registry.export.ExportDropListAction;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.mosapi.MosApiClient;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -1157,6 +1158,18 @@ public final class RegistryConfig {
         RegistryConfigSettings config) {
       return config.registryPolicy.domainExpiryAccessPeriod.finalFee.entrySet().stream()
           .collect(toImmutableMap(entry -> CurrencyUnit.of(entry.getKey()), Entry::getValue));
+    }
+
+    /**
+     * Returns the Google Drive folder ID for exporting the domain drop list.
+     *
+     * @see ExportDropListAction
+     */
+    @Provides
+    @Config("domainDropListDriveFolderId")
+    public static Optional<String> provideDomainDropListDriveFolderId(
+        RegistryConfigSettings config) {
+      return Optional.ofNullable(config.registryPolicy.domainDropListDriveFolderId);
     }
 
     @Singleton
