@@ -97,6 +97,7 @@ public class RegistryConfigSettings {
     public String tmchMarksDbUrl;
     public String registryAdminClientId;
     public DomainExpiryAccessPeriod domainExpiryAccessPeriod;
+    public String domainDropListDriveFolderId;
     public String premiumTermsExportDisclaimer;
     public String reservedTermsExportDisclaimer;
     public String rdapTos;
