@@ -58,6 +58,18 @@ serialPipeline:
                 - |
                   gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-deploy-${TARGET_ID}.yaml .
                   gcloud builds submit --no-source --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
+                  TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-deploy-gke-${TARGET_ID}.yaml .
+                  gcloud builds submit --no-source --config=cloudbuild-deploy-gke-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -130,6 +142,18 @@ serialPipeline:
                 - |
                   gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-deploy-${TARGET_ID}.yaml .
                   gcloud builds submit --no-source --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
+                  TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-deploy-gke-${TARGET_ID}.yaml .
+                  gcloud builds submit --no-source --config=cloudbuild-deploy-gke-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
@@ -193,6 +217,17 @@ serialPipeline:
               - type: container
                 image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
                 env:
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-sync-and-tag.yaml .
+                  gcloud builds submit --no-source --config=cloudbuild-sync-and-tag.yaml
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
                   TARGET_ID: ${{ target.id }}
                   TAG_NAME: ${{ deploy_params['tag_name'] }}
                   PROJECT_ID: ${{ deploy_params['project_id'] }}
@@ -202,6 +237,18 @@ serialPipeline:
                 - |
                   gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-schema-deploy-${TARGET_ID}.yaml .
                   gcloud builds submit --no-source --config=cloudbuild-schema-deploy-${TARGET_ID}.yaml
+              - type: container
+                image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+                env:
+                  TARGET_ID: ${{ target.id }}
+                  TAG_NAME: ${{ deploy_params['tag_name'] }}
+                  PROJECT_ID: ${{ deploy_params['project_id'] }}
+                command: ["/bin/bash"]
+                args:
+                - "-c"
+                - |
+                  gcloud storage cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/cloudbuild-deploy-gke-${TARGET_ID}.yaml .
+                  gcloud builds submit --no-source --config=cloudbuild-deploy-gke-${TARGET_ID}.yaml
             analysis:
               # 10 minutes.
               duration: 600s
