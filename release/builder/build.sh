@@ -61,7 +61,7 @@ apt-get install postgresql-client-17 procps -y
 
 # Install gcloud
 apt-get install google-cloud-cli -y
-apt-get install google-cloud-sdk-app-engine-java -y
+apt-get install google-cloud-cli-app-engine-java -y
 apt-get install kubectl -y
 apt-get install google-cloud-cli-gke-gcloud-auth-plugin -y
 
@@ -77,13 +77,13 @@ wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 apt install ./google-chrome-stable_current_amd64.deb -y
 
 # Install libxss1 (needed by Karma)
-apt install libxss1
+apt-get install libxss1 -y
 
 # Use unzip to extract files from jars.
 apt-get install zip -y
 
 # Get netstat, used for checking Cloud SQL proxy readiness.
-apt-get install net-tools
+apt-get install net-tools -y
 
 # Clean up
 apt-get remove apt-utils locales -y
