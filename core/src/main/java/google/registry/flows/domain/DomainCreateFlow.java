@@ -59,12 +59,14 @@ import static google.registry.util.DateTimeUtils.plusYears;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
+import google.registry.cache.SimplifiedJedisClient;
 import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.ExtensionManager;
+import google.registry.flows.FlowModule.DryRun;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
@@ -224,6 +226,8 @@ public final class DomainCreateFlow implements MutatingFlow {
   @Inject DomainFlowTmchUtils tmchUtils;
   @Inject DomainPricingLogic pricingLogic;
   @Inject DomainDeletionTimeCache domainDeletionTimeCache;
+  @Inject Optional<SimplifiedJedisClient> jedisClient;
+  @Inject @DryRun boolean isDryRun;
 
   @Inject
   @Config("domainExpiryAccessPeriodTotalLength")
@@ -231,6 +235,10 @@ public final class DomainCreateFlow implements MutatingFlow {
 
   @Inject
   DomainCreateFlow() {}
+
+  public String getTargetId() {
+    return targetId;
+  }
 
   @Override
   public EppResponse run() throws EppException {
@@ -461,6 +469,9 @@ public final class DomainCreateFlow implements MutatingFlow {
                 .setYears(years)
                 .build());
     persistEntityChanges(entityChanges);
+    if (!isDryRun) {
+      jedisClient.ifPresent(client -> client.delete(Domain.class, getTargetId()));
+    }
 
     // If the registrar is participating in tiered pricing promos, return the standard price in the
     // response (even if the actual charged price is less)

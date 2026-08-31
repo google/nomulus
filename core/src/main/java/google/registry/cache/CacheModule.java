@@ -38,6 +38,7 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
@@ -96,12 +97,16 @@ public final class CacheModule {
   @Provides
   @Singleton
   public static DomainCache provideDomainCache(
-      Optional<SimplifiedJedisClient> jedisClient, Clock clock, CacheMetrics cacheMetrics) {
+      Optional<SimplifiedJedisClient> jedisClient,
+      Clock clock,
+      CacheMetrics cacheMetrics,
+      @Config("domainExpiryAccessPeriodTotalLength") Duration domainExpiryAccessPeriodTotalLength) {
     if (jedisClient.isEmpty()) {
       return domainName ->
           ForeignKeyUtils.loadResourceByCache(Domain.class, domainName, clock.now());
     }
-    return new MultilayerDomainCache(jedisClient.get(), clock, cacheMetrics);
+    return new MultilayerDomainCache(
+        jedisClient.get(), clock, cacheMetrics, domainExpiryAccessPeriodTotalLength);
   }
 
   @Provides

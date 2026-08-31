@@ -38,7 +38,7 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
           .build();
 
   private final SimplifiedJedisClient jedisClient;
-  private final Clock clock;
+  protected final Clock clock;
   private final CacheMetrics cacheMetrics;
 
   protected MultilayerEppResourceCache(
@@ -54,6 +54,10 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
     return true;
   }
 
+  protected Optional<Instant> getExpirationTime(V resource) {
+    return Optional.empty();
+  }
+
   @SuppressWarnings("unchecked")
   protected Optional<V> loadFromCaches(Class<V> clazz, String key) {
     Instant now = clock.now();
@@ -61,6 +65,12 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
         loadFromCachesInternal(clazz, key)
             .filter(v -> now.isBefore(v.getDeletionTime()))
             .map(v -> v.cloneProjectedAtTime(now));
+  }
+
+  @SuppressWarnings("unchecked")
+  protected Optional<V> loadMostRecentFromCaches(Class<V> clazz, String key) {
+    Instant now = clock.now();
+    return (Optional<V>) loadFromCachesInternal(clazz, key).map(v -> v.cloneProjectedAtTime(now));
   }
 
   private Optional<V> loadFromCachesInternal(Class<V> clazz, String key) {
@@ -87,7 +97,9 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
     }
     V value = possibleValue.get();
     if (shouldPersistToRemoteCache(value)) {
-      jedisClient.set(new SimplifiedJedisClient.JedisResource<>(key, value));
+      jedisClient.set(
+          new SimplifiedJedisClient.JedisResource<>(
+              key, value, getExpirationTime(value).orElse(null)));
     }
     localCache.put(key, value);
     cacheMetrics.recordLookup(clazz.getSimpleName(), CacheMetrics.CacheHitType.MISS);

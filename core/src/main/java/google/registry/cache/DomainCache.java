@@ -19,5 +19,15 @@ import java.util.Optional;
 
 /** Interface for some type of cache that loads {@link Domain}s by domain name. */
 public interface DomainCache {
+
+  /** Loads the active domain by domain name, filtering out soft-deleted domains. */
   Optional<Domain> loadByDomainName(String domainName);
+
+  /**
+   * Loads the most recent domain by domain name from cache or database, including soft-deleted
+   * domains.
+   */
+  default Optional<Domain> loadMostRecentByDomainName(String domainName) {
+    return loadByDomainName(domainName);
+  }
 }

@@ -14,6 +14,7 @@
 
 package google.registry.batch;
 
+import static google.registry.flows.domain.DomainFlowUtils.isDomainEligibleForXap;
 import static google.registry.model.common.Cursor.CursorType.REMOTE_CACHE_DOMAIN_SYNC;
 import static google.registry.model.common.Cursor.CursorType.REMOTE_CACHE_HOST_SYNC;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -32,6 +33,7 @@ import com.google.monitoring.metrics.IncrementableMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.cache.SimplifiedJedisClient;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.Domain;
@@ -87,13 +89,23 @@ public class SyncRemoteCacheAction implements Runnable {
   private final LockHandler lockHandler;
   private final Response response;
   private final Optional<SimplifiedJedisClient> jedisClient;
+  private final Duration domainExpiryAccessPeriodTotalLength;
 
   @Inject
   public SyncRemoteCacheAction(
-      LockHandler lockHandler, Response response, Optional<SimplifiedJedisClient> jedisClient) {
+      LockHandler lockHandler,
+      Response response,
+      Optional<SimplifiedJedisClient> jedisClient,
+      @Config("domainExpiryAccessPeriodTotalLength") Duration domainExpiryAccessPeriodTotalLength) {
     this.lockHandler = lockHandler;
     this.response = response;
     this.jedisClient = jedisClient;
+    this.domainExpiryAccessPeriodTotalLength = domainExpiryAccessPeriodTotalLength;
+  }
+
+  public SyncRemoteCacheAction(
+      LockHandler lockHandler, Response response, Optional<SimplifiedJedisClient> jedisClient) {
+    this(lockHandler, response, jedisClient, Duration.ofDays(10));
   }
 
   @Override
@@ -187,10 +199,13 @@ public class SyncRemoteCacheAction implements Runnable {
     ImmutableList.Builder<SimplifiedJedisClient.JedisResource<T>> toSaveBuilder =
         new ImmutableList.Builder<>();
 
+    Instant now = tm().getTxTime();
     for (T resource : resources) {
       String key = getKeyFunction.apply(resource);
-      if (resource.getDeletionTime().isAfter(tm().getTxTime())) {
-        toSaveBuilder.add(new SimplifiedJedisClient.JedisResource<>(key, resource));
+      if (shouldSaveResourceInRemoteCache(resource, now)) {
+        toSaveBuilder.add(
+            new SimplifiedJedisClient.JedisResource<>(
+                key, resource, getExpirationTime(resource, now)));
       } else {
         toDeleteBuilder.add(key);
       }
@@ -202,6 +217,32 @@ public class SyncRemoteCacheAction implements Runnable {
     logger.atInfo().log("Invalidated %d from the remote cache", toDelete.size());
     jedisClient.get().setAll(toSave);
     logger.atInfo().log("Set %d in the remote cache", toSave.size());
+  }
+
+  private <T extends EppResource> Optional<Instant> getExpirationTime(T resource, Instant now) {
+    if (resource instanceof Domain domain) {
+      Tld tld = Tld.get(domain.getTld());
+      if (isDomainInXap(domain, tld, now)) {
+        return Optional.of(domain.getDeletionTime().plus(domainExpiryAccessPeriodTotalLength));
+      }
+    }
+    return Optional.empty();
+  }
+
+  private <T extends EppResource> boolean shouldSaveResourceInRemoteCache(T resource, Instant now) {
+    if (resource.getDeletionTime().isAfter(now)) {
+      return true;
+    }
+    if (resource instanceof Domain domain) {
+      return isDomainInXap(domain, Tld.get(domain.getTld()), now);
+    }
+    return false;
+  }
+
+  private boolean isDomainInXap(Domain domain, Tld tld, Instant now) {
+    return tld.getExpiryAccessPeriodModeAt(now) == Tld.ExpiryAccessPeriodMode.ENABLED
+        && isDomainEligibleForXap(domain, tld, now)
+        && domain.getDeletionTime().isAfter(now.minus(domainExpiryAccessPeriodTotalLength));
   }
 
   private Instant getPreviousCursorTime(Cursor.CursorType cursorType) {

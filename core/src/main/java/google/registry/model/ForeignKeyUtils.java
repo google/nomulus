@@ -403,6 +403,22 @@ public final class ForeignKeyUtils {
   }
 
   /**
+   * Loads the last created version of an {@link EppResource} from the replica database by foreign
+   * key, using a cache, including soft-deleted resources.
+   *
+   * <p>This method ignores the config setting for caching, and is reserved for use cases that can
+   * tolerate slightly stale data.
+   */
+  @SuppressWarnings("unchecked")
+  public static <E extends EppResource> Optional<E> loadMostRecentResourceByCache(
+      Class<E> clazz, String foreignKey, Instant now) {
+    return (Optional<E>)
+        foreignKeyToResourceCache
+            .get(VKey.create(clazz, foreignKey))
+            .map(e -> e.cloneProjectedAtTime(now));
+  }
+
+  /**
    * Loads the last created version of multiple {@link EppResource}s from the replica database by
    * foreign keys, using a cache.
    *

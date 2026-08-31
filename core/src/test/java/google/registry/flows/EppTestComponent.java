@@ -21,6 +21,7 @@ import dagger.Subcomponent;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.batch.AsyncTaskEnqueuerTest;
 import google.registry.batch.CloudTasksUtils;
+import google.registry.cache.SimplifiedJedisClient;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.flows.custom.CustomLogicFactory;
@@ -40,6 +41,7 @@ import google.registry.tmch.TmchXmlSignature;
 import google.registry.util.Clock;
 import google.registry.util.Sleeper;
 import jakarta.inject.Singleton;
+import java.util.Optional;
 
 /** Dagger component for running EPP tests. */
 @Singleton
@@ -133,6 +135,21 @@ public interface EppTestComponent {
     @Provides
     DomainDeletionTimeCache provideDomainDeletionTimeCache() {
       return DomainDeletionTimeCache.create();
+    }
+
+    private static Optional<SimplifiedJedisClient> jedisClient = Optional.empty();
+
+    public static void setJedisClient(Optional<SimplifiedJedisClient> client) {
+      jedisClient = client;
+    }
+
+    public static void resetJedisClient() {
+      jedisClient = Optional.empty();
+    }
+
+    @Provides
+    static Optional<SimplifiedJedisClient> provideJedisClient() {
+      return jedisClient;
     }
   }
 

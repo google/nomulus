@@ -36,7 +36,11 @@ import google.registry.cache.DomainCache;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.registrar.Registrar;
+import google.registry.rdap.RdapDomainAction.DomainBlockedByBsaException;
+import google.registry.rdap.RdapDomainAction.DomainInExpiryAccessPeriodException;
 import google.registry.rdap.RdapMetrics.EndpointType;
+import google.registry.rdap.RdapObjectClasses.DomainBlockedByBsaErrorResponse;
+import google.registry.rdap.RdapObjectClasses.DomainInExpiryAccessPeriodErrorResponse;
 import google.registry.rdap.RdapObjectClasses.ErrorResponse;
 import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
@@ -169,10 +173,14 @@ public abstract class RdapActionBase implements Runnable {
       response.setStatus(SC_OK);
       setPayload(replyObject);
       metricInformationBuilder.setStatusCode(SC_OK);
-    } catch (RdapDomainAction.DomainBlockedByBsaException e) {
+    } catch (DomainBlockedByBsaException e) {
       logger.atInfo().withCause(e).log("Domain blocked by BSA");
       setErrorCodes(SC_NOT_FOUND);
-      setPayload(new RdapObjectClasses.DomainBlockedByBsaErrorResponse(e.getMessage()));
+      setPayload(new DomainBlockedByBsaErrorResponse(e.getMessage()));
+    } catch (DomainInExpiryAccessPeriodException e) {
+      logger.atInfo().withCause(e).log("Domain in Expiry Access Period");
+      setErrorCodes(SC_NOT_FOUND);
+      setPayload(new DomainInExpiryAccessPeriodErrorResponse(e.getMessage()));
     } catch (HttpException e) {
       logger.atInfo().withCause(e).log("Error in RDAP.");
       setError(e.getResponseCode(), e.getResponseCodeString(), e.getMessage());

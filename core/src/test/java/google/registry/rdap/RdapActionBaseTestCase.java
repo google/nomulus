@@ -28,6 +28,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import google.registry.cache.DomainCache;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -95,8 +96,19 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     action.rdapMetrics = rdapMetrics;
     action.requestMethod = GET;
     action.domainCache =
-        (domainName) -> ForeignKeyUtils.loadResourceByCache(Domain.class, domainName, clock.now());
-    action.clock = new FakeClock(Instant.parse("2025-01-01T00:00:00.000Z"));
+        new DomainCache() {
+          @Override
+          public Optional<Domain> loadByDomainName(String domainName) {
+            return ForeignKeyUtils.loadResourceByCache(Domain.class, domainName, clock.now());
+          }
+
+          @Override
+          public Optional<Domain> loadMostRecentByDomainName(String domainName) {
+            return ForeignKeyUtils.loadMostRecentResourceByCache(
+                Domain.class, domainName, clock.now());
+          }
+        };
+    action.clock = clock;
     logout();
   }
 

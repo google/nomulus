@@ -14,11 +14,19 @@
 
 package google.registry.cache;
 
+import static google.registry.flows.domain.DomainFlowUtils.isDomainEligibleForXap;
+
 import com.google.common.collect.ImmutableList;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.ExpiryAccessPeriodMode;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -29,14 +37,31 @@ import java.util.Optional;
 public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
     implements DomainCache {
 
+  private final Duration domainExpiryAccessPeriodTotalLength;
+
+  @Inject
+  public MultilayerDomainCache(
+      SimplifiedJedisClient jedisClient,
+      Clock clock,
+      CacheMetrics cacheMetrics,
+      @Config("domainExpiryAccessPeriodTotalLength") Duration domainExpiryAccessPeriodTotalLength) {
+    super(jedisClient, clock, cacheMetrics);
+    this.domainExpiryAccessPeriodTotalLength = domainExpiryAccessPeriodTotalLength;
+  }
+
   public MultilayerDomainCache(
       SimplifiedJedisClient jedisClient, Clock clock, CacheMetrics cacheMetrics) {
-    super(jedisClient, clock, cacheMetrics);
+    this(jedisClient, clock, cacheMetrics, Duration.ofDays(10));
   }
 
   @Override
   public Optional<Domain> loadByDomainName(String domainName) {
     return loadFromCaches(Domain.class, domainName);
+  }
+
+  @Override
+  public Optional<Domain> loadMostRecentByDomainName(String domainName) {
+    return loadMostRecentFromCaches(Domain.class, domainName);
   }
 
   @Override
@@ -50,6 +75,30 @@ public class MultilayerDomainCache extends MultilayerEppResourceCache<Domain>
 
   @Override
   protected boolean shouldPersistToRemoteCache(Domain domain) {
-    return Tld.get(domain.getTld()).getTldType().equals(Tld.TldType.REAL);
+    Tld tld = Tld.get(domain.getTld());
+    if (!tld.getTldType().equals(TldType.REAL)) {
+      return false;
+    }
+    Instant now = clock.now();
+    if (domain.getDeletionTime().isAfter(now)) {
+      return true;
+    }
+    return isDomainInXap(domain, tld, now);
+  }
+
+  @Override
+  protected Optional<Instant> getExpirationTime(Domain domain) {
+    Instant now = clock.now();
+    Tld tld = Tld.get(domain.getTld());
+    if (isDomainInXap(domain, tld, now)) {
+      return Optional.of(domain.getDeletionTime().plus(domainExpiryAccessPeriodTotalLength));
+    }
+    return Optional.empty();
+  }
+
+  private boolean isDomainInXap(Domain domain, Tld tld, Instant now) {
+    return tld.getExpiryAccessPeriodModeAt(now) == ExpiryAccessPeriodMode.ENABLED
+        && isDomainEligibleForXap(domain, tld, now)
+        && domain.getDeletionTime().isAfter(now.minus(domainExpiryAccessPeriodTotalLength));
   }
 }

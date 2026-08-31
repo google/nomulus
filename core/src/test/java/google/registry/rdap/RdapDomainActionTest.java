@@ -27,18 +27,29 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntr
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static google.registry.testing.GsonSubject.assertAboutJson;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.JsonObject;
+import google.registry.cache.CacheMetrics;
+import google.registry.cache.MultilayerDomainCache;
+import google.registry.cache.SimplifiedJedisClient;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -48,13 +59,20 @@ import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.ExpiryAccessPeriodMode;
+import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.persistence.transaction.TransactionManager.ThrowingRunnable;
+import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
+import google.registry.testing.FakeResponse;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -67,6 +85,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   }
 
   private Host host1;
+  private Domain domainDeleted;
+  private Domain domainIdn;
 
   @BeforeEach
   void beforeEach() {
@@ -91,7 +111,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     Host hostDodo2 =
         makeAndPersistHost(
             "ns2.dodo.lol", "bad:f00d:cafe:0:0:0:15:beef", minusYears(clock.now(), 2));
-    Domain domainDeleted =
+    domainDeleted =
         persistResource(
             makeDomain("dodo.lol", host1, hostDodo2, registrarLol)
                 .asBuilder()
@@ -104,12 +124,13 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     Registrar registrarIdn =
         persistResource(makeRegistrar("idnregistrar", "IDN Registrar", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrarIdn));
-    persistResource(
-        makeDomain("cat.みんな", host1, host2, registrarIdn)
-            .asBuilder()
-            .setCreationTimeForTest(minusYears(clock.now(), 3))
-            .setCreationRegistrarId("TheRegistrar")
-            .build());
+    domainIdn =
+        persistResource(
+            makeDomain("cat.みんな", host1, host2, registrarIdn)
+                .asBuilder()
+                .setCreationTimeForTest(minusYears(clock.now(), 3))
+                .setCreationRegistrarId("TheRegistrar")
+                .build());
 
     // 1.tld
     createTld("1.tld");
@@ -472,6 +493,844 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         .add(RdapTestHelper.GSON.toJsonTree(expectedBsaNotice));
     assertAboutJson().that(actuaResponse).isEqualTo(expectedErrorResponse);
     assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_deletedOutsideXapWindow_notFound() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(domainDeleted.asBuilder().setDeletionTime(minusDays(clock.now(), 15)).build());
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
+        .isEqualTo(generateExpectedJsonError("dodo.lol not found", 404));
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_deletedDuringAgp_notFound() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        domainDeleted
+            .asBuilder()
+            .setCreationTimeForTest(minusDays(clock.now(), 2))
+            .setDeletionTime(minusDays(clock.now(), 1))
+            .build());
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
+        .isEqualTo(generateExpectedJsonError("dodo.lol not found", 404));
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_loggedInAsAdmin_includeDeleted() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    loginAsAdmin();
+    action.includeDeletedParam = Optional.of(true);
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
+        .isEqualTo(
+            addDomainBoilerplateNotices(
+                jsonFileBuilder()
+                    .addDomain("dodo.lol", "9-LOL")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.dodo.lol", "7-ROID")
+                    .addRegistrar("Yes Virginia <script>")
+                    .load("rdap_domain_deleted.json")));
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_atDeletionTimeExact_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(domainDeleted.asBuilder().setDeletionTime(clock.now()).build());
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_nearExpiryBoundary_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Duration xapLength = Duration.ofDays(10);
+    persistResource(
+        domainDeleted
+            .asBuilder()
+            .setDeletionTime(clock.now().minus(xapLength).plusSeconds(1))
+            .build());
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_exactExpiry_returnsStandard404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Duration xapLength = Duration.ofDays(10);
+    persistResource(
+        domainDeleted.asBuilder().setDeletionTime(clock.now().minus(xapLength)).build());
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
+        .isEqualTo(generateExpectedJsonError("dodo.lol not found", 404));
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_postExpiry_returnsStandard404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Duration xapLength = Duration.ofDays(10);
+    persistResource(
+        domainDeleted
+            .asBuilder()
+            .setDeletionTime(clock.now().minus(xapLength).minusSeconds(1))
+            .build());
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
+        .isEqualTo(generateExpectedJsonError("dodo.lol not found", 404));
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_oneMilliBeforeDeletion_activeReturns200() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(domainDeleted.asBuilder().setDeletionTime(clock.now().plusMillis(1)).build());
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(actualResponse.get("ldhName").getAsString()).isEqualTo("dodo.lol");
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_oneMilliBeforeExpiry_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Duration xapLength = Duration.ofDays(10);
+    persistResource(
+        domainDeleted
+            .asBuilder()
+            .setDeletionTime(clock.now().minus(xapLength).plusMillis(1))
+            .build());
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_oneMilliAfterExpiry_returnsStandard404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Duration xapLength = Duration.ofDays(10);
+    persistResource(
+        domainDeleted
+            .asBuilder()
+            .setDeletionTime(clock.now().minus(xapLength).minusMillis(1))
+            .build());
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
+        .isEqualTo(generateExpectedJsonError("dodo.lol not found", 404));
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_idnDomain_returnsXap404() {
+    persistResource(
+        Tld.get("xn--q9jyb4c")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(domainIdn.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+
+    // 1. Query via Punycode (A-label)
+    JsonObject actualPunycodeResponse = generateActualJson("cat.xn--q9jyb4c");
+    JsonObject expectedPunycodeResponse =
+        generateExpectedJsonError("cat.xn--q9jyb4c in Expiry Access Period", 404);
+    expectedPunycodeResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualPunycodeResponse).isEqualTo(expectedPunycodeResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+
+    // 2. Query via Unicode (U-label)
+    response = new FakeResponse();
+    action.response = response;
+    JsonObject actualUnicodeResponse = generateActualJson("cat.みんな");
+    JsonObject expectedUnicodeResponse =
+        generateExpectedJsonError("cat.xn--q9jyb4c in Expiry Access Period", 404);
+    expectedUnicodeResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualUnicodeResponse).isEqualTo(expectedUnicodeResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_atExactAgpBoundary_notFound() {
+    Tld tld =
+        persistResource(
+            Tld.get("lol")
+                .asBuilder()
+                .setExpiryAccessPeriodTransitions(
+                    ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+                .build());
+    Instant creationTime = clock.now().minus(Duration.ofDays(5));
+    Instant deletionTime = creationTime.plus(tld.getAddGracePeriodLength());
+    persistResource(
+        domainDeleted
+            .asBuilder()
+            .setCreationTimeForTest(creationTime)
+            .setDeletionTime(deletionTime)
+            .build());
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
+        .isEqualTo(generateExpectedJsonError("dodo.lol not found", 404));
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_sponsoringRegistrar_includeDeleted() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    login("evilregistrar");
+    action.includeDeletedParam = Optional.of(true);
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
+        .isEqualTo(
+            addDomainBoilerplateNotices(
+                jsonFileBuilder()
+                    .addDomain("dodo.lol", "9-LOL")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.dodo.lol", "7-ROID")
+                    .addRegistrar("Yes Virginia <script>")
+                    .load("rdap_domain_deleted.json")));
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_otherRegistrar_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    login("idnregistrar");
+    action.includeDeletedParam = Optional.of(true);
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_sponsoringRegistrar_noParam() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    login("evilregistrar");
+    action.includeDeletedParam = Optional.empty();
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_deletedJustAfterAgp_returnsXap404() {
+    Tld tld =
+        persistResource(
+            Tld.get("lol")
+                .asBuilder()
+                .setExpiryAccessPeriodTransitions(
+                    ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+                .build());
+    Instant creationTime = clock.now().minus(Duration.ofDays(6));
+    Instant deletionTime = creationTime.plus(tld.getAddGracePeriodLength()).plusMillis(1);
+    persistResource(
+        domainDeleted
+            .asBuilder()
+            .setCreationTimeForTest(creationTime)
+            .setDeletionTime(deletionTime)
+            .build());
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_public_includeDeletedTrue_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    action.includeDeletedParam = Optional.of(true);
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_public_includeDeletedFalse_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    action.includeDeletedParam = Optional.of(false);
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_otherRegistrar_includeDeletedFalse_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    login("idnregistrar");
+    action.includeDeletedParam = Optional.of(false);
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_sponsoringRegistrar_includeDeletedFalse_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    login("evilregistrar");
+    action.includeDeletedParam = Optional.of(false);
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_idnUnicodeSld_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Host hostIdn2 =
+        makeAndPersistHost(
+            "ns2.xn--q9jyb4c.lol", "bad:f00d:cafe:0:0:0:15:beef", minusYears(clock.now(), 2));
+    persistResource(
+        makeDomain(
+                "xn--q9jyb4c.lol",
+                host1,
+                hostIdn2,
+                Registrar.loadByRegistrarId("evilregistrar").get())
+            .asBuilder()
+            .setCreationTimeForTest(minusYears(clock.now(), 3))
+            .setCreationRegistrarId("TheRegistrar")
+            .setDeletionTime(minusDays(clock.now(), 1))
+            .build());
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+
+    // 1. Query via Punycode (A-label)
+    JsonObject actualPunycodeResponse = generateActualJson("xn--q9jyb4c.lol");
+    JsonObject expectedPunycodeResponse =
+        generateExpectedJsonError("xn--q9jyb4c.lol in Expiry Access Period", 404);
+    expectedPunycodeResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualPunycodeResponse).isEqualTo(expectedPunycodeResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+
+    // 2. Query via Unicode (U-label)
+    response = new FakeResponse();
+    action.response = response;
+    JsonObject actualUnicodeResponse = generateActualJson("みんな.lol");
+    JsonObject expectedUnicodeResponse =
+        generateExpectedJsonError("xn--q9jyb4c.lol in Expiry Access Period", 404);
+    expectedUnicodeResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualUnicodeResponse).isEqualTo(expectedUnicodeResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_loggedInAsAdmin_includeDeletedFalse_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    loginAsAdmin();
+    action.includeDeletedParam = Optional.of(false);
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_loggedInAsAdmin_noParam_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    loginAsAdmin();
+    action.includeDeletedParam = Optional.empty();
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    JsonObject expectedErrorResponse =
+        generateExpectedJsonError("dodo.lol in Expiry Access Period", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_idnUnicodeSldAndTld_returnsXap404() {
+    persistResource(
+        Tld.get("xn--q9jyb4c")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Host hostIdnFull =
+        makeAndPersistHost(
+            "ns1.xn--q9jyb4c.xn--q9jyb4c", "1.2.3.4", null, minusYears(clock.now(), 2));
+    persistResource(
+        makeDomain(
+                "xn--q9jyb4c.xn--q9jyb4c",
+                hostIdnFull,
+                host1,
+                Registrar.loadByRegistrarId("evilregistrar").get())
+            .asBuilder()
+            .setCreationTimeForTest(minusYears(clock.now(), 3))
+            .setCreationRegistrarId("TheRegistrar")
+            .setDeletionTime(minusDays(clock.now(), 1))
+            .build());
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+
+    // 1. Query via Punycode (A-label)
+    String punyName = "xn--q9jyb4c.xn--q9jyb4c";
+    JsonObject actualPunycodeResponse = generateActualJson(punyName);
+    JsonObject expectedPunycodeResponse =
+        generateExpectedJsonError(punyName + " in Expiry Access Period", 404);
+    expectedPunycodeResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualPunycodeResponse).isEqualTo(expectedPunycodeResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+
+    // 2. Query via Unicode (U-label)
+    response = new FakeResponse();
+    action.response = response;
+    JsonObject actualUnicodeResponse = generateActualJson("みんな.みんな");
+    JsonObject expectedUnicodeResponse =
+        generateExpectedJsonError(punyName + " in Expiry Access Period", 404);
+    expectedUnicodeResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualUnicodeResponse).isEqualTo(expectedUnicodeResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_mixedCasePunycode_returnsXap404() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    Host hostIdn =
+        makeAndPersistHost(
+            "ns1.xn--q9jyb4c.lol", "bad:f00d:cafe:0:0:0:15:beef", minusYears(clock.now(), 2));
+    persistResource(
+        makeDomain(
+                "xn--q9jyb4c.lol",
+                host1,
+                hostIdn,
+                Registrar.loadByRegistrarId("evilregistrar").get())
+            .asBuilder()
+            .setCreationTimeForTest(minusYears(clock.now(), 3))
+            .setCreationRegistrarId("TheRegistrar")
+            .setDeletionTime(minusDays(clock.now(), 1))
+            .build());
+    ImmutableMap<?, ?> expectedXapNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of(
+                "This domain is currently available for registration in the Expiry Access Period"),
+            "title",
+            "Expiry Access Period");
+
+    JsonObject actualResponse = generateActualJson("XN--Q9JYB4C.LOL");
+    JsonObject expectedResponse =
+        generateExpectedJsonError("xn--q9jyb4c.lol in Expiry Access Period", 404);
+    expectedResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedXapNotice));
+    assertAboutJson().that(actualResponse).isEqualTo(expectedResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void testDomainInExpiryAccessPeriod_oneMilliBeforeDeletion_pendingDelete() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    persistResource(
+        domainDeleted
+            .asBuilder()
+            .setDeletionTime(clock.now().plusMillis(1))
+            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+            .build());
+    JsonObject actualResponse = generateActualJson("dodo.lol");
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(actualResponse.get("ldhName").getAsString()).isEqualTo("dodo.lol");
+    assertThat(actualResponse.getAsJsonArray("status").toString()).contains("pending delete");
+  }
+
+  @Test
+  void testDomain_rapidRecreationAndDeletionCycle() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+
+    // Step 1: Initial domain in XAP -> returns 404 with XAP notice
+    JsonObject xapResponse = generateActualJson("dodo.lol");
+    assertThat(response.getStatus()).isEqualTo(404);
+    assertThat(xapResponse.toString()).contains("Expiry Access Period");
+
+    // Step 2: Re-register domain (active) -> returns 200 OK
+    clock.advanceBy(Duration.ofDays(1));
+    Domain activeDomain =
+        persistResource(
+            domainDeleted
+                .asBuilder()
+                .setCreationTimeForTest(clock.now())
+                .setDeletionTime(END_INSTANT)
+                .build());
+    response = new FakeResponse();
+    action.response = response;
+    action.rdapJsonFormatter = RdapTestHelper.getTestRdapJsonFormatter(clock);
+    JsonObject activeResponse = generateActualJson("dodo.lol");
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(activeResponse.get("ldhName").getAsString()).isEqualTo("dodo.lol");
+
+    // Step 3: Deleted again outside AGP -> returns 404 with XAP notice
+    clock.advanceBy(Duration.ofDays(10));
+    Instant secondDeletion = clock.now();
+    persistResource(activeDomain.asBuilder().setDeletionTime(secondDeletion).build());
+    clock.advanceBy(Duration.ofDays(1));
+    response = new FakeResponse();
+    action.response = response;
+    action.rdapJsonFormatter = RdapTestHelper.getTestRdapJsonFormatter(clock);
+    JsonObject secondXapResponse = generateActualJson("dodo.lol");
+    assertThat(response.getStatus()).isEqualTo(404);
+    assertThat(secondXapResponse.toString()).contains("Expiry Access Period");
+  }
+
+  @Test
+  void testWorkloadIsolation_zeroPrimaryDbTransactionsDuringRdapExecution() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
+    JpaTransactionManager originalTm = TransactionManagerFactory.tm();
+    JpaTransactionManager originalReplicaTm = TransactionManagerFactory.replicaTm();
+    JpaTransactionManager primaryTmSpy = spy(originalTm);
+    JpaTransactionManager replicaTmSpy = spy(originalReplicaTm);
+    TransactionManagerFactory.setJpaTm(() -> primaryTmSpy);
+    TransactionManagerFactory.setReplicaJpaTm(() -> replicaTmSpy);
+    try {
+      // 1. Active domain query
+      generateActualJson("cat.lol");
+      assertThat(response.getStatus()).isEqualTo(200);
+
+      // 2. XAP domain query
+      response = new FakeResponse();
+      action.response = response;
+      generateActualJson("dodo.lol");
+      assertThat(response.getStatus()).isEqualTo(404);
+
+      // 3. Nonexistent domain query
+      response = new FakeResponse();
+      action.response = response;
+      generateActualJson("nonexistent.lol");
+      assertThat(response.getStatus()).isEqualTo(404);
+
+      // 4. MultilayerDomainCache with Jedis cache miss delegating to replica Cloud SQL
+      SimplifiedJedisClient jedisClient = mock(SimplifiedJedisClient.class);
+      when(jedisClient.get(any(), any())).thenReturn(Optional.empty());
+      action.domainCache = new MultilayerDomainCache(jedisClient, clock, mock(CacheMetrics.class));
+      response = new FakeResponse();
+      action.response = response;
+      generateActualJson("dodo.lol");
+      assertThat(response.getStatus()).isEqualTo(404);
+
+      // Verify zero write transactions were initiated on primary database
+      verify(primaryTmSpy, never()).transact(any(ThrowingRunnable.class));
+      verify(primaryTmSpy, never()).transact(any(Callable.class));
+
+      // Verify database reads for Domain entities route strictly to replicaTm()
+      verify(replicaTmSpy, atLeastOnce()).reTransact(any(Callable.class));
+    } finally {
+      TransactionManagerFactory.setJpaTm(() -> originalTm);
+      TransactionManagerFactory.setReplicaJpaTm(() -> originalReplicaTm);
+    }
   }
 
   private Domain persistActiveDomainWithHost(

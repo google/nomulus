@@ -69,6 +69,11 @@ import static google.registry.util.DateTimeUtils.plusYears;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -76,11 +81,15 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
+import google.registry.cache.CacheMetrics;
+import google.registry.cache.MultilayerDomainCache;
+import google.registry.cache.SimplifiedJedisClient;
 import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfigSettings;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
+import google.registry.flows.EppTestComponent;
 import google.registry.flows.ExtensionManager.UndeclaredServiceExtensionException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
@@ -196,6 +205,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
@@ -235,6 +245,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   DomainCreateFlowTest() {
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     clock.setTo(Instant.parse("1999-04-03T22:00:00.0Z").minusMillis(2));
+  }
+
+  @AfterEach
+  void afterEachDomainCreateFlowTest() {
+    EppTestComponent.FakesAndMocksModule.resetJedisClient();
   }
 
   @BeforeEach
@@ -3086,7 +3101,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest();
   }
 
-  private void setXapForTld(String tldStr, Instant deletionTime) throws Exception {
+  private Domain setXapForTld(String tldStr, Instant deletionTime) throws Exception {
     persistResource(
         Registrar.loadByRegistrarId("TheRegistrar")
             .get()
@@ -3099,7 +3114,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setExpiryAccessPeriodTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
             .build());
-    persistResource(
+    return persistResource(
         new Domain.Builder()
             .setDomainName(getUniqueIdFromCommand())
             .setDeletionTime(deletionTime)
@@ -4600,5 +4615,167 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     .build())
             .build());
     return allocationToken;
+  }
+
+  private void setEppInputForXapCreate() {
+    setEppInput(
+        "domain_create_eap_fee.xml",
+        new ImmutableMap.Builder<String, String>()
+            .putAll(FEE_STD_1_0_MAP)
+            .put("DESCRIPTION_1", "create")
+            .put("DESCRIPTION_2", "Expiry Access Period")
+            .build());
+  }
+
+  @Test
+  void testSuccess_reRegisterXapDomain_invalidatesValkeyCache() throws Exception {
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    SimplifiedJedisClient jedisClient = mock(SimplifiedJedisClient.class);
+    EppTestComponent.FakesAndMocksModule.setJedisClient(Optional.of(jedisClient));
+    try {
+      persistHosts();
+      Instant deletionTime = Instant.parse("1999-04-03T21:00:00.0Z");
+      setXapForTld("tld", deletionTime);
+
+      setEppInputForXapCreate();
+      clock.advanceOneMilli();
+      runFlowAssertResponse(loadFile("domain_create_response_xap_fee.xml"));
+
+      Domain domain = reloadResourceByForeignKey();
+      assertThat(domain.getDeletionTime()).isEqualTo(END_INSTANT);
+      verify(jedisClient).delete(Domain.class, "example.tld");
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
+  }
+
+  @Test
+  void testSuccess_reRegisterXapDomain_dryRun_doesNotInvalidateValkeyCache() throws Exception {
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    SimplifiedJedisClient jedisClient = mock(SimplifiedJedisClient.class);
+    EppTestComponent.FakesAndMocksModule.setJedisClient(Optional.of(jedisClient));
+    try {
+      persistHosts();
+      Instant deletionTime = Instant.parse("1999-04-03T21:00:00.0Z");
+      setXapForTld("tld", deletionTime);
+
+      setEppInputForXapCreate();
+      clock.advanceOneMilli();
+      runFlow(CommitMode.DRY_RUN, UserPrivileges.NORMAL);
+
+      verifyNoInteractions(jedisClient);
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
+  }
+
+  @Test
+  void testSuccess_reRegisterXapDomain_cacheReflectsActiveDomainAfterInvalidation()
+      throws Exception {
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    SimplifiedJedisClient jedisClient = mock(SimplifiedJedisClient.class);
+    EppTestComponent.FakesAndMocksModule.setJedisClient(Optional.of(jedisClient));
+    try {
+      persistHosts();
+      Instant deletionTime = Instant.parse("1999-04-03T21:00:00.0Z");
+      Domain softDeletedDomain = setXapForTld("tld", deletionTime);
+      setEppInputForXapCreate();
+
+      when(jedisClient.get(Domain.class, "example.tld")).thenReturn(Optional.of(softDeletedDomain));
+      doAnswer(
+              invocation -> {
+                when(jedisClient.get(Domain.class, "example.tld")).thenReturn(Optional.empty());
+                return null;
+              })
+          .when(jedisClient)
+          .delete(Domain.class, "example.tld");
+
+      // Prior to re-registration, cache serves the soft-deleted XAP domain from Valkey
+      MultilayerDomainCache cacheBefore =
+          new MultilayerDomainCache(jedisClient, clock, mock(CacheMetrics.class));
+      Optional<Domain> domainBefore = cacheBefore.loadMostRecentByDomainName("example.tld");
+      assertThat(domainBefore).isPresent();
+      assertThat(domainBefore.get().getDeletionTime()).isEqualTo(deletionTime);
+
+      // Re-register via DomainCreateFlow
+      clock.advanceOneMilli();
+      runFlowAssertResponse(loadFile("domain_create_response_xap_fee.xml"));
+
+      // Verify Valkey invalidation occurred
+      verify(jedisClient).delete(Domain.class, "example.tld");
+
+      // Post-registration, cache misses Valkey and loads the active domain from DB replica
+      MultilayerDomainCache cacheAfter =
+          new MultilayerDomainCache(jedisClient, clock, mock(CacheMetrics.class));
+      Optional<Domain> domainAfter = cacheAfter.loadMostRecentByDomainName("example.tld");
+      assertThat(domainAfter).isPresent();
+      assertThat(domainAfter.get().getDeletionTime()).isEqualTo(END_INSTANT);
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
+  }
+
+  @Test
+  void testSuccess_reRegisterXapDomain_noJedisClient_succeeds() throws Exception {
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    EppTestComponent.FakesAndMocksModule.resetJedisClient();
+    try {
+      persistHosts();
+      Instant deletionTime = Instant.parse("1999-04-03T21:00:00.0Z");
+      setXapForTld("tld", deletionTime);
+
+      setEppInputForXapCreate();
+      clock.advanceOneMilli();
+      runFlowAssertResponse(loadFile("domain_create_response_xap_fee.xml"));
+
+      Domain domain = reloadResourceByForeignKey();
+      assertThat(domain.getDeletionTime()).isEqualTo(END_INSTANT);
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
   }
 }
