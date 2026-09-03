@@ -35,7 +35,6 @@ import com.google.common.collect.Streams;
 import com.google.common.truth.Correspondence;
 import com.google.common.truth.Correspondence.BinaryPredicate;
 import google.registry.beam.TestPipelineExtension;
-import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.beam.spec11.SafeBrowsingTransformsTest.HttpResponder;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
@@ -105,8 +104,8 @@ class Spec11PipelineTest {
       ImmutableList.of(
           ThreatMatch.create("MALWARE", "111.com"),
           ThreatMatch.create("SOCIAL_ENGINEERING", "party-night.net"),
-          ThreatMatch.create("POTENTIALLY_HARMFUL_APPLICATION", "bitcoin.bank"),
-          ThreatMatch.create("THREAT_TYPE_UNSPECIFIED", "no-eamil.com"),
+          ThreatMatch.create("MALWARE", "bitcoin.bank"),
+          ThreatMatch.create("SOCIAL_ENGINEERING", "no-eamil.com"),
           ThreatMatch.create("UNWANTED_SOFTWARE", "anti-anti-anti-virus.dev"));
 
   @TempDir Path tmpDir;
@@ -164,14 +163,14 @@ class Spec11PipelineTest {
                 .setDomainRepoId("1C3D5E7F9-BANK")
                 .setRegistrarId("hello-registrar")
                 .setCheckDate(LocalDate.of(2020, 1, 27))
-                .setThreatTypes(ImmutableSet.of(ThreatType.POTENTIALLY_HARMFUL_APPLICATION))
+                .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
                 .build(),
             new Spec11ThreatMatch.Builder()
                 .setDomainName("no-email.com")
                 .setDomainRepoId("2A4BA9BBC-COM")
                 .setRegistrarId("kitty-registrar")
                 .setCheckDate(LocalDate.of(2020, 1, 27))
-                .setThreatTypes(ImmutableSet.of(ThreatType.THREAT_TYPE_UNSPECIFIED))
+                .setThreatTypes(ImmutableSet.of(ThreatType.SOCIAL_ENGINEERING))
                 .build(),
             new Spec11ThreatMatch.Builder()
                 .setDomainName("anti-anti-anti-virus.dev")
@@ -185,14 +184,13 @@ class Spec11PipelineTest {
   @Test
   void testSuccess_fullSqlPipeline() throws Exception {
     setupCloudSql();
-    EvaluateSafeBrowsingFn safeBrowsingFn =
-        new EvaluateSafeBrowsingFn(
-            SAFE_BROWSING_API_KEY,
-            new Retrier(new FakeSleeper(fakeClock), 1),
-            fakeClock,
-            Suppliers.ofInstance(mockHttpClient));
     when(mockHttpClient.execute(any(HttpPost.class))).thenAnswer(new HttpResponder());
-    Spec11Pipeline spec11Pipeline = new Spec11Pipeline(options, safeBrowsingFn);
+    Spec11Pipeline spec11Pipeline =
+        new Spec11Pipeline(
+            options,
+            fakeClock,
+            new Retrier(new FakeSleeper(fakeClock), 1),
+            Suppliers.ofInstance(mockHttpClient));
     spec11Pipeline.setupPipeline(pipeline);
     pipeline.run(options).waitUntilFinish();
     verifySaveToGcs();
