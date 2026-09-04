@@ -55,128 +55,12 @@ steps:
       -PpluginsUrl=gcs://domain-registry-maven-repository/plugins
     docker tag nomulus us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:${TAG_NAME}
     docker tag nomulus us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:latest
-    docker push us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:${TAG_NAME}
-    docker push us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:latest
     docker tag proxy us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}
     docker tag proxy us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest
-    docker push us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}
-    docker push us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest
     docker tag nomulus-tool gcr.io/${PROJECT_ID}/nomulus-tool:${TAG_NAME}
     docker tag nomulus-tool gcr.io/${PROJECT_ID}/nomulus-tool:latest
     docker push gcr.io/${PROJECT_ID}/nomulus-tool:${TAG_NAME}
     docker push gcr.io/${PROJECT_ID}/nomulus-tool:latest
-    nomulus_digest=$(gcloud artifacts docker images describe \
-      us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:${TAG_NAME} \
-      --format="value(image_summary.digest)")
-    echo "$nomulus_digest" > /workspace/nomulus_digest
-    proxy_digest=$(gcloud artifacts docker images describe \
-      us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME} \
-      --format="value(image_summary.digest)")
-    echo "$proxy_digest" > /workspace/proxy_digest
-# Promote nomulus and proxy images via Artifact Registry Exit Gate.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  entrypoint: /bin/bash
-  args:
-  - -c
-  - |
-    set -e
-    LOCATION="us"
-    DEST_REPO="gcr.io"
-    SRC_REPO="staging"
-    ENDPOINT="https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/$LOCATION/repositories/$DEST_REPO:promoteArtifact"
-    TOKEN=$(gcloud auth print-access-token)
-
-    promote_image() {
-      local pkg="$1"
-      local digest="$2"
-      echo "================================================================================"
-      echo "Initiating Artifact Registry Exit Gate promotion for $pkg:${TAG_NAME} ($digest)"
-      echo "================================================================================"
-
-      PAYLOAD=$(printf '{"source_repository":"projects/%s/locations/%s/repositories/%s","source_version":"projects/%s/locations/%s/repositories/%s/packages/%s/versions/%s","include_all_tags":true,"overwrite_tags":true,"attachment_behavior":"PUBLIC_BCID_VSA_ONLY"}' \
-        "${PROJECT_ID}" "$LOCATION" "$SRC_REPO" \
-        "${PROJECT_ID}" "$LOCATION" "$SRC_REPO" "$pkg" "$digest")
-
-      OPERATION_JSON=$(curl -s --no-progress-meter \
-        -H "Authorization: Bearer $TOKEN" \
-        -H "Content-Type: application/json" \
-        -X POST "$ENDPOINT" \
-        -d "$PAYLOAD")
-
-      OPERATION_NAME=$(echo "$OPERATION_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); sys.exit(f'ERROR: {d[\"error\"]}') if 'error' in d else print(d.get('name', ''))")
-      if [[ $? -ne 0 || -z "$OPERATION_NAME" ]]; then
-        echo "Failed to initiate promotion for $pkg"
-        exit 1
-      fi
-
-      echo "Promotion operation started: $OPERATION_NAME"
-      echo "Polling operation status until completion..."
-
-      MAX_ATTEMPTS=60
-      ATTEMPT=0
-      while true; do
-        ATTEMPT=$((ATTEMPT + 1))
-        if [[ $ATTEMPT -gt $MAX_ATTEMPTS ]]; then
-          echo "ERROR: Timed out waiting for promotion operation on $pkg to complete."
-          exit 1
-        fi
-
-        STATUS_JSON=$(gcloud artifacts operations describe "$OPERATION_NAME" \
-          --project="${PROJECT_ID}" \
-          --location="$LOCATION" \
-          --format="json" 2>/dev/null || true)
-
-        if [[ -z "$STATUS_JSON" ]]; then
-          echo "Warning: Failed to query operation status; retrying in 5s..."
-          sleep 5
-          continue
-        fi
-
-        RESULT=$(echo "$STATUS_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); print('IN_PROGRESS' if not d.get('done') else ('ERROR: ' + json.dumps(d['error']) if 'error' in d else 'SUCCESS'))" 2>/dev/null || echo "RETRY")
-
-        if [[ "$RESULT" == "SUCCESS" ]]; then
-          echo "================================================================================"
-          echo "Artifact promotion succeeded! BCID VSA attached to $DEST_REPO/$pkg."
-          echo "================================================================================"
-          break
-        elif [[ "$RESULT" =~ ^ERROR: ]]; then
-          echo "================================================================================"
-          echo "ERROR: Artifact promotion failed BCID policy evaluation or execution for $pkg:"
-          echo "$RESULT"
-          echo "================================================================================"
-          exit 1
-        elif [[ "$RESULT" == "IN_PROGRESS" || "$RESULT" == "RETRY" ]]; then
-          echo "Operation in progress... (attempt $ATTEMPT/$MAX_ATTEMPTS), retrying in 5s..."
-          sleep 5
-        fi
-      done
-    }
-
-    nomulus_digest=$(cat /workspace/nomulus_digest)
-    proxy_digest=$(cat /workspace/proxy_digest)
-
-    promote_image "nomulus" "$nomulus_digest"
-    promote_image "proxy" "$proxy_digest"
-# Sign nomulus and proxy images.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  entrypoint: /bin/bash
-  args:
-  - -c
-  - |
-    nomulus_digest=$(cat /workspace/nomulus_digest)
-    proxy_digest=$(cat /workspace/proxy_digest)
-    gcloud --project=${PROJECT_ID} beta container binauthz attestations \
-      sign-and-create --artifact-url=gcr.io/${PROJECT_ID}/nomulus@$nomulus_digest \
-      --attestor=build-attestor --attestor-project=${PROJECT_ID} \
-      --keyversion-project=${PROJECT_ID} --keyversion-location=global \
-      --keyversion-keyring=attestor-keys --keyversion-key=signing \
-      --keyversion=1
-    gcloud --project=${PROJECT_ID} beta container binauthz attestations \
-      sign-and-create --artifact-url=gcr.io/${PROJECT_ID}/proxy@$proxy_digest \
-      --attestor=build-attestor --attestor-project=${PROJECT_ID} \
-      --keyversion-project=${PROJECT_ID} --keyversion-location=global \
-      --keyversion-keyring=attestor-keys --keyversion-key=signing \
-      --keyversion=1
 # Get the tool image digest and substitute in the digest in other GCB files.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
@@ -265,35 +149,6 @@ steps:
     cp db/build/libs/schema.jar output/
     cp core/build/libs/nomulus-public.jar output/
     cp core/build/libs/nomulus-tests-alldeps.jar output/
-# Create a release in Cloud Deploy to trigger the deployment pipeline
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  entrypoint: /bin/bash
-  args:
-  - -c
-  - |
-    set -e
-    echo "============================================="
-    echo "Triggering Google Cloud Deploy Release"
-    echo "============================================="
-    echo "Tag Name: ${TAG_NAME}"
-    echo "Project ID: ${PROJECT_ID}"
-    pipeline="deploy-nomulus"
-    region="us-central1"
-    # Release names must consist of lowercase letters, numbers, and hyphens.
-    release_name=$(echo "${TAG_NAME}" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
-    echo "Release Name: $release_name"
-    echo "============================================="
-    # Read the pre-fetched image digest from the workspace file
-    nomulus_digest=$(cat /workspace/nomulus_digest)
-    proxy_digest=$(cat /workspace/proxy_digest)
-    gcloud deploy releases create "$release_name" \
-      --delivery-pipeline="$pipeline" \
-      --region="$region" \
-      --project=${PROJECT_ID} \
-      --images="gcr.io/${PROJECT_ID}/nomulus=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest},gcr.io/${PROJECT_ID}/proxy=gcr.io/${PROJECT_ID}/proxy@${proxy_digest}" \
-      --source=. \
-      --skaffold-file=release/clouddeploy/skaffold.yaml \
-      --deploy-parameters="deployed_image=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest},base_image=us-docker.pkg.dev/${PROJECT_ID}/gcr.io/nomulus,tag_name=${TAG_NAME},project_id=${PROJECT_ID}"
 # The tarballs and jars to upload to GCS.
 artifacts:
   objects:
@@ -316,7 +171,7 @@ artifacts:
     - 'release/cloudbuild-restart-proxies-*.yaml'
     - 'jetty/kubernetes/*.yaml'
     - 'jetty/kubernetes/gateway/*.yaml'
-# Staging images uploaded to Artifact Registry for which Cloud Build generates provenance.
+# Images to upload to staging repository for build provenance generation.
 images:
   - 'us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:${TAG_NAME}'
   - 'us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}'

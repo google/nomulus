@@ -18,37 +18,18 @@ steps:
   - :proxy:buildProxyImage
   - -PmavenUrl=gcs://domain-registry-maven-repository/maven
   - -PpluginsUrl=gcs://domain-registry-maven-repository/plugins
-# Tag and push the image. We can't let Cloud Build's default processing do that for us
-# because we need to push the image before we can sign it in the following step.
+# Tag the image for staging repository.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   args:
   - -c
   - |
     set -e
-    docker tag proxy gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}
-    docker tag proxy gcr.io/${PROJECT_ID}/proxy:latest
-    docker push gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}
-    docker push gcr.io/${PROJECT_ID}/proxy:latest
+    docker tag proxy us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}
+    docker tag proxy us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest
   dir: 'proxy'
-# Get the image digest, sign it and substitute in the digest in the tagging yaml file.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  entrypoint: /bin/bash
-  args:
-  - -c
-  - |
-    set -e
-    digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/proxy \
-      --format="get(digest)" --filter="tags = ${TAG_NAME}")
-    gcloud --project=${PROJECT_ID} alpha container binauthz attestations \
-      sign-and-create --artifact-url=gcr.io/${PROJECT_ID}/proxy@$digest \
-      --attestor=build-attestor --attestor-project=${PROJECT_ID} \
-      --keyversion-project=${PROJECT_ID} --keyversion-location=global \
-      --keyversion-keyring=attestor-keys --keyversion-key=signing \
-      --keyversion=1
-# Images to upload to GCR. Even though the image has already been uploaded, we still include it
-# here so that the GCB pubsub message contains it (for Spinnaker to consume).
-images: ['gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}']
+# Images to upload to staging repository for build provenance generation.
+images: ['us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}']
 # Config files to upload to GCS.
 artifacts:
   objects:
