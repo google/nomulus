@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script handles post-build promotion, BinAuthz signing, and deployment:
+# This script handles post-build promotion and BinAuthz signing:
 # 1. Obtains the image digests from the staging repository.
 # 2. Promotes the images from staging to gcr.io via the Artifact Registry
 #    promoteArtifact API (evaluating BCID exit gate policy and attaching VSA).
 # 3. Signs the promoted gcr.io images with Binary Authorization.
-# 4. Triggers Cloud Deploy release creation (for nomulus release tags).
 #
 # Usage:
-#   release/promote_and_deploy.sh <release_type> <tag_name> <project_id>
+#   release/promote_artifacts.sh <release_type> <tag_name> <project_id>
 # where <release_type> is "nomulus" or "proxy".
 
 set -e
@@ -148,23 +147,6 @@ if [[ "${RELEASE_TYPE}" == "nomulus" ]]; then
 
   sign_binauthz "nomulus" "${nomulus_digest}"
   sign_binauthz "proxy" "${proxy_digest}"
-
-  echo "================================================================================"
-  echo "Triggering Google Cloud Deploy Release"
-  echo "================================================================================"
-  pipeline="deploy-nomulus"
-  region="us-central1"
-  release_name=$(echo "${TAG_NAME}" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
-  echo "Release Name: ${release_name}"
-
-  gcloud deploy releases create "${release_name}" \
-    --delivery-pipeline="${pipeline}" \
-    --region="${region}" \
-    --project="${PROJECT_ID}" \
-    --images="gcr.io/${PROJECT_ID}/nomulus=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest},gcr.io/${PROJECT_ID}/proxy=gcr.io/${PROJECT_ID}/proxy@${proxy_digest}" \
-    --source=. \
-    --skaffold-file=release/clouddeploy/skaffold.yaml \
-    --deploy-parameters="deployed_image=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest},base_image=us-docker.pkg.dev/${PROJECT_ID}/gcr.io/nomulus,tag_name=${TAG_NAME},project_id=${PROJECT_ID}"
 
 elif [[ "${RELEASE_TYPE}" == "proxy" ]]; then
   echo "Retrieving digest from staging for proxy release..."

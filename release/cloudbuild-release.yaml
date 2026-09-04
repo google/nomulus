@@ -319,7 +319,7 @@ steps:
     rm ${gradle_bin}
     sed -i s%services.gradle.org/distributions%storage.googleapis.com/${gcs_loc}% \
       gradle/wrapper/gradle-wrapper.properties
-# Conditionally trigger the appropriate build based on the tag format.
+# Conditionally trigger the appropriate build based on the tag format and promote artifacts.
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: 'bash'
   env:
@@ -333,17 +333,54 @@ steps:
     if [[ "$TAG_NAME" =~ ^nomulus-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
       echo "Tag format matches a nomulus release. Triggering nomulus build..."
       gcloud builds submit . --config=release/cloudbuild-nomulus.yaml --substitutions="TAG_NAME=$TAG_NAME"
-      echo "Promoting, signing, and deploying nomulus release..."
-      ./release/promote_and_deploy.sh "nomulus" "$TAG_NAME" "$PROJECT_ID"
+      echo "Promoting and signing nomulus release artifacts..."
+      ./release/promote_artifacts.sh "nomulus" "$TAG_NAME" "$PROJECT_ID"
     # Check for a proxy release tag (e.g., "proxy-v1.2.3")
     elif [[ "$TAG_NAME" =~ ^proxy-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
       echo "Tag format matches a proxy release. Triggering proxy build..."
       gcloud builds submit . --config=release/cloudbuild-proxy.yaml --substitutions="TAG_NAME=$TAG_NAME"
-      echo "Promoting and signing proxy release..."
-      ./release/promote_and_deploy.sh "proxy" "$TAG_NAME" "$PROJECT_ID"
+      echo "Promoting and signing proxy release artifacts..."
+      ./release/promote_artifacts.sh "proxy" "$TAG_NAME" "$PROJECT_ID"
     else
       echo "Tag format '$TAG_NAME' does not match a known release type. Exiting."
       exit 1
+    fi
+# Create a release in Cloud Deploy to trigger the deployment pipeline
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  env:
+    - 'TAG_NAME=${TAG_NAME}'
+    - 'PROJECT_ID=${PROJECT_ID}'
+  args:
+  - -c
+  - |
+    set -e
+    if [[ "$TAG_NAME" =~ ^nomulus-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
+      echo "============================================="
+      echo "Triggering Google Cloud Deploy Release"
+      echo "============================================="
+      echo "Tag Name: ${TAG_NAME}"
+      echo "Project ID: ${PROJECT_ID}"
+      pipeline="deploy-nomulus"
+      region="us-central1"
+      # Release names must consist of lowercase letters, numbers, and hyphens.
+      release_name=$(echo "${TAG_NAME}" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+      echo "Release Name: $release_name"
+      echo "============================================="
+      nomulus_digest=$(gcloud artifacts docker images describe \
+        "us-docker.pkg.dev/${PROJECT_ID}/gcr.io/nomulus:${TAG_NAME}" \
+        --format="value(image_summary.digest)")
+      proxy_digest=$(gcloud artifacts docker images describe \
+        "us-docker.pkg.dev/${PROJECT_ID}/gcr.io/proxy:${TAG_NAME}" \
+        --format="value(image_summary.digest)")
+      gcloud deploy releases create "$release_name" \
+        --delivery-pipeline="$pipeline" \
+        --region="$region" \
+        --project=${PROJECT_ID} \
+        --images="gcr.io/${PROJECT_ID}/nomulus=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest},gcr.io/${PROJECT_ID}/proxy=gcr.io/${PROJECT_ID}/proxy@${proxy_digest}" \
+        --source=. \
+        --skaffold-file=release/clouddeploy/skaffold.yaml \
+        --deploy-parameters="deployed_image=gcr.io/${PROJECT_ID}/nomulus@${nomulus_digest},base_image=us-docker.pkg.dev/${PROJECT_ID}/gcr.io/nomulus,tag_name=${TAG_NAME},project_id=${PROJECT_ID}"
     fi
 # Run the BEAM smoke test, using the builder and pipeline image just created
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
