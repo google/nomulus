@@ -29,7 +29,9 @@ steps:
     docker tag proxy us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest
   dir: 'proxy'
 # Images to upload to staging repository for build provenance generation.
-images: ['us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}']
+images:
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}'
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest'
 # Config files to upload to GCS.
 artifacts:
   objects:

@@ -174,7 +174,9 @@ artifacts:
 # Images to upload to staging repository for build provenance generation.
 images:
   - 'us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:${TAG_NAME}'
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:latest'
   - 'us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}'
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest'
 timeout: 7200s
 options:
   machineType: 'E2_HIGHCPU_32'
