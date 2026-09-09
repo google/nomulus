@@ -63,8 +63,10 @@ promote_artifact() {
     -d "${payload}")
 
   local operation_name
-  operation_name=$(echo "${operation_json}" | python3 -c "import sys, json; d=json.load(sys.stdin); sys.exit(f'ERROR: {d[\"error\"]}') if 'error' in d else print(d.get('name', ''))")
-  if [[ $? -ne 0 || -z "${operation_name}" ]]; then
+  if ! operation_name=$(echo "${operation_json}" | python3 -c \
+      "import sys, json; d=json.load(sys.stdin); \
+       sys.exit(1) if 'error' in d or not d.get('name') else print(d['name'])" \
+      2>/dev/null); then
     echo "Failed to initiate promotion for ${pkg}: ${operation_json}"
     exit 1
   fi
@@ -72,22 +74,13 @@ promote_artifact() {
   echo "Promotion operation started: ${operation_name}"
   echo "Polling operation status until completion..."
 
-  local max_attempts=60
-  local attempt=0
-  while true; do
-    attempt=$((attempt + 1))
-    if [[ ${attempt} -gt ${max_attempts} ]]; then
-      echo "ERROR: Timed out waiting for promotion operation on ${pkg} to complete."
-      exit 1
-    fi
-
+  local max_attempts=5
+  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
     local status_json
-    status_json=$(gcloud artifacts operations describe "${operation_name}" \
-      --project="${PROJECT_ID}" \
-      --location="${LOCATION}" \
-      --format="json" 2>/dev/null || true)
-
-    if [[ -z "${status_json}" ]]; then
+    if ! status_json=$(gcloud artifacts operations describe "${operation_name}" \
+        --project="${PROJECT_ID}" \
+        --location="${LOCATION}" \
+        --format="json") || [[ -z "${status_json}" ]]; then
       echo "Warning: Failed to query operation status; retrying in 5s..."
       sleep 5
       continue
@@ -100,7 +93,7 @@ promote_artifact() {
       echo "================================================================================"
       echo "Artifact promotion succeeded! BCID VSA attached to ${DEST_REPO}/${pkg}."
       echo "================================================================================"
-      break
+      return 0
     elif [[ "${result}" =~ ^ERROR: ]]; then
       echo "================================================================================"
       echo "ERROR: Artifact promotion failed BCID policy evaluation or execution for ${pkg}:"
@@ -109,9 +102,15 @@ promote_artifact() {
       exit 1
     elif [[ "${result}" == "IN_PROGRESS" || "${result}" == "RETRY" ]]; then
       echo "Operation in progress... (attempt ${attempt}/${max_attempts}), retrying in 5s..."
-      sleep 5
+    else
+      echo "Warning: Unknown result '${result}'" \
+        "(attempt ${attempt}/${max_attempts}), retrying in 5s..."
     fi
+    sleep 5
   done
+
+  echo "ERROR: Timed out waiting for promotion operation on ${pkg} to complete."
+  exit 1
 }
 
 sign_binauthz() {
