@@ -74,9 +74,10 @@ promote_artifact() {
   echo "Promotion operation started: ${operation_name}"
   echo "Polling operation status until completion..."
 
-  local max_attempts=5
+  local max_attempts=60
+  local status_output=""
+  local status_json=""
   for ((attempt = 1; attempt <= max_attempts; attempt++)); do
-    local status_output
     if ! status_output=$(gcloud artifacts operations describe "${operation_name}" \
         --project="${PROJECT_ID}" \
         --location="${LOCATION}" \
@@ -88,7 +89,7 @@ promote_artifact() {
       sleep 5
       continue
     fi
-    local status_json="${status_output}"
+    status_json="${status_output}"
 
     local result
     result=$(echo "${status_json}" | python3 -c "import sys, json; d=json.load(sys.stdin); print('IN_PROGRESS' if not d.get('done') else ('ERROR: ' + json.dumps(d['error']) if 'error' in d else 'SUCCESS'))" 2>/dev/null || echo "RETRY")
@@ -114,6 +115,9 @@ promote_artifact() {
   done
 
   echo "ERROR: Timed out waiting for promotion operation on ${pkg} to complete."
+  if [[ -n "${status_output}" ]]; then
+    echo "Last operation status: ${status_output}"
+  fi
   exit 1
 }
 
@@ -126,7 +130,7 @@ sign_binauthz() {
   echo "================================================================================"
 
   gcloud --project="${PROJECT_ID}" beta container binauthz attestations \
-    sign-and-create --artifact-url="gcr.io/${PROJECT_ID}/${image_name}@${digest}" \
+    sign-and-create --artifact-url="${DEST_REPO}/${PROJECT_ID}/${image_name}@${digest}" \
     --attestor=build-attestor --attestor-project="${PROJECT_ID}" \
     --keyversion-project="${PROJECT_ID}" --keyversion-location=global \
     --keyversion-keyring=attestor-keys --keyversion-key=signing \
@@ -136,10 +140,10 @@ sign_binauthz() {
 if [[ "${RELEASE_TYPE}" == "nomulus" ]]; then
   echo "Retrieving digests from staging for nomulus release..."
   nomulus_digest=$(gcloud artifacts docker images describe \
-    "us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:${TAG_NAME}" \
+    "${LOCATION}-docker.pkg.dev/${PROJECT_ID}/${SRC_REPO}/nomulus:${TAG_NAME}" \
     --format="value(image_summary.digest)")
   proxy_digest=$(gcloud artifacts docker images describe \
-    "us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}" \
+    "${LOCATION}-docker.pkg.dev/${PROJECT_ID}/${SRC_REPO}/proxy:${TAG_NAME}" \
     --format="value(image_summary.digest)")
 
   echo "nomulus digest: ${nomulus_digest}"
@@ -154,7 +158,7 @@ if [[ "${RELEASE_TYPE}" == "nomulus" ]]; then
 elif [[ "${RELEASE_TYPE}" == "proxy" ]]; then
   echo "Retrieving digest from staging for proxy release..."
   proxy_digest=$(gcloud artifacts docker images describe \
-    "us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}" \
+    "${LOCATION}-docker.pkg.dev/${PROJECT_ID}/${SRC_REPO}/proxy:${TAG_NAME}" \
     --format="value(image_summary.digest)")
 
   echo "proxy digest: ${proxy_digest}"
