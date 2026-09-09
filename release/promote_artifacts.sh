@@ -76,15 +76,19 @@ promote_artifact() {
 
   local max_attempts=5
   for ((attempt = 1; attempt <= max_attempts; attempt++)); do
-    local status_json
-    if ! status_json=$(gcloud artifacts operations describe "${operation_name}" \
+    local status_output
+    if ! status_output=$(gcloud artifacts operations describe "${operation_name}" \
         --project="${PROJECT_ID}" \
         --location="${LOCATION}" \
-        --format="json") || [[ -z "${status_json}" ]]; then
+        --format="json" 2>&1) || [[ -z "${status_output}" ]]; then
       echo "Warning: Failed to query operation status; retrying in 5s..."
+      if [[ -n "${status_output}" ]]; then
+        echo "${status_output}"
+      fi
       sleep 5
       continue
     fi
+    local status_json="${status_output}"
 
     local result
     result=$(echo "${status_json}" | python3 -c "import sys, json; d=json.load(sys.stdin); print('IN_PROGRESS' if not d.get('done') else ('ERROR: ' + json.dumps(d['error']) if 'error' in d else 'SUCCESS'))" 2>/dev/null || echo "RETRY")
