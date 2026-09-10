@@ -32,6 +32,7 @@ import google.registry.export.sheet.SheetsServiceModule;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
 import google.registry.flows.domain.DomainDeletionTimeCacheModule;
+import google.registry.flows.quota.FlowQuotaModule;
 import google.registry.groups.DirectoryModule;
 import google.registry.groups.GmailModule;
 import google.registry.groups.GroupsModule;
@@ -68,6 +69,7 @@ import jakarta.inject.Singleton;
       DirectoryModule.class,
       DomainDeletionTimeCacheModule.class,
       DriveModule.class,
+      FlowQuotaModule.class,
       GmailModule.class,
       GroupsModule.class,
       GroupssettingsModule.class,

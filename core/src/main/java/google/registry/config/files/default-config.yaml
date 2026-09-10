@@ -198,6 +198,12 @@ registryPolicy:
   # deletions.
   noPollMessageOnDeletionRegistrarIds: []
 
+  # Number of seconds for the domain:create throttling window.
+  domainCreateThrottleWindowDurationSeconds: 10
+
+  # Number of domain:create requests allowed per throttling window.
+  domainCreateThrottleWindowTokens: 3
+
 hibernate:
   # If set to false, calls to tm().transact() cannot be nested. If set to true,
   # nested calls to tm().transact() are allowed, as long as they do not specify

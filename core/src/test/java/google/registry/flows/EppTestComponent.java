@@ -27,7 +27,9 @@ import google.registry.flows.custom.CustomLogicFactory;
 import google.registry.flows.custom.TestCustomLogicFactory;
 import google.registry.flows.domain.DomainDeletionTimeCache;
 import google.registry.flows.domain.DomainFlowTmchUtils;
+import google.registry.flows.quota.FlowQuotaManager;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.quota.NoopQuotaManager;
 import google.registry.request.Modules.GsonModule;
 import google.registry.request.RequestScope;
 import google.registry.request.lock.LockHandler;
@@ -40,6 +42,7 @@ import google.registry.tmch.TmchXmlSignature;
 import google.registry.util.Clock;
 import google.registry.util.Sleeper;
 import jakarta.inject.Singleton;
+import java.time.Duration;
 
 /** Dagger component for running EPP tests. */
 @Singleton
@@ -60,6 +63,7 @@ public interface EppTestComponent {
     private FakeLockHandler lockHandler;
     private Sleeper sleeper;
     private CloudTasksHelper cloudTasksHelper;
+    private FlowQuotaManager flowQuotaManager;
 
     public CloudTasksHelper getCloudTasksHelper() {
       return cloudTasksHelper;
@@ -67,6 +71,10 @@ public interface EppTestComponent {
 
     public EppMetric.Builder getMetricBuilder() {
       return metricBuilder;
+    }
+
+    public FlowQuotaManager getFlowQuotaManager() {
+      return flowQuotaManager;
     }
 
     public static FakesAndMocksModule create(FakeClock clock) {
@@ -82,6 +90,8 @@ public interface EppTestComponent {
       instance.metricBuilder = EppMetric.builderForRequest(clock);
       instance.lockHandler = new FakeLockHandler(true);
       instance.cloudTasksHelper = cloudTasksHelper;
+      instance.flowQuotaManager =
+          new FlowQuotaManager(new NoopQuotaManager(), 3, Duration.ofSeconds(10));
       return instance;
     }
 
@@ -133,6 +143,11 @@ public interface EppTestComponent {
     @Provides
     DomainDeletionTimeCache provideDomainDeletionTimeCache() {
       return DomainDeletionTimeCache.create();
+    }
+
+    @Provides
+    FlowQuotaManager provideFlowQuotaManager() {
+      return flowQuotaManager;
     }
   }
 
