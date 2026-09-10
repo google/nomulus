@@ -5,6 +5,10 @@ metadata:
   name: nomulus-skaffold
 profiles:
 - name: crash
+  # Note: The stable profile intentionally includes partial-phase-5 manifests alongside
+  # primary workloads. This ensures that the candidate image is deployed across both deployments,
+  # maintaining stable pod and GKE node allocation to prevent churn on nodes hosting persistent
+  # registrar sessions.
   manifests:
     rawYaml:
     - ../../jetty/kubernetes/nomulus-crash-backend.yaml
@@ -40,6 +44,10 @@ profiles:
   deploy:
     kubectl: { }
 - name: sandbox
+  # Note: The stable profile intentionally includes partial-phase-5 manifests alongside
+  # primary workloads. This ensures that the candidate image is deployed across both deployments,
+  # maintaining stable pod and GKE node allocation to prevent churn on nodes hosting persistent
+  # registrar sessions.
   manifests:
     rawYaml:
     - ../../jetty/kubernetes/nomulus-sandbox-backend.yaml
@@ -75,6 +83,10 @@ profiles:
   deploy:
     kubectl: { }
 - name: production
+  # Note: The stable profile intentionally includes partial-phase-5 manifests alongside
+  # primary workloads. This ensures that the candidate image is deployed across both deployments,
+  # maintaining stable pod and GKE node allocation to prevent churn on nodes hosting persistent
+  # registrar sessions.
   manifests:
     rawYaml:
     - ../../jetty/kubernetes/nomulus-production-backend.yaml
