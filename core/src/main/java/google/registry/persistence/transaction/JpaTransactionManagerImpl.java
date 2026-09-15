@@ -17,19 +17,19 @@ package google.registry.persistence.transaction;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getHibernateAllowNestedTransactions;
 import static google.registry.persistence.transaction.DatabaseException.throwIfSqlException;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
-import static java.util.AbstractMap.SimpleEntry;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
@@ -78,7 +78,6 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -473,23 +472,38 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       Iterable<? extends VKey<? extends T>> keys) {
     checkArgumentNotNull(keys, "keys must be specified");
     assertInTransaction();
-    return StreamSupport.stream(keys.spliterator(), false)
-        // Accept duplicate keys.
-        .distinct()
-        .map(
-            key ->
-                new SimpleEntry<VKey<? extends T>, T>(
-                    key, detach(getEntityManager().find(key.getKind(), key.getKey()))))
-        .filter(entry -> entry.getValue() != null)
-        .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+    // Group keys by entity type; T may be a common superclass with keys pointing to different
+    // concrete entity tables (e.g. EppResource, Domain, and Host). Session::findMultiple requires a
+    // single concrete entity class per call.
+    ImmutableListMultimap<Class<? extends T>, VKey<? extends T>> keysByObjectType =
+        Multimaps.index(Streams.stream(keys).distinct().collect(toImmutableList()), VKey::getKind);
+    ImmutableMap.Builder<VKey<? extends T>, T> builder = new ImmutableMap.Builder<>();
+    for (Class<? extends T> objectClass : keysByObjectType.keySet()) {
+      ImmutableList<VKey<? extends T>> singleObjectTypeKeys = keysByObjectType.get(objectClass);
+      ImmutableList<Serializable> ids =
+          singleObjectTypeKeys.stream().map(VKey::getKey).collect(toImmutableList());
+      // Note: Hibernate batches SQL queries for us if necessary under the hood
+      List<? extends T> entities =
+          getEntityManager().unwrap(Session.class).findMultiple(objectClass, ids);
+      // Session::findMultiple keeps the entities in the same order with null values for missing
+      // keys. As a result, we can zip the keys+values as a map, ignoring null values.
+      for (int i = 0; i < ids.size(); i++) {
+        T entity = entities.get(i);
+        if (entity != null) {
+          builder.put(singleObjectTypeKeys.get(i), detach(entity));
+        }
+      }
+    }
+    return builder.build();
   }
 
   @Override
   public <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
-    return Streams.stream(entities)
-        .filter(this::exists)
-        .map(this::loadByEntity)
-        .collect(toImmutableList());
+    checkArgumentNotNull(entities, "entities must be specified");
+    assertInTransaction();
+    ImmutableList<VKey<T>> keys =
+        Streams.stream(entities).map(this::getKeyFromEntity).collect(toImmutableList());
+    return loadByKeysIfPresent(keys).values().asList();
   }
 
   @Override
@@ -521,20 +535,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T loadByEntity(T entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
-    @SuppressWarnings("unchecked")
-    T returnValue =
-        (T)
-            loadByKey(
-                VKey.create(
-                    entity.getClass(),
-                    // Casting to Serializable is safe according to JPA (JSR 338 sec. 2.4).
-                    (Serializable) emf.getPersistenceUnitUtil().getIdentifier(entity)));
-    return returnValue;
+    return loadByKey(getKeyFromEntity(entity));
   }
 
   @Override
   public <T> ImmutableList<T> loadByEntities(Iterable<T> entities) {
-    return Streams.stream(entities).map(this::loadByEntity).collect(toImmutableList());
+    checkArgumentNotNull(entities, "entities must be specified");
+    assertInTransaction();
+    ImmutableList<VKey<T>> keys =
+        Streams.stream(entities).map(this::getKeyFromEntity).collect(toImmutableList());
+    return loadByKeys(keys).values().asList();
   }
 
   @Override
@@ -642,6 +652,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private <T> EntityType<T> getEntityType(Class<T> clazz) {
     return emf.getMetamodel().entity(clazz);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> VKey<T> getKeyFromEntity(T entity) {
+    checkArgumentNotNull(entity, "entity must be specified");
+    return (VKey<T>)
+        VKey.create(
+            entity.getClass(),
+            // Casting to Serializable is safe according to JPA (JSR 338 sec. 2.4).
+            (Serializable) emf.getPersistenceUnitUtil().getIdentifier(entity));
   }
 
   /**
