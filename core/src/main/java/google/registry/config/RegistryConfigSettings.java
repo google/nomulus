@@ -130,6 +130,7 @@ public class RegistryConfigSettings {
     public String hikariIdleTimeout;
     public int jdbcBatchSize;
     public String jdbcFetchSize;
+    public int defaultBatchFetchSize;
   }
 
   /** Configuration for Cloud SQL. */
