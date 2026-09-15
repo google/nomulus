@@ -15,7 +15,11 @@
 package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.PersistenceModule.DEFAULT_BATCH_FETCH_SIZE;
+import static google.registry.persistence.PersistenceModule.JDBC_BATCH_SIZE;
+import static google.registry.persistence.PersistenceModule.JDBC_FETCH_SIZE;
 
+import com.google.common.collect.ImmutableMap;
 import dagger.Component;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
@@ -75,6 +79,14 @@ class PersistenceModuleTest {
   void connectionIsolation() {
     assertThat(PersistenceModule.provideDefaultDatabaseConfigs().get(Environment.ISOLATION))
         .isEqualTo(TransactionIsolationLevel.TRANSACTION_SERIALIZABLE.name());
+  }
+
+  @Test
+  void batchAndFetchConfigs() {
+    ImmutableMap<String, String> configs = PersistenceModule.provideDefaultDatabaseConfigs();
+    assertThat(configs.get(JDBC_BATCH_SIZE)).isEqualTo("50");
+    assertThat(configs.get(JDBC_FETCH_SIZE)).isEqualTo("40");
+    assertThat(configs.get(DEFAULT_BATCH_FETCH_SIZE)).isEqualTo("50");
   }
 
   @Singleton

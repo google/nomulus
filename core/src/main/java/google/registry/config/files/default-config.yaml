@@ -247,6 +247,12 @@ hibernate:
   # database cursor. Here we set a small default geared toward Nomulus server
   # transactions. Large queries can override the defaults on a per-query basis.
   jdbcFetchSize: 40
+  # The default batch fetch size is the maximum number of uninitialized child
+  # entities or collection proxies that Hibernate will load / initialize in a
+  # single batched SELECT query using an IN clause. This is not the same as the
+  # JDBC batch size, which controls batched insertions / updates of root
+  # entities.
+  defaultBatchFetchSize: 50
 
 cloudSql:
   # jdbc url for the Cloud SQL database.
