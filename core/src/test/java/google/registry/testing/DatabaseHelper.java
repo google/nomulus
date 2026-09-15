@@ -912,7 +912,7 @@ public final class DatabaseHelper {
           .that(resource)
           .isNotInstanceOf(Buildable.Builder.class);
     }
-    tm().transact(() -> resources.forEach(e -> tm().put(e)));
+    tm().transact(() -> tm().putAll(ImmutableList.copyOf(resources)));
     maybeAdvanceClock();
     return loadByEntitiesIfPresent(resources);
   }
