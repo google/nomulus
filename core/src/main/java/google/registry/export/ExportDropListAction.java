@@ -16,6 +16,7 @@ package google.registry.export;
 
 import static com.google.common.base.Verify.verifyNotNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.model.tld.Tlds.getTldEntities;
 import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
@@ -35,6 +36,7 @@ import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.util.Clock;
+import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -45,7 +47,10 @@ import java.util.Optional;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-/** An action that exports the upcoming domain drop list across all open TLDs to Google Drive. */
+/**
+ * An action that exports the upcoming domain drop list across TLDs with XAP enabled to Google
+ * Drive.
+ */
 @Action(
     service = Action.Service.BACKEND,
     path = "/_dr/task/exportDropList",
@@ -89,15 +94,17 @@ public class ExportDropListAction implements Runnable {
 
     Instant now = clock.now();
     ImmutableSet<String> xapTlds =
-        getTldEntitiesOfType(TldType.REAL).stream()
-            .filter(Tld::isInvoicingEnabled)
+        (RegistryEnvironment.get() == RegistryEnvironment.PRODUCTION
+                ? getTldEntitiesOfType(TldType.REAL)
+                : getTldEntities())
+            .stream()
             .filter(tld -> tld.getExpiryAccessPeriodModeAt(now) == ExpiryAccessPeriodMode.ENABLED)
             .map(Tld::getTldStr)
             .collect(toImmutableSet());
-    logger.atInfo().log("Exporting domain drop list for open TLDs with XAP enabled: %s", xapTlds);
+    logger.atInfo().log("Exporting domain drop list for TLDs with XAP enabled: %s", xapTlds);
 
     if (xapTlds.isEmpty()) {
-      logger.atInfo().log("No open TLDs found with XAP enabled.");
+      logger.atInfo().log("No TLDs found with XAP enabled.");
       exportToDrive(createCsv(ImmutableList.of()));
       return;
     }
