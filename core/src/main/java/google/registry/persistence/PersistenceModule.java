@@ -17,6 +17,7 @@ package google.registry.persistence;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.config.RegistryConfig.getHibernateConnectionIsolation;
+import static google.registry.config.RegistryConfig.getHibernateDefaultBatchFetchSize;
 import static google.registry.config.RegistryConfig.getHibernateHikariConnectionTimeout;
 import static google.registry.config.RegistryConfig.getHibernateHikariIdleTimeout;
 import static google.registry.config.RegistryConfig.getHibernateHikariMaximumPoolSize;
@@ -84,6 +85,7 @@ public abstract class PersistenceModule {
 
   public static final String JDBC_BATCH_SIZE = "hibernate.jdbc.batch_size";
   public static final String JDBC_FETCH_SIZE = "hibernate.jdbc.fetch_size";
+  public static final String DEFAULT_BATCH_FETCH_SIZE = "hibernate.default_batch_fetch_size";
 
   @VisibleForTesting
   @Provides
@@ -113,6 +115,7 @@ public abstract class PersistenceModule {
     properties.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
     properties.put(JDBC_BATCH_SIZE, Integer.toString(getHibernateJdbcBatchSize()));
     properties.put(JDBC_FETCH_SIZE, getHibernateJdbcFetchSize());
+    properties.put(DEFAULT_BATCH_FETCH_SIZE, Integer.toString(getHibernateDefaultBatchFetchSize()));
     return properties.build();
   }
 

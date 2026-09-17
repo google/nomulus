@@ -1825,6 +1825,18 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().hibernate.jdbcFetchSize;
   }
 
+  /**
+   * Returns the Hibernate default batch fetch size ({@code hibernate.default_batch_fetch_size}).
+   *
+   * <p>This controls the maximum number of uninitialized child entities or collection proxies that
+   * Hibernate will batch together into a single {@code SELECT ... WHERE id IN (...)} query when
+   * loading / initializing child entities in the persistence context. This is not the standard
+   * "batch size" used when loading root entities in batches.
+   */
+  public static int getHibernateDefaultBatchFetchSize() {
+    return CONFIG_SETTINGS.get().hibernate.defaultBatchFetchSize;
+  }
+
   /** Returns the roid suffix to be used for the roids of all hosts. */
   public static String getHostRoidSuffix() {
     return CONFIG_SETTINGS.get().registryPolicy.contactAndHostRoidSuffix;
