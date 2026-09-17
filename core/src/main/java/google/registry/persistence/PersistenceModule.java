@@ -116,6 +116,8 @@ public abstract class PersistenceModule {
     properties.put(JDBC_BATCH_SIZE, Integer.toString(getHibernateJdbcBatchSize()));
     properties.put(JDBC_FETCH_SIZE, getHibernateJdbcFetchSize());
     properties.put(DEFAULT_BATCH_FETCH_SIZE, Integer.toString(getHibernateDefaultBatchFetchSize()));
+    properties.put(Environment.ORDER_INSERTS, "true");
+    properties.put(Environment.ORDER_UPDATES, "true");
     return properties.build();
   }
 
