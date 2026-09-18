@@ -71,6 +71,34 @@ public class CreateBulkPricingPackageCommandTest
   }
 
   @Test
+  void testSuccess_multipleTokens() throws Exception {
+    for (String token : ImmutableSet.of("abc123", "def456")) {
+      persistResource(
+          new AllocationToken.Builder()
+              .setToken(token)
+              .setTokenType(TokenType.BULK_PRICING)
+              .setCreationTimeForTest(Instant.parse("2010-11-12T05:00:00Z"))
+              .setAllowedTlds(ImmutableSet.of("foo"))
+              .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+              .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+              .setRenewalPrice(Money.of(USD, 0))
+              .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
+              .setDiscountFraction(1.0)
+              .build());
+    }
+    runCommandForced(
+        "--max_domains=100",
+        "--max_creates=500",
+        "--price=USD 1000.00",
+        "--next_billing_date=2012-03-17T00:00:00Z",
+        "abc123",
+        "def456");
+
+    assertThat(tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"))).isPresent();
+    assertThat(tm().transact(() -> BulkPricingPackage.loadByTokenString("def456"))).isPresent();
+  }
+
+  @Test
   void testFailure_tokenIsNotBulkType() throws Exception {
     persistResource(
         new AllocationToken.Builder()

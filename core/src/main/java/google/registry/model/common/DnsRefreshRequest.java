@@ -41,7 +41,7 @@ public class DnsRefreshRequest extends ImmutableObject {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Id
   @SuppressWarnings("unused")
-  protected long id;
+  protected Long id;
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
@@ -109,9 +109,7 @@ public class DnsRefreshRequest extends ImmutableObject {
     checkNotNull(tld, "TLD cannot be null");
     checkNotNull(requestTime, "Request time cannot be null");
     checkNotNull(lastProcessTime, "Last process time cannot be null");
-    if (id != null) {
-      this.id = id;
-    }
+    this.id = id;
     this.type = type;
     this.name = name;
     this.tld = tld;

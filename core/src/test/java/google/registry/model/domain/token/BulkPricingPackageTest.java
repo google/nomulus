@@ -69,9 +69,13 @@ public class BulkPricingPackageTest extends EntityTestCase {
             .setNextBillingDate(Instant.parse("2011-11-12T05:00:00Z"))
             .build();
 
+    assertThat(bulkPricingPackage.getId()).isNull();
     tm().transact(() -> tm().put(bulkPricingPackage));
+    BulkPricingPackage persisted =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123")).get();
+    assertThat(persisted.getId()).isNotNull();
     assertAboutImmutableObjects()
-        .that(tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123")).get())
+        .that(persisted)
         .isEqualExceptFields(bulkPricingPackage, "bulkPricingId");
   }
 
