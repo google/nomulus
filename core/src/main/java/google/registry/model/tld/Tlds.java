@@ -85,6 +85,11 @@ public final class Tlds {
     return ImmutableSet.copyOf(filterValues(cache.get(), equalTo(type)).keySet());
   }
 
+  /** Returns all TLD entities loaded fresh from the database. */
+  public static ImmutableSet<Tld> getTldEntities() {
+    return Tld.get(cache.get().keySet());
+  }
+
   /** Returns the TLD entities themselves of the given type loaded fresh from the database. */
   public static ImmutableSet<Tld> getTldEntitiesOfType(TldType type) {
     return Tld.get(filterValues(cache.get(), equalTo(type)).keySet());
