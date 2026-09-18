@@ -278,6 +278,23 @@ rules:
 apiVersion: deploy.cloud.google.com/v1
 kind: Automation
 metadata:
+  name: deploy-nomulus/auto-advance-canary-production
+description: Automatically advances rollouts from canary-1 to canary-5 phase in production.
+# Placeholder: Replace with project service account.
+serviceAccount: serviceAccount
+selector:
+  targets:
+  - id: production
+rules:
+- advanceRolloutRule:
+    id: advance-canary-phases
+    sourcePhases:
+    - "canary-1"
+    wait: 0m
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Automation
+metadata:
   name: deploy-nomulus/auto-promote-crash-to-sandbox
 description: Automatically promotes release to sandbox after successful rollout in crash.
 # Placeholder: Replace with project service account.
@@ -290,4 +307,19 @@ rules:
     id: promote-crash-to-sandbox
     destinationTargetId: "sandbox"
     wait: 0m
-
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Automation
+metadata:
+  name: deploy-nomulus/auto-promote-sandbox-to-production
+description: Automatically promotes release to production after successful rollout in sandbox.
+# Placeholder: Replace with project service account.
+serviceAccount: serviceAccount
+selector:
+  targets:
+  - id: sandbox
+rules:
+- promoteReleaseRule:
+    id: promote-sandbox-to-production
+    destinationTargetId: "production"
+    wait: 0m
