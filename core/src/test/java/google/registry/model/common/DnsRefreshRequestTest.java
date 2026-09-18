@@ -38,6 +38,7 @@ public class DnsRefreshRequestTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
+    assertThat(request.id).isNull();
     assertThat(request.getLastProcessTime()).isEqualTo(START_INSTANT);
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().insert(request));
@@ -45,6 +46,7 @@ public class DnsRefreshRequestTest extends EntityTestCase {
     ImmutableList<DnsRefreshRequest> requests = loadAllOf(DnsRefreshRequest.class);
     assertThat(requests.size()).isEqualTo(1);
     assertThat(requests.get(0)).isEqualTo(request);
+    assertThat(requests.get(0).id).isNotNull();
   }
 
   @Test

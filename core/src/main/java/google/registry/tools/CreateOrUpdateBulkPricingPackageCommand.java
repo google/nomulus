@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
+import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.BulkPricingPackage;
@@ -30,7 +31,7 @@ import javax.annotation.Nullable;
 import org.joda.money.Money;
 
 /** Shared base class for commands to create or update a {@link BulkPricingPackage} object. */
-abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
+abstract class CreateOrUpdateBulkPricingPackageCommand extends ConfirmingCommand {
 
   @Parameter(description = "Allocation token String of the bulk token", required = true)
   List<String> mainParameters;
@@ -61,6 +62,8 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
           "The next date that the bulk pricing package should be billed for its annual fee")
   Instant nextBillingDate;
 
+  private ImmutableList<BulkPricingPackage> packagesToSave;
+
   /** Returns the existing BulkPricingPackage or null if it does not exist. */
   @Nullable
   abstract BulkPricingPackage getOldBulkPricingPackage(String token);
@@ -87,6 +90,7 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
 
   @Override
   protected final void init() throws Exception {
+    ImmutableList.Builder<BulkPricingPackage> packagesBuilder = new ImmutableList.Builder<>();
     for (String token : mainParameters) {
       tm().transact(
               () -> {
@@ -110,9 +114,20 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
                 if (clearLastNotificationSent()) {
                   builder.setLastNotificationSent((Instant) null);
                 }
-                BulkPricingPackage newBulkPricingPackage = builder.build();
-                stageEntityChange(oldBulkPricingPackage, newBulkPricingPackage);
+                packagesBuilder.add(builder.build());
               });
     }
+    packagesToSave = packagesBuilder.build();
+  }
+
+  @Override
+  protected String prompt() {
+    return String.format("Save %d bulk pricing package(s)?", packagesToSave.size());
+  }
+
+  @Override
+  protected String execute() {
+    tm().transact(() -> tm().putAll(packagesToSave));
+    return String.format("Saved %d bulk pricing package(s).", packagesToSave.size());
   }
 }

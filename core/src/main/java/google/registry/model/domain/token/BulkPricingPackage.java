@@ -49,7 +49,7 @@ public class BulkPricingPackage extends ImmutableObject implements Buildable {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "package_promotion_id")
-  long bulkPricingId;
+  Long bulkPricingId;
 
   /** The allocation token string for the bulk pricing package. */
   @Column(nullable = false)
@@ -84,7 +84,7 @@ public class BulkPricingPackage extends ImmutableObject implements Buildable {
    */
   @Nullable Instant lastNotificationSent;
 
-  public long getId() {
+  public Long getId() {
     return bulkPricingId;
   }
 
