@@ -608,39 +608,101 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
-  void loadByKeys_succeeds() {
+  void loadByKeysIfPresent_mixedEntityTypes_succeeds() {
     persistResource(theEntity);
+    persistResource(compoundIdEntity);
     tm().transact(
             () -> {
-              ImmutableMap<VKey<? extends TestEntity>, TestEntity> results =
-                  tm().loadByKeysIfPresent(ImmutableList.of(theEntityKey));
-              assertThat(results).containsExactly(theEntityKey, theEntity);
+              ImmutableMap<VKey<? extends ImmutableObject>, ImmutableObject> results =
+                  tm().loadByKeysIfPresent(
+                          ImmutableList.of(
+                              theEntityKey,
+                              compoundIdEntityKey,
+                              VKey.create(TestEntity.class, "does-not-exist")));
+
+              assertThat(results)
+                  .containsExactly(theEntityKey, theEntity, compoundIdEntityKey, compoundIdEntity);
               assertDetachedFromEntityManager(results.get(theEntityKey));
+              assertDetachedFromEntityManager(results.get(compoundIdEntityKey));
             });
+  }
+
+  @Test
+  void loadByKeys_succeeds() {
+    persistResource(theEntity);
+    persistResource(compoundIdEntity);
+    tm().transact(
+            () -> {
+              ImmutableMap<VKey<? extends ImmutableObject>, ImmutableObject> results =
+                  tm().loadByKeys(ImmutableList.of(theEntityKey, compoundIdEntityKey));
+              assertThat(results)
+                  .containsExactly(theEntityKey, theEntity, compoundIdEntityKey, compoundIdEntity);
+              assertDetachedFromEntityManager(results.get(theEntityKey));
+              assertDetachedFromEntityManager(results.get(compoundIdEntityKey));
+            });
+  }
+
+  @Test
+  void loadByKeys_missingKey_throws() {
+    persistResource(theEntity);
+    assertThat(
+            assertThrows(
+                NoSuchElementException.class,
+                () ->
+                    tm().transact(
+                            () ->
+                                tm().loadByKeys(
+                                        ImmutableList.of(
+                                            theEntityKey,
+                                            VKey.create(TestEntity.class, "does-not-exist"))))))
+        .hasMessageThat()
+        .contains("does-not-exist");
   }
 
   @Test
   void loadByEntitiesIfPresent_succeeds() {
     persistResource(theEntity);
+    persistResource(compoundIdEntity);
     tm().transact(
             () -> {
-              ImmutableList<TestEntity> results =
+              ImmutableList<ImmutableObject> results =
                   tm().loadByEntitiesIfPresent(
-                          ImmutableList.of(theEntity, new TestEntity("does-not-exist", "bar")));
-              assertThat(results).containsExactly(theEntity);
-              assertDetachedFromEntityManager(results.get(0));
+                          ImmutableList.of(
+                              theEntity,
+                              compoundIdEntity,
+                              new TestEntity("does-not-exist", "bar")));
+              assertThat(results).containsExactly(theEntity, compoundIdEntity);
+              results.forEach(DatabaseHelper::assertDetachedFromEntityManager);
             });
   }
 
   @Test
   void loadByEntities_succeeds() {
     persistResource(theEntity);
+    persistResource(compoundIdEntity);
     tm().transact(
             () -> {
-              ImmutableList<TestEntity> results = tm().loadByEntities(ImmutableList.of(theEntity));
-              assertThat(results).containsExactly(theEntity);
-              assertDetachedFromEntityManager(results.get(0));
+              ImmutableList<ImmutableObject> results =
+                  tm().loadByEntities(ImmutableList.of(theEntity, compoundIdEntity));
+              assertThat(results).containsExactly(theEntity, compoundIdEntity);
+              results.forEach(DatabaseHelper::assertDetachedFromEntityManager);
             });
+  }
+
+  @Test
+  void loadByEntities_missingEntity_throws() {
+    persistResource(theEntity);
+    assertThat(
+            assertThrows(
+                NoSuchElementException.class,
+                () ->
+                    tm().transact(
+                            () ->
+                                tm().loadByEntities(
+                                        ImmutableList.of(
+                                            theEntity, new TestEntity("does-not-exist", "bar"))))))
+        .hasMessageThat()
+        .contains("does-not-exist");
   }
 
   @Test
@@ -911,7 +973,7 @@ class JpaTransactionManagerImplTest {
     }
   }
 
-  private static class CompoundId implements Serializable {
+  private static class CompoundId extends ImmutableObject implements Serializable {
     String name;
     int age;
 
@@ -959,7 +1021,7 @@ class JpaTransactionManagerImplTest {
     }
   }
 
-  private static class NamedCompoundId implements Serializable {
+  private static class NamedCompoundId extends ImmutableObject implements Serializable {
     String nameField;
     int ageField;
 
