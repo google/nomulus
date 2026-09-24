@@ -21,7 +21,6 @@ import static google.registry.testing.DatabaseHelper.persistResources;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -104,16 +103,19 @@ public abstract class JpaTransactionManagerExtension
   // reused between test methods if the requested schema remains the same.
   private static EntityManagerFactory emf;
   // Hash of the ORM entity names in the current schema in the test db.
-
   private static int emfEntityHash;
-
-  private JpaTransactionManager cachedTm;
   // Hash of the ORM entity names requested by this extension instance.
   private final int entityHash;
+  private JpaTransactionManager cachedTm;
 
   // Whether to create nomulus tables in the test db. Right now, only the JpaTestExtensions set this
   // to false.
   private boolean includeNomulusSchema = true;
+
+  // Cached re-usable connection used for resetting tables / schema
+  private static Connection reusableConnection;
+  // Cached "reset" statement so we don't need to query SQL each time to find out what tables exist
+  private static String cachedResetSql;
 
   // Whether to pre-populate some registrars for ease of testing.
   private final boolean withCannedData;
@@ -144,7 +146,19 @@ public abstract class JpaTransactionManagerExtension
                 "POSTGRES_INITDB_ARGS",
                 "--encoding=UTF8 --lc-collate=en_US.UTF8 --lc-ctype=en_US.UTF8"
                     + " --locale-provider=libc --no-locale")
-            .withDatabaseName(POSTGRES_DB_NAME);
+            .withDatabaseName(POSTGRES_DB_NAME)
+            // Use tmpFs so that we keep everything in memory. No point in writing to disk
+            .withTmpFs(ImmutableMap.of("/var/lib/postgresql/data", "rw"))
+            // Testcontainers defaults to fsync=off but we want the additional options turned off as
+            // well, for speed purposes
+            .withCommand(
+                "postgres",
+                "-c",
+                "fsync=off",
+                "-c",
+                "synchronous_commit=off",
+                "-c",
+                "full_page_writes=off");
     container.start();
     return container;
   }
@@ -159,11 +173,31 @@ public abstract class JpaTransactionManagerExtension
         .hashCode();
   }
 
+  private static void closeReusableConnection() {
+    if (reusableConnection != null) {
+      try {
+        reusableConnection.close();
+      } catch (SQLException e) {
+        // Ignore close errors during cleanup
+      }
+      reusableConnection = null;
+    }
+  }
+
+  private static Connection getReusableConnection() throws SQLException {
+    if (reusableConnection == null || reusableConnection.isClosed()) {
+      reusableConnection = createConnection();
+    }
+    return reusableConnection;
+  }
+
   /**
    * Drops and recreates the 'public' schema and all tables, then creates a new {@link
    * EntityManagerFactory} and save it in {@link #emf}.
    */
   private void recreateSchema() throws Exception {
+    closeReusableConnection();
+    cachedResetSql = null;
     if (emf != null) {
       emf.close();
       emf = null;
@@ -178,6 +212,10 @@ public abstract class JpaTransactionManagerExtension
       exporter.export(extraEntityClasses, tempSqlFile);
       executeSql(Files.readString(tempSqlFile.toPath(), UTF_8));
     }
+    // Lower project_wide_unique_id_seq's non-1 MINVALUE from the golden schema so deterministic
+    // sequence resets to 1 succeed.
+    executeSql(
+        "ALTER SEQUENCE IF EXISTS project_wide_unique_id_seq START 1 MINVALUE 1 RESTART WITH 1;");
     assertReasonableNumDbConnections();
     emf = createEntityManagerFactory(getJpaProperties());
     emfEntityHash = entityHash;
@@ -228,16 +266,6 @@ public abstract class JpaTransactionManagerExtension
     cachedTm = TransactionManagerFactory.tm();
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
     TransactionManagerFactory.setReplicaJpaTm(Suppliers.ofInstance(readOnlyTxnManager));
-    // Reset SQL Sequence based id allocation so that ids are deterministic in tests.
-    TransactionManagerFactory.tm()
-        .transact(
-            () ->
-                TransactionManagerFactory.tm()
-                    .getEntityManager()
-                    .createNativeQuery(
-                        "alter sequence if exists project_wide_unique_id_seq start 1 minvalue 1"
-                            + " restart with 1")
-                    .executeUpdate());
     if (withCannedData) {
       loadInitialData();
     }
@@ -256,22 +284,34 @@ public abstract class JpaTransactionManagerExtension
   }
 
   private void resetTablesAndSequences() {
-    try (Connection conn = createConnection();
-        Statement statement = conn.createStatement()) {
-      ResultSet rs =
-          statement.executeQuery(
-              "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';");
-      ImmutableList.Builder<String> tableNamesBuilder = new ImmutableList.Builder<>();
-      while (rs.next()) {
-        tableNamesBuilder.add('"' + rs.getString(1) + '"');
+    try (Statement statement = getReusableConnection().createStatement()) {
+      if (cachedResetSql == null) {
+        // We build up a list of tables/sequences to reset by querying SQL. We only need to do this
+        // once per schema.
+        StringBuilder sqlBuilder = new StringBuilder("BEGIN; SET CONSTRAINTS ALL DEFERRED; ");
+        try (ResultSet rs =
+            statement.executeQuery(
+                "SELECT table_name FROM information_schema.tables"
+                    + " WHERE table_schema = 'public' AND table_type = 'BASE TABLE';")) {
+          while (rs.next()) {
+            sqlBuilder.append(String.format("DELETE FROM \"%s\";", rs.getString(1)));
+          }
+        }
+        try (ResultSet rs =
+            statement.executeQuery(
+                "SELECT sequence_name FROM information_schema.sequences"
+                    + " WHERE sequence_schema = 'public';")) {
+          while (rs.next()) {
+            sqlBuilder.append(
+                String.format("ALTER SEQUENCE \"%s\" RESTART WITH 1;", rs.getString(1)));
+          }
+        }
+        sqlBuilder.append("COMMIT;");
+        cachedResetSql = sqlBuilder.toString();
       }
-      ImmutableList<String> tableNames = tableNamesBuilder.build();
-      if (!tableNames.isEmpty()) {
-        String sql =
-            String.format("TRUNCATE %s RESTART IDENTITY CASCADE", Joiner.on(',').join(tableNames));
-        executeSql(sql);
-      }
+      statement.execute(cachedResetSql);
     } catch (Exception e) {
+      closeReusableConnection();
       throw new RuntimeException(e);
     }
   }

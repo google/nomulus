@@ -18,7 +18,10 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -56,16 +59,29 @@ class HibernateSchemaExporterTest {
   @Test
   void export_succeeds() throws IOException {
     File sqlFile = Files.createFile(tmpDir.resolve("tempfile.dat")).toFile();
-    exporter.export(ImmutableList.of(HibernateSchemaTestEntity.class), sqlFile);
+    exporter.export(
+        ImmutableList.of(HibernateSchemaTestEntity.class, HibernateSchemaChildEntity.class),
+        sqlFile);
     assertThat(Files.readAllBytes(sqlFile.toPath()))
         .isEqualTo(
-            """
+"""
+
+    create table "ChildEntity" (
+        id text not null,
+        parent_name text,
+        primary key (id)
+    );
 
     create table "TestEntity" (
         name text not null,
         cu text,
         primary key (name)
     );
+
+    alter table if exists "ChildEntity"\s
+       add constraint FK_child_parent\s
+       foreign key (parent_name)\s
+       references "TestEntity" deferrable initially deferred;
 """
                 .getBytes(StandardCharsets.UTF_8));
   }
@@ -75,5 +91,14 @@ class HibernateSchemaExporterTest {
     @Id String name;
 
     CurrencyUnit cu;
+  }
+
+  @Entity(name = "ChildEntity")
+  private static class HibernateSchemaChildEntity {
+    @Id String id;
+
+    @ManyToOne
+    @JoinColumn(name = "parent_name", foreignKey = @ForeignKey(name = "FK_child_parent"))
+    HibernateSchemaTestEntity parent;
   }
 }

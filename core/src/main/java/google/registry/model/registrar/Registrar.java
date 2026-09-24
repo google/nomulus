@@ -211,7 +211,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       memoizeWithShortExpiration(
           () ->
               Maps.uniqueIndex(
-                  tm().reTransact(() -> tm().loadAllOf(Registrar.class)),
+                  tm().reTransact(() -> tm().loadAllOfSorted(Registrar.class, "registrarId")),
                   Registrar::getRegistrarId));
 
   /**
@@ -1050,9 +1050,9 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return email;
   }
 
-  /** Loads all registrar entities directly from the database. */
+  /** Loads all registrar entities directly from the database, sorted by {@code registrarId}. */
   public static Iterable<Registrar> loadAll() {
-    return tm().transact(() -> tm().loadAllOf(Registrar.class));
+    return loadAllSorted("registrarId");
   }
 
   /** Loads all registrar entities directly from the database, sorted by the given field names. */
