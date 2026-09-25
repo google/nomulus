@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.4
--- Dumped by pg_dump version 17.4
+-- Dumped from database version 17.10
+-- Dumped by pg_dump version 17.10
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2740,7 +2740,7 @@ ALTER TABLE ONLY public."BillingRecurrence"
 --
 
 ALTER TABLE ONLY public."ConsoleUpdateHistory"
-    ADD CONSTRAINT fk_console_update_history_acting_user FOREIGN KEY (acting_user) REFERENCES public."User"(email_address);
+    ADD CONSTRAINT fk_console_update_history_acting_user FOREIGN KEY (acting_user) REFERENCES public."User"(email_address) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
