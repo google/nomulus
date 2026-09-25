@@ -50,6 +50,17 @@ public class DnsRefreshRequestTest extends EntityTestCase {
   }
 
   @Test
+  void testPutAll_leavesTransientIdNull() {
+    assertThat(request.id).isNull();
+    tm().transact(() -> tm().putAll(request));
+    assertThat(request.id).isNull();
+    ImmutableList<DnsRefreshRequest> requests = loadAllOf(DnsRefreshRequest.class);
+    assertThat(requests).hasSize(1);
+    assertThat(requests.get(0).id).isNotNull();
+    assertAboutImmutableObjects().that(requests.get(0)).isEqualExceptFields(request, "id");
+  }
+
+  @Test
   void testNullValues() {
     // type
     assertThrows(

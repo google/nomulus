@@ -131,31 +131,77 @@ public interface TransactionManager {
   /** Returns the Instant associated with the start of this particular transaction attempt. */
   Instant getTxTime();
 
-  /** Persists a new entity in the database, throws exception if the entity already exists. */
+  /**
+   * Persists a new entity in the database, throwing an exception if the entity already exists.
+   *
+   * <p>Note: This method uses {@link jakarta.persistence.EntityManager#persist} and <b>modifies the
+   * input {@code entity} in place</b> (e.g., assigning {@link jakarta.persistence.GeneratedValue}
+   * IDs, setting auto-timestamps, and wrapping collections). When used inside a retriable
+   * transaction, {@code entity} should be instantiated inside the transaction body so retries do
+   * not reuse a mutated instance; otherwise, prefer {@link #put}.
+   */
   void insert(Object entity);
 
-  /** Persists all new entities in the database, throws exception if any entity already exists. */
+  /**
+   * Persists all new entities in the database, throwing an exception if any entity already exists.
+   *
+   * <p>Like {@link #insert}, this method <b>modifies the input entities in place</b>.
+   */
   void insertAll(ImmutableCollection<?> entities);
 
-  /** Persists all new entities in the database, throws exception if any entity already exists. */
+  /**
+   * Persists all new entities in the database, throwing an exception if any entity already exists.
+   *
+   * <p>Like {@link #insert}, this method <b>modifies the input entities in place</b>.
+   */
   void insertAll(ImmutableObject... entities);
 
-  /** Persists a new entity or update the existing entity in the database. */
+  /**
+   * Persists a new entity or updates an existing entity in the database.
+   *
+   * <p>Unlike {@link #insert}, this method uses {@link jakarta.persistence.EntityManager#merge} to
+   * make a deep copy and <b>never modifies the input {@code entity} in place</b>.
+   */
   void put(Object entity);
 
-  /** Persists all new entities or updates the existing entities in the database. */
+  /**
+   * Persists all new entities or updates existing entities in the database.
+   *
+   * <p>Unlike {@link #insertAll}, this method uses {@link jakarta.persistence.EntityManager#merge}
+   * to make a deep copy and <b>never modifies the input entities in place</b>.
+   */
   void putAll(ImmutableObject... entities);
 
-  /** Persists all new entities or updates the existing entities in the database. */
+  /**
+   * Persists all new entities or updates existing entities in the database.
+   *
+   * <p>Unlike {@link #insertAll}, this method uses {@link jakarta.persistence.EntityManager#merge}
+   * to make a deep copy and <b>never modifies the input entities in place</b>.
+   */
   void putAll(ImmutableCollection<?> entities);
 
-  /** Updates an entity in the database, throws exception if the entity does not exist. */
+  /**
+   * Updates an existing entity in the database, throwing an exception if it does not exist.
+   *
+   * <p>This method uses {@link jakarta.persistence.EntityManager#merge} to make a deep copy and
+   * <b>never modifies the input {@code entity} in place</b>.
+   */
   void update(Object entity);
 
-  /** Updates all entities in the database, throws exception if any entity does not exist. */
+  /**
+   * Updates all existing entities in the database, throwing an exception if any does not exist.
+   *
+   * <p>This method uses {@link jakarta.persistence.EntityManager#merge} to make a deep copy and
+   * <b>never modifies the input entities in place</b>.
+   */
   void updateAll(ImmutableCollection<?> entities);
 
-  /** Updates all entities in the database, throws exception if any entity does not exist. */
+  /**
+   * Updates all existing entities in the database, throwing an exception if any does not exist.
+   *
+   * <p>This method uses {@link jakarta.persistence.EntityManager#merge} to make a deep copy and
+   * <b>never modifies the input entities in place</b>.
+   */
   void updateAll(ImmutableObject... entities);
 
   /** Returns whether the given entity with same ID exists. */
