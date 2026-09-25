@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.truth.TextDiffSubject.assertThat;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.Resources;
 import google.registry.persistence.NomulusPostgreSql;
@@ -81,7 +82,9 @@ class SchemaTest {
   private final PostgreSQLContainer<?> sqlContainer =
       new PostgreSQLContainer<>(NomulusPostgreSql.getDockerImageName())
           .withClasspathResourceMapping(
-              MOUNTED_RESOURCE_PATH, CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
+              MOUNTED_RESOURCE_PATH, CONTAINER_MOUNT_POINT, BindMode.READ_WRITE)
+          // Use tmpFs so that we keep everything in memory. No point in writing to disk
+          .withTmpFs(ImmutableMap.of("/var/lib/postgresql/data", "rw"));
 
   @Test
   @DisabledIfSystemProperty(named = "deploy_to_existing_db", matches = ".*")

@@ -63,7 +63,8 @@ public final class Tlds {
                       EntityManager entityManager = tm().getEntityManager();
                       Stream<Object[]> resultStream =
                           entityManager
-                              .createQuery("SELECT tldStr, tldType FROM Tld", Object[].class)
+                              .createQuery(
+                                  "SELECT tldStr, tldType FROM Tld ORDER BY tldStr", Object[].class)
                               .getResultStream();
                       return resultStream
                           .map(e -> Maps.immutableEntry((String) e[0], ((TldType) e[1])))
