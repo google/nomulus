@@ -1,0 +1,46 @@
+# If dependencies change, add a comment to remind the author.
+name: Request Lockfile Review
+
+on:
+  workflow_run:
+    workflows: ["Lockfile Scan"]
+    types:
+      - completed
+
+jobs:
+  comment:
+    # Ensure the scanning workflow actually succeeded before doing anything
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lockfile-scan-results
+          path: ./results
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Post unresolved review comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            const anyChanged = fs.readFileSync('./results/any_changed.txt', 'utf8').trim();
+            if (anyChanged !== 'true') {
+              console.log('No lockfiles were changed. Skipping comment.');
+              return;
+            }
+
+            const prNumber = fs.readFileSync('./results/pr_number.txt', 'utf8').trim();
+            
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: parseInt(prNumber, 10),
+              event: 'COMMENT',
+              body: `### ⚠️ Attention Required: Lockfile Detected\nThis pull request contains modifications to one or more \`*.lockfile\` files. Please confirm that you have run update_dependency.sh to push new dependencies to the private repo.\n\n_The PR author must manually mark this conversation as resolved before merging._`
+            });
