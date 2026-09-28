@@ -19,7 +19,7 @@ import argparse
 import dataclasses
 import io
 import os
-import shutil
+import re
 import subprocess
 import sys
 from typing import List, Union
@@ -285,11 +285,17 @@ def do_pseudo_task(task: str) -> None:
         print('\033[33mWARNING:\033[0m Ignore the above failure, it is '
               'expected.')
 
-        # Copy the new schema into place.
-        shutil.copy(f'{root}/db/build/resources/test/testcontainer/'
-                    'mount/dump.txt',
-                    f'{root}/db/src/main/resources/sql/schema/'
-                    'nomulus.golden.sql')
+        # Copy the new schema into place, stripping psql \restrict and
+        # \unrestrict meta-commands emitted by pg_dump 17.6+.
+        dump_path = (f'{root}/db/build/resources/test/testcontainer/'
+                     'mount/dump.txt')
+        golden_path = (f'{root}/db/src/main/resources/sql/schema/'
+                       'nomulus.golden.sql')
+        with open(dump_path, 'r', encoding='utf-8') as src:
+            content = re.sub(
+                r'^\\(un)?restrict .*\n\n?', '', src.read(), flags=re.MULTILINE)
+        with open(golden_path, 'w', encoding='utf-8') as dst:
+            dst.write(content)
 
         # Rerun :db:test and regenerate the ER diagram (at "warning" log
         # level so it doesn't generate pages of messaging)
