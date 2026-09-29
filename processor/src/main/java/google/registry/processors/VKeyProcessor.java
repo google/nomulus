@@ -105,6 +105,7 @@ public class VKeyProcessor extends AbstractProcessor {
                       }
                       try {
                         createJavaFile(
+                                annotatedTypeElement,
                                 getPackageName(annotatedTypeElement),
                                 String.format(CONVERTER_CLASS_NAME_TEMP, simpleTypeName),
                                 TypeName.get(entityType),
@@ -118,7 +119,11 @@ public class VKeyProcessor extends AbstractProcessor {
   }
 
   private static JavaFile createJavaFile(
-      String packageName, String converterClassName, TypeName entityType, TypeName keyType) {
+      TypeElement annotatedTypeElement,
+      String packageName,
+      String converterClassName,
+      TypeName entityType,
+      TypeName keyType) {
     ParameterizedTypeName attributeConverter =
         ParameterizedTypeName.get(
             ClassName.get("google.registry.persistence.converter", "VKeyConverter"),
@@ -143,6 +148,7 @@ public class VKeyProcessor extends AbstractProcessor {
 
     TypeSpec.Builder classBuilder =
         TypeSpec.classBuilder(converterClassName)
+            .addOriginatingElement(annotatedTypeElement)
             .addAnnotation(AnnotationSpec.builder(ClassName.get(Converter.class)).build())
             .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
             .superclass(attributeConverter)
