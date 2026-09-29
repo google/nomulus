@@ -203,24 +203,6 @@ class ConsoleOteActionTest extends ConsoleActionBaseTestCase {
             ImmutableList.of("domain creates idn", "domain restores", "host deletes"));
   }
 
-  @Test
-  void testFailure_invalidEmailDomain() {
-    AuthResult authResult = AuthResult.createUser(fteUser);
-    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
-    ConsoleOteAction action =
-        createAction(
-            Action.Method.POST,
-            authResult,
-            "theregistrar",
-            Optional.of("someRandomString@email.test"),
-            Optional.of(new OteCreateData("theregistrar", "contact@invalid.com")));
-    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
-    action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.getPayload())
-        .isEqualTo("Email address must exist in the registry.example domain");
-  }
-
   private ConsoleOteAction createAction(
       Action.Method method,
       AuthResult authResult,
@@ -237,7 +219,6 @@ class ConsoleOteActionTest extends ConsoleActionBaseTestCase {
         oteCreateData,
         maybeGroupEmailAddress,
         Optional.of("consoleIapServiceId"),
-        "registry.example",
         registrarId);
   }
 }
