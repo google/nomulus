@@ -64,7 +64,6 @@ public class ConsoleOteAction extends ConsoleApiAction {
   private final Optional<OteCreateData> oteCreateData;
   private final Optional<String> maybeGroupEmailAddress;
   private final Optional<String> consoleIapServiceId;
-  private final String gSuiteDomainName;
   private final String registrarId;
 
   @Inject
@@ -75,7 +74,6 @@ public class ConsoleOteAction extends ConsoleApiAction {
       @Parameter("oteCreateData") Optional<OteCreateData> oteCreateData,
       @Config("gSuiteConsoleUserGroupEmailAddress") Optional<String> maybeGroupEmailAddress,
       @Config("consoleIapServiceId") Optional<String> consoleIapServiceId,
-      @Config("gSuiteDomainName") String gSuiteDomainName,
       @Parameter("registrarId") String registrarId) {
     super(consoleApiParams);
     this.iamClient = iamClient;
@@ -83,7 +81,6 @@ public class ConsoleOteAction extends ConsoleApiAction {
     this.oteCreateData = oteCreateData;
     this.maybeGroupEmailAddress = maybeGroupEmailAddress;
     this.consoleIapServiceId = consoleIapServiceId;
-    this.gSuiteDomainName = gSuiteDomainName;
     this.registrarId = registrarId;
   }
 
@@ -101,10 +98,6 @@ public class ConsoleOteAction extends ConsoleApiAction {
             && !this.oteCreateData.get().registrarId.isEmpty()
             && !this.oteCreateData.get().registrarEmail.isEmpty();
     checkArgument(isBodyValid, "OT&E create body is invalid");
-    checkArgument(
-        this.oteCreateData.get().registrarEmail.endsWith("@" + gSuiteDomainName),
-        "Email address must exist in the %s domain",
-        gSuiteDomainName);
 
     String password = passwordGenerator.createString(PASSWORD_LENGTH);
 
