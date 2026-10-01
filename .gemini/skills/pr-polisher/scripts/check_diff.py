@@ -17,12 +17,13 @@ import subprocess
 import re
 import sys
 import datetime
+import os
 
 # Color codes
-RED = "\03.3[91m"
-YELLOW = "\03.3[93m"
-GREEN = "\03.3[92m"
-RESET = "\03.3[0m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+GREEN = "\033[92m"
+RESET = "\033[0m"
 
 errors_found = 0
 warnings_found = 0
@@ -144,10 +145,20 @@ def check_license_headers():
 def check_formatting():
     print("\n--- Checking Project Formatting ---")
     try:
+        # Keep local origin/master tracking ref in sync with upstream/master so
+        # google-java-format-git-diff.sh only checks the current branch's diff.
+        try:
+            run_cmd("git rev-parse --verify refs/remotes/upstream/master")
+            run_cmd("git update-ref refs/remotes/origin/master refs/remotes/upstream/master")
+        except Exception:
+            pass
         run_cmd("./gradlew spotlessCheck javaIncrementalFormatCheck")
         log_success("All formatting checks (spotless and javaIncrementalFormat) passed.")
     except Exception as e:
         log_error("Formatting checks failed. Run './gradlew spotlessApply javaIncrementalFormatApply' to fix.")
+    finally:
+        if os.path.exists("gjf.out"):
+            os.remove("gjf.out")
 
 def check_diff_anti_patterns():
     print("\n--- Checking Code Anti-Patterns in Diff ---")
@@ -311,11 +322,11 @@ def main():
 
     check_single_commit()
     check_commit_message()
-    check_workspace_clean()
-    check_package_lock()
     check_license_headers()
     check_missing_tests()
     check_formatting()
+    check_package_lock()
+    check_workspace_clean()
     check_diff_anti_patterns()
 
     print("\n========================================")
