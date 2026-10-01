@@ -15,6 +15,7 @@
 package google.registry.beam.resave;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -27,10 +28,11 @@ import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTra
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.google.common.collect.ImmutableCollection;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.model.EppResource;
 import google.registry.model.domain.Domain;
@@ -138,6 +140,7 @@ public class ResaveAllEppResourcesPipelineTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void testPipeline_fastOnlySavesChanged() {
     Instant now = fakeClock.now();
     persistDomainWithDependentResources("renewed", "tld", now, now, plusYears(now, 1));
@@ -145,14 +148,16 @@ public class ResaveAllEppResourcesPipelineTest {
     // Spy the transaction manager so we can be sure we're only saving the renewed domain
     JpaTransactionManager spy = spy(tm());
     TransactionManagerFactory.setJpaTm(() -> spy);
-    ArgumentCaptor<Domain> domainPutCaptor = ArgumentCaptor.forClass(Domain.class);
+    ArgumentCaptor<ImmutableCollection<Domain>> domainPutCaptor =
+        ArgumentCaptor.forClass(ImmutableCollection.class);
     runPipeline();
     // We should only be attempting to put the one changed domain into the DB
-    verify(spy).put(domainPutCaptor.capture());
-    assertThat(domainPutCaptor.getValue().getDomainName()).isEqualTo("renewed.tld");
+    verify(spy).putAll(domainPutCaptor.capture());
+    assertThat(getOnlyElement(domainPutCaptor.getValue()).getDomainName()).isEqualTo("renewed.tld");
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void testPipeline_notFastResavesAll() {
     options.setFast(false);
     Instant now = fakeClock.now();
@@ -163,12 +168,14 @@ public class ResaveAllEppResourcesPipelineTest {
     // Spy the transaction manager so we can be sure we're attempting to save everything
     JpaTransactionManager spy = spy(tm());
     TransactionManagerFactory.setJpaTm(() -> spy);
-    ArgumentCaptor<EppResource> eppResourcePutCaptor = ArgumentCaptor.forClass(EppResource.class);
+    ArgumentCaptor<ImmutableCollection<EppResource>> eppResourcePutCaptor =
+        ArgumentCaptor.forClass(ImmutableCollection.class);
     runPipeline();
     // We should be attempting to put both domains in, even the unchanged one
-    verify(spy, times(2)).put(eppResourcePutCaptor.capture());
+    verify(spy, atLeastOnce()).putAll(eppResourcePutCaptor.capture());
     assertThat(
             eppResourcePutCaptor.getAllValues().stream()
+                .flatMap(ImmutableCollection::stream)
                 .map(EppResource::getRepoId)
                 .collect(toImmutableSet()))
         .containsExactly(renewed.getRepoId(), nonRenewed.getRepoId());

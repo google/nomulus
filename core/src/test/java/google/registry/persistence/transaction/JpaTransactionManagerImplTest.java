@@ -54,6 +54,8 @@ import jakarta.persistence.PersistenceException;
 import jakarta.persistence.RollbackException;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.function.Executable;
@@ -481,6 +483,76 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
+  void putAll_mixedEntityTypes_succeeds() {
+    persistResource(theEntity);
+    TestEntity updatedTheEntity = new TestEntity("theEntity", "foo_updated");
+    TestEntity newEntity = new TestEntity("newEntity", "new_data");
+    tm().transact(
+            () -> tm().putAll(ImmutableList.of(updatedTheEntity, compoundIdEntity, newEntity)));
+    assertThat(tm().transact(() -> tm().loadByKey(theEntityKey))).isEqualTo(updatedTheEntity);
+    assertThat(tm().transact(() -> tm().loadByKey(compoundIdEntityKey)))
+        .isEqualTo(compoundIdEntity);
+    assertThat(tm().transact(() -> tm().loadByKey(VKey.create(TestEntity.class, "newEntity"))))
+        .isEqualTo(newEntity);
+  }
+
+  @Test
+  void putAll_varargs_succeeds() {
+    persistResource(theEntity);
+    TestEntity updatedTheEntity = new TestEntity("theEntity", "foo_updated");
+    tm().transact(() -> tm().putAll(updatedTheEntity, compoundIdEntity));
+    assertThat(tm().transact(() -> tm().loadByKey(theEntityKey))).isEqualTo(updatedTheEntity);
+    assertThat(tm().transact(() -> tm().loadByKey(compoundIdEntityKey)))
+        .isEqualTo(compoundIdEntity);
+  }
+
+  @Test
+  void putAll_duplicateIds_throws() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    tm().transact(
+                            () ->
+                                tm().putAll(
+                                        new TestEntity("entity1", "foo"),
+                                        new TestEntity("entity1", "bar")))))
+        .hasMessageThat()
+        .contains("Multiple entities of type TestEntity with the same ID");
+  }
+
+  @Test
+  void putAll_deepCopiesNewEntitiesWithoutExtraSelects() {
+    persistResource(theEntity);
+    TestEntity updatedTheEntity = new TestEntity("theEntity", "foo_updated");
+    TestEntity newEntity1 = new TestEntity("newEntity1", "data1");
+    TestEntity newEntity2 = new TestEntity("newEntity2", "data2");
+    tm().transact(
+            () -> {
+              Statistics stats =
+                  tm().getEntityManager()
+                      .getEntityManagerFactory()
+                      .unwrap(SessionFactory.class)
+                      .getStatistics();
+              stats.setStatisticsEnabled(true);
+              stats.clear();
+              tm().putAll(updatedTheEntity, newEntity1, newEntity2);
+              // Only 1 SQL statement (the single batched findMultiple SELECT) should have been
+              // prepared so far; merging newEntity1 and newEntity2 must not trigger extra SELECTs.
+              assertThat(stats.getPrepareStatementCount()).isEqualTo(1);
+              assertThat(tm().getEntityManager().contains(updatedTheEntity)).isFalse();
+              assertThat(tm().getEntityManager().contains(newEntity1)).isFalse();
+              assertThat(tm().getEntityManager().contains(newEntity2)).isFalse();
+              newEntity1.data = "mutated_in_memory";
+            });
+    assertThat(tm().transact(() -> tm().loadByKey(theEntityKey))).isEqualTo(updatedTheEntity);
+    assertThat(tm().transact(() -> tm().loadByKey(VKey.create(TestEntity.class, "newEntity1"))))
+        .isEqualTo(new TestEntity("newEntity1", "data1"));
+    assertThat(tm().transact(() -> tm().loadByKey(VKey.create(TestEntity.class, "newEntity2"))))
+        .isEqualTo(new TestEntity("newEntity2", "data2"));
+  }
+
+  @Test
   void update_succeeds() {
     persistResource(theEntity);
     TestEntity persisted =
@@ -518,9 +590,52 @@ class JpaTransactionManagerImplTest {
             new TestEntity("entity1", "foo_updated"),
             new TestEntity("entity2", "bar_updated"),
             new TestEntity("entity3", "qux_updated"));
-    tm().transact(() -> tm().updateAll(updated));
+    tm().transact(
+            () -> {
+              Statistics stats =
+                  tm().getEntityManager()
+                      .getEntityManagerFactory()
+                      .unwrap(SessionFactory.class)
+                      .getStatistics();
+              stats.setStatisticsEnabled(true);
+              stats.clear();
+              tm().updateAll(updated);
+              // Only 1 SQL statement (the single batched findMultiple SELECT) should have been
+              // prepared before flush; merging the entities into the pre-warmed persistence context
+              // must not trigger extra per-entity SELECTs.
+              assertThat(stats.getPrepareStatementCount()).isEqualTo(1);
+            });
     assertThat(tm().transact(() -> tm().loadAllOf(TestEntity.class)))
         .containsExactlyElementsIn(updated);
+  }
+
+  @Test
+  void updateAll_mixedEntityTypes_succeeds() {
+    persistResource(theEntity);
+    persistResource(compoundIdEntity);
+    TestEntity updatedTheEntity = new TestEntity("theEntity", "foo_updated");
+    TestCompoundIdEntity updatedCompoundEntity =
+        new TestCompoundIdEntity("compoundIdEntity", 10, "bar_updated");
+    tm().transact(() -> tm().updateAll(updatedTheEntity, updatedCompoundEntity));
+    assertThat(tm().transact(() -> tm().loadByKey(theEntityKey))).isEqualTo(updatedTheEntity);
+    assertThat(tm().transact(() -> tm().loadByKey(compoundIdEntityKey)))
+        .isEqualTo(updatedCompoundEntity);
+  }
+
+  @Test
+  void updateAll_duplicateIds_throws() {
+    persistResource(theEntity);
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    tm().transact(
+                            () ->
+                                tm().updateAll(
+                                        new TestEntity("theEntity", "foo_updated"),
+                                        new TestEntity("theEntity", "bar_updated")))))
+        .hasMessageThat()
+        .contains("Multiple entities of type TestEntity with the same ID");
   }
 
   @Test
