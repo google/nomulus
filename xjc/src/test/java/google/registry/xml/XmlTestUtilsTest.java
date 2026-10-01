@@ -14,7 +14,7 @@
 
 package google.registry.xml;
 
-import static google.registry.testing.TestDataHelper.loadFile;
+import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 class XmlTestUtilsTest {
 
   void runTest(String file1, String file2) throws Exception {
-    assertXmlEquals(loadFile(getClass(), file1), loadFile(getClass(), file2));
+    assertXmlEquals(readResourceUtf8(getClass(), file1), readResourceUtf8(getClass(), file2));
   }
 
   @Test
