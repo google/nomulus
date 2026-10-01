@@ -42,6 +42,8 @@ Within the Nomulus repository there are a few notable subprojects:
     registrar console frontend
 *   `proxy` contains code for the EPP proxy, which relays port 700 requests to
     the core EPP services
+*   `xjc` contains code for XML marshalling/unmarshalling and generation of the
+    corresponding Java classes
 *   `core` contains the bulk of the core Nomulus code, including request
     handling+serving, backend, actions, etc
 
