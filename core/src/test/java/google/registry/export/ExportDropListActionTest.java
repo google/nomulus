@@ -39,10 +39,13 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.FakeClock;
+import google.registry.testing.SystemPropertyExtension;
+import google.registry.util.RegistryEnvironment;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
@@ -58,6 +61,10 @@ class ExportDropListActionTest {
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
+
+  @RegisterExtension
+  @Order(Integer.MAX_VALUE)
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   @BeforeEach
   void beforeEach() {
@@ -80,11 +87,23 @@ class ExportDropListActionTest {
             .build());
 
     createTld("closed");
-    persistResource(Tld.get("closed").asBuilder().setInvoicingEnabled(false).build());
+    persistResource(
+        Tld.get("closed")
+            .asBuilder()
+            .setInvoicingEnabled(false)
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
 
     createTld("testtld");
     persistResource(
-        Tld.get("testtld").asBuilder().setTldType(TldType.TEST).setInvoicingEnabled(true).build());
+        Tld.get("testtld")
+            .asBuilder()
+            .setTldType(TldType.TEST)
+            .setInvoicingEnabled(false)
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.ENABLED))
+            .build());
 
     action = new ExportDropListAction();
     action.clock = clock;
@@ -104,7 +123,7 @@ class ExportDropListActionTest {
   }
 
   @Test
-  void test_exportsDropListAcrossOpenTlds_sortedByDomainName() throws Exception {
+  void test_exportsDropListAcrossTlds_sortedByDomainName() throws Exception {
     // Active domain with no drop date (END_INSTANT) on open TLD -> excluded
     persistActiveDomain("active.open1");
 
@@ -112,8 +131,11 @@ class ExportDropListActionTest {
     persistDeletedDomain("zebra.open1", Instant.parse("2020-02-07T02:02:02Z"));
     persistDeletedDomain("alpha.open2", Instant.parse("2020-02-04T02:02:02Z"));
 
-    // Pending delete domain on non-invoicing (closed) TLD -> excluded
+    // Pending delete domain on non-invoicing (closed) TLD with XAP enabled -> included
     persistDeletedDomain("closed.closed", Instant.parse("2020-02-05T02:02:02Z"));
+
+    // Pending delete domain on test TLD with XAP enabled in non-PROD -> included
+    persistDeletedDomain("test.testtld", Instant.parse("2020-02-06T02:02:02Z"));
 
     // Pending delete domain on open TLD with XAP disabled -> excluded
     createTld("noxap");
@@ -126,9 +148,6 @@ class ExportDropListActionTest {
             .build());
     persistDeletedDomain("noxap.noxap", Instant.parse("2020-02-05T02:02:02Z"));
 
-    // Pending delete domain on test TLD -> excluded
-    persistDeletedDomain("test.testtld", Instant.parse("2020-02-06T02:02:02Z"));
-
     // Already deleted domain on open TLD -> excluded
     persistDeletedDomain("deleted.open1", Instant.parse("2020-02-01T02:02:02Z"));
 
@@ -138,7 +157,30 @@ class ExportDropListActionTest {
         """
         domain_name,tld,deletion_time
         alpha.open2,open2,2020-02-04T02:02:02Z
+        closed.closed,closed,2020-02-05T02:02:02Z
+        test.testtld,testtld,2020-02-06T02:02:02Z
         zebra.open1,open1,2020-02-07T02:02:02Z
+        """);
+  }
+
+  @Test
+  void test_exportsDropList_excludesTestTldsInProduction() throws Exception {
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
+
+    // Pending delete domains on open TLD and non-invoicing TLD with XAP enabled -> included
+    persistDeletedDomain("alpha.open2", Instant.parse("2020-02-04T02:02:02Z"));
+    persistDeletedDomain("closed.closed", Instant.parse("2020-02-05T02:02:02Z"));
+
+    // Pending delete domain on test TLD with XAP enabled -> excluded in PROD
+    persistDeletedDomain("test.testtld", Instant.parse("2020-02-06T02:02:02Z"));
+
+    action.run();
+
+    verifyExportedToDrive(
+        """
+        domain_name,tld,deletion_time
+        alpha.open2,open2,2020-02-04T02:02:02Z
+        closed.closed,closed,2020-02-05T02:02:02Z
         """);
   }
 
@@ -164,7 +206,7 @@ class ExportDropListActionTest {
   }
 
   @Test
-  void test_noOpenTldsWithXap_outputsHeaderOnly() throws Exception {
+  void test_noTldsWithXap_outputsHeaderOnly() throws Exception {
     persistResource(
         Tld.get("open1")
             .asBuilder()
@@ -173,6 +215,18 @@ class ExportDropListActionTest {
             .build());
     persistResource(
         Tld.get("open2")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.DISABLED))
+            .build());
+    persistResource(
+        Tld.get("closed")
+            .asBuilder()
+            .setExpiryAccessPeriodTransitions(
+                ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.DISABLED))
+            .build());
+    persistResource(
+        Tld.get("testtld")
             .asBuilder()
             .setExpiryAccessPeriodTransitions(
                 ImmutableSortedMap.of(START_INSTANT, ExpiryAccessPeriodMode.DISABLED))

@@ -54,6 +54,8 @@ class TldsTest {
   void test_getTldEntities() {
     initTestTlds();
     persistResource(newTld("testtld", "TESTTLD").asBuilder().setTldType(TldType.TEST).build());
+    assertThat(Tlds.getTldEntities())
+        .containsExactly(Tld.get("foo"), Tld.get("a.b.c"), Tld.get("testtld"));
     assertThat(Tlds.getTldEntitiesOfType(TldType.REAL))
         .containsExactly(Tld.get("foo"), Tld.get("a.b.c"));
     assertThat(Tlds.getTldEntitiesOfType(TldType.TEST)).containsExactly(Tld.get("testtld"));
