@@ -15,7 +15,7 @@
 package google.registry.xjc;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.TestDataHelper.loadFile;
+import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static google.registry.xjc.XjcXmlTransformer.unmarshal;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -105,6 +105,7 @@ class XmlTestdataTest {
   }
 
   private static ByteArrayInputStream loadAsStream(String filename) {
-    return new ByteArrayInputStream(loadFile(XmlTestdataTest.class, filename).getBytes(UTF_8));
+    return new ByteArrayInputStream(
+        readResourceUtf8(XmlTestdataTest.class, filename).getBytes(UTF_8));
   }
 }
