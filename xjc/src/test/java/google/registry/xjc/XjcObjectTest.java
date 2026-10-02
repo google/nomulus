@@ -16,8 +16,8 @@ package google.registry.xjc;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.testing.TestDataHelper.loadBytes;
-import static google.registry.testing.TestDataHelper.loadFile;
+import static google.registry.util.ResourceUtils.readResourceBytes;
+import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static google.registry.xjc.XjcXmlTransformer.unmarshal;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 class XjcObjectTest {
 
   private static final String RDE_DEPOSIT_FULL =
-      loadFile(XjcObjectTest.class, "rde_deposit_full.xml");
+      readResourceUtf8(XjcObjectTest.class, "rde_deposit_full.xml");
 
   @Test
   void testMarshalUtf8() throws Exception {
@@ -116,7 +116,9 @@ class XjcObjectTest {
   @Test
   void testNamespaceEpp() throws Exception {
     String xml =
-        unmarshal(XjcObject.class, loadBytes(XjcObjectTest.class, "greeting.xml").openStream())
+        unmarshal(
+                XjcObject.class,
+                readResourceBytes(XjcObjectTest.class, "greeting.xml").openStream())
             .toString();
     assertWithMessage(xml).that(xml).startsWith("<epp:epp ");
     assertWithMessage(xml).that(xml).contains("\"urn:ietf:params:xml:ns:epp-1.0\"");
