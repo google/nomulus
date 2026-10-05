@@ -15,12 +15,13 @@
 
 # Sync the configuration files in the internal repo with the objects in the
 # database. Loops through the configuration files in the inputted directory and
-# runs the passed in nomulus update command with the file.
+# runs the passed in nomulus update command with the file, falling back to the
+# corresponding create command if a premium or reserved list does not exist yet.
 
 # - env: The Nomulus environment, production, sandbox, etc.
 # - tools_credential: The credential (.json) needed to run the nomulus command.
 # - nomulus_command: The nomulus command to run.
-# - config_file_directory: The internal directory storing the TLD config files.
+# - config_file_directory: The internal directory storing the config files.
 
 set -e
 if [ "$#" -ne 4 ]; then
@@ -36,8 +37,33 @@ config_file_directory="${4}"
 echo ${config_file_directory}
 
 for FILE in ${config_file_directory}/${nomulus_env}/*; do
-  echo $FILE
-  java -jar /nomulus.jar -e "${nomulus_env}" \
-  --credential "${tools_credential}" \
-  "${nomulus_command}" -i $FILE --force --build_environment
+  if [[ -e "${FILE}" ]]; then
+    echo "${FILE}"
+    if ! java -jar /nomulus.jar -e "${nomulus_env}" \
+      --credential "${tools_credential}" \
+      "${nomulus_command}" -i "${FILE}" --force --build_environment; then
+      if [[ "${nomulus_command}" == "update_premium_list" ]]; then
+        CURRENCY=$(grep -v '^[[:space:]]*#' "${FILE}" \
+          | grep -v '^[[:space:]]*$' \
+          | head -n 1 \
+          | awk -F',' '{print $2}' \
+          | awk '{print $1}')
+        echo "update_premium_list failed for ${FILE}, attempting" \
+          "create_premium_list fallback with currency ${CURRENCY:-USD}..."
+        java -jar /nomulus.jar -e "${nomulus_env}" \
+          --credential "${tools_credential}" \
+          create_premium_list -i "${FILE}" --force --build_environment \
+          -c "${CURRENCY:-USD}" --override
+      elif [[ "${nomulus_command}" == "update_reserved_list" ]]; then
+        echo "update_reserved_list failed for ${FILE}, attempting" \
+          "create_reserved_list fallback for brand new reserved list..."
+        java -jar /nomulus.jar -e "${nomulus_env}" \
+          --credential "${tools_credential}" \
+          create_reserved_list -i "${FILE}" --force --build_environment \
+          --override
+      else
+        exit 1
+      fi
+    fi
+  fi
 done
