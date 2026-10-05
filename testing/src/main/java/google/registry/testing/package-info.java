@@ -12,7 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(b/19014308): Move the SRE testing package under java/ somewhere else so we
-//             don't need this package-info.java file under javatests/
 @javax.annotation.ParametersAreNonnullByDefault
 package google.registry.testing;

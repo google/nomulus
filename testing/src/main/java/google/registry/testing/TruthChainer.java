@@ -24,7 +24,7 @@ public final class TruthChainer {
 
     private final S subject;
 
-    And(S subject) {
+    public And(S subject) {
       this.subject = subject;
     }
 
@@ -38,7 +38,7 @@ public final class TruthChainer {
 
     private final S subject;
 
-    Which(S subject) {
+    public Which(S subject) {
       this.subject = subject;
     }
 

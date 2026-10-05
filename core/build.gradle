@@ -101,11 +101,6 @@ configurations {
     canBeConsumed = true
     canBeResolved = false
   }
-  testRuntimeElements {
-    canBeConsumed = true
-    canBeResolved = false
-    extendsFrom testRuntimeOnly
-  }
 
   // Exclude non-canonical servlet-api jars. Our deployment uses
   // javax.servlet:servlet-api:2.5
@@ -199,12 +194,8 @@ dependencies {
   implementation deps['org.apache.commons:commons-lang3']
   testImplementation deps['org.apache.commons:commons-text']
   testImplementation deps['org.apache.ftpserver:ftplet-api']
-  testImplementation deps['org.apache.ftpserver:ftpserver-core']
   implementation deps['org.apache.httpcomponents:httpclient']
   implementation deps['org.apache.httpcomponents:httpcore']
-  testImplementation deps['org.apache.sshd:sshd-core']
-  testImplementation deps['org.apache.sshd:sshd-scp']
-  testImplementation deps['org.apache.sshd:sshd-sftp']
   testImplementation deps['org.apache.tomcat:tomcat-annotations-api']
   implementation deps['org.bouncycastle:bcpg-jdk18on']
   implementation deps['org.bouncycastle:bcpkix-jdk18on']
@@ -243,7 +234,7 @@ dependencies {
   implementation deps['org.ogce:xpp3']
   // Known issue: nebula-lint misses inherited dependency.
   implementation project(':common')
-  testImplementation project(path: ':common', configuration: 'testing')
+  testImplementation project(':testing')
   implementation project(':util')
   implementation project(':networking')
   // Import NomulusPostreSql from ':db' for implementation but exclude dependencies.
@@ -369,17 +360,6 @@ task jaxbToJava {
 }
 
 compileJava.dependsOn jaxbToJava
-
-// Make testing artifacts available to be depended up on by other projects.
-// TODO: factor out google.registry.testing to be a separate project.
-task testJar(type: Jar) {
-  archiveClassifier = 'test'
-  from sourceSets.test.output
-}
-
-artifacts {
-  add('testRuntimeElements', testJar)
-}
 
 task findGoldenImages(type: JavaExec) {
   classpath = sourceSets.test.runtimeClasspath
