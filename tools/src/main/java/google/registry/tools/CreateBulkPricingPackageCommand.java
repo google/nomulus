@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.beust.jcommander.Parameters;
 import google.registry.model.domain.token.BulkPricingPackage;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 
 /** Command to create a {@link BulkPricingPackage} */
 @Parameters(

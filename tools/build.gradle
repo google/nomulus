@@ -1,0 +1,282 @@
+// Copyright 2026 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import java.util.Optional
+
+plugins {
+  id 'java-library'
+  id 'maven-publish'
+}
+
+def resourcesDir = "${project.buildDir}/resources/main"
+
+// Tests that fail when running Gradle in a docker container, e.g. when
+// building the release artifacts in Google Cloud Build.
+def dockerIncompatibleTestPatterns = [
+    // GenerateSqlSchemaCommandTest and DumpGoldenSchemaCommandTest launch
+    // postgresql in a docker container.
+    "google/registry/tools/GenerateSqlSchemaCommandTest.*",
+    "google/registry/tools/DumpGoldenSchemaCommandTest.*",
+    // PathParameterTest includes tests which validate that file permissions are
+    // respected. However when running in Docker the user is root by default, so
+    // every file is read/write-able. There is no way to exclude specific test
+    // methods, so we exclude the whole test class.
+    "google/registry/tools/params/PathParameterTest.*",
+]
+
+def fragileTestPatterns = dockerIncompatibleTestPatterns
+
+sourceSets {
+  nonprod {
+    java {
+      compileClasspath += main.output
+      runtimeClasspath += main.output
+    }
+  }
+  test {
+    java {
+      compileClasspath += nonprod.output
+      runtimeClasspath += nonprod.output
+    }
+  }
+}
+
+configurations {
+  devtool
+
+  nonprodImplementation.extendsFrom implementation
+  nonprodRuntimeOnly.extendsFrom runtimeOnly
+
+  testImplementation.extendsFrom nonprodImplementation
+
+  all {
+    // servlet-api:3.1 pulled in but not used
+    exclude group: 'javax.servlet', module: 'javax.servlet-api'
+  }
+}
+
+dependencies {
+  def deps = rootProject.dependencyMap
+
+  testRuntimeOnly files(sourceSets.test.resources.srcDirs)
+
+  implementation deps['com.fasterxml.jackson.core:jackson-databind']
+  implementation deps['com.fasterxml.jackson.dataformat:jackson-dataformat-yaml']
+  implementation deps['com.github.mwiede:jsch']
+  implementation deps['com.google.api-client:google-api-client']
+  implementation deps['com.google.api-client:google-api-client-java6']
+  implementation deps['com.google.api.grpc:proto-google-cloud-tasks-v2']
+  implementation deps['com.google.apis:google-api-services-bigquery']
+  implementation deps['com.google.apis:google-api-services-dataflow']
+  implementation deps['com.google.apis:google-api-services-dns']
+  implementation deps['com.google.auth:google-auth-library-credentials']
+  implementation deps['com.google.auth:google-auth-library-oauth2-http']
+  implementation deps['com.google.auto.value:auto-value-annotations']
+  implementation deps['com.google.cloud:google-cloud-secretmanager']
+  implementation deps['com.google.cloud:google-cloud-storage']
+  implementation deps['com.google.cloud:google-cloud-tasks']
+  implementation deps['com.google.code.findbugs:jsr305']
+  implementation deps['com.google.code.gson:gson']
+  implementation deps['com.google.dagger:dagger']
+  implementation deps['com.google.flogger:flogger']
+  implementation deps['com.google.guava:guava']
+  implementation deps['com.google.http-client:google-http-client']
+  implementation deps['com.google.oauth-client:google-oauth-client']
+  implementation deps['com.google.oauth-client:google-oauth-client-java6']
+  implementation deps['com.google.oauth-client:google-oauth-client-jetty']
+  implementation deps['com.google.re2j:re2j']
+  implementation deps['jakarta.inject:jakarta.inject-api']
+  implementation deps['jakarta.mail:jakarta.mail-api']
+  implementation deps['jakarta.persistence:jakarta.persistence-api']
+  implementation deps['jakarta.servlet:jakarta.servlet-api']
+  implementation deps['jakarta.xml.bind:jakarta.xml.bind-api']
+  implementation deps['org.bouncycastle:bcpg-jdk18on']
+  implementation deps['org.bouncycastle:bcprov-jdk18on']
+  implementation deps['org.hibernate.orm:hibernate-core']
+  implementation deps['org.jcommander:jcommander']
+  implementation deps['org.jline:jline']
+  implementation deps['org.joda:joda-money']
+  implementation deps['org.postgresql:postgresql']
+  implementation deps['org.yaml:snakeyaml']
+  runtimeOnly deps['org.slf4j:slf4j-jdk14']
+
+  nonprodImplementation deps['org.flywaydb:flyway-core']
+  nonprodImplementation deps['org.flywaydb:flyway-database-postgresql']
+  nonprodImplementation deps['org.jsoup:jsoup']
+  nonprodImplementation deps['org.testcontainers:postgresql']
+  nonprodImplementation deps['org.testcontainers:testcontainers']
+  nonprodImplementation deps['us.fatehi:schemacrawler']
+  nonprodImplementation deps['us.fatehi:schemacrawler-api']
+  nonprodImplementation deps['us.fatehi:schemacrawler-diagram']
+  nonprodImplementation deps['us.fatehi:schemacrawler-postgresql']
+  nonprodImplementation deps['us.fatehi:schemacrawler-tools']
+
+  implementation project(':common')
+  implementation project(':util')
+  implementation project(':core')
+  implementation project(path: ':db', configuration: 'implementationApi')
+  nonprodRuntimeOnly project(':db')
+  testRuntimeOnly project(':db')
+
+  annotationProcessor deps['com.google.auto.value:auto-value']
+  testAnnotationProcessor deps['com.google.auto.value:auto-value']
+  annotationProcessor deps['com.google.dagger:dagger-compiler']
+  testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+  annotationProcessor project(':processor')
+  testAnnotationProcessor project(':processor')
+
+  testRuntimeOnly deps['guru.nidi:graphviz-java-all-j2v8']
+  testRuntimeOnly deps['io.github.java-diff-utils:java-diff-utils']
+  testImplementation deps['com.google.cloud:google-cloud-nio']
+  testImplementation deps['com.google.guava:guava-testlib']
+  testImplementation deps['com.google.truth:truth']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-api']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
+  testImplementation deps['org.junit.jupiter:junit-jupiter-params']
+  testImplementation deps['org.junit-pioneer:junit-pioneer']
+  testImplementation deps['org.junit.platform:junit-platform-runner']
+  testImplementation deps['org.junit.platform:junit-platform-suite-api']
+  testImplementation deps['org.mockito:mockito-core']
+  testImplementation deps['org.mockito:mockito-junit-jupiter']
+  testImplementation deps['org.testcontainers:junit-jupiter']
+  testImplementation project(path: ':common', configuration: 'testing')
+  testImplementation project(path: ':core', configuration: 'testRuntimeElements')
+}
+
+Optional<List<String>> getToolArgsList() {
+  // If "-PtoolArgs=..." is present in the command line, use it to set the args,
+  // otherwise use the default flag, which is "--args" to set the args.
+  def toolArgs = rootProject.findProperty("toolArgs")
+  if (toolArgs != null) {
+    def delimiter = '|'
+    toolArgs += delimiter
+    def argsList = []
+    def currArg = ''
+    for (def i = 0; i < toolArgs.length(); i++) {
+      def currChar = toolArgs[i]
+      if (currChar != delimiter) {
+        currArg += currChar
+      } else if (i != 0 && toolArgs[i - 1] == '\\') {
+        currArg = currArg.substring(0, currArg.length() - 1) + currChar
+      } else {
+        argsList.add(currArg)
+        currArg = ''
+      }
+    }
+    return Optional.of(argsList)
+  }
+  return Optional.empty()
+}
+
+// To run the nomulus tools with these command line tokens:
+// "--foo", "bar baz", "--qux=quz"
+//   gradle tools:registryTool --args="--foo 'bar baz' --qux=quz"
+// or:
+//   gradle tools:registryTool -PtoolArgs="--foo|bar baz|--qux=quz"
+// Note that the delimiting pipe can be backslash escaped if it is part of a
+// parameter.
+ext.createToolTask = {
+    taskName,
+    mainClassName,
+    sourceSet = sourceSets.main ->
+  project.tasks.create(taskName, JavaExec) {
+    classpath = sourceSet.runtimeClasspath
+    mainClass = mainClassName
+    jvmArgs "--sun-misc-unsafe-memory-access=allow", "--enable-native-access=ALL-UNNAMED"
+
+    doFirst {
+      getToolArgsList().ifPresent {
+        args it
+      }
+    }
+  }
+}
+createToolTask('registryTool', 'google.registry.tools.RegistryTool')
+createToolTask(
+    'devTool',
+    'google.registry.tools.DevTool',
+    sourceSets.nonprod)
+
+project.tasks.create('generateSqlSchema', JavaExec) {
+  classpath = sourceSets.nonprod.runtimeClasspath
+  mainClass = 'google.registry.tools.DevTool'
+  jvmArgs "--sun-misc-unsafe-memory-access=allow"
+  args = [
+      '-e', 'unittest',
+      'generate_sql_schema', '--start_postgresql', '-o',
+      "${rootProject.projectRootDir}/db/src/main/resources/sql/schema/" +
+      "db-schema.sql.generated"
+  ]
+}
+
+createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
+
+task buildToolImage(dependsOn: nomulus, type: Exec) {
+  commandLine 'docker', 'build', '-t', 'nomulus-tool', '.'
+}
+
+// Build the devtool jar.
+createUberJar(
+    'devtool',
+    'devtool',
+    'google.registry.tools.DevTool',
+    [ project.configurations.nonprodRuntimeClasspath ],
+    [ project.sourceSets.nonprod.output, sourceSets.main.output ],
+    [ '**/*.java' ])
+
+artifacts {
+  devtool devtool
+}
+
+task fragileTest(type: FilteringTest) {
+  tests = fragileTestPatterns
+
+  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
+    exclude dockerIncompatibleTestPatterns
+  }
+
+  forkEvery = 1
+}
+
+// Verifies that RegistryTool can be instantiated:
+// - All dependencies are packaged in nomulus.jar
+// - JPA setup succeeds.
+task registryToolIntegrationTest(dependsOn: nomulus, type: FilteringTest) {
+  tests = ['google/registry/tools/RegistryToolTest.*']
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = nomulus.outputs.files.plus(configurations.testRuntimeClasspath)
+      .plus(files(testClassesDirs))
+}
+
+task standardTest(type: FilteringTest) {
+  includeAllTests()
+  exclude fragileTestPatterns
+
+  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
+    exclude dockerIncompatibleTestPatterns
+  }
+
+  maxParallelForks = 64
+
+  systemProperty 'test.projectRoot', rootProject.projectRootDir
+  systemProperty 'test.resourcesDir', resourcesDir
+}
+
+test {
+  exclude "**"
+}.dependsOn(standardTest, registryToolIntegrationTest, fragileTest)
+
+cleanTest.dependsOn(cleanStandardTest, cleanRegistryToolIntegrationTest, cleanFragileTest)
+
+project.build.dependsOn devtool, buildToolImage

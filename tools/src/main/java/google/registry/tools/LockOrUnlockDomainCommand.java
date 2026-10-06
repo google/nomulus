@@ -16,9 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.eppcommon.StatusValue.SERVER_DELETE_PROHIBITED;
-import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
-import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.util.CollectionUtils.findDuplicates;
 
 import com.beust.jcommander.Parameter;
@@ -27,7 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.eppcommon.StatusValue;
 import jakarta.inject.Inject;
 import java.util.List;
 
@@ -35,10 +31,6 @@ import java.util.List;
 public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  public static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
-      ImmutableSet.of(
-          SERVER_DELETE_PROHIBITED, SERVER_TRANSFER_PROHIBITED, SERVER_UPDATE_PROHIBITED);
 
   @Parameter(
       names = {"-c", "--client"},

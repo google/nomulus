@@ -77,6 +77,73 @@ test {
   useJUnitPlatform()
 }
 
+/**
+ * We have to break out the test suites because some of the tests conflict
+ * with one another, but unfortunately this breaks the "--tests" flag.  The
+ * --tests flag only applies to the task named on the command line (usually
+ * just "test"), not for all tasks of type "Test".
+ *
+ * As a better solution, FilteringTest sets testNameIncludePatterns (the
+ * internal property that --tests sets) from the value of the "testFilter"
+ * property, allowing us to filter across all the tests in a subproject without
+ * explicitly specifying a test task or causing errors because there are no
+ * matching tests in the main task.
+ *
+ * To use it, define "testFilter" to be a comma-separated collection of class
+ * names (wildcards are allowed):
+ *
+ *   ./gradlew test -P testFilter=*.FooBar,google.registry.tools.ShellCommandTest
+ */
+abstract class FilteringTest extends Test {
+
+  FilteringTest() {
+    useJUnitPlatform()
+    testClassesDirs = project.sourceSets.test.output.classesDirs
+    classpath = project.sourceSets.test.runtimeClasspath
+  }
+
+  private void applyTestFilter() {
+    if (project.testFilter) {
+      testNameIncludePatterns = project.testFilter.split(',')
+
+      // By default, gradle test tasks will produce a failure if no tests
+      // match the include/exclude/filter rules.  Since test filtering allows us
+      // to select a set of tests from a particular task, we don't want this
+      // behavior.
+      filter.failOnNoMatchingTests = false
+    }
+  }
+
+  /**
+   * Set to false if you also want to include TestCase and TestSuite classes.
+   *
+   * <p>Must be defined before "test", if at all.
+   */
+  @Input
+  boolean excludeTestCases = true
+
+  void setTests(List<String> tests) {
+    // Common exclude pattern. See README in parent directory for explanation.
+    if (excludeTestCases) {
+      exclude "**/*TestCase.*", "**/*TestSuite.*"
+    }
+    include tests
+    applyTestFilter()
+  }
+
+  /**
+   * Include all of the tests (except Test{Case,TestSuite}).  This actually
+   * doesn't explicitly "include" anything, in which case the Test class tries
+   * to include everything that is not explicitly excluded.
+   */
+  void includeAllTests() {
+    exclude "**/*TestCase.*", "**/*TestSuite.*"
+    applyTestFilter()
+  }
+}
+
+ext.FilteringTest = FilteringTest
+
 // Sets up integration test with a registry environment. The target environment
 // is passed by the 'test.gcp_integration.env' property. Test runner must have
 // been authorized to access the corresponding GCP project, e.g., by running

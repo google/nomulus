@@ -16,8 +16,10 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
+import static google.registry.model.eppcommon.StatusValue.SERVER_DELETE_PROHIBITED;
+import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
+import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -34,6 +36,7 @@ import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.model.tld.Tld;
@@ -54,6 +57,10 @@ import javax.annotation.Nullable;
  * question is in a lock/unlockable state and will return the lock object.
  */
 public final class DomainLockUtils {
+
+  public static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
+      ImmutableSet.of(
+          SERVER_DELETE_PROHIBITED, SERVER_TRANSFER_PROHIBITED, SERVER_UPDATE_PROHIBITED);
 
   private static final int VERIFICATION_CODE_LENGTH = 32;
 

@@ -33,11 +33,11 @@ if [ "${environment}" == tool ]
 then
   mkdir -p "${dest}"
 
-  ./gradlew :core:buildToolImage \
+  ./gradlew :tools:buildToolImage \
     -PmavenUrl="${gcs_prefix}"/maven \
     -PpluginsUrl="${gcs_prefix}"/plugins
 
-  mv core/build/libs/nomulus.jar "${dest}"
+  mv tools/build/libs/nomulus.jar "${dest}"
 else
   dest="${dest}/$1"
   mkdir -p "${dest}"

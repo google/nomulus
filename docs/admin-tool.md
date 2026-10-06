@@ -5,8 +5,8 @@ to view and change a large number of things in a live Nomulus environment,
 including creating registrars, running arbitrary EPP commands from given XML
 files, and performing various backend tasks like re-running RDE if the most
 recent export failed. Its code lives inside the tools package
-(`core/src/main/java/google/registry/tools`), and is compiled by building the
-`nomulus` Gradle target in the `core` project, e.g. `./gradlew core:nomulus`.
+(`tools/src/main/java/google/registry/tools`), and is compiled by building the
+`nomulus` Gradle target in the `tools` project, e.g. `./gradlew tools:nomulus`.
 
 The tool connects to the Google Cloud Platform project (identified by project
 ID) that was configured in your implementation of `RegistryConfig` when the tool
@@ -21,17 +21,17 @@ ID is also "acme-registry", and the project ID for the sandbox environment is
 ## Build the tool
 
 To build the `nomulus` tool's jarfile, execute the following Gradle command
-inside the project's home directory: `./gradlew core:nomulus`. You must rebuild
+inside the project's home directory: `./gradlew tools:nomulus`. You must rebuild
 the tool any time that you edit configuration or make database schema changes.
 Note that proper project configuration is necessary for building the tool --
 this includes the specialized configuration such as GCP project names.
 
 It's recommended that you alias the compiled jarfile located at
-`core/build/libs/nomulus.jar` (or add it to your shell path) so that you can run
+`tools/build/libs/nomulus.jar` (or add it to your shell path) so that you can run
 it easily, e.g.
 
 ```shell
-$ alias nomulus="java -jar core/build/libs/nomulus.jar"
+$ alias nomulus="java -jar tools/build/libs/nomulus.jar"
 ```
 
 The rest of this guide assumes that it has been aliased to `nomulus`.
