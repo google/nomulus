@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import com.google.common.base.CaseFormat
-import java.util.Optional
 
 plugins {
   id 'java-library'
@@ -35,17 +34,8 @@ def goldensDir =
 // building the release artifacts in Google Cloud Build.
 def dockerIncompatibleTestPatterns = [
     // The webdriver tests start headless Chrome in a Docker container,
-    // resulting in Docker-in-Docker complications.  Likewise,
-    // GenerateSqlSchemaCommandTest and DumpGoldenSchemaCommandTest launch
-    // postgresql in a docker container.
+    // resulting in Docker-in-Docker complications.
     "google/registry/webdriver/*",
-    "google/registry/tools/GenerateSqlSchemaCommandTest.*",
-    "google/registry/tools/DumpGoldenSchemaCommandTest.*",
-    // PathParameterTest includes tests which validate that file permissions are
-    // respected. However when running in Docker the user is root by default, so
-    // every file is read/write-able. There is no way to exclude specific test
-    // methods, so we exclude the whole test class.
-    "google/registry/tools/params/PathParameterTest.*",
     "google/registry/persistence/PersistenceModuleTest.*",
 ]
 
@@ -64,17 +54,7 @@ sourceSets {
       exclude '**/*.xjb'
     }
   }
-  nonprod {
-    java {
-      compileClasspath += main.output
-      runtimeClasspath += main.output
-    }
-  }
   test {
-    java {
-      compileClasspath += nonprod.output
-      runtimeClasspath += nonprod.output
-    }
     resources {
       exclude '**/*.xjb', '**/*.xsd'
     }
@@ -87,12 +67,6 @@ processTestResources {
 
 configurations {
   jaxb
-  devtool
-
-  nonprodImplementation.extendsFrom implementation
-  nonprodRuntimeOnly.extendsFrom runtimeOnly
-
-  testImplementation.extendsFrom nonprodImplementation
 
   // Published jars that are used for server/schema compatibility tests.
   // See <a href="../integration/README.md">the integration project</a>
@@ -131,7 +105,6 @@ dependencies {
   implementation deps['com.google.api-client:google-api-client-servlet']
   implementation deps['com.google.monitoring-client:metrics']
   implementation deps['com.google.monitoring-client:stackdriver']
-  implementation deps['com.google.api-client:google-api-client-java6']
   implementation deps['com.google.api.grpc:proto-google-cloud-tasks-v2']
   implementation deps['com.google.apis:google-api-services-admin-directory']
   implementation deps['com.google.apis:google-api-services-bigquery']
@@ -166,8 +139,6 @@ dependencies {
   implementation deps['com.google.http-client:google-http-client']
   implementation deps['com.google.http-client:google-http-client-jackson2']
   implementation deps['com.google.oauth-client:google-oauth-client']
-  implementation deps['com.google.oauth-client:google-oauth-client-java6']
-  implementation deps['com.google.oauth-client:google-oauth-client-jetty']
   implementation deps['com.google.oauth-client:google-oauth-client-servlet']
   implementation deps['com.google.re2j:re2j']
   implementation deps['org.freemarker:freemarker']
@@ -175,7 +146,6 @@ dependencies {
   implementation deps['com.zaxxer:HikariCP']
   implementation deps['com.squareup.okhttp3:okhttp']
   implementation deps['dnsjava:dnsjava']
-  testRuntimeOnly deps['guru.nidi:graphviz-java-all-j2v8']
   testImplementation deps['io.github.classgraph:classgraph']
   testRuntimeOnly deps['io.github.java-diff-utils:java-diff-utils']
   testImplementation deps['io.github.ss-bhatt:testcontainers-valkey']
@@ -214,8 +184,7 @@ dependencies {
   implementation deps['org.hibernate.orm:hibernate-ant']
   implementation deps['org.hibernate.orm:hibernate-core']
   implementation deps['org.hibernate.orm:hibernate-hikaricp']
-  implementation deps['org.jcommander:jcommander']
-  implementation deps['org.jline:jline']
+  testImplementation deps['org.jcommander:jcommander']
   implementation deps['org.joda:joda-money']
   implementation deps['org.json:json']
   implementation deps['org.jsoup:jsoup']
@@ -230,15 +199,10 @@ dependencies {
   runtimeOnly deps['org.slf4j:slf4j-jdk14']
   testImplementation deps['org.testcontainers:jdbc']
   testImplementation deps['org.testcontainers:junit-jupiter']
-  nonprodImplementation deps['org.testcontainers:postgresql']
+  testImplementation deps['org.testcontainers:postgresql']
   testImplementation deps['org.testcontainers:selenium']
-  nonprodImplementation deps['org.testcontainers:testcontainers']
+  testImplementation deps['org.testcontainers:testcontainers']
   implementation deps['redis.clients:jedis']
-  implementation deps['us.fatehi:schemacrawler']
-  implementation deps['us.fatehi:schemacrawler-api']
-  implementation deps['us.fatehi:schemacrawler-diagram']
-  implementation deps['us.fatehi:schemacrawler-tools']
-  implementation deps['us.fatehi:schemacrawler-postgresql']
   implementation deps['xerces:xmlParserAPIs']
   implementation deps['org.ogce:xpp3']
   // Known issue: nebula-lint misses inherited dependency.
@@ -248,7 +212,6 @@ dependencies {
   implementation project(':networking')
   // Import NomulusPostreSql from ':db' for implementation but exclude dependencies.
   implementation project(path: ':db', configuration: 'implementationApi')
-  nonprodRuntimeOnly project(':db')
   testRuntimeOnly project(':db')
 
   annotationProcessor deps['com.google.auto.service:auto-service']
@@ -289,19 +252,10 @@ dependencies {
   runtimeOnly deps['io.netty:netty-tcnative-boringssl-static']
   implementation deps['org.yaml:snakeyaml']
 
-  // Indirect dependency found by undeclared-dependency check. Such
-  // dependencies should go after all other implementation and testImplementation
-  // dependencies to avoid overriding them accidentally.
-  implementation deps['com.google.oauth-client:google-oauth-client-java6']
-
   // Dependencies needed for jaxb compilation.
   jaxb deps['jakarta.xml.bind:jakarta.xml.bind-api']
   jaxb deps['org.glassfish.jaxb:jaxb-runtime']
   jaxb deps['org.glassfish.jaxb:jaxb-xjc']
-
-  // Flyway classes needed to generate the golden file.
-  implementation deps['org.flywaydb:flyway-core']
-  implementation deps['org.flywaydb:flyway-database-postgresql']
 }
 
 task jaxbToJava {
@@ -395,72 +349,6 @@ task findGoldenImages(type: JavaExec) {
   args arguments
 }
 
-Optional<List<String>> getToolArgsList() {
-  // If "-PtoolArgs=..." is present in the command line, use it to set the args,
-  // otherwise use the default flag, which is "--args" to set the args.
-  def toolArgs = rootProject.findProperty("toolArgs")
-  if (toolArgs != null) {
-    def delimiter = '|'
-    toolArgs += delimiter
-    def argsList = []
-    def currArg = ''
-    for (def i = 0; i < toolArgs.length(); i++) {
-      def currChar = toolArgs[i]
-      if (currChar != delimiter) {
-        currArg += currChar
-      } else if (i != 0 && toolArgs[i - 1] == '\\') {
-        currArg = currArg.substring(0, currArg.length() - 1) + currChar
-      } else {
-        argsList.add(currArg)
-        currArg = ''
-      }
-    }
-    return Optional.of(argsList)
-  }
-  return Optional.empty()
-}
-
-// To run the nomulus tools with these command line tokens:
-// "--foo", "bar baz", "--qux=quz"
-//   gradle core:registryTool --args="--foo 'bar baz' --qux=quz"
-// or:
-//   gradle core:registryTool -PtoolArgs="--foo|bar baz|--qux=quz"
-// Note that the delimiting pipe can be backslash escaped if it is part of a
-// parameter.
-ext.createToolTask = {
-    taskName,
-    mainClassName,
-    sourceSet = sourceSets.main ->
-  project.tasks.create(taskName, JavaExec) {
-    classpath = sourceSet.runtimeClasspath
-    mainClass = mainClassName
-    jvmArgs "--sun-misc-unsafe-memory-access=allow", "--enable-native-access=ALL-UNNAMED"
-
-    doFirst {
-      getToolArgsList().ifPresent {
-        args it
-      }
-    }
-  }
-}
-createToolTask('registryTool', 'google.registry.tools.RegistryTool')
-createToolTask(
-    'devTool',
-    'google.registry.tools.DevTool',
-    sourceSets.nonprod)
-
-project.tasks.create('generateSqlSchema', JavaExec) {
-  classpath = sourceSets.nonprod.runtimeClasspath
-  mainClass = 'google.registry.tools.DevTool'
-  jvmArgs "--sun-misc-unsafe-memory-access=allow"
-  args = [
-      '-e', 'unittest',
-      'generate_sql_schema', '--start_postgresql', '-o',
-      "${rootProject.projectRootDir}/db/src/main/resources/sql/schema/" +
-      "db-schema.sql.generated"
-  ]
-}
-
 task generateGoldenImages(type: FilteringTest) {
   tests = ["**/webdriver/*"]
 
@@ -476,8 +364,6 @@ task generateGoldenImages(type: FilteringTest) {
   }
 }
 generateGoldenImages.finalizedBy(findGoldenImages)
-
-createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 
 // Build the Uber jar shared by all flex-template based BEAM pipelines.
 // This packages more code and dependency than necessary. However, without
@@ -596,93 +482,11 @@ artifacts {
   nomulus_test testUberJar
 }
 
-task buildToolImage(dependsOn: nomulus, type: Exec) {
-  commandLine 'docker', 'build', '-t', 'nomulus-tool', '.'
-}
-
-// Build the devtool jar.
-createUberJar(
-    'devtool',
-    'devtool',
-    'google.registry.tools.DevTool',
-    [ project.configurations.nonprodRuntimeClasspath ],
-    [ project.sourceSets.nonprod.output, sourceSets.main.output ],
-    [ '**/*.java' ])
-
-artifacts {
-  devtool devtool
-}
-
 task runTestServer(type: JavaExec) {
   mainClass = 'google.registry.server.RegistryTestServerMain'
   classpath = sourceSets.test.runtimeClasspath
   jvmArgs "--sun-misc-unsafe-memory-access=allow"
   dependsOn(rootProject.project('console-webapp').tasks.named('buildConsoleWebapp'))
-}
-
-/**
- * We have to break out the test suites because some of the tests conflict
- * with one another, but unfortunately this breaks the "--tests" flag.  The
- * --tests flag only applies to the task named on the command line (usually
- * just "test"), not for all tasks of type "Test".
- *
- * As a better solution, FilteringTest sets testNameIncludePatterns (the
- * internal property that --tests sets) from the value of the "testFilter"
- * property, allowing us to filter across all the tests in core without
- * explicitly specifying a test task or causing errors because there are no
- * matching tests in the main task.
- *
- * To use it, define "testFilter" to be a comma-separated collection of class
- * names (wildcards are allowed):
- *
- *   ./gradlew test -P testFilter=*.FooBar,google.registry.tools.ShellCommandTest
- */
-abstract class FilteringTest extends Test {
-
-  FilteringTest() {
-    useJUnitPlatform();
-    testClassesDirs = project.sourceSets.test.output.classesDirs
-    classpath = project.sourceSets.test.runtimeClasspath
-  }
-
-  private void applyTestFilter() {
-    if (project.testFilter) {
-      testNameIncludePatterns = project.testFilter.split(',')
-
-      // By default, gradle test tasks will produce a failure if no tests
-      // match the include/exclude/filter rules.  Since test filtering allows us
-      // to select a set of tests from a particular task, we don't want this
-      // behavior.
-      filter.failOnNoMatchingTests = false
-    }
-  }
-
-  /**
-   * Set to false if you also want to include TestCase and TestSuite classes.
-   *
-   * <p>Must be defined before "test", if at all.
-   */
-  @Input
-  boolean excludeTestCases = true
-
-  void setTests(List<String> tests) {
-    // Common exclude pattern. See README in parent directory for explanation.
-    if (excludeTestCases) {
-      exclude "**/*TestCase.*", "**/*TestSuite.*"
-    }
-    include tests
-    applyTestFilter()
-  }
-
-  /**
-   * Include all of the tests (except Test{Case,TestSuite}).  This actually
-   * doesn't explicitly "include" anything, in which cast the Test class tries
-   * to include everything that is not explicitly excluded.
-   */
-  void includeAllTests() {
-    exclude "**/*TestCase.*", "**/*TestSuite.*"
-    applyTestFilter()
-  }
 }
 
 task fragileTest(type: FilteringTest) {
@@ -714,16 +518,6 @@ task sqlIntegrationTest(type: FilteringTest) {
   classpath = sourceSets.test.runtimeClasspath
 }
 
-// Verifies that RegistryTool can be instantiated:
-// - All dependencies are packaged in nomulus.jar
-// - JPA setup succeeds.
-task registryToolIntegrationTest(dependsOn: nomulus, type: FilteringTest) {
-  tests = ['google/registry/tools/RegistryToolTest.*']
-  testClassesDirs = sourceSets.test.output.classesDirs
-  classpath = nomulus.outputs.files.plus(configurations.testRuntimeClasspath)
-      .plus(files(testClassesDirs))
-}
-
 task standardTest(type: FilteringTest) {
   includeAllTests()
   exclude fragileTestPatterns
@@ -753,9 +547,7 @@ test {
   // Don't run any tests from this task, all testing gets done in the
   // FilteringTest tasks.
   exclude "**"
-}.dependsOn(standardTest, registryToolIntegrationTest, sqlIntegrationTest, fragileTest)
+}.dependsOn(standardTest, sqlIntegrationTest, fragileTest)
 
 // When we override tests, we also break the cleanTest command.
-cleanTest.dependsOn(cleanStandardTest, cleanRegistryToolIntegrationTest, cleanSqlIntegrationTest, cleanFragileTest)
-
-project.build.dependsOn devtool, buildToolImage
+cleanTest.dependsOn(cleanStandardTest, cleanSqlIntegrationTest, cleanFragileTest)

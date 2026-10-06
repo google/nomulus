@@ -35,6 +35,7 @@ import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.CredentialModule.ApplicationDefaultCredential;
+import google.registry.config.CredentialModule.CloudSqlClientCredential;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.CredentialModule.LocalCredentialJson;
 import google.registry.config.RegistryConfig.Config;
@@ -201,11 +202,6 @@ public class AuthModule {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   private @interface StoredCredential {}
-
-  /** Dagger qualifier for {@link Credential} used by the Cloud SQL client in the nomulus tool. */
-  @Qualifier
-  @Documented
-  public @interface CloudSqlClientCredential {}
 
   /** Dagger qualifier for the credential qualifier consisting of client and scopes. */
   @Qualifier

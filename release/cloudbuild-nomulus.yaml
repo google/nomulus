@@ -50,7 +50,7 @@ steps:
   args:
   - -c
   - |
-    ./gradlew :jetty:buildNomulusImage :proxy:buildProxyImage :core:buildToolImage\
+    ./gradlew :jetty:buildNomulusImage :proxy:buildProxyImage :tools:buildToolImage\
       -PmavenUrl=gcs://domain-registry-maven-repository/maven \
       -PpluginsUrl=gcs://domain-registry-maven-repository/plugins
     docker tag nomulus us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:${TAG_NAME}

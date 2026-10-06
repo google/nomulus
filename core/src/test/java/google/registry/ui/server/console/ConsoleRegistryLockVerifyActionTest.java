@@ -20,7 +20,7 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
-import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static google.registry.tools.DomainLockUtils.REGISTRY_LOCK_STATUSES;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;

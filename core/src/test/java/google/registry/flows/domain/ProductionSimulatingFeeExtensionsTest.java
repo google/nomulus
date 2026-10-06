@@ -16,20 +16,29 @@ package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.FeatureFlag.FeatureName.FEE_EXTENSION_1_DOT_0_IN_PROD;
-import static google.registry.tools.RegistryToolEnvironment.PRODUCTION;
-import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
+import static google.registry.testing.DatabaseHelper.persistFeatureFlag;
 
 import google.registry.model.eppcommon.ProtocolDefinition;
-import google.registry.tools.CommandTestCase;
-import google.registry.tools.ConfigureFeatureFlagCommand;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.testing.FakeClock;
 import google.registry.util.RegistryEnvironment;
+import java.time.Instant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Class for testing the XML extension definitions loaded in the prod environment. */
-public class ProductionSimulatingFeeExtensionsTest
-    extends CommandTestCase<ConfigureFeatureFlagCommand> {
+public class ProductionSimulatingFeeExtensionsTest {
+
+  private final FakeClock fakeClock = new FakeClock(Instant.parse("2022-09-01T00:00:00.000Z"));
+
+  @RegisterExtension
+  final JpaIntegrationTestExtension jpa =
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   private RegistryEnvironment previousEnvironment;
 
@@ -80,13 +89,9 @@ public class ProductionSimulatingFeeExtensionsTest
   }
 
   @Test
-  void testProdEnvironment_feeExtensionFeatureActiveInTheFuture() throws Exception {
-    runCommandInEnvironment(
-        PRODUCTION,
-        FEE_EXTENSION_1_DOT_0_IN_PROD.name(),
-        "--force",
-        "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_INSTANT, fakeClock.now().plusMillis(1)));
+  void testProdEnvironment_feeExtensionFeatureActiveInTheFuture() {
+    persistFeatureFlag(
+        FEE_EXTENSION_1_DOT_0_IN_PROD, INACTIVE, fakeClock.now().plusMillis(1), ACTIVE);
     RegistryEnvironment.PRODUCTION.setup();
     ProtocolDefinition.reloadServiceExtensionUris();
     // prod shouldn't have the fee extension version 1.0
@@ -101,13 +106,9 @@ public class ProductionSimulatingFeeExtensionsTest
   }
 
   @Test
-  void testProdEnvironment_feeExtensionFeatureActiveInThePast() throws Exception {
-    runCommandInEnvironment(
-        PRODUCTION,
-        FEE_EXTENSION_1_DOT_0_IN_PROD.name(),
-        "--force",
-        "--status_map",
-        String.format("%s=INACTIVE,%s=ACTIVE", START_INSTANT, fakeClock.now().minusMillis(1)));
+  void testProdEnvironment_feeExtensionFeatureActiveInThePast() {
+    persistFeatureFlag(
+        FEE_EXTENSION_1_DOT_0_IN_PROD, INACTIVE, fakeClock.now().minusMillis(1), ACTIVE);
     RegistryEnvironment.PRODUCTION.setup();
     ProtocolDefinition.reloadServiceExtensionUris();
     // prod should have the fee extension version 1.0

@@ -26,7 +26,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getRegistryLockByRevisionId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
-import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static google.registry.tools.DomainLockUtils.REGISTRY_LOCK_STATUSES;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.cloud.tasks.v2.HttpMethod;
