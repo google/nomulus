@@ -14,7 +14,7 @@
 
 # This Dockerfile updates the SSL certs used by the probers. It uses the builder
 # image, and should be built after the builder in the release process. It also
-# needs the :core:nomulus jar in this directory, which is the caller's
+# needs the :tools:nomulus jar in this directory, which is the caller's
 # responsibility to copy it here.
 
 ARG PROJECT_ID

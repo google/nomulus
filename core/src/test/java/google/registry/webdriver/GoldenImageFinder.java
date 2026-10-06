@@ -23,7 +23,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.Maps;
 import com.google.common.io.MoreFiles;
-import google.registry.tools.params.ParameterFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -111,7 +110,6 @@ public class GoldenImageFinder {
   public static void main(String[] args) {
     GoldenImageFinder finder = new GoldenImageFinder();
     JCommander jCommander = new JCommander(finder);
-    jCommander.addConverterFactory(new ParameterFactory());
     jCommander.parse(args);
     finder.run();
   }

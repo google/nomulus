@@ -205,4 +205,10 @@ public abstract class CredentialModule {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   public @interface LocalCredentialJson {}
+
+  /** Dagger qualifier for the credential used by the Cloud SQL client in the nomulus tool. */
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface CloudSqlClientCredential {}
 }

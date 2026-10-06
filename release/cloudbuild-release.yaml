@@ -103,7 +103,7 @@ steps:
     temurin_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/temurin" \
       --format='get(digest)' --filter="tags = ${TAG_NAME}")
     sed -i s%eclipse-temurin:25%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g proxy/Dockerfile
-    sed -i s%eclipse-temurin:25%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g core/Dockerfile
+    sed -i s%eclipse-temurin:25%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g tools/Dockerfile
     sed -i s%jetty:12-jdk25%gcr.io/${PROJECT_ID}/jetty@$jetty_digest%g jetty/Dockerfile
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-proxy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-nomulus.yaml

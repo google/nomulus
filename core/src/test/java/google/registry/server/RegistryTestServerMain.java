@@ -27,7 +27,6 @@ import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism;
 import google.registry.testing.DatabaseHelper;
-import google.registry.tools.params.HostAndPortParameter;
 import java.util.List;
 
 /** Command-line interface for {@link RegistryTestServer}. */
@@ -41,11 +40,8 @@ public final class RegistryTestServerMain {
   private static final String LIGHT_PURPLE = "\u001b[38;5;139m";
   private static final String ORANGE = "\u001b[1;38;5;172m";
 
-  @Parameter(
-      names = "--address",
-      description = "Listening address.",
-      validateWith = HostAndPortParameter.class)
-  private HostAndPort address = HostAndPort.fromString("[::1]:8080");
+  @Parameter(names = "--address", description = "Listening address.")
+  private String address = "[::1]:8080";
 
   @Parameter(names = "--fixtures", description = "Fixtures to load into the DB.")
   private List<Fixture> fixtures = ImmutableList.of(Fixture.BASIC);
@@ -123,7 +119,7 @@ public final class RegistryTestServerMain {
 """,
         LIGHT_PURPLE, ORANGE, PINK, RESET);
 
-    final RegistryTestServer server = new RegistryTestServer(address);
+    final RegistryTestServer server = new RegistryTestServer(HostAndPort.fromString(address));
 
     System.out.printf("%sLoading SQL fixtures setting User for authentication...%s\n", BLUE, RESET);
     new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);

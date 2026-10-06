@@ -25,7 +25,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
-import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static google.registry.tools.DomainLockUtils.REGISTRY_LOCK_STATUSES;
 import static google.registry.ui.server.console.ConsoleRegistryLockAction.ConsoleRegistryLockPostInput;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;

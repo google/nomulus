@@ -561,6 +561,7 @@ task coreDev {
   dependsOn 'checkDependenciesDotGradle'
   dependsOn 'checkLicense'
   dependsOn ':core:check'
+  dependsOn ':tools:check'
   dependsOn 'assemble'
 
   if (gradle.startParameter.parallelProjectExecutionEnabled
@@ -621,8 +622,9 @@ task fastBuild {
     if (graph.hasTask(fastBuild)) {
       project(':console-webapp').tasks.named('buildConsoleForAll').get().enabled = false
       project(':jetty').tasks.named('buildNomulusImage').get().enabled = false
-      project(':core').tasks.named('buildToolImage').get().enabled = false
+      project(':tools').tasks.named('buildToolImage').get().enabled = false
       project(':core').tasks.named('fragileTest').get().enabled = false
+      project(':tools').tasks.named('fragileTest').get().enabled = false
       project(':jetty').tasks.named('stage').get().enabled = false
       if (project.tasks.findByName('stage') != null) {
         project.tasks.named('stage').get().enabled = false

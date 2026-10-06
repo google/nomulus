@@ -37,7 +37,7 @@ public class GoldenFileTestHelper {
   String goldenFileDescription = null;
 
   private static final String UPDATE_COMMAND =
-      "../gradlew nomulus && java -jar build/libs/nomulus.jar -e localhost %s > %s";
+      "../gradlew nomulus && java -jar ../tools/build/libs/nomulus.jar -e localhost %s > %s";
 
   private static final String UPDATE_INSTRUCTIONS =
       Joiner.on('\n')
