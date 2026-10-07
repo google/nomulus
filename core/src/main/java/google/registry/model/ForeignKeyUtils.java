@@ -392,13 +392,25 @@ public final class ForeignKeyUtils {
    * <p>This method ignores the config setting for caching, and is reserved for use cases that can
    * tolerate slightly stale data.
    */
-  @SuppressWarnings("unchecked")
   public static <E extends EppResource> Optional<E> loadResourceByCache(
+      Class<E> clazz, String foreignKey, Instant now) {
+    return loadResourceByCacheIncludingDeleted(clazz, foreignKey, now)
+        .filter(e -> now.isBefore(e.getDeletionTime()));
+  }
+
+  /**
+   * Loads the last created version of an {@link EppResource} from the replica database by foreign
+   * key, using a cache, including soft-deleted resources.
+   *
+   * <p>This method ignores the config setting for caching, and is reserved for use cases that can
+   * tolerate slightly stale data.
+   */
+  @SuppressWarnings("unchecked")
+  public static <E extends EppResource> Optional<E> loadResourceByCacheIncludingDeleted(
       Class<E> clazz, String foreignKey, Instant now) {
     return (Optional<E>)
         foreignKeyToResourceCache
             .get(VKey.create(clazz, foreignKey))
-            .filter(e -> now.isBefore(e.getDeletionTime()))
             .map(e -> e.cloneProjectedAtTime(now));
   }
 
