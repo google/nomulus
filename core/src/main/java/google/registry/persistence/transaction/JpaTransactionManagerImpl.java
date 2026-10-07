@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
@@ -50,6 +51,7 @@ import jakarta.persistence.FlushModeType;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.Parameter;
 import jakarta.persistence.PersistenceException;
+import jakarta.persistence.PersistenceUnitUtil;
 import jakarta.persistence.Query;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.TypedQuery;
@@ -79,7 +81,9 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import org.hibernate.Interceptor;
 import org.hibernate.Session;
+import org.hibernate.SessionBuilder;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Environment;
 
@@ -253,20 +257,17 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
     TransactionInfo txnInfo = transactionInfo.get();
 
-    txnInfo.entityManager =
-        logSqlStatements
-            ? emf.unwrap(SessionFactory.class)
-                .withOptions()
-                .statementInspector(
-                    new UnaryOperator<String>() {
-                      @Override
-                      public String apply(String s) {
-                        logger.atInfo().log(SQL_STATEMENT_LOG_SENTINEL_FORMAT, s);
-                        return s;
-                      }
-                    })
-                .openSession()
-            : emf.createEntityManager();
+    SessionBuilder sessionBuilder =
+        emf.unwrap(SessionFactory.class).withOptions().interceptor(txnInfo);
+    if (logSqlStatements) {
+      sessionBuilder.statementInspector(
+          (UnaryOperator<String>)
+              s -> {
+                logger.atInfo().log(SQL_STATEMENT_LOG_SENTINEL_FORMAT, s);
+                return s;
+              });
+    }
+    txnInfo.entityManager = sessionBuilder.openSession();
     if (readOnly) {
       // Disable Hibernate's dirty object check on flushing, it has become more aggressive in v6.
       txnInfo.entityManager.unwrap(Session.class).setDefaultReadOnly(true);
@@ -359,16 +360,20 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   /**
-   * Inserts an object into the database.
+   * Inserts a new object into the database, throwing an exception if it already exists.
+   *
+   * <p>This method delegates to {@link EntityManager#persist} and therefore <b>modifies {@code
+   * entity} in place</b> (e.g., assigning {@link jakarta.persistence.GeneratedValue} IDs, setting
+   * auto-timestamps, and wrapping collections).
    *
    * <p>If {@code entity} has an auto-generated identity field (i.e., a field annotated with {@link
    * jakarta.persistence.GeneratedValue}), the caller must not assign a value to this field,
    * otherwise Hibernate would mistake the entity as detached and raise an error.
    *
    * <p>The practical implication of the above is that when inserting such an entity using a
-   * retriable transaction , the entity should be instantiated inside the transaction body. A failed
-   * attempt may still assign and ID to the entity, therefore reusing the same entity would cause
-   * retries to fail.
+   * retriable transaction, the entity should be instantiated inside the transaction body. A failed
+   * attempt may still assign an ID to the entity, therefore reusing the same entity would cause
+   * retries to fail; otherwise, prefer {@link #put}.
    */
   @Override
   public void insert(Object entity) {
@@ -386,9 +391,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public void insertAll(ImmutableObject... entities) {
-    insertAll(ImmutableSet.copyOf(entities));
+    insertAll(ImmutableList.copyOf(entities));
   }
 
+  /**
+   * Persists a new object or updates an existing object in the database.
+   *
+   * <p>Unlike {@link #insert}, this method delegates to {@link EntityManager#merge} to make a deep
+   * copy and <b>never modifies {@code entity} in place</b>.
+   */
   @Override
   public void put(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
@@ -399,32 +410,73 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void putAll(ImmutableObject... entities) {
     checkArgumentNotNull(entities, "entities must be specified");
-    assertInTransaction();
-    for (Object entity : entities) {
-      put(entity);
-    }
+    putAll(ImmutableList.copyOf(entities));
   }
 
   @Override
   public void putAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();
-    entities.forEach(this::put);
+    // Group entities by class so we can batch-load existing entities per concrete type via
+    // Session::findMultiple.
+    ImmutableListMultimap<Class<?>, ?> entitiesByClass =
+        Multimaps.index(entities, Object::getClass);
+    // Pre-warm the Hibernate first-level cache (persistence context) in one batched SELECT per
+    // entity class and record which entities already exist in the database. Without this, calling
+    // EntityManager::merge on detached entities would execute an individual SELECT per entity.
+    Set<Object> existingEntities = Collections.newSetFromMap(new IdentityHashMap<>());
+    for (Class<?> clazz : entitiesByClass.keySet()) {
+      existingEntities.addAll(
+          findExistingEntitiesAndLoadContext(clazz, entitiesByClass.get(clazz)));
+    }
+    for (Object entity : entities) {
+      if (existingEntities.contains(entity)) {
+        // The entity already exists in the persistence context (loaded from the DB above);
+        // updateObject merges into the pre-warmed persistence context without issuing a SELECT.
+        transactionInfo.get().updateObject(entity);
+      } else {
+        // The entity does not exist in the DB yet (either id == null or findMultiple returned
+        // null). By calling "merge" while explicitly telling Hibernate that the object is
+        // transient, we get a deep copy (so, not modifying the immutable original) while still
+        // avoiding issuing an additional SELECT.
+        transactionInfo.get().mergeTransientObject(entity);
+      }
+    }
   }
 
   @Override
   public void update(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    assertInTransaction();
-    checkArgument(exists(entity), "Given entity does not exist");
-    transactionInfo.get().updateObject(entity);
+    updateAll(ImmutableList.of(entity));
   }
 
   @Override
   public void updateAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();
-    entities.forEach(this::update);
+    ImmutableListMultimap<Class<?>, ?> entitiesByClass =
+        Multimaps.index(entities, Object::getClass);
+    // Instead of merging the entities one by one, we load the entities in one go then merge them.
+    // If we go one-by-one, we execute one or two SELECT statements per entity (one to check
+    // existence, one to load into the persistence context). Instead, we run one large SELECT
+    // statement to check all the entities' existences. This has the extra benefit of loading all
+    // the entities into the persistence context (cache) at once instead of having to load the
+    // entities into the cache one by one.
+    for (Class<?> clazz : entitiesByClass.keySet()) {
+      ImmutableList<?> entitiesForThisClass = entitiesByClass.get(clazz);
+      ImmutableList<Object> existingEntities =
+          findExistingEntitiesAndLoadContext(clazz, entitiesForThisClass);
+      // All entities should be present and accounted for after loading the persistence context
+      if (existingEntities.size() != entitiesForThisClass.size()) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Entity/entities passed to updateAll do not already exist: %s",
+                Sets.difference(
+                    ImmutableSet.copyOf(entitiesForThisClass),
+                    ImmutableSet.copyOf(existingEntities))));
+      }
+    }
+    entities.forEach(transactionInfo.get()::updateObject);
   }
 
   @Override
@@ -806,17 +858,66 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return entity;
   }
 
-  private static class TransactionInfo {
+  /**
+   * Finds existing entities and pre-warms the persistence context (cache).
+   *
+   * <p>This first filters out entities that don't have IDs (i.e. new objects with generated IDs).
+   * Then we call Session::findMultiple to find existing entities while also populating the
+   * persistence context (cache). This means that later calls to merge() won't need to SELECT, as
+   * the object is already loaded.
+   */
+  private ImmutableList<Object> findExistingEntitiesAndLoadContext(
+      Class<?> clazz, ImmutableList<?> entitiesWithThisClass) {
+    Session session = getEntityManager().unwrap(Session.class);
+    PersistenceUnitUtil persistenceUnitUtil = emf.getPersistenceUnitUtil();
+    ImmutableList.Builder<Object> entitiesWithIdsBuilder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Object> idsBuilder = new ImmutableList.Builder<>();
+    for (Object entity : entitiesWithThisClass) {
+      Object id = persistenceUnitUtil.getIdentifier(entity);
+      // Skip entities with null IDs (e.g., unpersisted @GeneratedValue entities) since they
+      // cannot exist in the database yet.
+      if (id != null) {
+        entitiesWithIdsBuilder.add(entity);
+        idsBuilder.add(id);
+      }
+    }
+    ImmutableList<Object> entitiesWithIds = entitiesWithIdsBuilder.build();
+    ImmutableList<Object> ids = idsBuilder.build();
+    checkArgument(
+        ids.size() == ImmutableSet.copyOf(ids).size(),
+        "Multiple entities of type %s with the same ID",
+        clazz.getSimpleName());
+    ImmutableList.Builder<Object> existingEntitiesBuilder = new ImmutableList.Builder<>();
+    if (!ids.isEmpty()) {
+      // Session::findMultiple's return value includes nulls for missing entities
+      List<?> loaded = session.findMultiple(clazz, ids);
+      for (int i = 0; i < ids.size(); i++) {
+        if (loaded.get(i) != null) {
+          existingEntitiesBuilder.add(entitiesWithIds.get(i));
+        }
+      }
+    }
+    return existingEntitiesBuilder.build();
+  }
+
+  private static class TransactionInfo implements Interceptor {
     EntityManager entityManager;
     boolean inTransaction = false;
     Instant transactionTime;
     Supplier<Long> idProvider;
+    @Nullable Object transientEntityToMerge;
 
     // The set of entity objects that have been either persisted (via insert()) or merged (via
     // put()/update()). If the entity manager returns these as a result of a find() or query
     // operation, we can not detach them -- detaching removes them from the transaction and causes
     // them to not be saved to the database -- so we throw an exception instead.
     Set<Object> objectsToSave = Collections.newSetFromMap(new IdentityHashMap<>());
+
+    @Override
+    public Boolean isTransient(Object entity) {
+      // "null" indicates "we don't know if this is transient"
+      return (entity != null && entity == transientEntityToMerge) ? Boolean.TRUE : null;
+    }
 
     /** Start a new transaction. */
     private void start(Clock clock, Supplier<Long> idProvider) {
@@ -830,6 +931,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       idProvider = null;
       inTransaction = false;
       transactionTime = null;
+      transientEntityToMerge = null;
       objectsToSave = Collections.newSetFromMap(new IdentityHashMap<>());
       if (entityManager != null) {
         // Close this EntityManager just let the connection pool be able to reuse it, it doesn't
@@ -839,13 +941,39 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       }
     }
 
-    /** Does the full "update" on an object including all internal housekeeping. */
+    /**
+     * Merges {@code object} into the session (making a deep copy without modifying {@code object}
+     * in place) and records the managed copy for internal housekeeping.
+     */
     private void updateObject(Object object) {
       Object merged = entityManager.merge(object);
       objectsToSave.add(merged);
     }
 
-    /** Does the full "insert" on a new object including all internal housekeeping. */
+    /**
+     * Merges a known-transient (new) object into the session without firing a database SELECT.
+     *
+     * <p>Hibernate performs deep copies on objects when calling "merge" which we want in order to
+     * avoid modifying the original object. However, "merge" issues an additional SELECT statement
+     * unless we explicitly tell Hibernate the object is transient. By setting {@link
+     * #transientEntityToMerge}, {@link #isTransient(Object)} returns {@code Boolean.TRUE} when
+     * Hibernate's {@code DefaultMergeEventListener} inspects the entity, causing Hibernate to take
+     * the {@code entityIsTransient} path (deep-copying the entity and scheduling an INSERT) without
+     * executing a {@code SELECT} query even when the entity has a pre-assigned non-null ID.
+     */
+    private void mergeTransientObject(Object object) {
+      transientEntityToMerge = object;
+      try {
+        updateObject(object);
+      } finally {
+        transientEntityToMerge = null;
+      }
+    }
+
+    /**
+     * Persists a new {@code object} directly in the session (modifying {@code object} in place) and
+     * records it for internal housekeeping.
+     */
     private void insertObject(Object object) {
       entityManager.persist(object);
       objectsToSave.add(object);
