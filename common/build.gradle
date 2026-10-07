@@ -12,57 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-sourceSets {
-  testing {
-    java {
-      compileClasspath += main.output
-      runtimeClasspath += main.output
-    }
-  }
-  test {
-    java {
-      compileClasspath += testing.output
-      runtimeClasspath += testing.output
-    }
-  }
-}
-
-configurations {
-  // For reasons I don't understand, testingCompileOnly is the configuration
-  // used for compiling the classes in the "testing" jar.
-  testingCompileOnly.extendsFrom implementation
-  testingRuntimeOnly.extendsFrom runtimeOnly
-
-  testImplementation.extendsFrom testingCompile
-  testRuntimeOnly.extendsFrom testingRuntime
-
-  // All testing util classes. Other projects may declare dependency as:
-  // testImplementation project(path: 'common', configuration: 'testing')
-  create("testing")
-  testing.extendsFrom testingCompileOnly
-}
-
-task testingJar(type: Jar) {
-  archiveBaseName = 'testing'
-  from sourceSets.testing.output
-}
-
-artifacts {
-  testing testingJar
-}
-
 dependencies {
   def deps = rootProject.dependencyMap
 
-  implementation deps['com.github.ben-manes.caffeine:caffeine']
   implementation deps['com.google.code.findbugs:jsr305']
   implementation deps['com.google.guava:guava']
   implementation deps['jakarta.inject:jakarta.inject-api']
   implementation deps['org.freemarker:freemarker']
-  implementation deps['com.google.flogger:flogger']
-  implementation deps['io.github.java-diff-utils:java-diff-utils']
-  implementation deps['com.google.truth:truth']
 
+  testImplementation deps['com.google.truth:truth']
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
   testImplementation deps['org.junit.platform:junit-platform-launcher']

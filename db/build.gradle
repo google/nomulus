@@ -177,7 +177,7 @@ dependencies {
   testImplementation deps['org.junit.platform:junit-platform-launcher']
   testImplementation deps['org.testcontainers:junit-jupiter']
   testImplementation deps['org.testcontainers:postgresql']
-  testImplementation project(path: ':common', configuration: 'testing')
+  testImplementation project(':testing')
 }
 
 test {

@@ -1,0 +1,46 @@
+// Copyright 2026 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+dependencies {
+  def deps = rootProject.dependencyMap
+
+  implementation deps['com.github.ben-manes.caffeine:caffeine']
+  implementation deps['com.google.code.findbugs:jsr305']
+  implementation deps['com.google.code.gson:gson']
+  implementation deps['com.google.dagger:dagger']
+  implementation deps['com.google.errorprone:error_prone_annotations']
+  implementation deps['com.google.flogger:flogger']
+  implementation deps['com.google.guava:guava']
+  implementation deps['com.google.guava:guava-testlib']
+  implementation deps['com.google.truth:truth']
+  implementation deps['io.github.java-diff-utils:java-diff-utils']
+  implementation deps['jakarta.inject:jakarta.inject-api']
+  implementation deps['jakarta.servlet:jakarta.servlet-api']
+  implementation deps['org.apache.ftpserver:ftplet-api']
+  implementation deps['org.apache.ftpserver:ftpserver-core']
+  implementation deps['org.apache.sshd:sshd-core']
+  implementation deps['org.apache.sshd:sshd-scp']
+  implementation deps['org.apache.sshd:sshd-sftp']
+  implementation deps['org.bouncycastle:bcpkix-jdk18on']
+  implementation deps['org.bouncycastle:bcprov-jdk18on']
+  implementation deps['org.json:json']
+  implementation deps['org.junit.jupiter:junit-jupiter-api']
+  implementation deps['org.mockito:mockito-core']
+  implementation project(':common')
+
+  runtimeOnly deps['com.google.flogger:flogger-system-backend']
+
+  testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
+  testImplementation deps['org.junit.platform:junit-platform-launcher']
+}

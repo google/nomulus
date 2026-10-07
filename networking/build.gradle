@@ -40,7 +40,7 @@ dependencies {
   testImplementation deps['org.junit.platform:junit-platform-runner']
   testImplementation deps['org.junit.platform:junit-platform-suite-api']
   testImplementation deps['org.testcontainers:junit-jupiter']
-  testImplementation project(path: ':common', configuration: 'testing')
+  testImplementation project(':testing')
 
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
