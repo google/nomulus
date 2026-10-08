@@ -1,0 +1,33 @@
+# Scan for Gradle dependency changes in PR
+name: Lockfile Scan
+
+on:
+  pull_request:
+    branches: ["master"]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for changed lockfiles
+        id: changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            **/*.lockfile
+
+      - name: Save scan results
+        run: |
+          mkdir -p ./results
+          echo "${{ steps.changed-files.outputs.any_changed }}" > ./results/any_changed.txt
+          echo "${{ github.event.pull_request.number }}" > ./results/pr_number.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lockfile-scan-results
+          path: ./results/
