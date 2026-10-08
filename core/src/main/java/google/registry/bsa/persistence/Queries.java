@@ -27,7 +27,6 @@ import google.registry.bsa.api.UnblockableDomain;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Helpers for querying BSA JPA entities. */
@@ -114,21 +113,33 @@ public final class Queries {
   }
 
   static ImmutableSet<String> queryUnblockablesByNames(ImmutableSet<String> domains) {
-    String labelTldParis =
-        domains.stream()
-            .map(
-                domain -> {
-                  List<String> parts = DOMAIN_SPLITTER.splitToList(domain);
-                  verify(parts.size() == 2, "Invalid domain name %s", domain);
-                  return String.format("('%s','%s')", parts.get(0), parts.get(1));
-                })
-            .collect(Collectors.joining(","));
-    String sql =
-        String.format(
-            "SELECT CONCAT(d.label, '.', d.tld) FROM \"BsaUnblockableDomain\" d "
-                + "WHERE (d.label, d.tld) IN (%s)",
-            labelTldParis);
-    return ImmutableSet.copyOf(tm().getEntityManager().createNativeQuery(sql).getResultList());
+    if (domains.isEmpty()) {
+      return ImmutableSet.of();
+    }
+    ImmutableList<String> domainList = ImmutableList.copyOf(domains);
+    StringBuilder sqlBuilder =
+        new StringBuilder(
+            "SELECT CONCAT(d.label, '.', d.tld) FROM \"BsaUnblockableDomain\" d WHERE (d.label,"
+                + " d.tld) IN (");
+    for (int i = 0; i < domainList.size(); i++) {
+      if (i > 0) {
+        sqlBuilder.append(",");
+      }
+      sqlBuilder.append("(:label").append(i).append(", :tld").append(i).append(")");
+    }
+    sqlBuilder.append(")");
+
+    var query = tm().getEntityManager().createNativeQuery(sqlBuilder.toString());
+    for (int i = 0; i < domainList.size(); i++) {
+      List<String> parts = DOMAIN_SPLITTER.splitToList(domainList.get(i));
+      verify(parts.size() == 2, "Invalid domain name %s", domainList.get(i));
+      query.setParameter("label" + i, parts.get(0));
+      query.setParameter("tld" + i, parts.get(1));
+    }
+
+    @SuppressWarnings("unchecked")
+    List<String> resultList = (List<String>) query.getResultList();
+    return ImmutableSet.copyOf(resultList);
   }
 
   static ImmutableSet<String> queryNewlyCreatedDomains(
