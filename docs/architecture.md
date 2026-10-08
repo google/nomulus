@@ -12,6 +12,42 @@ HTTP(s) traffic, Nomulus uses a custom proxy to handle raw TCP traffic required
 for EPP (Port 700). This proxy can run as a GKE sidecar or a standalone cluster.
 For more information on the proxy, see [the proxy setup guide](proxy-setup.md).
 
+### Build Modules vs Deployed Services
+
+Nomulus has two overlapping naming conventions that commonly cause confusion:
+
+**Build modules** are the Gradle subprojects (directories in the repository) that
+you compile and produce Docker images from:
+
+| Build Module | Directory | Produces |
+|---|---|---|
+| `core` | `core/` | Nomulus uber-jar (`nomulus.jar`) containing all registry business logic, servlets, actions, and routing. |
+| `jetty` | `jetty/` | The **single** `nomulus` Docker image. This is the main deployment artifact that all four HTTP services run. |
+| `proxy` | `proxy/` | A separate `proxy` Docker image for the EPP TCP-to-HTTP proxy. |
+| `console-webapp` | `console-webapp/` | Angular-based registrar console frontend (static assets bundled into the `jetty` image). |
+| `services/{backend,bsa,default,pubapi,tools}` | `services/` | Legacy App Engine stubs. These directories are intentionally empty and configured purely through the root `build.gradle`. |
+
+**Deployed services** are what actually run in Kubernetes / Cloud Run:
+
+| Service Name | Runs in Kubernetes | Docker Image | Purpose |
+|---|---|---|---|
+| `frontend` | `jetty/kubernetes/nomulus-frontend.yaml` | `nomulus` (from `jetty/`) | Registrar-facing EPP command traffic. Most critical workload. Also runs the `proxy` as a sidecar for EPP on port 700. |
+| `backend` | `jetty/kubernetes/nomulus-backend.yaml` | `nomulus` (from `jetty/`) | Background cron, async tasks (RDE, DNS, TMDB, BSA, ICANN reports), BEAM pipelines, and the `nomulus` admin CLI tool. |
+| `console` | `jetty/kubernetes/nomulus-console.yaml` | `nomulus` (from `jetty/`) | Registrar self-service web console (Angular frontend). Startup probe at `/ready/console`. |
+| `pubapi` | `jetty/kubernetes/nomulus-pubapi.yaml` | `nomulus` (from `jetty/`) | Public API — primarily RDAP and domain availability checks. Startup probe at `/ready/pubapi`. |
+| `proxy` | `proxy/kubernetes/proxy-deployment-*.yaml` | `proxy` (from `proxy/`) | Standalone EPP TCP proxy clusters (or sidecar in `frontend`). |
+
+The critical point: **All four HTTP services (`frontend`, `backend`, `console`,
+`pubapi`) run the same `nomulus` Docker image** built from the `jetty/` module.
+They are differentiated only by the environment argument passed to the container
+and by the URL routing rules in the GKE Gateway, not by different binaries.
+
+The `services/` subdirectories (`backend`, `bsa`, `default`, `pubapi`, `tools`)
+are legacy App Engine service definitions from an earlier architecture. They
+contain no logic and have empty `src/` directories. They exist as Gradle
+subprojects in `settings.gradle` for compatibility but are **not** used in
+Kubernetes/Cloud Run deployments.
+
 ### Workloads
 
 Nomulus contains four Kubernetes
