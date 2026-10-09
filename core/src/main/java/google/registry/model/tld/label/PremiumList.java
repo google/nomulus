@@ -200,16 +200,23 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
     List<String> parts = Splitter.on(',').trimResults().splitToList(line);
     checkArgument(parts.size() == 2, "Could not parse line in premium list: %s", originalLine);
     List<String> moneyParts = Splitter.on(' ').trimResults().splitToList(parts.get(1));
-    if (moneyParts.size() == 2 && this.currency != null) {
-      if (!Money.parse(parts.get(1)).getCurrencyUnit().equals(this.currency)) {
+    BigDecimal price;
+    if (moneyParts.size() == 2) {
+      Money money = Money.parse(parts.get(1));
+      // If no currency was explicitly set on the PremiumList prior to parsing (e.g., when creating
+      // a new list via `update_premium_list --upsert` or validating a raw file), infer the list's
+      // currency from the first entry that includes a currency code and enforce that all
+      // subsequent entries use the same currency.
+      if (this.currency == null) {
+        this.currency = money.getCurrencyUnit();
+      } else if (!money.getCurrencyUnit().equals(this.currency)) {
         throw new IllegalArgumentException(
             String.format("The currency unit must be %s", this.currency.getCode()));
       }
+      price = money.getAmount();
+    } else {
+      price = new BigDecimal(parts.get(1));
     }
-    BigDecimal price =
-        moneyParts.size() == 2
-            ? Money.parse(parts.get(1)).getAmount()
-            : new BigDecimal(parts.get(1));
     return new PremiumEntry.Builder()
         .setLabel(parts.get(0))
         .setPrice(price)

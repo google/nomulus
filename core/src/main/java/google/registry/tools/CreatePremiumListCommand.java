@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.tld.Tlds.assertTldExists;
+import static google.registry.model.tld.label.PremiumListUtils.parseToPremiumList;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -56,6 +57,8 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
               + " (unless --override is specified), yet TLD %s does not exist");
     }
     inputData = Files.readAllLines(inputFile, UTF_8);
+    checkArgument(!inputData.isEmpty(), "New premium list data cannot be empty");
+    parseToPremiumList(name, currency, inputData, clock.now());
     return String.format("Create new premium list for %s?", name);
   }
 }
