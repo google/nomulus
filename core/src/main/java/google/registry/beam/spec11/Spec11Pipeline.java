@@ -16,6 +16,7 @@ package google.registry.beam.spec11;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import dagger.Component;
 import dagger.Module;
@@ -23,6 +24,7 @@ import dagger.Provides;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
+import google.registry.beam.spec11.SafeBrowsingTransforms.FetchThreatListPrefixesFn;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
@@ -35,20 +37,26 @@ import jakarta.inject.Singleton;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.function.Supplier;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.Reshuffle;
+import org.apache.beam.sdk.transforms.View;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.beam.sdk.values.TypeDescriptors;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -84,11 +92,28 @@ public class Spec11Pipeline implements Serializable {
   public static final String THREAT_MATCHES_FIELD = "threatMatches";
 
   private final Spec11PipelineOptions options;
-  private final EvaluateSafeBrowsingFn safeBrowsingFn;
+  private final Clock clock;
+  private final Retrier retrier;
+  private final Supplier<CloseableHttpClient> clientSupplier;
 
-  Spec11Pipeline(Spec11PipelineOptions options, EvaluateSafeBrowsingFn safeBrowsingFn) {
+  Spec11Pipeline(Spec11PipelineOptions options, Clock clock, Retrier retrier) {
+    this(
+        options,
+        clock,
+        retrier,
+        (Supplier<CloseableHttpClient> & Serializable) HttpClients::createDefault);
+  }
+
+  @VisibleForTesting
+  Spec11Pipeline(
+      Spec11PipelineOptions options,
+      Clock clock,
+      Retrier retrier,
+      Supplier<CloseableHttpClient> clientSupplier) {
     this.options = options;
-    this.safeBrowsingFn = safeBrowsingFn;
+    this.clock = clock;
+    this.retrier = retrier;
+    this.clientSupplier = clientSupplier;
   }
 
   PipelineResult run() {
@@ -99,10 +124,25 @@ public class Spec11Pipeline implements Serializable {
 
   void setupPipeline(Pipeline pipeline) {
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
+
+    PCollectionView<int[]> prefixView =
+        pipeline
+            .apply("Get SafeBrowsing API key", Create.of(options.getSafeBrowsingApiKey()))
+            .apply(
+                "Fetch threat prefixes from SafeBrowsing",
+                ParDo.of(new FetchThreatListPrefixesFn(retrier, clientSupplier)))
+            .setCoder(SerializableCoder.of(int[].class))
+            .apply("Create prefix view", View.asSingleton());
+
     PCollection<DomainNameInfo> domains = readFromCloudSql(pipeline);
 
+    EvaluateSafeBrowsingFn safeBrowsingFn =
+        new EvaluateSafeBrowsingFn(
+            options.getSafeBrowsingApiKey(), retrier, clock, clientSupplier, prefixView);
+
     PCollection<KV<DomainNameInfo, ThreatMatch>> threatMatches =
-        domains.apply("Run through SafeBrowsing API", ParDo.of(safeBrowsingFn));
+        domains.apply(
+            "Run through SafeBrowsing API", ParDo.of(safeBrowsingFn).withSideInputs(prefixView));
 
     saveToSql(threatMatches, options);
     saveToGcs(threatMatches, options);
@@ -238,18 +278,10 @@ public class Spec11Pipeline implements Serializable {
     }
 
     @Provides
-    EvaluateSafeBrowsingFn provideSafeBrowsingFn(
-        Spec11PipelineOptions options, Clock clock, Sleeper sleeper) {
+    Spec11Pipeline providePipeline(Spec11PipelineOptions options, Clock clock, Sleeper sleeper) {
       // Have a noticeably longer backoff for SafeBrowsing retries to mitigate any 429s
       Retrier safeBrowsingRetrier = new Retrier(sleeper, 9, 1000L);
-      return new EvaluateSafeBrowsingFn(
-          options.getSafeBrowsingApiKey(), safeBrowsingRetrier, clock);
-    }
-
-    @Provides
-    Spec11Pipeline providePipeline(
-        Spec11PipelineOptions options, EvaluateSafeBrowsingFn safeBrowsingFn) {
-      return new Spec11Pipeline(options, safeBrowsingFn);
+      return new Spec11Pipeline(options, clock, safeBrowsingRetrier);
     }
   }
 
