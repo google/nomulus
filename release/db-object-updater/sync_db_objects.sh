@@ -20,11 +20,12 @@
 # - env: The Nomulus environment, production, sandbox, etc.
 # - tools_credential: The credential (.json) needed to run the nomulus command.
 # - nomulus_command: The nomulus command to run.
-# - config_file_directory: The internal directory storing the TLD config files.
+# - config_file_directory: The internal directory storing the config files.
 
 set -e
 if [ "$#" -ne 4 ]; then
-  echo "Expecting four parameters in order: env tools_credential nomulus_command config_file_directory"
+  echo "Expecting four parameters in order: env tools_credential" \
+    "nomulus_command config_file_directory"
   exit 1
 fi
 
@@ -33,11 +34,20 @@ tools_credential="${2}"
 nomulus_command="${3}"
 config_file_directory="${4}"
 
-echo ${config_file_directory}
+extra_args=()
+if [[ "${nomulus_command}" == "update_premium_list" || \
+  "${nomulus_command}" == "update_reserved_list" ]]; then
+  extra_args+=(--upsert)
+fi
 
-for FILE in ${config_file_directory}/${nomulus_env}/*; do
-  echo $FILE
-  java -jar /nomulus.jar -e "${nomulus_env}" \
-  --credential "${tools_credential}" \
-  "${nomulus_command}" -i $FILE --force --build_environment
+echo "${config_file_directory}"
+
+for FILE in "${config_file_directory}/${nomulus_env}"/*; do
+  if [[ -e "${FILE}" ]]; then
+    echo "${FILE}"
+    java -jar /nomulus.jar -e "${nomulus_env}" \
+      --credential "${tools_credential}" \
+      "${nomulus_command}" -i "${FILE}" --force --build_environment \
+      "${extra_args[@]}"
+  fi
 done

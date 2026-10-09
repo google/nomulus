@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 import google.registry.model.tld.label.ReservedList;
+import google.registry.model.tld.label.ReservedListDao;
 import java.io.File;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
@@ -160,5 +161,59 @@ class UpdateReservedListCommandTest
     assertInStdout("helicopter: helicopter,FULLY_BLOCKED -> null");
     assertInStdout("baddies: null -> baddies,FULLY_BLOCKED");
     assertInStdout("ford: null -> ford,FULLY_BLOCKED # random comment");
+  }
+
+  @Test
+  void testSuccess_upsertCreatesNonExistentReservedList() throws Exception {
+    runCommandForced("--name=xn--q9jyb4c_new-reserved", "--input=" + reservedTermsPath, "--upsert");
+    assertThat(ReservedList.get("xn--q9jyb4c_new-reserved")).isPresent();
+    assertThat(ReservedListDao.getLatestRevision("xn--q9jyb4c_new-reserved")).isPresent();
+    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_new-reserved").get();
+    assertThat(reservedList.getReservedListEntries()).hasSize(2);
+    assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
+    assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
+  }
+
+  @Test
+  void testSuccess_upsertShortFlag_defaultsToFileName() throws Exception {
+    File newReservedFile = tmpDir.resolve("soy_new-reserved.txt").toFile();
+    String reservedTermsCsv =
+        loadFile(CreateOrUpdateReservedListCommandTestCase.class, "example_reserved_terms.csv");
+    Files.asCharSink(newReservedFile, UTF_8).write(reservedTermsCsv);
+
+    runCommandForced("-i=" + newReservedFile.getPath(), "-u");
+    assertThat(ReservedList.get("soy_new-reserved")).isPresent();
+    ReservedList reservedList = ReservedList.get("soy_new-reserved").get();
+    assertThat(reservedList.getReservedListEntries()).hasSize(2);
+    assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
+    assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
+  }
+
+  @Test
+  void testSuccess_upsertUpdatesExistingReservedList() throws Exception {
+    runSuccessfulUpdateTest(
+        "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--upsert");
+  }
+
+  @Test
+  void testSuccess_upsertDryRun_doesNotCreateList() throws Exception {
+    runCommandForced(
+        "--name=xn--q9jyb4c_dryrun-reserved",
+        "--input=" + reservedTermsPath,
+        "--upsert",
+        "--dry_run");
+    assertThat(ReservedList.get("xn--q9jyb4c_dryrun-reserved")).isEmpty();
+  }
+
+  @Test
+  void testFailure_upsertInvalidSyntax_throwsException() throws Exception {
+    File badFile = tmpDir.resolve("xn--q9jyb4c_bad-reserved.txt").toFile();
+    Files.asCharSink(badFile, UTF_8).write("baddies,INVALID_TYPE\n");
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            runCommandForced(
+                "--name=xn--q9jyb4c_bad-reserved", "--input=" + badFile.getPath(), "--upsert"));
+    assertThat(ReservedList.get("xn--q9jyb4c_bad-reserved")).isEmpty();
   }
 }
