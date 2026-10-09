@@ -15,12 +15,14 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.testing.DatabaseHelper;
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,6 +79,54 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   }
 
   @Test
+  void commandPrompt_failureEmptyInputFile() throws Exception {
+    Path emptyFile = tmpDir.resolve(TLD_TEST + "_empty.txt");
+    Files.write(new byte[0], emptyFile.toFile());
+    command.name = TLD_TEST;
+    command.inputFile = emptyFile;
+    command.currencyUnit = "USD";
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
+    assertThat(thrown).hasMessageThat().isEqualTo("New premium list data cannot be empty");
+  }
+
+  @Test
+  void commandPrompt_failureMalformedInputFile() throws Exception {
+    Path malformedFile = tmpDir.resolve(TLD_TEST + "_malformed_prompt.txt");
+    Files.asCharSink(malformedFile.toFile(), UTF_8).write("malformed_line_without_comma\n");
+    command.name = TLD_TEST;
+    command.inputFile = malformedFile;
+    command.currencyUnit = "USD";
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
+    assertThat(thrown).hasMessageThat().contains("Could not parse line in premium list");
+  }
+
+  @Test
+  void commandRun_failureMalformedInputFile() throws Exception {
+    File malformedFile = tmpDir.resolve(TLD_TEST + "_malformed.txt").toFile();
+    Files.asCharSink(malformedFile, UTF_8).write("malformed_line_without_comma\n");
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            runCommandForced(
+                "--name=" + TLD_TEST, "--input=" + malformedFile.getPath(), "--currency=USD"));
+    assertThat(PremiumListDao.getLatestRevision(TLD_TEST)).isEmpty();
+  }
+
+  @Test
+  void commandRun_failureCurrencyMismatchInInputFile() throws Exception {
+    File mismatchedFile = tmpDir.resolve(TLD_TEST + "_jpy.txt").toFile();
+    Files.asCharSink(mismatchedFile, UTF_8).write("doge,JPY 9090\n");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--name=" + TLD_TEST, "--input=" + mismatchedFile.getPath(), "--currency=USD"));
+    assertThat(thrown).hasMessageThat().isEqualTo("The currency unit must be USD");
+    assertThat(PremiumListDao.getLatestRevision(TLD_TEST)).isEmpty();
+  }
+
+  @Test
   void commandPrompt_failurePremiumListAlreadyExists() {
     String randomStr = "random";
     DatabaseHelper.createTld(randomStr);
@@ -125,5 +175,33 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
     runCommandForced(
         "--name=" + TLD_TEST, "--input=" + premiumTermsPath, "--currency=USD", "--dry_run");
     assertThat(PremiumListDao.getLatestRevision(TLD_TEST)).isEmpty();
+  }
+
+  @Test
+  void testFailure_runCommandOnProduction_noFlag() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandInEnvironment(
+                    RegistryToolEnvironment.PRODUCTION,
+                    "--name=" + TLD_TEST,
+                    "--input=" + premiumTermsPath,
+                    "--currency=USD"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("The --build_environment flag must be used when running in production");
+  }
+
+  @Test
+  void testSuccess_runCommandOnProduction_buildEnvFlag() throws Exception {
+    runCommandInEnvironment(
+        RegistryToolEnvironment.PRODUCTION,
+        "--name=" + TLD_TEST,
+        "--input=" + premiumTermsPath,
+        "--currency=USD",
+        "--build_environment",
+        "-f");
+    assertThat(PremiumListDao.getLatestRevision(TLD_TEST)).isPresent();
   }
 }

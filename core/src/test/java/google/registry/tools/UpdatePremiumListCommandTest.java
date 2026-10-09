@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -31,6 +32,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -226,5 +228,152 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
         .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
         .containsExactly(PremiumEntry.create(0L, new BigDecimal("9999.00"), "eth"));
+  }
+
+  @Test
+  void commandRun_failureMalformedInputFile() throws Exception {
+    File malformedFile = tmpDir.resolve(TLD_TEST + "_malformed.txt").toFile();
+    Files.asCharSink(malformedFile, UTF_8).write("malformed_line_without_comma\n");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> runCommandForced("--name=" + TLD_TEST, "--input=" + malformedFile.getPath()));
+  }
+
+  @Test
+  void commandRun_failureCurrencyMismatchInInputFile() throws Exception {
+    File mismatchedFile = tmpDir.resolve(TLD_TEST + "_jpy.txt").toFile();
+    Files.asCharSink(mismatchedFile, UTF_8).write("doge,JPY 9090\n");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--name=" + TLD_TEST, "--input=" + mismatchedFile.getPath()));
+    assertThat(thrown).hasMessageThat().isEqualTo("The currency unit must be USD");
+  }
+
+  @Test
+  void commandPrompt_successCreateListWithUpsert() throws Exception {
+    File tmpFile = tmpDir.resolve("newlist.txt").toFile();
+    Files.asCharSink(tmpFile, UTF_8).write("omg,USD 1234");
+    command.inputFile = Paths.get(tmpFile.getPath());
+    command.name = "newlist";
+    command.upsert = true;
+    assertThat(command.prompt()).contains("Create new premium list for newlist?");
+  }
+
+  @Test
+  void commandRun_successCreateListWithUpsert_usd() throws Exception {
+    File tmpFile = tmpDir.resolve("newlist.txt").toFile();
+    Files.asCharSink(tmpFile, UTF_8).write("eth,USD 9999");
+    runCommandForced("--name=newlist", "--input=" + tmpFile.getPath(), "--upsert");
+
+    Optional<PremiumList> list = PremiumListDao.getLatestRevision("newlist");
+    assertThat(list).isPresent();
+    assertThat(list.get().getCurrency()).isEqualTo(USD);
+    assertThat(PremiumListDao.loadAllPremiumEntries("newlist"))
+        .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
+        .containsExactly(PremiumEntry.create(0L, new BigDecimal("9999.00"), "eth"));
+  }
+
+  @Test
+  void commandRun_successCreateListWithUpsertShortFlag_nonUsdAndComments() throws Exception {
+    File tmpFile = tmpDir.resolve("jpylist.txt").toFile();
+    String content =
+        """
+        # Leading comment
+           # Indented comment
+
+        doge,JPY 9090 # inline comment
+        eth,JPY 100
+        """;
+    Files.asCharSink(tmpFile, UTF_8).write(content);
+    runCommandForced("-i=" + tmpFile.getPath(), "-u");
+
+    Optional<PremiumList> list = PremiumListDao.getLatestRevision("jpylist");
+    assertThat(list).isPresent();
+    assertThat(list.get().getCurrency()).isEqualTo(JPY);
+    assertThat(PremiumListDao.getPremiumPrice("jpylist", "doge"))
+        .hasValue(Money.ofMajor(JPY, 9090));
+    assertThat(PremiumListDao.getPremiumPrice("jpylist", "eth")).hasValue(Money.ofMajor(JPY, 100));
+  }
+
+  @Test
+  void commandRun_successUpdateExistingListWithUpsert() throws Exception {
+    File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
+    Files.asCharSink(tmpFile, UTF_8).write("eth,USD 9999");
+    runCommandForced("--name=" + TLD_TEST, "--input=" + tmpFile.getPath(), "--upsert");
+
+    Optional<PremiumList> list = PremiumListDao.getLatestRevision(TLD_TEST);
+    assertThat(list).isPresent();
+    assertThat(list.get().getCurrency()).isEqualTo(USD);
+    assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
+        .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
+        .containsExactly(PremiumEntry.create(0L, new BigDecimal("9999.00"), "eth"));
+  }
+
+  @Test
+  void commandDryRun_upsertNewList_noChangesMade() throws Exception {
+    File tmpFile = tmpDir.resolve("dryrunlist.txt").toFile();
+    Files.asCharSink(tmpFile, UTF_8).write("eth,EUR 99.50");
+    runCommandForced("--name=dryrunlist", "--input=" + tmpFile.getPath(), "--upsert", "--dry_run");
+
+    assertThat(PremiumListDao.getLatestRevision("dryrunlist")).isEmpty();
+  }
+
+  @Test
+  void commandRun_failureUpsertEmptyFile() throws Exception {
+    File emptyFile = tmpDir.resolve("empty.txt").toFile();
+    Files.write(new byte[0], emptyFile);
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--name=empty", "--input=" + emptyFile.getPath(), "--upsert"));
+    assertThat(thrown).hasMessageThat().isEqualTo("New premium list data cannot be empty");
+    assertThat(PremiumListDao.getLatestRevision("empty")).isEmpty();
+  }
+
+  @Test
+  void commandRun_failureUpsertCommentOnlyFile() throws Exception {
+    File commentFile = tmpDir.resolve("comments.txt").toFile();
+    Files.asCharSink(commentFile, UTF_8).write("# only comment\n   \n");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> runCommandForced("--name=comments", "--input=" + commentFile.getPath(), "--upsert"));
+    assertThat(PremiumListDao.getLatestRevision("comments")).isEmpty();
+  }
+
+  @Test
+  void commandRun_failureUpsertMissingCurrencyToken() throws Exception {
+    File noCurrencyFile = tmpDir.resolve("nocurrency.txt").toFile();
+    Files.asCharSink(noCurrencyFile, UTF_8).write("doge,9090\n");
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            runCommandForced(
+                "--name=nocurrency", "--input=" + noCurrencyFile.getPath(), "--upsert"));
+    assertThat(PremiumListDao.getLatestRevision("nocurrency")).isEmpty();
+  }
+
+  @Test
+  void commandRun_failureUpsertMismatchedCurrenciesAcrossLines() throws Exception {
+    File mixedFile = tmpDir.resolve("mixed.txt").toFile();
+    Files.asCharSink(mixedFile, UTF_8).write("doge,EUR 9090\neth,USD 100\n");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--name=mixed", "--input=" + mixedFile.getPath(), "--upsert"));
+    assertThat(thrown).hasMessageThat().isEqualTo("The currency unit must be EUR");
+    assertThat(PremiumListDao.getLatestRevision("mixed")).isEmpty();
+  }
+
+  @Test
+  void commandRun_failureUpsertInvalidPriceLine() throws Exception {
+    File invalidFile = tmpDir.resolve("invalidprice.txt").toFile();
+    Files.asCharSink(invalidFile, UTF_8).write("doge,USD not_a_price\n");
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            runCommandForced(
+                "--name=invalidprice", "--input=" + invalidFile.getPath(), "--upsert"));
+    assertThat(PremiumListDao.getLatestRevision("invalidprice")).isEmpty();
   }
 }

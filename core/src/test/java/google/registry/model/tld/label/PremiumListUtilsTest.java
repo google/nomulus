@@ -16,6 +16,7 @@ package google.registry.model.tld.label;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.tld.label.PremiumListUtils.parseToPremiumList;
+import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -54,6 +55,66 @@ class PremiumListUtilsTest {
                     ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,JPY 990"),
                     SAMPLE_TIME));
     assertThat(thrown).hasMessageThat().isEqualTo("The currency unit must be USD");
+  }
+
+  @Test
+  void parseInputToPremiumList_nullCurrency_infersFromInput() {
+    PremiumList premiumList =
+        parseToPremiumList(
+            "testlist",
+            null,
+            ImmutableList.of("# leading comment", "   ", "foo,EUR 99.50 # inline", "bar,EUR 30"),
+            SAMPLE_TIME);
+    assertThat(premiumList.getName()).isEqualTo("testlist");
+    assertThat(premiumList.getCurrency()).isEqualTo(EUR);
+    assertThat(premiumList.getLabelsToPrices())
+        .containsExactly("foo", twoDigits(99.50), "bar", twoDigits(30));
+  }
+
+  @Test
+  void parseInputToPremiumList_nullCurrency_throwsOnInconsistentCurrencies() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                parseToPremiumList(
+                    "testlist",
+                    null,
+                    ImmutableList.of("foo,EUR 99.50", "bar,USD 30"),
+                    SAMPLE_TIME));
+    assertThat(thrown).hasMessageThat().isEqualTo("The currency unit must be EUR");
+  }
+
+  @Test
+  void parseInputToPremiumList_nullCurrency_throwsWhenCurrencyCannotBeDetermined() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                parseToPremiumList(
+                    "testlist",
+                    null,
+                    ImmutableList.of("# comment only", "foo,99.50"),
+                    SAMPLE_TIME));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Could not determine currency for premium list from input file");
+  }
+
+  @Test
+  void parseInputToPremiumList_nullCurrency_throwsOnMalformedLine() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                parseToPremiumList(
+                    "testlist",
+                    null,
+                    ImmutableList.of("malformed_line_without_comma"),
+                    SAMPLE_TIME));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Could not parse line in premium list: malformed_line_without_comma");
   }
 
   private static BigDecimal twoDigits(double num) {

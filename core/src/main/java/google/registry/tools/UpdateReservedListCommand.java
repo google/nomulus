@@ -14,19 +14,27 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
 import google.registry.model.tld.label.ReservedList;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Optional;
 
 /** Command to safely update {@link ReservedList}. */
 @Parameters(separators = " =", commandDescription = "Update a ReservedList.")
 final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand {
+
+  @Parameter(
+      names = {"-u", "--upsert"},
+      description = "Create the reserved list if it does not already exist.")
+  boolean upsert;
 
   // indicates if there is a new change made by this command
   private boolean newChange = true;
@@ -34,28 +42,36 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
   @Override
   protected String prompt() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
-    ReservedList existingReservedList =
-        ReservedList.get(name)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        String.format(
-                            "Could not update reserved list %s because it doesn't exist.", name)));
+    Optional<ReservedList> existingReservedList = ReservedList.get(name);
+    checkArgument(
+        upsert || existingReservedList.isPresent(),
+        "Could not update reserved list %s because it doesn't exist.",
+        name);
     List<String> allLines = Files.readAllLines(input, UTF_8);
-    ReservedList.Builder updated =
-        existingReservedList.asBuilder().setReservedListMapFromLines(allLines);
+    if (existingReservedList.isEmpty()) {
+      newChange = true;
+      reservedList =
+          new ReservedList.Builder()
+              .setName(name)
+              .setReservedListMapFromLines(allLines)
+              .setCreationTimestamp(clock.now())
+              .build();
+      return String.format(
+          "Create new reserved list for %s?\n%s\nreservedListMap=%s\n",
+          name, reservedList, outputReservedListEntries(reservedList));
+    }
+    ReservedList existing = existingReservedList.get();
+    ReservedList.Builder updated = existing.asBuilder().setReservedListMapFromLines(allLines);
     reservedList = updated.build();
     boolean reservedListEntriesChanged =
-        !existingReservedList
-            .getReservedListEntries()
-            .equals(reservedList.getReservedListEntries());
+        !existing.getReservedListEntries().equals(reservedList.getReservedListEntries());
     if (!reservedListEntriesChanged) {
       newChange = false;
       return "No entity changes to apply.";
     }
     return String.format("Update reserved list for %s?\n", name)
         + prettyPrintEntityDeepDiff(
-            existingReservedList.getReservedListEntries(), reservedList.getReservedListEntries());
+            existing.getReservedListEntries(), reservedList.getReservedListEntries());
   }
 
   @Override
