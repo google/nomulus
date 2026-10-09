@@ -187,4 +187,30 @@ class CreateReservedListCommandTest
         "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--dry_run");
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isEmpty();
   }
+
+  @Test
+  void testFailure_runCommandOnProduction_noFlag() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandInEnvironment(
+                    RegistryToolEnvironment.PRODUCTION,
+                    "--name=xn--q9jyb4c_common-reserved",
+                    "--input=" + reservedTermsPath));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("The --build_environment flag must be used when running in production");
+  }
+
+  @Test
+  void testSuccess_runCommandOnProduction_buildEnvFlag() throws Exception {
+    runCommandInEnvironment(
+        RegistryToolEnvironment.PRODUCTION,
+        "--name=xn--q9jyb4c_common-reserved",
+        "--input=" + reservedTermsPath,
+        "--build_environment",
+        "-f");
+    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
+  }
 }

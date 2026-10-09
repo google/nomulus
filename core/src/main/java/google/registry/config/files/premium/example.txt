@@ -4,4 +4,4 @@
 # These are manipulated using the "nomulus" tool
 # {create,update,delete,list}_premium_list commands.
 foo,USD 100 # comment after the item
-bar,JPY 14
+bar,USD 14
