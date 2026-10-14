@@ -229,3 +229,4 @@ V228__hosthistory_repo_id_mod_time_idx.sql
 V229__tld_drop_xap_transitions_default.sql
 V230__registrar_drop_xap_enabled_default.sql
 V231__defer_console_update_history_user_fk.sql
+V232__add_registrar_cert_hostname_columns.sql

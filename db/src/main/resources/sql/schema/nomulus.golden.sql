@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.10
--- Dumped by pg_dump version 17.10
+-- Dumped from database version 17.11
+-- Dumped by pg_dump version 17.11
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -856,7 +856,9 @@ CREATE TABLE public."Registrar" (
     last_expiring_cert_notification_sent_date timestamp with time zone,
     last_expiring_failover_cert_notification_sent_date timestamp with time zone,
     last_poc_verification_date timestamp with time zone,
-    expiry_access_period_enabled boolean NOT NULL
+    expiry_access_period_enabled boolean NOT NULL,
+    allowed_epp_client_certificate_hostnames text[],
+    revoked_client_certificate_hashes text[]
 );
 
 
