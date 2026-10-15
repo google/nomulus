@@ -21,6 +21,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Domain;
@@ -29,7 +30,9 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import io.github.ss_bhatt.testcontainers.valkey.ValkeyContainer;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -44,7 +47,8 @@ public class SimplifiedJedisClientTest {
 
   @Container private static final ValkeyContainer valkey = new ValkeyContainer();
 
-  private final FakeClock fakeClock = new FakeClock(Instant.parse("2025-01-01T00:00:00.000Z"));
+  private static final Instant START_TIME = Instant.parse("2025-01-01T00:00:00.000Z");
+  private final FakeClock fakeClock = new FakeClock(START_TIME);
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -153,10 +157,137 @@ public class SimplifiedJedisClientTest {
     assertThat(hostClient.get(Host.class, "ns1.nonexistent.tld")).isEmpty();
   }
 
+  @Test
+  void testSet_softDeletedDomain_withExplicitExpiration_retainedInValkey() {
+    RedisClient redisClient = createRedisClient();
+    SimplifiedJedisClient client = new SimplifiedJedisClient(redisClient);
+    Instant deletionTime = Instant.parse("2035-01-01T00:00:00.000Z");
+    Domain softDeletedDomain = persistDeletedDomain("xap-retained.tld", deletionTime);
+
+    Instant futureExpiration = deletionTime.plus(Duration.ofDays(10));
+    client.set(
+        new SimplifiedJedisClient.JedisResource<>(
+            "xap-retained.tld", softDeletedDomain, futureExpiration));
+
+    Optional<Domain> cached = client.get(Domain.class, "xap-retained.tld");
+    assertThat(cached).isPresent();
+    assertAboutImmutableObjects()
+        .that(cached.get())
+        .isEqualExceptFields(softDeletedDomain, "dsData", "gracePeriods", "nsHosts");
+    assertThat(cached.get().getDeletionTime()).isEqualTo(deletionTime);
+    assertThat(redisClient.pexpireTime(client.getRedisKey(Domain.class, "xap-retained.tld")))
+        .isEqualTo(futureExpiration.toEpochMilli());
+  }
+
+  @Test
+  void testSet_softDeletedDomain_withoutExplicitExpiration_evictedImmediately() {
+    SimplifiedJedisClient client = createJedisClient();
+    Domain softDeletedDomain = persistDeletedDomain("evicted-immediate.tld", START_TIME);
+
+    client.set(
+        new SimplifiedJedisClient.JedisResource<>("evicted-immediate.tld", softDeletedDomain));
+
+    assertThat(client.get(Domain.class, "evicted-immediate.tld")).isEmpty();
+  }
+
+  @Test
+  void testSetAll_mixedResources_pipelineSetsCorrectTtls() {
+    RedisClient redisClient = createRedisClient();
+    SimplifiedJedisClient client = new SimplifiedJedisClient(redisClient);
+
+    Domain activeDomain = persistActiveDomain("active.tld");
+    Instant deletionTime = Instant.parse("2035-01-01T00:00:00.000Z");
+    Domain xapDomain = persistDeletedDomain("xap.tld", deletionTime);
+    Instant xapExpiration = deletionTime.plus(Duration.ofDays(10));
+    Domain expiredDomain = persistDeletedDomain("expired.tld", START_TIME);
+
+    client.setAll(
+        ImmutableList.of(
+            new SimplifiedJedisClient.JedisResource<>("active.tld", activeDomain),
+            new SimplifiedJedisClient.JedisResource<>("xap.tld", xapDomain, xapExpiration),
+            new SimplifiedJedisClient.JedisResource<>("expired.tld", expiredDomain)));
+
+    Optional<Domain> cachedActive = client.get(Domain.class, "active.tld");
+    assertThat(cachedActive).isPresent();
+    assertThat(cachedActive.get().getDeletionTime()).isEqualTo(END_INSTANT);
+    assertThat(redisClient.pexpireTime(client.getRedisKey(Domain.class, "active.tld")))
+        .isEqualTo(END_INSTANT.toEpochMilli());
+
+    Optional<Domain> cachedXap = client.get(Domain.class, "xap.tld");
+    assertThat(cachedXap).isPresent();
+    assertThat(cachedXap.get().getDeletionTime()).isEqualTo(deletionTime);
+    assertThat(redisClient.pexpireTime(client.getRedisKey(Domain.class, "xap.tld")))
+        .isEqualTo(xapExpiration.toEpochMilli());
+
+    assertThat(client.get(Domain.class, "expired.tld")).isEmpty();
+  }
+
+  @Test
+  void testJedisResource_expirationResolution() {
+    Domain domain = persistDeletedDomain("test.tld", START_TIME.minus(Duration.ofDays(2)));
+    Instant explicitTime = START_TIME.plus(Duration.ofDays(5));
+
+    // 2-arg constructor defaults expirationTime to Optional.empty()
+    SimplifiedJedisClient.JedisResource<Domain> defaultResource =
+        new SimplifiedJedisClient.JedisResource<>("test.tld", domain);
+    assertThat(defaultResource.expirationTime()).isEmpty();
+    assertThat(defaultResource.getExpirationTime()).isEqualTo(domain.getDeletionTime());
+
+    // 3-arg constructor with explicit Instant
+    SimplifiedJedisClient.JedisResource<Domain> explicitResource =
+        new SimplifiedJedisClient.JedisResource<>("test.tld", domain, explicitTime);
+    assertThat(explicitResource.expirationTime()).hasValue(explicitTime);
+    assertThat(explicitResource.getExpirationTime()).isEqualTo(explicitTime);
+
+    // 3-arg constructor with null Instant
+    Instant nullExpiration = null;
+    SimplifiedJedisClient.JedisResource<Domain> nullInstantResource =
+        new SimplifiedJedisClient.JedisResource<>("test.tld", domain, nullExpiration);
+    assertThat(nullInstantResource.expirationTime()).isEmpty();
+    assertThat(nullInstantResource.getExpirationTime()).isEqualTo(domain.getDeletionTime());
+  }
+
+  @Test
+  void testDelete_byClassAndKey_removesKeyFromValkey() {
+    SimplifiedJedisClient client = createJedisClient();
+    Domain domain1 = persistActiveDomain("to-delete.tld");
+    Domain domain2 = persistActiveDomain("to-keep.tld");
+
+    client.setAll(
+        ImmutableList.of(
+            new SimplifiedJedisClient.JedisResource<>("to-delete.tld", domain1),
+            new SimplifiedJedisClient.JedisResource<>("to-keep.tld", domain2)));
+
+    assertThat(client.get(Domain.class, "to-delete.tld")).isPresent();
+    assertThat(client.get(Domain.class, "to-keep.tld")).isPresent();
+
+    client.delete(Domain.class, "to-delete.tld");
+
+    assertThat(client.get(Domain.class, "to-delete.tld")).isEmpty();
+    assertThat(client.get(Domain.class, "to-keep.tld")).isPresent();
+  }
+
+  @Test
+  void testDelete_byJedisResource_removesKeyFromValkey() {
+    SimplifiedJedisClient client = createJedisClient();
+    Domain domain = persistActiveDomain("resource-delete.tld");
+    SimplifiedJedisClient.JedisResource<Domain> resource =
+        new SimplifiedJedisClient.JedisResource<>("resource-delete.tld", domain);
+
+    client.set(resource);
+    assertThat(client.get(Domain.class, "resource-delete.tld")).isPresent();
+
+    client.delete(resource);
+    assertThat(client.get(Domain.class, "resource-delete.tld")).isEmpty();
+  }
+
+  private RedisClient createRedisClient() {
+    return RedisClient.builder()
+        .hostAndPort(new HostAndPort(valkey.getHost(), valkey.getFirstMappedPort()))
+        .build();
+  }
+
   private SimplifiedJedisClient createJedisClient() {
-    return new SimplifiedJedisClient(
-        RedisClient.builder()
-            .hostAndPort(new HostAndPort(valkey.getHost(), valkey.getFirstMappedPort()))
-            .build());
+    return new SimplifiedJedisClient(createRedisClient());
   }
 }

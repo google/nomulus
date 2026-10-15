@@ -25,10 +25,10 @@ import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccoun
 import static google.registry.flows.domain.DomainFlowUtils.getReservationTypes;
 import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.isAnchorTenant;
-import static google.registry.flows.domain.DomainFlowUtils.isDomainEligibleForXap;
 import static google.registry.flows.domain.DomainFlowUtils.isRegisterBsaCreate;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.flows.domain.DomainFlowUtils.isValidReservedCreate;
+import static google.registry.flows.domain.DomainFlowUtils.loadDomainIfInXap;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWithIdnTables;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
@@ -257,13 +257,6 @@ public final class DomainCheckFlow implements TransactionalFlow {
     }
     return getMessageForCheckWithToken(
         idn, existingDomains, bsaBlockedDomainNames, tldStates, token, now);
-  }
-
-  private static Optional<Domain> loadDomainIfInXap(
-      String domainName, Instant now, Duration domainExpiryAccessPeriodTotalLength) {
-    return ForeignKeyUtils.loadResource(
-            Domain.class, domainName, now.minus(domainExpiryAccessPeriodTotalLength))
-        .filter(domain -> isDomainEligibleForXap(domain, Tld.get(domain.getTld()), now));
   }
 
   private Optional<String> getMessageForCheckWithToken(
