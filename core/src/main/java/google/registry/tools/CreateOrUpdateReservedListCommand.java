@@ -15,8 +15,11 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.model.tld.Tlds.assertTldExists;
 
 import com.beust.jcommander.Parameter;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedListDao;
@@ -24,6 +27,7 @@ import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
@@ -36,6 +40,11 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
   @Inject Clock clock;
 
   static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  @VisibleForTesting
+  static final String INVALID_FORMAT_ERROR_MESSAGE =
+      "The name must be in the format {tld|common}_list-name "
+          + "and contain only letters, numbers, and hyphens, plus a single underscore delimiter";
 
   @Parameter(
       names = {"-d", "--dry_run"},
@@ -71,14 +80,9 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
         String.format(
             "Saved reserved list %s with %d entries.",
             name, reservedList.getReservedListEntries().size());
-    try {
-      logger.atInfo().log("Saving reserved list for TLD %s.", name);
-      ReservedListDao.save(reservedList);
-      logger.atInfo().log(message);
-    } catch (Throwable e) {
-      message = "Unexpected error saving reserved list from nomulus tool command.";
-      logger.atSevere().withCause(e).log(message);
-    }
+    logger.atInfo().log("Saving reserved list for TLD %s.", name);
+    ReservedListDao.save(reservedList);
+    logger.atInfo().log(message);
     return message;
   }
 
@@ -101,5 +105,17 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
         !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
         "The --build_environment flag must be used when running in production");
     return super.checkExecutionState();
+  }
+
+  static void validateListName(String name, boolean checkTldExists) {
+    List<String> nameParts = Splitter.on('_').splitToList(name);
+    checkArgument(nameParts.size() == 2, INVALID_FORMAT_ERROR_MESSAGE);
+    String tld = nameParts.get(0);
+    checkArgument(tld.matches("[-a-zA-Z0-9]+"), INVALID_FORMAT_ERROR_MESSAGE);
+    if (checkTldExists && !tld.equals("common")) {
+      assertTldExists(
+          tld, "The name must be in the format {tld|common}_list-name, yet TLD %s does not exist");
+    }
+    checkArgument(nameParts.get(1).matches("[-a-zA-Z0-9]+"), INVALID_FORMAT_ERROR_MESSAGE);
   }
 }

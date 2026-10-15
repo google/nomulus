@@ -15,14 +15,11 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.tld.Tlds.assertTldExists;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import google.registry.model.tld.label.ReservedList;
 import java.nio.file.Files;
@@ -32,11 +29,6 @@ import java.util.List;
 /** Command to create a {@link ReservedList}. */
 @Parameters(separators = " =", commandDescription = "Create a ReservedList.")
 final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand {
-
-  @VisibleForTesting
-  static final String INVALID_FORMAT_ERROR_MESSAGE =
-      "The name must be in the format {tld|common}_list-name "
-      + "and contain only letters, numbers, and hyphens, plus a single underscore delimiter";
 
   @Parameter(
       names = {"-o", "--override"},
@@ -48,7 +40,7 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
     checkArgument(ReservedList.get(name).isEmpty(), "A reserved list already exists by this name");
     if (!override) {
-      validateListName(name);
+      validateListName(name, true);
     }
     Instant now = clock.now();
     List<String> allLines = Files.readAllLines(input, UTF_8);
@@ -61,16 +53,5 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
 
     return String.format(
         "%s\nreservedListMap=%s\n", reservedList, outputReservedListEntries(reservedList));
-  }
-
-  private static void validateListName(String name) {
-    List<String> nameParts = Splitter.on('_').splitToList(name);
-    checkArgument(nameParts.size() == 2, INVALID_FORMAT_ERROR_MESSAGE);
-    String tld = nameParts.get(0);
-    if (!tld.equals("common")) {
-      assertTldExists(
-          tld, "The name must be in the format {tld|common}_list-name, yet TLD %s does not exist");
-    }
-    checkArgument(nameParts.get(1).matches("[-a-zA-Z0-9]+"), INVALID_FORMAT_ERROR_MESSAGE);
   }
 }
