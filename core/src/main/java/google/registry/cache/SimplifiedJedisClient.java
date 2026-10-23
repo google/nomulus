@@ -40,6 +40,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Optional;
 import redis.clients.jedis.AbstractPipeline;
 import redis.clients.jedis.UnifiedJedis;
@@ -55,7 +56,27 @@ import redis.clients.jedis.params.SetParams;
  */
 public class SimplifiedJedisClient {
 
-  public record JedisResource<V extends EppResource>(String key, V value) {}
+  public record JedisResource<V extends EppResource>(
+      String key, V value, Optional<Instant> expirationTime) {
+
+    public JedisResource {
+      checkNotNull(key, "Key cannot be null");
+      checkNotNull(value, "Value cannot be null");
+      checkNotNull(expirationTime, "expirationTime cannot be null");
+    }
+
+    public JedisResource(String key, V value) {
+      this(key, value, Optional.empty());
+    }
+
+    public JedisResource(String key, V value, Instant expirationTime) {
+      this(key, value, Optional.ofNullable(expirationTime));
+    }
+
+    public Instant getExpirationTime() {
+      return expirationTime.orElseGet(() -> value.getDeletionTime());
+    }
+  }
 
   private static final ImmutableMap<Class<? extends EppResource>, String> TYPE_PREFIXES =
       ImmutableMap.of(
@@ -101,7 +122,7 @@ public class SimplifiedJedisClient {
     jedis.set(
         convertKey(resource.value.getClass(), resource.key),
         serialize(resource.value),
-        new SetParams().pxAt(resource.value.getDeletionTime().toEpochMilli()));
+        new SetParams().pxAt(resource.getExpirationTime().toEpochMilli()));
   }
 
   /** Sets multiple values in the remote cache using a Jedis {@link AbstractPipeline}. */
@@ -114,10 +135,31 @@ public class SimplifiedJedisClient {
                 pipeline.set(
                     convertKey(resource.value.getClass(), resource.key),
                     serialize(resource.value),
-                    new SetParams().pxAt(resource.value.getDeletionTime().toEpochMilli())));
+                    new SetParams().pxAt(resource.getExpirationTime().toEpochMilli())));
         pipeline.sync();
       }
     }
+  }
+
+  /**
+   * Deletes the value associated with the given key in Valkey.
+   *
+   * <p>If the given key does not exist, it does nothing.
+   */
+  public void delete(Class<? extends EppResource> resourceClass, String key) {
+    checkNotNull(resourceClass, "resourceClass cannot be null");
+    checkNotNull(key, "Key cannot be null");
+    jedis.unlink(getRedisKey(resourceClass, key));
+  }
+
+  /** Deletes the given resource in Valkey. */
+  public void delete(JedisResource<?> resource) {
+    checkNotNull(resource, "resource cannot be null");
+    delete(resource.value.getClass().asSubclass(EppResource.class), resource.key);
+  }
+
+  byte[] getRedisKey(Class<?> clazz, String key) {
+    return convertKey(clazz, key);
   }
 
   /**
