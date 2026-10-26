@@ -15,18 +15,14 @@
 // This source-less project is used to run cross-release server/SQL integration
 // tests. See the README.md file in this folder for more information.
 
-import static com.google.common.base.Preconditions.checkArgument
-import static com.google.common.base.Strings.isNullOrEmpty
-
 if (schema_env == '' || nomulus_env == '') {
   return
 }
 
 def USE_LOCAL = 'local'
 
-if (schema_env != USE_LOCAL || nomulus_env != USE_LOCAL) {
-  checkArgument(
-      !isNullOrEmpty(schemaTestArtifactsDir),
+if ((schema_env != USE_LOCAL || nomulus_env != USE_LOCAL) && !schemaTestArtifactsDir) {
+  throw new IllegalArgumentException(
       'The schemaTestArtifactsDir is required when deployed jars are needed.')
 }
 

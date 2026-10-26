@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.common.base.CaseFormat
 import java.util.Optional
 
 plugins {
@@ -426,9 +425,11 @@ if (environment == 'alpha') {
         if (rootProject.pipeline == ''|| rootProject.pipeline == it.key) {
           def mainClass = it.value['mainClass']
           def metaData = it.value['metaData']
-          def pipelineName = CaseFormat.UPPER_CAMEL.to(
-              CaseFormat.LOWER_UNDERSCORE,
-              mainClass.substring(mainClass.lastIndexOf('.') + 1))
+          def pipelineName =
+              mainClass
+                  .substring(mainClass.lastIndexOf('.') + 1)
+                  .replaceAll(/([a-z0-9])([A-Z])/, '$1_$2')
+                  .toLowerCase()
           def imageName = "gcr.io/${gcpProject}/beam/${pipelineName}"
           def metaDataBaseName = metaData.substring(metaData.lastIndexOf('/') + 1)
           def uberJarName = tasks.beamPipelineCommon.outputs.files.asPath

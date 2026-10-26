@@ -27,11 +27,8 @@ buildscript {
   }
 
   dependencies {
-    classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.5.0'
     classpath 'net.ltgt.gradle:gradle-errorprone-plugin:5.1.0'
     classpath 'com.gradleup.shadow:com.gradleup.shadow.gradle.plugin:9.4.0'
-    classpath 'org.sonatype.aether:aether-api:1.13.1'
-    classpath 'org.sonatype.aether:aether-impl:1.13.1'
   }
 }
 
@@ -155,9 +152,6 @@ rootProject.ext.verifyDeploymentConfig = {
 def allowInsecure = allowInsecureProtocol
 
 allprojects {
-  // Skip no-op project
-  if (project.name == 'services') return
-
   repositories {
     if (!mavenUrl.isEmpty()) {
       maven {
@@ -255,16 +249,7 @@ def javadocSource = []
 def javadocClasspath = []
 def javadocDependentTasks = []
 
-def services = [':services:default',
-                ':services:backend',
-                ':services:bsa',
-                ':services:tools',
-                ':services:pubapi']
-
 subprojects {
-  // Skip no-op project
-  if (project.name == 'services') return
-
   apply plugin: 'com.gradleup.shadow'
 
   tasks.configureEach {
@@ -348,12 +333,6 @@ subprojects {
     }
   }
 
-  // Set up all of the deployment projects.
-  if (services.contains(project.path)) {
-    // Return early, do not apply the settings below.
-    return
-  }
-
   apply from: "${rootDir.path}/java_common.gradle"
 
   // When changing Java version here, be sure to update BEAM Java runtime:
@@ -394,7 +373,7 @@ subprojects {
 
   // No need to produce javadoc for the jetty subproject, which has no APIs to
   // expose to users.
-  if (project.name != 'jetty' && !services.contains(project.path)) {
+  if (project.name != 'jetty') {
     javadocSource << project.sourceSets.main.allJava
     javadocClasspath << { project.sourceSets.main.compileClasspath.files }
     javadocClasspath << "${buildDir}/generated/sources/annotationProcessor/java/main"
