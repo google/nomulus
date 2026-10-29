@@ -20,17 +20,30 @@ import dagger.Provides;
 import dagger.multibindings.IntoMap;
 import dagger.multibindings.IntoSet;
 import dagger.multibindings.StringKey;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.writer.DnsWriter;
 import jakarta.inject.Named;
-import javax.net.SocketFactory;
+import java.net.UnknownHostException;
+import java.time.Duration;
+import org.xbill.DNS.Resolver;
+import org.xbill.DNS.SimpleResolver;
 
 /** Dagger module that provides a DnsUpdateWriter. */
 @Module
 public abstract class DnsUpdateWriterModule {
 
   @Provides
-  static SocketFactory provideSocketFactory() {
-    return SocketFactory.getDefault();
+  static Resolver provideResolver(
+      @Config("dnsUpdateHost") String updateHost,
+      @Config("dnsUpdateTimeout") Duration updateTimeout) {
+    try {
+      SimpleResolver resolver = new SimpleResolver(updateHost);
+      resolver.setTCP(true);
+      resolver.setTimeout(updateTimeout);
+      return resolver;
+    } catch (UnknownHostException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Binds
