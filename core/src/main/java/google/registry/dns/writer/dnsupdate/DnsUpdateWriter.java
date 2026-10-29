@@ -50,6 +50,7 @@ import org.xbill.DNS.NSRecord;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.RRset;
 import org.xbill.DNS.Rcode;
+import org.xbill.DNS.Resolver;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Update;
@@ -58,7 +59,7 @@ import org.xbill.DNS.Update;
  * A DnsWriter that implements the DNS UPDATE protocol as specified in <a
  * href="https://tools.ietf.org/html/rfc2136">RFC 2136</a>. Publishes changes in the domain-registry
  * to a (capable) external DNS server, sometimes called a "hidden master". DNS UPDATE messages are
- * sent via a supplied "transport" class.
+ * sent via a supplied {@link Resolver}.
  *
  * <p>On call to {@link #commit()}, a single UPDATE message is created containing the records
  * required to "synchronize" the DNS with the current (at the time of processing) state of the
@@ -89,7 +90,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
   private final Duration dnsDefaultATtl;
   private final Duration dnsDefaultNsTtl;
   private final Duration dnsDefaultDsTtl;
-  private final DnsMessageTransport transport;
+  private final Resolver resolver;
   private final Clock clock;
   private final Update update;
   private final String zoneName;
@@ -100,7 +101,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
    * @param dnsDefaultATtl TTL used for any created resource records
    * @param dnsDefaultNsTtl TTL used for any created nameserver records
    * @param dnsDefaultDsTtl TTL used for any created DS records
-   * @param transport the transport used to send/receive the UPDATE messages
+   * @param resolver the resolver used to send/receive the UPDATE messages
    * @param clock a source of time
    */
   @Inject
@@ -109,14 +110,14 @@ public class DnsUpdateWriter extends BaseDnsWriter {
       @Config("dnsDefaultATtl") Duration dnsDefaultATtl,
       @Config("dnsDefaultNsTtl") Duration dnsDefaultNsTtl,
       @Config("dnsDefaultDsTtl") Duration dnsDefaultDsTtl,
-      DnsMessageTransport transport,
+      Resolver resolver,
       Clock clock) {
     this.zoneName = zoneName;
     this.update = new Update(toAbsoluteName(zoneName));
     this.dnsDefaultATtl = dnsDefaultATtl;
     this.dnsDefaultNsTtl = dnsDefaultNsTtl;
     this.dnsDefaultDsTtl = dnsDefaultDsTtl;
-    this.transport = transport;
+    this.resolver = resolver;
     this.clock = clock;
   }
 
@@ -175,7 +176,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
   @Override
   protected void commitUnchecked() {
     try {
-      Message response = transport.send(update);
+      Message response = resolver.send(update);
       verify(
           response.getRcode() == Rcode.NOERROR,
           "DNS server failed domain update for '%s' rcode: %s",

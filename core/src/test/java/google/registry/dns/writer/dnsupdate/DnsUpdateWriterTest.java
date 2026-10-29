@@ -18,6 +18,7 @@ import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
@@ -43,13 +44,20 @@ import google.registry.model.host.Host;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,12 +74,16 @@ import org.xbill.DNS.Opcode;
 import org.xbill.DNS.RRset;
 import org.xbill.DNS.Rcode;
 import org.xbill.DNS.Record;
+import org.xbill.DNS.Resolver;
 import org.xbill.DNS.Section;
+import org.xbill.DNS.SimpleResolver;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Update;
+import org.xbill.DNS.WireParseException;
 
 /** Unit tests for {@link DnsUpdateWriter}. */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class DnsUpdateWriterTest {
 
   @RegisterExtension
@@ -81,7 +93,7 @@ public class DnsUpdateWriterTest {
   // Base16 encoded sha1 digest. Must have 40 chars (20 bytes after decoding)
   private static final String BASE16_SHA1_DIGEST = "0123".repeat(10);
 
-  @Mock private DnsMessageTransport mockResolver;
+  @Mock private Resolver mockResolver;
   @Captor private ArgumentCaptor<Update> updateCaptor;
 
   private final FakeClock clock = new FakeClock(Instant.parse("1971-01-01T00:00:00Z"));
@@ -103,7 +115,7 @@ public class DnsUpdateWriterTest {
     Host host1 = persistActiveHost("ns1.example.tld");
     Host host2 = persistActiveHost("ns2.example.tld");
     Domain domain =
-        persistActiveDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(host1.createVKey(), host2.createVKey()))
             .build();
@@ -126,12 +138,11 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 2); // The delete and NS sets
   }
 
-  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
   void testPublishAtomic_noCommit() {
     Host host1 = persistActiveHost("ns.example1.tld");
     Domain domain1 =
-        persistActiveDomain("example1.tld")
+        newDomain("example1.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(host1.createVKey()))
             .build();
@@ -139,7 +150,7 @@ public class DnsUpdateWriterTest {
 
     Host host2 = persistActiveHost("ns.example2.tld");
     Domain domain2 =
-        persistActiveDomain("example2.tld")
+        newDomain("example2.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(host2.createVKey()))
             .build();
@@ -155,7 +166,7 @@ public class DnsUpdateWriterTest {
   void testPublishAtomic_oneUpdate() throws Exception {
     Host host1 = persistActiveHost("ns.example1.tld");
     Domain domain1 =
-        persistActiveDomain("example1.tld")
+        newDomain("example1.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(host1.createVKey()))
             .build();
@@ -163,7 +174,7 @@ public class DnsUpdateWriterTest {
 
     Host host2 = persistActiveHost("ns.example2.tld");
     Domain domain2 =
-        persistActiveDomain("example2.tld")
+        newDomain("example2.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(host2.createVKey()))
             .build();
@@ -188,7 +199,7 @@ public class DnsUpdateWriterTest {
   @Test
   void testPublishDomainCreate_publishesDelegationSigner_usesDefaultTtl() throws Exception {
     Domain domain =
-        persistActiveDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .setDsData(
@@ -219,7 +230,7 @@ public class DnsUpdateWriterTest {
             .setDnsDsTtl(Duration.ofMillis(400))
             .build());
     Domain domain =
-        persistActiveDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .setDsData(
@@ -248,7 +259,7 @@ public class DnsUpdateWriterTest {
   @Test
   void testPublishDomainWhenNotActive_removesDnsRecords() throws Exception {
     Domain domain =
-        persistActiveDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .addStatusValue(StatusValue.SERVER_HOLD)
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
@@ -292,7 +303,7 @@ public class DnsUpdateWriterTest {
                         InetAddresses.forString("fd0e:a5c8:6dfb:6a5e:0:0:0:1")))
                 .build());
     persistResource(
-        DatabaseHelper.newDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .addSubordinateHost("ns1.example.tld")
             .addNameserver(host.createVKey())
@@ -338,7 +349,7 @@ public class DnsUpdateWriterTest {
                         InetAddresses.forString("fd0e:a5c8:6dfb:6a5e:0:0:0:1")))
                 .build());
     persistResource(
-        DatabaseHelper.newDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .addSubordinateHost("ns1.example.tld")
             .addNameserver(host.createVKey())
@@ -390,7 +401,7 @@ public class DnsUpdateWriterTest {
   void testPublishHostDelete_removesGlueRecords() throws Exception {
     persistDeletedHost("ns1.example.tld", minusDays(clock.now(), 1));
     persistResource(
-        persistActiveDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.com").createVKey()))
             .build());
@@ -423,7 +434,7 @@ public class DnsUpdateWriterTest {
                 .build());
 
     persistResource(
-        DatabaseHelper.newDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .addSubordinateHost("ns1.example.tld")
             .addNameservers(
@@ -471,7 +482,7 @@ public class DnsUpdateWriterTest {
                 .build());
 
     persistResource(
-        DatabaseHelper.newDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .addSubordinateHost("ns1.example.tld")
             .addSubordinateHost("foo.example.tld")
@@ -500,29 +511,20 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 6);
   }
 
-  @MockitoSettings(strictness = Strictness.LENIENT)
-  @SuppressWarnings("AssertThrowsMultipleStatements")
   @Test
   void testPublishDomainFails_whenDnsUpdateReturnsError() throws Exception {
     Domain domain =
-        persistActiveDomain("example.tld")
+        newDomain("example.tld")
             .asBuilder()
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .build();
     persistResource(domain);
     when(mockResolver.send(any(Message.class))).thenReturn(messageWithResponseCode(Rcode.SERVFAIL));
-    VerifyException thrown =
-        assertThrows(
-            VerifyException.class,
-            () -> {
-              writer.publishDomain("example.tld");
-              writer.commit();
-            });
+    writer.publishDomain("example.tld");
+    VerifyException thrown = assertThrows(VerifyException.class, () -> writer.commit());
     assertThat(thrown).hasMessageThat().contains("SERVFAIL");
   }
 
-  @MockitoSettings(strictness = Strictness.LENIENT)
-  @SuppressWarnings("AssertThrowsMultipleStatements")
   @Test
   void testPublishHostFails_whenDnsUpdateReturnsError() throws Exception {
     Host host =
@@ -532,26 +534,136 @@ public class DnsUpdateWriterTest {
             .build();
     persistResource(host);
     when(mockResolver.send(any(Message.class))).thenReturn(messageWithResponseCode(Rcode.SERVFAIL));
-    VerifyException thrown =
-        assertThrows(
-            VerifyException.class,
-            () -> {
-              writer.publishHost("ns1.example.tld");
-              writer.commit();
-            });
+    writer.publishHost("ns1.example.tld");
+    VerifyException thrown = assertThrows(VerifyException.class, () -> writer.commit());
     assertThat(thrown).hasMessageThat().contains("SERVFAIL");
   }
 
-  private static void assertThatUpdatedZoneIs(Update update, String zoneName) {
+  @Test
+  void testPublishDomainFails_whenResolverThrowsIoException() throws Exception {
+    Domain domain =
+        newDomain("example.tld")
+            .asBuilder()
+            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
+            .build();
+    persistResource(domain);
+    when(mockResolver.send(any(Message.class))).thenThrow(new IOException("connection refused"));
+    writer.publishDomain("example.tld");
+    RuntimeException thrown = assertThrows(RuntimeException.class, () -> writer.commit());
+    assertThat(thrown).hasMessageThat().contains("publishDomain failed for zone: tld");
+    assertThat(thrown).hasCauseThat().isInstanceOf(IOException.class);
+  }
+
+  @Test
+  void testProvideResolver_configuresTcpAndTimeout() {
+    Resolver resolver = DnsUpdateWriterModule.provideResolver("127.0.0.1", Duration.ofSeconds(15));
+    assertThat(resolver).isInstanceOf(SimpleResolver.class);
+    SimpleResolver simpleResolver = (SimpleResolver) resolver;
+    assertThat(simpleResolver.getTCP()).isTrue();
+    assertThat(simpleResolver.getTimeout()).isEqualTo(Duration.ofSeconds(15));
+    assertThat(simpleResolver.getAddress().getHostString()).isEqualTo("127.0.0.1");
+    assertThat(simpleResolver.getPort()).isEqualTo(SimpleResolver.DEFAULT_PORT);
+  }
+
+  @Test
+  void testPublishDomain_withRealSimpleResolverOverLoopbackTcp() throws Exception {
+    Host host1 = persistActiveHost("ns1.example.tld");
+    Host host2 = persistActiveHost("ns2.example.tld");
+    persistResource(
+        newDomain("example.tld")
+            .asBuilder()
+            .setNameservers(ImmutableSet.of(host1.createVKey(), host2.createVKey()))
+            .build());
+
+    try (ServerSocket serverSocket = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+      CompletableFuture<Message> receivedUpdateFuture =
+          serveSingleDnsUpdate(serverSocket, Opcode.UPDATE);
+      DnsUpdateWriter realWriter = createLoopbackWriter(serverSocket);
+
+      realWriter.publishDomain("example.tld");
+      realWriter.commit();
+
+      Message receivedUpdate = receivedUpdateFuture.get(10, TimeUnit.SECONDS);
+      assertThatUpdatedZoneIs(receivedUpdate, "tld.");
+      assertThatUpdateDeletes(receivedUpdate, "example.tld.", Type.ANY);
+      assertThatUpdateAdds(
+          receivedUpdate,
+          "example.tld.",
+          Type.NS,
+          Duration.ZERO.toSeconds(),
+          "ns1.example.tld.",
+          "ns2.example.tld.");
+      assertThatTotalUpdateSetsIs(receivedUpdate, 2);
+    }
+  }
+
+  @Test
+  void testPublishDomain_withRealSimpleResolverOverLoopbackTcp_responseOpcodeMismatchFails()
+      throws Exception {
+    persistResource(
+        newDomain("example.tld")
+            .asBuilder()
+            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
+            .build());
+
+    try (ServerSocket serverSocket = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+      CompletableFuture<Message> receivedUpdateFuture =
+          serveSingleDnsUpdate(serverSocket, Opcode.QUERY);
+      DnsUpdateWriter realWriter = createLoopbackWriter(serverSocket);
+
+      realWriter.publishDomain("example.tld");
+      RuntimeException thrown = assertThrows(RuntimeException.class, () -> realWriter.commit());
+      receivedUpdateFuture.get(10, TimeUnit.SECONDS);
+      assertThat(thrown).hasCauseThat().isInstanceOf(WireParseException.class);
+      assertThat(thrown).hasCauseThat().hasMessageThat().contains("opcode response is not UPDATE");
+    }
+  }
+
+  private DnsUpdateWriter createLoopbackWriter(ServerSocket serverSocket) {
+    Resolver realResolver =
+        DnsUpdateWriterModule.provideResolver("127.0.0.1", Duration.ofSeconds(10));
+    realResolver.setPort(serverSocket.getLocalPort());
+    return new DnsUpdateWriter(
+        "tld", Duration.ZERO, Duration.ZERO, Duration.ZERO, realResolver, clock);
+  }
+
+  private static CompletableFuture<Message> serveSingleDnsUpdate(
+      ServerSocket serverSocket, int responseOpcode) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          try (Socket client = serverSocket.accept();
+              DataInputStream in = new DataInputStream(client.getInputStream());
+              DataOutputStream out = new DataOutputStream(client.getOutputStream())) {
+            int length = in.readUnsignedShort();
+            byte[] queryBytes = new byte[length];
+            in.readFully(queryBytes);
+            Message receivedUpdate = new Message(queryBytes);
+
+            Message response = new Message(receivedUpdate.getHeader().getID());
+            response.getHeader().setOpcode(responseOpcode);
+            response.getHeader().setFlag(Flags.QR);
+            response.getHeader().setRcode(Rcode.NOERROR);
+            byte[] responseBytes = response.toWire();
+            out.writeShort(responseBytes.length);
+            out.write(responseBytes);
+            out.flush();
+            return receivedUpdate;
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
+  }
+
+  private static void assertThatUpdatedZoneIs(Message update, String zoneName) {
     List<Record> zoneRecords = update.getSection(Section.ZONE);
     assertThat(zoneRecords.get(0).getName().toString()).isEqualTo(zoneName);
   }
 
-  private static void assertThatTotalUpdateSetsIs(Update update, int count) {
+  private static void assertThatTotalUpdateSetsIs(Message update, int count) {
     assertThat(update.getSectionRRsets(Section.UPDATE)).hasSize(count);
   }
 
-  private static void assertThatUpdateDeletes(Update update, String resourceName, int recordType) {
+  private static void assertThatUpdateDeletes(Message update, String resourceName, int recordType) {
     ImmutableList<Record> deleted = findUpdateRecords(update, resourceName, recordType);
     // There's only an empty (i.e. "delete") record.
     assertThat(deleted.get(0).rdataToString()).hasLength(0);
@@ -559,7 +671,7 @@ public class DnsUpdateWriterTest {
   }
 
   private static void assertThatUpdateAdds(
-      Update update, String resourceName, int recordType, Long ttl, String... resourceData) {
+      Message update, String resourceName, int recordType, Long ttl, String... resourceData) {
     ArrayList<String> expectedData = new ArrayList<>();
     Collections.addAll(expectedData, resourceData);
 
@@ -572,7 +684,7 @@ public class DnsUpdateWriterTest {
   }
 
   private static ImmutableList<Record> findUpdateRecords(
-      Update update, String resourceName, int recordType) {
+      Message update, String resourceName, int recordType) {
     for (RRset set : update.getSectionRRsets(Section.UPDATE)) {
       if (set.getName().toString().equals(resourceName) && set.getType() == recordType) {
         return ImmutableList.copyOf(set.rrs());
