@@ -202,6 +202,16 @@ CREATE TABLE public."BsaLabel" (
 
 
 --
+-- Name: BsaTld; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."BsaTld" (
+    tld text NOT NULL,
+    ready_time timestamp with time zone NOT NULL
+);
+
+
+--
 -- Name: BsaUnblockableDomain; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1413,6 +1423,14 @@ ALTER TABLE ONLY public."BsaDownload"
 
 ALTER TABLE ONLY public."BsaLabel"
     ADD CONSTRAINT "BsaLabel_pkey" PRIMARY KEY (label);
+
+
+--
+-- Name: BsaTld BsaTld_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaTld"
+    ADD CONSTRAINT "BsaTld_pkey" PRIMARY KEY (tld);
 
 
 --
