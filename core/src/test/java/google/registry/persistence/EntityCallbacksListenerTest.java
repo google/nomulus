@@ -113,6 +113,19 @@ class EntityCallbacksListenerTest {
     assertThat(testLoad.nonTransientField).isEqualTo(1);
   }
 
+  @Test
+  void verifyCallbackInfo_cachedPerClass() {
+    assertThat(EntityCallbacksListener.getCallbackInfoForTesting(TestEntity.class))
+        .isSameInstanceAs(EntityCallbacksListener.getCallbackInfoForTesting(TestEntity.class));
+    assertThat(EntityCallbacksListener.getCallbackInfoForTesting(EntityEmbedded.class))
+        .isSameInstanceAs(EntityCallbacksListener.getCallbackInfoForTesting(EntityEmbedded.class));
+    assertThat(EntityCallbacksListener.getCallbackInfoForTesting(TestEntity.class).superclassInfo())
+        .isSameInstanceAs(EntityCallbacksListener.getCallbackInfoForTesting(ParentEntity.class));
+    assertThat(
+            EntityCallbacksListener.getCallbackInfoForTesting(ParentEntity.class).superclassInfo())
+        .isNull();
+  }
+
   private static boolean hasMethodAnnotatedWithEmbedded(Class<?> entityType) {
     boolean result = false;
     Class<?> parentType = entityType.getSuperclass();
