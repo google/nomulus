@@ -559,6 +559,19 @@ class RegistrarTest extends EntityTestCase {
   }
 
   @Test
+  void testSuccess_driveFolderIdTrimmed() {
+    String driveFolderId = "abcdABCD";
+    String driverFolderIdEnclosedBySpaces = " " + driveFolderId + " ";
+    assertThat(
+            registrar
+                .asBuilder()
+                .setDriveFolderId(driverFolderIdEnclosedBySpaces)
+                .build()
+                .getDriveFolderId())
+        .isEqualTo(driveFolderId);
+  }
+
+  @Test
   void testFailure_setAllowedTlds_nonexistentTld() {
     assertThrows(
         IllegalArgumentException.class,
