@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newHost;
@@ -238,6 +239,14 @@ public class DomainTest {
     String foreignKey = domain.getForeignKey();
     assertThat(ForeignKeyUtils.loadResource(Domain.class, foreignKey, fakeClock.now()))
         .hasValue(domain);
+    // Verify that HQL query loading (which detaches entities on stream consumption)
+    // eagerly initializes all child collections before the transaction closes.
+    Domain loadedByStream =
+        tm().transact(() -> tm().loadAllOfStream(Domain.class).findFirst().orElseThrow());
+    assertThat(loadedByStream.getNsHosts()).isNotEmpty();
+    assertThat(loadedByStream.getGracePeriods()).isNotEmpty();
+    assertThat(loadedByStream.getDsData()).isNotEmpty();
+    assertThat(loadedByStream).isEqualTo(domain);
   }
 
   @Test
