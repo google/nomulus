@@ -954,6 +954,11 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       checkArgument(
           driveFolderId == null || !driveFolderId.contains("/"),
           "Drive folder ID must not be a full URL");
+      // When driveFolderId is manually entered in Console, it is a relatively common human error
+      // to include trailing white spaces. Silently correct it. No need to raise exception.
+      if (driveFolderId != null) {
+        driveFolderId = driveFolderId.trim();
+      }
       getInstance().driveFolderId = driveFolderId;
       return this;
     }
