@@ -112,6 +112,12 @@
         primary key (label)
     );
 
+    create table "BsaTld" (
+        tld text not null,
+        ready_time timestamp(6) with time zone not null,
+        primary key (tld)
+    );
+
     create table "BsaUnblockableDomain" (
         label text not null,
         tld text not null,
