@@ -38,6 +38,7 @@ import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
@@ -45,15 +46,20 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.RollbackException;
 import java.io.Serializable;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.function.Supplier;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
@@ -89,7 +95,10 @@ class JpaTransactionManagerImplTest {
           .withInitScript(fileClassPath(getClass(), "test_schema.sql"))
           .withClock(fakeClock)
           .withEntityClass(
-              TestEntity.class, TestCompoundIdEntity.class, TestNamedCompoundIdEntity.class)
+              TestEntity.class,
+              TestCompoundIdEntity.class,
+              TestNamedCompoundIdEntity.class,
+              TestCollectionEntity.class)
           .buildUnitTestExtension();
 
   @Test
@@ -960,6 +969,52 @@ class JpaTransactionManagerImplTest {
                                         "FROM TestEntity WHERE name = 'entity1'", TestEntity.class)
                                     .getSingleResult()))
                     .isFalse());
+    tm().transact(
+            () -> {
+              TestEntity result =
+                  tm().query("FROM TestEntity WHERE name = 'entity1'", TestEntity.class)
+                      .getSingleResultOrNull();
+              assertThat(result).isEqualTo(moreEntities.get(0));
+              assertThat(tm().getEntityManager().contains(result)).isFalse();
+              assertThat(
+                      tm().query("FROM TestEntity WHERE name = 'nonexistent'", TestEntity.class)
+                          .getSingleResultOrNull())
+                  .isNull();
+            });
+  }
+
+  @Test
+  void queryAndLoadAllOf_batchFetchEagerCollections() {
+    ImmutableList<TestCollectionEntity> entities =
+        ImmutableList.of(
+            new TestCollectionEntity("c1", ImmutableSet.of("a", "b")),
+            new TestCollectionEntity("c2", ImmutableSet.of("c")),
+            new TestCollectionEntity("c3", ImmutableSet.of("d", "e")));
+    persistResources(entities);
+
+    for (Supplier<List<TestCollectionEntity>> querySupplier :
+        ImmutableList.<Supplier<List<TestCollectionEntity>>>of(
+            () ->
+                tm().query("FROM TestCollectionEntity ORDER BY name", TestCollectionEntity.class)
+                    .getResultList(),
+            () -> tm().loadAllOfSorted(TestCollectionEntity.class, "name"))) {
+      tm().transact(
+              () -> {
+                Statistics stats =
+                    tm().getEntityManager()
+                        .getEntityManagerFactory()
+                        .unwrap(SessionFactory.class)
+                        .getStatistics();
+                stats.setStatisticsEnabled(true);
+                stats.clear();
+
+                List<TestCollectionEntity> loaded = querySupplier.get();
+                // 1 query for TestCollectionEntity + 1 batched query for all 3 eager collections.
+                assertThat(stats.getPrepareStatementCount()).isEqualTo(2);
+                loaded.forEach(DatabaseHelper::assertDetachedFromEntityManager);
+                assertThat(loaded).containsExactlyElementsIn(entities).inOrder();
+              });
+    }
   }
 
   @Test
@@ -1166,6 +1221,21 @@ class JpaTransactionManagerImplTest {
     @SuppressWarnings("unused")
     private void setAgeField(int ageField) {
       this.ageField = ageField;
+    }
+  }
+
+  @Entity(name = "TestCollectionEntity")
+  private static class TestCollectionEntity extends ImmutableObject {
+    @Id private String name;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    private Set<String> items;
+
+    private TestCollectionEntity() {}
+
+    private TestCollectionEntity(String name, Set<String> items) {
+      this.name = name;
+      this.items = items;
     }
   }
 }
