@@ -13,15 +13,18 @@
 // limitations under the License.
 
 import { Component, computed, ChangeDetectionStrategy } from '@angular/core';
+import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { SelectedRegistrarWrapper } from '../shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
+import { ForceFocusDirective } from '../shared/directives/forceFocus.directive';
 
 @Component({
   selector: 'app-billingInfo',
+  imports: [MaterialModule, SelectedRegistrarWrapper, ForceFocusDirective],
   templateUrl: './billingInfo.component.html',
   styleUrls: ['./billingInfo.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BillingInfoComponent {
   public static PATH = 'billingInfo';

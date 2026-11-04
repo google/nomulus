@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { MaterialModule } from '../material.module';
 import { HistoryRecord } from './history.service';
 
 @Component({
   selector: 'app-history-list',
+  imports: [CommonModule, MaterialModule],
   templateUrl: './historyList.component.html',
   styleUrls: ['./historyList.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: false,
 })
 export class HistoryListComponent {
   @Input() historyRecords: HistoryRecord[] = [];

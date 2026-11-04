@@ -12,47 +12,73 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  linkedSignal,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { first } from 'rxjs';
+import { MaterialModule } from 'src/app/material.module';
+import {
+  GlobalLoader,
+  GlobalLoaderService,
+} from 'src/app/shared/services/globalLoader.service';
 import {
   ContactService,
   contactType,
   contactTypeToTextMap,
+  contactTypeToViewReadyContact,
 } from './contact.service';
 
 @Component({
   selector: 'app-contact-details',
+  imports: [CommonModule, FormsModule, MaterialModule],
   templateUrl: './contactDetails.component.html',
   styleUrls: ['./contactDetails.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContactDetailsComponent {
+export class ContactDetailsComponent implements GlobalLoader {
   protected contactTypeToTextMap = contactTypeToTextMap;
-  isEditing: boolean = false;
+  contactInEdit = linkedSignal(() =>
+    structuredClone(this.contactService.contactInEdit())
+  );
+  isEditing = signal(false);
+  isUpdating = signal(false);
 
   constructor(
     protected contactService: ContactService,
-    private _snackBar: MatSnackBar
+    private _snackBar: MatSnackBar,
+    protected globalLoader: GlobalLoaderService
   ) {}
 
+  loadingTimeout() {
+    this._snackBar.open('Timeout updating contact');
+  }
+
   deleteContact() {
-    if (
-      confirm(
-        `Please confirm deletion of contact ${this.contactService.contactInEdit.name}`
-      )
-    ) {
+    const contact = this.contactInEdit();
+    if (!contact) return;
+    if (confirm(`Please confirm deletion of contact ${contact.name}`)) {
+      this.isUpdating.set(true);
+      this.globalLoader.startGlobalLoader(this);
       this.contactService
-        .deleteContact(this.contactService.contactInEdit)
+        .deleteContact(contact)
         .pipe(first())
         .subscribe({
           error: (err: HttpErrorResponse) => {
-            this._snackBar.open(err.error);
+            this._snackBar.open(err.error || err.message);
+            this.isUpdating.set(false);
+            this.globalLoader.stopGlobalLoader(this);
           },
           complete: () => {
+            this.isUpdating.set(false);
+            this.globalLoader.stopGlobalLoader(this);
             this.goBack();
           },
         });
@@ -60,29 +86,42 @@ export class ContactDetailsComponent {
   }
 
   goBack() {
-    if (this.isEditing) {
-      this.isEditing = false;
+    if (this.isEditing()) {
+      this.contactInEdit.set(
+        structuredClone(this.contactService.contactInEdit())
+      );
+      this.isEditing.set(false);
     } else {
-      this.contactService.isContactNewView = false;
-      this.contactService.isContactDetailsView = false;
+      this.contactService.isContactNewView.set(false);
+      this.contactService.isContactDetailsView.set(false);
     }
   }
 
   save(e: SubmitEvent) {
     e.preventDefault();
-    if ((this.contactService.contactInEdit.types || []).length === 0) {
+    const contact = this.contactInEdit();
+    if (!contact || (contact.types || []).length === 0) {
       this._snackBar.open('Required to select contact type');
       return;
     }
-    const request = this.contactService.isContactNewView
-      ? this.contactService.addContact(this.contactService.contactInEdit)
-      : this.contactService.updateContact(this.contactService.contactInEdit);
+    this.isUpdating.set(true);
+    this.globalLoader.startGlobalLoader(this);
+    const request = this.contactService.isContactNewView()
+      ? this.contactService.addContact(contact)
+      : this.contactService.updateContact(contact);
     request.subscribe({
       complete: () => {
+        this.isUpdating.set(false);
+        this.globalLoader.stopGlobalLoader(this);
+        this.contactService.setEditableContact(
+          contactTypeToViewReadyContact(contact)
+        );
         this.goBack();
       },
       error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.error);
+        this._snackBar.open(err.error || err.message);
+        this.isUpdating.set(false);
+        this.globalLoader.stopGlobalLoader(this);
       },
     });
   }
@@ -92,33 +131,28 @@ export class ContactDetailsComponent {
   }
 
   checkboxIsChecked(type: string) {
-    return this.contactService.contactInEdit.types.includes(
-      type as contactType
-    );
+    return !!this.contactInEdit()?.types.includes(type as contactType);
   }
 
   checkboxIsDisabled(type: string) {
     if (type === 'ADMIN') {
       return true;
     }
-    return (
-      this.contactService.contactInEdit.types.length === 1 &&
-      this.contactService.contactInEdit.types[0] === (type as contactType)
-    );
+    const types = this.contactInEdit()?.types || [];
+    return types.length === 1 && types[0] === (type as contactType);
   }
 
   checkboxOnChange(event: MatCheckboxChange, type: string) {
+    const contact = this.contactInEdit();
+    if (!contact) return;
     if (event.checked) {
-      this.contactService.contactInEdit.types.push(type as contactType);
+      contact.types.push(type as contactType);
     } else {
-      this.contactService.contactInEdit.types =
-        this.contactService.contactInEdit.types.filter(
-          (t) => t != (type as contactType)
-        );
+      contact.types = contact.types.filter((t) => t != (type as contactType));
     }
   }
 
   emailAddressIsDisabled() {
-    return this.contactService.contactInEdit.types.includes('ADMIN');
+    return !!this.contactInEdit()?.types.includes('ADMIN');
   }
 }

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { MaterialModule } from 'src/app/material.module';
 
 interface Notification {
   id: string;
@@ -22,10 +23,10 @@ interface Notification {
 
 @Component({
   selector: 'app-notifications',
+  imports: [MaterialModule],
   templateUrl: './notifications.component.html',
   styleUrls: ['./notifications.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotificationsComponent {
   protected mockNotifications: Notification[] = [

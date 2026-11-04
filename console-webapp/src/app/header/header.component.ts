@@ -18,14 +18,17 @@ import {
   Output,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { RouterModule } from '@angular/router';
+import { MaterialModule } from '../material.module';
+import { RegistrarSelectorComponent } from '../registrar/registrarSelector.component';
 import { BreakPointObserverService } from '../shared/services/breakPoint.service';
 
 @Component({
   selector: 'app-header',
+  imports: [MaterialModule, RouterModule, RegistrarSelectorComponent],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeaderComponent {
   private isNavOpen = false;

@@ -13,12 +13,16 @@
 // limitations under the License.
 
 import { NestedTreeControl } from '@angular/cdk/tree';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatTreeNestedDataSource } from '@angular/material/tree';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { RouteWithIcon, routes, PATHS } from '../app-routing.module';
-import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import { RouteWithIcon, routes, PATHS } from '../app.routes';
+import { MaterialModule } from '../material.module';
+import {
+  RESTRICTED_ELEMENTS,
+  UserLevelVisibility,
+} from '../shared/directives/userLevelVisiblity.directive';
 import { RegistrarComponent } from '../registrar/registrarsTable.component';
 
 interface NavMenuNode extends RouteWithIcon {
@@ -31,13 +35,14 @@ interface NavMenuNode extends RouteWithIcon {
  */
 @Component({
   selector: 'app-navigation',
+  imports: [MaterialModule, UserLevelVisibility],
   templateUrl: './navigation.component.html',
   styleUrls: ['./navigation.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavigationComponent {
   renderRouter: boolean = true;
+  currentUrl = signal('');
   treeControl = new NestedTreeControl<RouteWithIcon>((node) => node.children);
   dataSource = new MatTreeNestedDataSource<RouteWithIcon>();
   private subscription!: Subscription;
@@ -50,8 +55,10 @@ export class NavigationComponent {
   }
 
   ngOnInit() {
+    this.currentUrl.set(this.router.url);
     this.subscription = this.router.events.subscribe((navigationParams) => {
       if (navigationParams instanceof NavigationEnd) {
+        this.currentUrl.set(navigationParams.url);
         this.syncExpandedNavigationWithRoute(navigationParams.url);
       }
     });

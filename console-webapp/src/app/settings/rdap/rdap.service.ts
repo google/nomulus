@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { switchMap } from 'rxjs';
 import {
   RegistrarService,
@@ -24,7 +24,7 @@ import { BackendService } from 'src/app/shared/services/backend.service';
   providedIn: 'root',
 })
 export class RdapService {
-  editing: boolean = false;
+  editing = signal(false);
 
   constructor(
     private backend: BackendService,

@@ -1,6 +1,6 @@
 <app-selected-registrar-wrapper>
   <div class="history-log">
-    <h1 class="mat-headline-4" forceFocus>
+    <h1 class="console-app__title" forceFocus>
       Registrar Console Activity History
     </h1>
     <mat-tab-group
@@ -12,7 +12,7 @@
 
         <app-history-list
           [historyRecords]="historyService.historyRecordsRegistrar()"
-          [isLoading]="isLoading"
+          [isLoading]="isLoading()"
         />
       </mat-tab>
       <mat-tab label="User Activity">
@@ -47,7 +47,7 @@
         <div class="spacer"></div>
         <app-history-list
           [historyRecords]="historyService.historyRecordsUser()"
-          [isLoading]="isLoading"
+          [isLoading]="isLoading()"
         />
       </mat-tab>
     </mat-tab-group>
@@ -57,6 +57,6 @@
     [elementId]="getElementIdForUserLog()"
     [isReverse]="true"
     [historyRecords]="historyService.historyRecordsUser()"
-    [isLoading]="isLoading"
+    [isLoading]="isLoading()"
   />
 </app-selected-registrar-wrapper>

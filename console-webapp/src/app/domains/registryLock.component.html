@@ -15,7 +15,7 @@
     contact {{ userDataService.userData()?.supportEmail }}.
   </h1>
   } @else if (isLocked()) {
-  <h1>Unlock the domain {{ domainListService.selectedDomain }}</h1>
+  <h1>Unlock the domain {{ domainListService.selectedDomain() }}</h1>
   <form (ngSubmit)="save(false)" [formGroup]="unlockDomain">
     <p>
       <mat-label for="password">Password: </mat-label>
@@ -55,7 +55,7 @@
     </button>
   </form>
   } @else {
-  <h1>Lock the domain {{ domainListService.selectedDomain }}</h1>
+  <h1>Lock the domain {{ domainListService.selectedDomain() }}</h1>
   <form (ngSubmit)="save(true)" [formGroup]="lockDomain">
     <p>
       <mat-label for="password">Password: </mat-label>

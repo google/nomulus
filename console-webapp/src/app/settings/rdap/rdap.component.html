@@ -1,4 +1,4 @@
-@if(rdapService.editing) {
+@if(rdapService.editing()) {
 <app-rdap-edit></app-rdap-edit>
 } @else {
 <div class="console-app__rdap">
@@ -12,7 +12,7 @@
       mat-flat-button
       color="primary"
       aria-label="Edit RDAP record"
-      (click)="rdapService.editing = true"
+      (click)="rdapService.editing.set(true)"
     >
       <mat-icon>edit</mat-icon>
       Edit

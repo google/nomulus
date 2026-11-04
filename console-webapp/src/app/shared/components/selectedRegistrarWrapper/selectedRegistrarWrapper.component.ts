@@ -13,10 +13,12 @@
 // limitations under the License.
 
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 
 @Component({
   selector: 'app-selected-registrar-wrapper',
+  imports: [MaterialModule],
   styleUrls: ['./selectedRegistrarWrapper.component.scss'],
   template: `
     @if(registrarService.registrarId()){
@@ -27,12 +29,11 @@ import { RegistrarService } from 'src/app/registrar/registrar.service';
         <mat-icon class="console-app__emty-registrar-icon">block</mat-icon>
       </h1>
       <h1>No registrar selected</h1>
-      <h4 class="mat-body-2">Please select a registrar</h4>
+      <h4>Please select a registrar</h4>
     </div>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelectedRegistrarWrapper {
   constructor(protected registrarService: RegistrarService) {}

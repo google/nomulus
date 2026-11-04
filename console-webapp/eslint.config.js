@@ -40,7 +40,7 @@ module.exports = tseslint.config(
       "@typescript-eslint/no-unused-expressions": "off",
       "@angular-eslint/prefer-on-push-component-change-detection": "off",
       "@angular-eslint/prefer-inject": "off",
-      "@angular-eslint/prefer-standalone": "off",
+      "@angular-eslint/prefer-standalone": "error",
       "@angular-eslint/no-output-on-prefix": "off",
       "no-var": "off",
       "prefer-const": "off",
