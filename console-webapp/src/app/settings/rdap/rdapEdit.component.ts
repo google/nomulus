@@ -13,8 +13,15 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, effect, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  effect,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MaterialModule } from 'src/app/material.module';
 import {
   Registrar,
   RegistrarService,
@@ -24,12 +31,12 @@ import { RdapService } from './rdap.service';
 
 @Component({
   selector: 'app-rdap-edit',
+  imports: [FormsModule, MaterialModule],
   templateUrl: './rdapEdit.component.html',
   styleUrls: ['./rdapEdit.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class RdapEditComponent {
+export class RdapEditComponent {
   registrarInEdit: Registrar | undefined;
 
   constructor(
@@ -41,7 +48,9 @@ export default class RdapEditComponent {
     effect(() => {
       const registrar = this.registrarService.registrar();
       if (registrar) {
-        this.registrarInEdit = structuredClone(registrar);
+        untracked(() => {
+          this.registrarInEdit = structuredClone(registrar);
+        });
       }
     });
   }
@@ -52,7 +61,7 @@ export default class RdapEditComponent {
 
     this.rdapService.saveChanges(this.registrarInEdit).subscribe({
       complete: () => {
-        this.rdapService.editing = false;
+        this.rdapService.editing.set(false);
       },
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error);

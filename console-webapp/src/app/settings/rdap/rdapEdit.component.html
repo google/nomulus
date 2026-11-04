@@ -8,7 +8,7 @@
     mat-icon-button
     class="console-app__rdap-edit-back"
     aria-label="Back to rdap view"
-    (click)="rdapService.editing = false"
+    (click)="rdapService.editing.set(false)"
   >
     <mat-icon>arrow_back</mat-icon>
   </button>

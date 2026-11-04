@@ -41,7 +41,7 @@ import {
       <button mat-button color="warn" (click)="onSave()">Confirm</button>
     </mat-dialog-actions>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MaterialModule],
 })
 export class ResetEppPasswordComponent {
@@ -58,12 +58,12 @@ export class ResetEppPasswordComponent {
 
 @Component({
   selector: 'app-epp-password-edit',
+  imports: [MaterialModule, PasswordInputForm],
   templateUrl: './eppPasswordEdit.component.html',
   styleUrls: ['./eppPasswordEdit.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class EppPasswordEditComponent {
+export class EppPasswordEditComponent {
   static EPP_VALIDATORS = [
     Validators.required,
     Validators.minLength(6),
@@ -108,7 +108,7 @@ export default class EppPasswordEditComponent {
   }
 
   goBack() {
-    this.securityService.isEditingPassword = false;
+    this.securityService.isEditingPassword.set(false);
   }
 
   sendEppPasswordResetRequest() {

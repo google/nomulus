@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MaterialModule } from 'src/app/material.module';
 import {
   IpAllowListItem,
   RegistrarService,
@@ -24,14 +26,14 @@ import { SecurityService, apiToUiConverter } from './security.service';
 
 @Component({
   selector: 'app-security-edit',
+  imports: [FormsModule, MaterialModule],
   templateUrl: './securityEdit.component.html',
   styleUrls: ['./securityEdit.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class SecurityEditComponent {
+export class SecurityEditComponent {
   dataSource: SecuritySettings = {};
-  isUpdating = false;
+  isUpdating = signal(false);
 
   constructor(
     public securityService: SecurityService,
@@ -46,21 +48,21 @@ export default class SecurityEditComponent {
   }
 
   save() {
-    this.isUpdating = true;
+    this.isUpdating.set(true);
     this.securityService.saveChanges(this.dataSource).subscribe({
       complete: () => {
-        this.isUpdating = false;
+        this.isUpdating.set(false);
         this.goBack();
       },
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
-        this.isUpdating = false;
+        this.isUpdating.set(false);
       },
     });
   }
 
   goBack() {
-    this.securityService.isEditingSecurity = false;
+    this.securityService.isEditingSecurity.set(false);
   }
 
   removeIpEntry(ip: IpAllowListItem) {

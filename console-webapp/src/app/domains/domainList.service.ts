@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable, Type } from '@angular/core';
+import { Injectable, signal, Type } from '@angular/core';
 import { tap } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
 import { BackendService } from '../shared/services/backend.service';
@@ -46,9 +46,9 @@ export enum BULK_ACTION_NAME {
 })
 export class DomainListService {
   checkpointTime?: string;
-  selectedDomain?: string;
-  public activeActionComponent: Type<any> | null = null;
-  public domainsList: Domain[] = [];
+  selectedDomain = signal<string | undefined>(undefined);
+  public activeActionComponent = signal<Type<any> | null>(null);
+  public domainsList = signal<Domain[]>([]);
 
   constructor(
     private backendService: BackendService,
@@ -72,7 +72,7 @@ export class DomainListService {
       .pipe(
         tap((domainListResult: DomainListResult) => {
           this.checkpointTime = domainListResult?.checkpointTime;
-          this.domainsList = domainListResult?.domains;
+          this.domainsList.set(domainListResult?.domains);
         })
       );
   }

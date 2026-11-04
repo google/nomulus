@@ -23,9 +23,15 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
-import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import { MaterialModule } from '../material.module';
+import { ForceFocusDirective } from '../shared/directives/forceFocus.directive';
+import {
+  RESTRICTED_ELEMENTS,
+  UserLevelVisibility,
+} from '../shared/directives/userLevelVisiblity.directive';
+import { NewRegistrarComponent } from './newRegistrar.component';
 import { Registrar, RegistrarService } from './registrar.service';
-import { PATHS } from '../app-routing.module';
+import { NewOteComponent } from '../ote/newOte.component';
 import { environment } from '../../environments/environment';
 
 export const columns = [
@@ -81,11 +87,16 @@ export const columns = [
 
 @Component({
   selector: 'app-registrar',
+  imports: [
+    MaterialModule,
+    NewRegistrarComponent,
+    ForceFocusDirective,
+    UserLevelVisibility,
+  ],
   templateUrl: './registrarsTable.component.html',
   styleUrls: ['./registrarsTable.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistrarComponent {
   public static PATH = 'registrars';
@@ -115,7 +126,7 @@ export class RegistrarComponent {
   }
 
   createOteAccount() {
-    this.router.navigate([PATHS.NewOteComponent]);
+    this.router.navigate([NewOteComponent.PATH]);
   }
 
   getElementIdForOteBlock() {

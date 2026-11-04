@@ -19,7 +19,13 @@ import {
   Output,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { AbstractControl, FormGroup, ValidatorFn } from '@angular/forms';
+import {
+  AbstractControl,
+  FormGroup,
+  FormsModule,
+  ValidatorFn,
+} from '@angular/forms';
+import { MaterialModule } from 'src/app/material.module';
 
 type errorCode = 'required' | 'maxlength' | 'minlength' | 'passwordsDontMatch';
 
@@ -33,10 +39,10 @@ export interface PasswordResults {
 
 @Component({
   selector: 'password-input-form-component',
+  imports: [FormsModule, MaterialModule],
   templateUrl: './passwordInputForm.component.html',
   styleUrls: ['./passwordInputForm.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PasswordInputForm {
   static newPasswordsMatch: ValidatorFn = (control: AbstractControl) => {

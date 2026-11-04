@@ -72,8 +72,8 @@ export function contactTypeToViewReadyContact(c: Contact): ViewReadyContact {
 export class ContactService {
   contacts = signal<ViewReadyContact[]>([]);
   contactInEdit!: ViewReadyContact;
-  isContactDetailsView: boolean = false;
-  isContactNewView: boolean = false;
+  isContactDetailsView = signal(false);
+  isContactNewView = signal(false);
 
   constructor(
     private backend: BackendService,

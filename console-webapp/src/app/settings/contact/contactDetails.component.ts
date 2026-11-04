@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { first } from 'rxjs';
+import { MaterialModule } from 'src/app/material.module';
 import {
   ContactService,
   contactType,
@@ -25,14 +28,14 @@ import {
 
 @Component({
   selector: 'app-contact-details',
+  imports: [CommonModule, FormsModule, MaterialModule],
   templateUrl: './contactDetails.component.html',
   styleUrls: ['./contactDetails.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContactDetailsComponent {
   protected contactTypeToTextMap = contactTypeToTextMap;
-  isEditing: boolean = false;
+  isEditing = signal(false);
 
   constructor(
     protected contactService: ContactService,
@@ -60,11 +63,11 @@ export class ContactDetailsComponent {
   }
 
   goBack() {
-    if (this.isEditing) {
-      this.isEditing = false;
+    if (this.isEditing()) {
+      this.isEditing.set(false);
     } else {
-      this.contactService.isContactNewView = false;
-      this.contactService.isContactDetailsView = false;
+      this.contactService.isContactNewView.set(false);
+      this.contactService.isContactDetailsView.set(false);
     }
   }
 
@@ -74,7 +77,7 @@ export class ContactDetailsComponent {
       this._snackBar.open('Required to select contact type');
       return;
     }
-    const request = this.contactService.isContactNewView
+    const request = this.contactService.isContactNewView()
       ? this.contactService.addContact(this.contactService.contactInEdit)
       : this.contactService.updateContact(this.contactService.contactInEdit);
     request.subscribe({

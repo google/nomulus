@@ -20,7 +20,10 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { MatSidenav } from '@angular/material/sidenav';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { HeaderComponent } from './header/header.component';
+import { MaterialModule } from './material.module';
+import { NavigationComponent } from './navigation/navigation.component';
 import { RegistrarService } from './registrar/registrar.service';
 import { BreakPointObserverService } from './shared/services/breakPoint.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
@@ -30,10 +33,10 @@ import { PocReminderComponent } from './shared/components/pocReminder/pocReminde
 
 @Component({
   selector: 'app-root',
+  imports: [MaterialModule, RouterModule, HeaderComponent, NavigationComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements AfterViewInit {
   @ViewChild(MatSidenav)

@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  computed,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { SelectedRegistrarModule } from '../app.module';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
-import { SnackBarModule } from '../snackbar.module';
 import { UsersService, roleToDescription, User } from './users.service';
 import { FormsModule } from '@angular/forms';
 import { UserEditFormComponent } from './userEditForm.component';
@@ -26,21 +29,15 @@ import { UserEditFormComponent } from './userEditForm.component';
   selector: 'app-user-edit',
   templateUrl: './userDetails.component.html',
   styleUrls: ['./userDetails.component.scss'],
-  imports: [
-    FormsModule,
-    MaterialModule,
-    SnackBarModule,
-    SelectedRegistrarModule,
-    UserEditFormComponent,
-  ],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  imports: [FormsModule, MaterialModule, UserEditFormComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [],
 })
 export class UserDetailsComponent {
-  isEditing = false;
+  isEditing = signal(false);
   isPasswordVisible = false;
   isNewUser = false;
-  isLoading = false;
+  isLoading = signal(false);
 
   userDetails = computed(() => {
     return this.usersService
@@ -72,14 +69,14 @@ export class UserDetailsComponent {
           this.userDetails().emailAddress
       )
     ) {
-      this.isLoading = true;
+      this.isLoading.set(true);
       this.usersService.deleteUser(this.userDetails()).subscribe({
         error: (err) => {
           this._snackBar.open(err.error || err.message);
-          this.isLoading = false;
+          this.isLoading.set(false);
         },
         complete: () => {
-          this.isLoading = false;
+          this.isLoading.set(false);
           this.goBack();
         },
       });
@@ -91,15 +88,15 @@ export class UserDetailsComponent {
   }
 
   saveEdit(user: User) {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.usersService.updateUser(user).subscribe({
       error: (err) => {
         this._snackBar.open(err.error || err.message);
-        this.isLoading = false;
+        this.isLoading.set(false);
       },
       complete: () => {
-        this.isLoading = false;
-        this.isEditing = false;
+        this.isLoading.set(false);
+        this.isEditing.set(false);
       },
     });
   }

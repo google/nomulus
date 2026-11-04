@@ -12,21 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, effect, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  effect,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { MaterialModule } from 'src/app/material.module';
 import {
   RegistrarService,
   SecuritySettings,
 } from 'src/app/registrar/registrar.service';
+import { EppPasswordEditComponent } from './eppPasswordEdit.component';
 import { SecurityService, apiToUiConverter } from './security.service';
+import { SecurityEditComponent } from './securityEdit.component';
 
 @Component({
   selector: 'app-security',
+  imports: [MaterialModule, SecurityEditComponent, EppPasswordEditComponent],
   templateUrl: './security.component.html',
   styleUrls: ['./security.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class SecurityComponent {
+export class SecurityComponent {
   public static PATH = 'security';
   dataSource: SecuritySettings = {};
   constructor(
@@ -34,19 +43,22 @@ export default class SecurityComponent {
     public registrarService: RegistrarService
   ) {
     effect(() => {
-      if (this.registrarService.registrar()) {
-        this.dataSource = apiToUiConverter(this.registrarService.registrar());
-        this.securityService.isEditingSecurity = false;
-        this.securityService.isEditingPassword = false;
+      const registrar = this.registrarService.registrar();
+      if (registrar) {
+        untracked(() => {
+          this.dataSource = apiToUiConverter(registrar);
+          this.securityService.isEditingSecurity.set(false);
+          this.securityService.isEditingPassword.set(false);
+        });
       }
     });
   }
 
   editSecurity() {
-    this.securityService.isEditingSecurity = true;
+    this.securityService.isEditingSecurity.set(true);
   }
 
   editEppPassword() {
-    this.securityService.isEditingPassword = true;
+    this.securityService.isEditingPassword.set(true);
   }
 }

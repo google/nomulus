@@ -1,6 +1,6 @@
-@if(securityService.isEditingSecurity) {
+@if(securityService.isEditingSecurity()) {
 <app-security-edit></app-security-edit>
-} @else if(securityService.isEditingPassword) {
+} @else if(securityService.isEditingPassword()) {
 <app-epp-password-edit></app-epp-password-edit>
 } @else {
 <div class="settings-security">

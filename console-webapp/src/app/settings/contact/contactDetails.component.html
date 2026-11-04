@@ -9,12 +9,12 @@
       <mat-icon>arrow_back</mat-icon>
     </button>
     <div class="spacer"></div>
-    @if(!isEditing && !contactService.isContactNewView) {
+    @if(!isEditing() && !contactService.isContactNewView()) {
     <button
       mat-flat-button
       color="primary"
       aria-label="Edit Contact"
-      (click)="isEditing = true"
+      (click)="isEditing.set(true)"
     >
       <mat-icon>edit</mat-icon>
       Edit
@@ -28,7 +28,7 @@
     </button>
     }
   </div>
-  @if(isEditing || contactService.isContactNewView) {
+  @if(isEditing() || contactService.isContactNewView()) {
   <h1>Contact Details</h1>
   <form (ngSubmit)="save($event)">
     <section>

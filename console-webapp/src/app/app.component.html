@@ -1,7 +1,7 @@
-<div class="console-app mat-typography">
+<div class="console-app">
   <app-header (toggleNavOpen)="toggleSidenav()"></app-header>
   <div class="console-app__global-spinner">
-    @if (globalLoader.isLoading) {
+    @if (globalLoader.isLoading()) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
   </div>

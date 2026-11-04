@@ -16,7 +16,6 @@ import { Directive, ElementRef, effect } from '@angular/core';
 
 @Directive({
   selector: '[forceFocus]',
-  standalone: false,
 })
 export class ForceFocusDirective {
   constructor(private el: ElementRef) {
