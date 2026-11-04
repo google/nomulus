@@ -171,7 +171,9 @@ public final class TestServer {
       if (port <= 0) {
         port = urlAddress.getPortOrDefault(DEFAULT_PORT);
       }
-      return new URI(String.format("http://%s:%d%s", urlAddress.getHost(), port, path)).toURL();
+      return new URI(
+              String.format("http://%s%s", HostAndPort.fromParts(urlAddress.getHost(), port), path))
+          .toURL();
     } catch (MalformedURLException | URISyntaxException e) {
       throw new RuntimeException(e);
     }

@@ -13,17 +13,19 @@
 // limitations under the License.
 
 import { Component, computed, ChangeDetectionStrategy } from '@angular/core';
+import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { RdapService } from './rdap.service';
+import { RdapEditComponent } from './rdapEdit.component';
 
 @Component({
   selector: 'app-rdap',
+  imports: [MaterialModule, RdapEditComponent],
   templateUrl: './rdap.component.html',
   styleUrls: ['./rdap.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class RdapComponent {
+export class RdapComponent {
   public static PATH = 'rdap';
   formattedAddress = computed(() => {
     let result = '';

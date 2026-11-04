@@ -1,20 +1,22 @@
-@if (contactService.contactInEdit) {
+@if (contactInEdit(); as contact) {
 <div class="console-app__contact" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
   <div class="console-app__contact-controls">
     <button
       mat-icon-button
       aria-label="Back to contacts list"
+      [disabled]="isUpdating()"
       (click)="goBack()"
     >
       <mat-icon>arrow_back</mat-icon>
     </button>
     <div class="spacer"></div>
-    @if(!isEditing && !contactService.isContactNewView) {
+    @if(!isEditing() && !contactService.isContactNewView()) {
     <button
       mat-flat-button
       color="primary"
       aria-label="Edit Contact"
-      (click)="isEditing = true"
+      [disabled]="isUpdating()"
+      (click)="isEditing.set(true)"
     >
       <mat-icon>edit</mat-icon>
       Edit
@@ -22,13 +24,14 @@
     <button
       mat-icon-button
       aria-label="Delete Contact"
+      [disabled]="isUpdating()"
       (click)="deleteContact()"
     >
       <mat-icon>delete</mat-icon>
     </button>
     }
   </div>
-  @if(isEditing || contactService.isContactNewView) {
+  @if(isEditing() || contactService.isContactNewView()) {
   <h1>Contact Details</h1>
   <form (ngSubmit)="save($event)">
     <section>
@@ -37,7 +40,8 @@
         <input
           matInput
           [required]="true"
-          [(ngModel)]="contactService.contactInEdit.name"
+          [disabled]="isUpdating()"
+          [(ngModel)]="contact.name"
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
@@ -48,9 +52,9 @@
           matInput
           [email]="true"
           [required]="true"
-          [(ngModel)]="contactService.contactInEdit.emailAddress"
+          [(ngModel)]="contact.emailAddress"
           [ngModelOptions]="{ standalone: true }"
-          [disabled]="emailAddressIsDisabled()"
+          [disabled]="emailAddressIsDisabled() || isUpdating()"
           [matTooltip]="
             emailAddressIsDisabled()
               ? 'Reach out to registry customer support to update email address'
@@ -62,7 +66,8 @@
         <mat-label>Phone: </mat-label>
         <input
           matInput
-          [(ngModel)]="contactService.contactInEdit.phoneNumber"
+          [disabled]="isUpdating()"
+          [(ngModel)]="contact.phoneNumber"
           [ngModelOptions]="{ standalone: true }"
           placeholder="+0.0000000000"
         />
@@ -71,7 +76,8 @@
         <mat-label>Fax: </mat-label>
         <input
           matInput
-          [(ngModel)]="contactService.contactInEdit.faxNumber"
+          [disabled]="isUpdating()"
+          [(ngModel)]="contact.faxNumber"
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
@@ -88,7 +94,7 @@
         <mat-checkbox
           [checked]="checkboxIsChecked(contactType.key)"
           (change)="checkboxOnChange($event, contactType.key)"
-          [disabled]="checkboxIsDisabled(contactType.key)"
+          [disabled]="checkboxIsDisabled(contactType.key) || isUpdating()"
         >
           {{ contactType.value }}
         </mat-checkbox>
@@ -99,21 +105,24 @@
       <h1>RDAP Preferences</h1>
       <div>
         <mat-checkbox
-          [(ngModel)]="contactService.contactInEdit.visibleInRdapAsAdmin"
+          [disabled]="isUpdating()"
+          [(ngModel)]="contact.visibleInRdapAsAdmin"
           [ngModelOptions]="{ standalone: true }"
           >Show in Registrar RDAP record as admin contact</mat-checkbox
         >
       </div>
       <div>
         <mat-checkbox
-          [(ngModel)]="contactService.contactInEdit.visibleInRdapAsTech"
+          [disabled]="isUpdating()"
+          [(ngModel)]="contact.visibleInRdapAsTech"
           [ngModelOptions]="{ standalone: true }"
           >Show in Registrar RDAP record as technical contact</mat-checkbox
         >
       </div>
       <div>
         <mat-checkbox
-          [(ngModel)]="contactService.contactInEdit.visibleInDomainRdapAsAbuse"
+          [disabled]="isUpdating()"
+          [(ngModel)]="contact.visibleInDomainRdapAsAbuse"
           [ngModelOptions]="{ standalone: true }"
           >Show Phone and Email in Domain RDAP Record as registrar abuse contact
           (per CL&D requirements)</mat-checkbox
@@ -125,13 +134,14 @@
       mat-flat-button
       color="primary"
       type="submit"
+      [disabled]="isUpdating()"
       aria-label="Save contact updates"
     >
       Save
     </button>
   </form>
   } @else {
-  <h1>{{ contactService.contactInEdit.name }}</h1>
+  <h1>{{ contact.name }}</h1>
   <mat-card appearance="outlined">
     <mat-card-content>
       <mat-list role="list">
@@ -142,28 +152,24 @@
         <mat-list-item role="listitem">
           <span class="console-app__list-key">Email</span>
           <span class="console-app__list-value">{{
-            contactService.contactInEdit.emailAddress
+            contact.emailAddress
           }}</span>
         </mat-list-item>
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">Phone</span>
-          <span class="console-app__list-value">{{
-            contactService.contactInEdit.phoneNumber
-          }}</span>
+          <span class="console-app__list-value">{{ contact.phoneNumber }}</span>
         </mat-list-item>
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">Fax</span>
-          <span class="console-app__list-value">{{
-            contactService.contactInEdit.faxNumber
-          }}</span>
+          <span class="console-app__list-value">{{ contact.faxNumber }}</span>
         </mat-list-item>
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">Type:</span>
           <span class="console-app__list-value">{{
-            contactService.contactInEdit.userFriendlyTypes.join(", ")
+            contact.userFriendlyTypes.join(", ")
           }}</span>
         </mat-list-item>
       </mat-list>
@@ -175,22 +181,22 @@
         <mat-list-item role="listitem">
           <h2>RDAP Preferences</h2>
         </mat-list-item>
-        @if(contactService.contactInEdit.visibleInRdapAsAdmin) {
+        @if(contact.visibleInRdapAsAdmin) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-value"
             >Show in Registrar RDAP record as admin contact</span
           >
         </mat-list-item>
-        } @if(contactService.contactInEdit.visibleInRdapAsTech) {
+        } @if(contact.visibleInRdapAsTech) {
         <mat-divider></mat-divider>
-        @if (contactService.contactInEdit.visibleInRdapAsTech) {
+        @if (contact.visibleInRdapAsTech) {
         <mat-list-item role="listitem">
           <span class="console-app__list-value"
             >Show in Registrar RDAP record as technical contact</span
           >
         </mat-list-item>
-        } } @if(contactService.contactInEdit.visibleInDomainRdapAsAbuse) {
+        } } @if(contact.visibleInDomainRdapAsAbuse) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-value"

@@ -12,10 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  ActivatedRoute,
+  ParamMap,
+  Router,
+  RouterModule,
+} from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { take } from 'rxjs';
+import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from '../../services/backend.service';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
@@ -23,7 +29,7 @@ import {
   PasswordInputForm,
   PasswordResults,
 } from './passwordInputForm.component';
-import EppPasswordEditComponent from 'src/app/settings/security/eppPasswordEdit.component';
+import { EppPasswordEditComponent } from 'src/app/settings/security/eppPasswordEdit.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface PasswordResetVerifyResponse {
@@ -33,9 +39,9 @@ export interface PasswordResetVerifyResponse {
 
 @Component({
   selector: 'app-password-reset-verify',
+  imports: [MaterialModule, RouterModule, PasswordInputForm],
   templateUrl: './passwordResetVerify.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PasswordResetVerifyComponent {
   public static PATH = 'password-reset-verify';
@@ -45,9 +51,9 @@ export class PasswordResetVerifyComponent {
     PasswordInputForm.newPasswordsMatch,
   ];
 
-  isLoading = true;
+  isLoading = signal(true);
   type?: string;
-  errorMessage?: string;
+  errorMessage = signal<string | undefined>(undefined);
   requestVerificationCode = '';
 
   passwordUpdateForm: FormGroup<any> | null = null;
@@ -68,8 +74,8 @@ export class PasswordResetVerifyComponent {
         .getPasswordResetInformation(this.requestVerificationCode)
         .subscribe({
           error: (err: HttpErrorResponse) => {
-            this.isLoading = false;
-            this.errorMessage = err.error;
+            this.errorMessage.set(err.error);
+            this.isLoading.set(false);
           },
           next: this.presentData.bind(this),
         });
@@ -88,7 +94,7 @@ export class PasswordResetVerifyComponent {
       newPassword: new FormControl('', validators),
       newPasswordRepeat: new FormControl('', validators),
     });
-    this.isLoading = false;
+    this.isLoading.set(false);
   }
 
   save(passwordResults: PasswordResults) {
@@ -99,8 +105,8 @@ export class PasswordResetVerifyComponent {
       )
       .subscribe({
         error: (err: HttpErrorResponse) => {
-          this.isLoading = false;
-          this.errorMessage = err.error;
+          this.errorMessage.set(err.error);
+          this.isLoading.set(false);
         },
         next: (_) => {
           this.router.navigate(['']);

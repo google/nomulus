@@ -20,7 +20,9 @@ import {
   ViewEncapsulation,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MaterialModule } from '../material.module';
 import { Registrar, RegistrarService } from './registrar.service';
 
 interface LocalizedAddressStreet {
@@ -31,13 +33,13 @@ interface LocalizedAddressStreet {
 
 @Component({
   selector: 'app-new-registrar',
+  imports: [FormsModule, MaterialModule],
   templateUrl: './newRegistrar.component.html',
   styleUrls: ['./newRegistrar.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class NewRegistrarComponent {
+export class NewRegistrarComponent {
   protected newRegistrar: Registrar;
   protected localizedAddressStreet: LocalizedAddressStreet;
   protected billingAccountMap: String = '';

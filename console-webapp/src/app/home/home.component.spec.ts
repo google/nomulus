@@ -16,19 +16,20 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { HomeComponent } from './home.component';
 import { MaterialModule } from '../material.module';
-import { AppModule } from '../app.module';
 import { BackendService } from '../shared/services/backend.service';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
+import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
   let fixture: ComponentFixture<HomeComponent>;
+  let router: Router;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MaterialModule, AppModule],
-      declarations: [HomeComponent],
+      imports: [HomeComponent, MaterialModule],
       providers: [
         BackendService,
         provideHttpClient(),
@@ -36,12 +37,39 @@ describe('HomeComponent', () => {
       ],
     }).compileComponents();
 
+    router = TestBed.inject(Router);
     fixture = TestBed.createComponent(HomeComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should return registrar restricted element ID', () => {
+    expect(component.getElementIdForRegistrarsBlock()).toBe(
+      RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT
+    );
+  });
+
+  it('should navigate to registrars view with merged query params', () => {
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    component.viewRegistrars();
+    expect(navigateSpy).toHaveBeenCalledWith(['registrars'], {
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('should navigate to security settings on updateEppPassword()', () => {
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    component.updateEppPassword();
+    expect(navigateSpy).toHaveBeenCalledWith(['settings/security'], {
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('should navigate to domain list on viewDums()', () => {
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    component.viewDums();
+    expect(navigateSpy).toHaveBeenCalledWith(['domain-list'], {
+      queryParamsHandling: 'merge',
+    });
   });
 });

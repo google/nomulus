@@ -13,29 +13,46 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import { MaterialModule } from '../material.module';
+import { LocationBackDirective } from '../shared/directives/locationBack.directive';
+import {
+  RESTRICTED_ELEMENTS,
+  UserLevelVisibility,
+} from '../shared/directives/userLevelVisiblity.directive';
 import { Registrar, RegistrarService } from './registrar.service';
-import { RegistrarComponent, columns } from './registrarsTable.component';
+import { columns } from './registrarsTable.component';
+import { PATHS } from '../app.routes';
 import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-registrar-details',
+  imports: [
+    FormsModule,
+    MaterialModule,
+    LocationBackDirective,
+    UserLevelVisibility,
+  ],
   templateUrl: './registrarDetails.component.html',
   styleUrls: ['./registrarDetails.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistrarDetailsComponent implements OnInit {
   public static PATH = 'registrars/:id';
   inEdit: boolean = false;
   oteButtonVisible = environment.sandbox;
   registrarInEdit!: Registrar;
-  registrarNotFound: boolean = true;
+  registrarNotFound = signal(true);
   columns = columns.filter((c) => !c.hiddenOnDetailsCard);
   private subscription!: Subscription;
 
@@ -58,9 +75,9 @@ export class RegistrarDetailsComponent implements OnInit {
           this._snackBar.open(
             `Registrar with id ${params.get('id')} is not available`
           );
-          this.registrarNotFound = true;
+          this.registrarNotFound.set(true);
         } else {
-          this.registrarNotFound = false;
+          this.registrarNotFound.set(false);
         }
       });
     });
@@ -94,7 +111,7 @@ export class RegistrarDetailsComponent implements OnInit {
   saveAndClose() {
     this.registrarService.updateRegistrar(this.registrarInEdit).subscribe({
       complete: () => {
-        this.router.navigate([RegistrarComponent.PATH], {
+        this.router.navigate([PATHS.RegistrarComponent], {
           queryParamsHandling: 'merge',
         });
       },

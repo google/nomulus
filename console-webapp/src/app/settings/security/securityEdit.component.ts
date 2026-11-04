@@ -13,58 +13,81 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  linkedSignal,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MaterialModule } from 'src/app/material.module';
 import {
   IpAllowListItem,
   RegistrarService,
-  SecuritySettings,
 } from 'src/app/registrar/registrar.service';
+import {
+  GlobalLoader,
+  GlobalLoaderService,
+} from 'src/app/shared/services/globalLoader.service';
 import { SecurityService, apiToUiConverter } from './security.service';
 
 @Component({
   selector: 'app-security-edit',
+  imports: [FormsModule, MaterialModule],
   templateUrl: './securityEdit.component.html',
   styleUrls: ['./securityEdit.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class SecurityEditComponent {
-  dataSource: SecuritySettings = {};
-  isUpdating = false;
+export class SecurityEditComponent implements GlobalLoader {
+  dataSource = linkedSignal(() =>
+    apiToUiConverter(this.registrarService.registrar())
+  );
+  isUpdating = signal(false);
 
   constructor(
     public securityService: SecurityService,
     private _snackBar: MatSnackBar,
-    public registrarService: RegistrarService
-  ) {
-    this.dataSource = apiToUiConverter(registrarService.registrar());
+    public registrarService: RegistrarService,
+    protected globalLoader: GlobalLoaderService
+  ) {}
+
+  loadingTimeout() {
+    this._snackBar.open('Timeout updating security settings');
   }
 
   createIpEntry() {
-    this.dataSource.ipAddressAllowList?.push({ value: '' });
+    this.dataSource.update((ds) => ({
+      ...ds,
+      ipAddressAllowList: [...(ds.ipAddressAllowList || []), { value: '' }],
+    }));
   }
 
   save() {
-    this.isUpdating = true;
-    this.securityService.saveChanges(this.dataSource).subscribe({
+    this.isUpdating.set(true);
+    this.globalLoader.startGlobalLoader(this);
+    this.securityService.saveChanges(this.dataSource()).subscribe({
       complete: () => {
-        this.isUpdating = false;
+        this.isUpdating.set(false);
+        this.globalLoader.stopGlobalLoader(this);
         this.goBack();
       },
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
-        this.isUpdating = false;
+        this.isUpdating.set(false);
+        this.globalLoader.stopGlobalLoader(this);
       },
     });
   }
 
   goBack() {
-    this.securityService.isEditingSecurity = false;
+    this.securityService.isEditingSecurity.set(false);
   }
 
   removeIpEntry(ip: IpAllowListItem) {
-    this.dataSource.ipAddressAllowList =
-      this.dataSource.ipAddressAllowList?.filter((item) => item !== ip);
+    this.dataSource.update((ds) => ({
+      ...ds,
+      ipAddressAllowList: ds.ipAddressAllowList?.filter((item) => item !== ip),
+    }));
   }
 }

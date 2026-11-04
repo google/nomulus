@@ -44,7 +44,7 @@ export const columns = [
   templateUrl: './usersList.component.html',
   styleUrls: ['./usersList.component.scss'],
   imports: [MaterialModule],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [],
 })
 export class UsersListComponent {

@@ -25,6 +25,10 @@ import { MaterialModule } from 'src/app/material.module';
 import { filter, switchMap, take } from 'rxjs';
 import { BackendService } from 'src/app/shared/services/backend.service';
 import {
+  GlobalLoader,
+  GlobalLoaderService,
+} from 'src/app/shared/services/globalLoader.service';
+import {
   PasswordInputForm,
   PasswordResults,
 } from 'src/app/shared/components/passwordReset/passwordInputForm.component';
@@ -41,7 +45,7 @@ import {
       <button mat-button color="warn" (click)="onSave()">Confirm</button>
     </mat-dialog-actions>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MaterialModule],
 })
 export class ResetEppPasswordComponent {
@@ -58,12 +62,12 @@ export class ResetEppPasswordComponent {
 
 @Component({
   selector: 'app-epp-password-edit',
+  imports: [MaterialModule, PasswordInputForm],
   templateUrl: './eppPasswordEdit.component.html',
   styleUrls: ['./eppPasswordEdit.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class EppPasswordEditComponent {
+export class EppPasswordEditComponent implements GlobalLoader {
   static EPP_VALIDATORS = [
     Validators.required,
     Validators.minLength(6),
@@ -86,10 +90,16 @@ export default class EppPasswordEditComponent {
     protected userDataService: UserDataService,
     private backendService: BackendService,
     private resetPasswordDialog: MatDialog,
-    private _snackBar: MatSnackBar
+    private _snackBar: MatSnackBar,
+    protected globalLoader: GlobalLoaderService
   ) {}
 
+  loadingTimeout() {
+    this._snackBar.open('Timeout updating EPP password');
+  }
+
   save(passwordResults: PasswordResults) {
+    this.globalLoader.startGlobalLoader(this);
     this.securityService
       .saveEppPassword({
         registrarId: this.registrarService.registrarId(),
@@ -99,19 +109,22 @@ export default class EppPasswordEditComponent {
       })
       .subscribe({
         complete: () => {
+          this.globalLoader.stopGlobalLoader(this);
           this.goBack();
         },
         error: (err: HttpErrorResponse) => {
           this._snackBar.open(err.error);
+          this.globalLoader.stopGlobalLoader(this);
         },
       });
   }
 
   goBack() {
-    this.securityService.isEditingPassword = false;
+    this.securityService.isEditingPassword.set(false);
   }
 
   sendEppPasswordResetRequest() {
+    this.globalLoader.startGlobalLoader(this);
     return this.backendService.requestEppPasswordReset(
       this.registrarService.registrarId()
     );
@@ -127,9 +140,14 @@ export default class EppPasswordEditComponent {
       )
       .pipe(switchMap((_) => this.sendEppPasswordResetRequest()))
       .subscribe({
-        next: (_) => this.goBack(),
-        error: (err: HttpErrorResponse) =>
-          this._snackBar.open(err.error || err.message),
+        next: (_) => {
+          this.globalLoader.stopGlobalLoader(this);
+          this.goBack();
+        },
+        error: (err: HttpErrorResponse) => {
+          this._snackBar.open(err.error || err.message);
+          this.globalLoader.stopGlobalLoader(this);
+        },
       });
   }
 }

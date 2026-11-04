@@ -13,13 +13,16 @@
 // limitations under the License.
 
 import { NestedTreeControl } from '@angular/cdk/tree';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatTreeNestedDataSource } from '@angular/material/tree';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { RouteWithIcon, routes, PATHS } from '../app-routing.module';
-import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
-import { RegistrarComponent } from '../registrar/registrarsTable.component';
+import { RouteWithIcon, routes, PATHS } from '../app.routes';
+import { MaterialModule } from '../material.module';
+import {
+  RESTRICTED_ELEMENTS,
+  UserLevelVisibility,
+} from '../shared/directives/userLevelVisiblity.directive';
 
 interface NavMenuNode extends RouteWithIcon {
   parentRoute?: RouteWithIcon;
@@ -31,13 +34,14 @@ interface NavMenuNode extends RouteWithIcon {
  */
 @Component({
   selector: 'app-navigation',
+  imports: [MaterialModule, UserLevelVisibility],
   templateUrl: './navigation.component.html',
   styleUrls: ['./navigation.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavigationComponent {
   renderRouter: boolean = true;
+  currentUrl = signal('');
   treeControl = new NestedTreeControl<RouteWithIcon>((node) => node.children);
   dataSource = new MatTreeNestedDataSource<RouteWithIcon>();
   private subscription!: Subscription;
@@ -50,9 +54,11 @@ export class NavigationComponent {
   }
 
   ngOnInit() {
+    this.currentUrl.set(this.router.url);
     this.subscription = this.router.events.subscribe((navigationParams) => {
       if (navigationParams instanceof NavigationEnd) {
-        this.syncExpandedNavigationWithRoute(navigationParams.url);
+        this.currentUrl.set(navigationParams.urlAfterRedirects);
+        this.syncExpandedNavigationWithRoute();
       }
     });
   }
@@ -62,7 +68,7 @@ export class NavigationComponent {
   }
 
   getElementId(node: RouteWithIcon) {
-    if (node.path === RegistrarComponent.PATH) {
+    if (node.path === PATHS.RegistrarComponent) {
       return RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT;
     } else if (node.path === PATHS.UsersComponent) {
       return RESTRICTED_ELEMENTS.USERS;
@@ -70,18 +76,20 @@ export class NavigationComponent {
     return null;
   }
 
-  syncExpandedNavigationWithRoute(url: string) {
-    const maybeComponentWithChildren = this.dataSource.data.find((menuNode) => {
-      return (
-        // @ts-ignore - optional function added to components with children,
-        // there's no availble tools to get current active router component
-        typeof menuNode.component?.matchesUrl === 'function' &&
-        // @ts-ignore
-        menuNode.component?.matchesUrl(url)
-      );
-    });
-    if (maybeComponentWithChildren) {
-      this.treeControl.expand(maybeComponentWithChildren);
+  syncExpandedNavigationWithRoute() {
+    const activeParentNode = this.dataSource.data.find(
+      (menuNode) =>
+        this.hasChild(0, menuNode) &&
+        menuNode.path &&
+        this.router.isActive(menuNode.path, {
+          paths: 'subset',
+          queryParams: 'ignored',
+          fragment: 'ignored',
+          matrixParams: 'ignored',
+        })
+    );
+    if (activeParentNode) {
+      this.treeControl.expand(activeParentNode);
     }
   }
 
