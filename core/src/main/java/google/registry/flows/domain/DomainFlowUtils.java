@@ -47,9 +47,9 @@ import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusYears;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
+import static google.registry.util.DomainNameUtils.ALLOWED_CHARS;
 import static java.util.stream.Collectors.joining;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -159,10 +159,6 @@ public class DomainFlowUtils {
       "Domain on the name collision list was allocated. But by policy, the domain will not be "
           + "delegated. Please visit https://www.icann.org/namecollision for more information on "
           + "name collision.";
-
-  /** Strict validator for ascii lowercase letters, digits, and "-", allowing "." as a separator */
-  private static final CharMatcher ALLOWED_CHARS =
-      CharMatcher.inRange('a', 'z').or(CharMatcher.inRange('0', '9').or(CharMatcher.anyOf("-.")));
 
   /** Default validator used to determine if an IDN name can be provisioned on a TLD. */
   private static final IdnLabelValidator IDN_LABEL_VALIDATOR = new IdnLabelValidator();

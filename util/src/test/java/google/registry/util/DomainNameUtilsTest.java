@@ -15,10 +15,12 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.util.DomainNameUtils.canonicalizeAndValidateHostname;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.DomainNameUtils.getSecondLevelDomain;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainNameUtils}. */
@@ -81,6 +83,65 @@ class DomainNameUtilsTest {
   @Test
   void testCanonicalizeHostname_acePrefixUnicodeChars() {
     assertThrows(IllegalArgumentException.class, () -> canonicalizeHostname("xn--みんな"));
+  }
+
+  @Test
+  void testCanonicalizeAndValidateHostname_succeeds() {
+    assertThat(canonicalizeAndValidateHostname("b.example")).isEqualTo("b.example");
+    assertThat(canonicalizeAndValidateHostname("EPP.Registrar.Example"))
+        .isEqualTo("epp.registrar.example");
+    assertThat(canonicalizeAndValidateHostname("COM.Google.Registrar."))
+        .isEqualTo("com.google.registrar");
+    assertThat(canonicalizeAndValidateHostname("epp.みんな")).isEqualTo("epp.xn--q9jyb4c");
+    assertThat(canonicalizeAndValidateHostname("みんな.registrar.example"))
+        .isEqualTo("xn--q9jyb4c.registrar.example");
+    assertThat(canonicalizeAndValidateHostname("XN--Q9JYB4C.Registrar.Example"))
+        .isEqualTo("xn--q9jyb4c.registrar.example");
+    assertThat(canonicalizeAndValidateHostname("epp-01.c-d.example"))
+        .isEqualTo("epp-01.c-d.example");
+    String maxLabel = "a".repeat(63);
+    assertThat(canonicalizeAndValidateHostname(maxLabel + ".example"))
+        .isEqualTo(maxLabel + ".example");
+    String maxHostname =
+        "a".repeat(63) + "." + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(61);
+    assertThat(maxHostname).hasLength(253);
+    assertThat(canonicalizeAndValidateHostname(maxHostname)).isEqualTo(maxHostname);
+  }
+
+  @Test
+  void testCanonicalizeAndValidateHostname_invalid() {
+    assertThrows(IllegalArgumentException.class, () -> canonicalizeAndValidateHostname(null));
+    for (String invalid :
+        ImmutableList.of(
+            "",
+            ".",
+            "localhost",
+            "localhost.",
+            ".registrar.example",
+            "epp..registrar.example",
+            "epp.registrar.example..",
+            "*.registrar.example",
+            "epp_1.registrar.example",
+            "-epp.registrar.example",
+            "epp-.registrar.example",
+            "ab--cd.registrar.example",
+            "xn--みんな.example",
+            "192.0.2.1",
+            "2001:db8::1",
+            "[2001:db8::1]",
+            "https://epp.registrar.example",
+            "epp.registrar.example:700",
+            "epp.registrar.example/path",
+            " epp.registrar.example",
+            "epp.registrar.example ",
+            "epp.registrar.ex ample",
+            "a".repeat(64) + ".example",
+            "a".repeat(63) + "." + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62))) {
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> canonicalizeAndValidateHostname(invalid),
+          "Expected IllegalArgumentException for: " + invalid);
+    }
   }
 
   @Test

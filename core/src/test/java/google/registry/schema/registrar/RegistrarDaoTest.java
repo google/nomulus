@@ -15,6 +15,7 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.existsInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -59,6 +60,8 @@ public class RegistrarDaoTest {
                     .setZip("11211")
                     .setCountryCode("US")
                     .build())
+            .setAllowedEppClientCertificateHostnames(ImmutableList.of("epp.registrar.example"))
+            .setRevokedClientCertificateHashes(ImmutableList.of(SAMPLE_CERT_HASH))
             .build();
   }
 
@@ -97,5 +100,8 @@ public class RegistrarDaoTest {
                 .setZip("11211")
                 .setCountryCode("US")
                 .build());
+    assertThat(persisted.getAllowedEppClientCertificateHostnames())
+        .containsExactly("epp.registrar.example");
+    assertThat(persisted.getRevokedClientCertificateHashes()).containsExactly(SAMPLE_CERT_HASH);
   }
 }
