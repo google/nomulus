@@ -22,6 +22,8 @@ import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.console.ConsolePermission;
@@ -30,6 +32,7 @@ import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
+import google.registry.request.OptionalJsonPayload;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
@@ -51,6 +54,7 @@ public class SecurityAction extends ConsoleApiAction {
   private final String registrarId;
   private final AuthenticatedRegistrarAccessor registrarAccessor;
   private final Optional<Registrar> registrar;
+  private final Optional<JsonElement> payload;
   private final CertificateChecker certificateChecker;
 
   @Inject
@@ -59,11 +63,13 @@ public class SecurityAction extends ConsoleApiAction {
       CertificateChecker certificateChecker,
       AuthenticatedRegistrarAccessor registrarAccessor,
       @Parameter("registrarId") String registrarId,
-      @Parameter("registrar") Optional<Registrar> registrar) {
+      @Parameter("registrar") Optional<Registrar> registrar,
+      @OptionalJsonPayload Optional<JsonElement> payload) {
     super(consoleApiParams);
     this.registrarId = registrarId;
     this.registrarAccessor = registrarAccessor;
     this.registrar = registrar;
+    this.payload = payload;
     this.certificateChecker = certificateChecker;
   }
 
@@ -95,7 +101,29 @@ public class SecurityAction extends ConsoleApiAction {
       updates.add("IP_CHANGE");
     }
 
+    JsonObject jsonObject = payload.get().getAsJsonObject();
+
     try {
+      if (isFieldPresent(jsonObject, "allowedEppClientCertificateHostnames")) {
+        checkNoNullElements(
+            jsonObject,
+            "allowedEppClientCertificateHostnames",
+            "EPP client certificate hostname cannot be null");
+        checkArgument(
+            !registrarParameter.getAllowedEppClientCertificateHostnames().isEmpty()
+                || savedRegistrar.getAllowedEppClientCertificateHostnames().isEmpty(),
+            "Cannot clear allowed EPP client certificate hostnames once configured");
+        updatedRegistrarBuilder.setAllowedEppClientCertificateHostnames(
+            registrarParameter.getAllowedEppClientCertificateHostnames());
+      }
+      if (isFieldPresent(jsonObject, "revokedClientCertificateHashes")) {
+        checkNoNullElements(
+            jsonObject,
+            "revokedClientCertificateHashes",
+            "Revoked client certificate hash cannot be null");
+        updatedRegistrarBuilder.setRevokedClientCertificateHashes(
+            registrarParameter.getRevokedClientCertificateHashes());
+      }
       if (!savedRegistrar
           .getClientCertificate()
           .equals(registrarParameter.getClientCertificate())) {
@@ -116,12 +144,22 @@ public class SecurityAction extends ConsoleApiAction {
           updates.add("FAILOVER_SSL_CERT_CHANGE");
         }
       }
-    } catch (InsecureCertificateException e) {
+    } catch (InsecureCertificateException | IllegalArgumentException e) {
       setFailedResponse(e.getMessage(), SC_BAD_REQUEST);
       return;
     }
 
     Registrar updatedRegistrar = updatedRegistrarBuilder.build();
+    if (!savedRegistrar
+        .getAllowedEppClientCertificateHostnames()
+        .equals(updatedRegistrar.getAllowedEppClientCertificateHostnames())) {
+      updates.add("EPP_CERT_HOSTNAMES_CHANGE");
+    }
+    if (!savedRegistrar
+        .getRevokedClientCertificateHashes()
+        .equals(updatedRegistrar.getRevokedClientCertificateHashes())) {
+      updates.add("REVOKED_CERTS_CHANGE");
+    }
     tm().put(updatedRegistrar);
     finishAndPersistConsoleUpdateHistory(
         new ConsoleUpdateHistory.Builder()
@@ -133,5 +171,16 @@ public class SecurityAction extends ConsoleApiAction {
     sendExternalUpdatesIfNecessary(
         EmailInfo.create(savedRegistrar, updatedRegistrar, ImmutableSet.of(), ImmutableSet.of()));
     consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  private static boolean isFieldPresent(JsonObject jsonObject, String fieldName) {
+    return jsonObject.has(fieldName) && !jsonObject.get(fieldName).isJsonNull();
+  }
+
+  private static void checkNoNullElements(
+      JsonObject jsonObject, String fieldName, String nullElementErrorMessage) {
+    for (JsonElement element : jsonObject.getAsJsonArray(fieldName)) {
+      checkArgument(!element.isJsonNull(), nullElementErrorMessage);
+    }
   }
 }
