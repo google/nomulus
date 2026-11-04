@@ -1,4 +1,4 @@
-@if (registrarInEdit) {
+@if (registrarInEdit(); as registrar) {
 <div
   class="console-app__rdap-edit"
   cdkTrapFocus
@@ -8,7 +8,8 @@
     mat-icon-button
     class="console-app__rdap-edit-back"
     aria-label="Back to rdap view"
-    (click)="rdapService.editing = false"
+    [disabled]="isUpdating()"
+    (click)="rdapService.editing.set(false)"
   >
     <mat-icon>arrow_back</mat-icon>
   </button>
@@ -27,7 +28,8 @@
         <input
           matInput
           type="email"
-          [(ngModel)]="registrarInEdit.emailAddress"
+          [disabled]="isUpdating()"
+          [(ngModel)]="registrar.emailAddress"
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
@@ -36,7 +38,8 @@
         <input
           matInput
           type="text"
-          [(ngModel)]="registrarInEdit.phoneNumber"
+          [disabled]="isUpdating()"
+          [(ngModel)]="registrar.phoneNumber"
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
@@ -45,7 +48,8 @@
         <input
           matInput
           type="text"
-          [(ngModel)]="registrarInEdit.faxNumber"
+          [disabled]="isUpdating()"
+          [(ngModel)]="registrar.faxNumber"
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
@@ -54,8 +58,9 @@
         <input
           matInput
           type="text"
+          [disabled]="isUpdating()"
           [ngModelOptions]="{ standalone: true }"
-          [(ngModel)]="registrarInEdit.localizedAddress.street![0]"
+          [(ngModel)]="registrar.localizedAddress.street![0]"
         />
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -63,8 +68,9 @@
         <input
           matInput
           type="text"
+          [disabled]="isUpdating()"
           [ngModelOptions]="{ standalone: true }"
-          [(ngModel)]="registrarInEdit.localizedAddress.street![1]"
+          [(ngModel)]="registrar.localizedAddress.street![1]"
         />
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -72,8 +78,9 @@
         <input
           matInput
           type="text"
+          [disabled]="isUpdating()"
           [ngModelOptions]="{ standalone: true }"
-          [(ngModel)]="(registrarInEdit.localizedAddress || {}).city"
+          [(ngModel)]="(registrar.localizedAddress || {}).city"
         />
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -81,8 +88,9 @@
         <input
           matInput
           type="text"
+          [disabled]="isUpdating()"
           [ngModelOptions]="{ standalone: true }"
-          [(ngModel)]="(registrarInEdit.localizedAddress || {}).state"
+          [(ngModel)]="(registrar.localizedAddress || {}).state"
         />
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -90,8 +98,9 @@
         <input
           matInput
           type="text"
+          [disabled]="isUpdating()"
           [ngModelOptions]="{ standalone: true }"
-          [(ngModel)]="(registrarInEdit.localizedAddress || {}).countryCode"
+          [(ngModel)]="(registrar.localizedAddress || {}).countryCode"
         />
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -99,14 +108,16 @@
         <input
           matInput
           type="text"
+          [disabled]="isUpdating()"
           [ngModelOptions]="{ standalone: true }"
-          [(ngModel)]="(registrarInEdit.localizedAddress || {}).zip"
+          [(ngModel)]="(registrar.localizedAddress || {}).zip"
         />
       </mat-form-field>
       <button
         mat-flat-button
         color="primary"
         type="submit"
+        [disabled]="isUpdating()"
         aria-label="Save RDAO settings"
       >
         Save

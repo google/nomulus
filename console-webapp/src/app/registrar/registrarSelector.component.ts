@@ -17,20 +17,23 @@ import {
   computed,
   effect,
   signal,
+  untracked,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MaterialModule } from '../material.module';
 import { RegistrarService } from './registrar.service';
 
 @Component({
   selector: 'app-registrar-selector',
+  imports: [FormsModule, MaterialModule],
   templateUrl: './registrarSelector.component.html',
   styleUrls: ['./registrarSelector.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistrarSelectorComponent {
   registrarInput = signal<string>(this.registrarService.registrarId());
-  filteredOptions?: string[];
+  filteredOptions = signal<string[] | undefined>(undefined);
   allRegistrarIds = computed(() =>
     this.registrarService
       .registrars()
@@ -41,15 +44,18 @@ export class RegistrarSelectorComponent {
   constructor(protected registrarService: RegistrarService) {
     effect(() => {
       const filterValue = this.registrarInput().toLowerCase();
-      this.filteredOptions = this.allRegistrarIds().filter((option) =>
+      const filtered = this.allRegistrarIds().filter((option) =>
         option.toLowerCase().includes(filterValue)
       );
+      untracked(() => {
+        this.filteredOptions.set(filtered);
+      });
     });
   }
 
   onFocus() {
     // We reset the list of options after selection, so that user doesn't have to clear it out
-    this.filteredOptions = this.allRegistrarIds();
+    this.filteredOptions.set(this.allRegistrarIds());
   }
 
   onSelect(registrarId: string) {

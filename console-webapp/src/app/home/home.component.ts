@@ -15,18 +15,22 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { DomainListComponent } from '../domains/domainList.component';
+import { MaterialModule } from '../material.module';
 import { RegistrarComponent } from '../registrar/registrarsTable.component';
-import SecurityComponent from '../settings/security/security.component';
+import { SecurityComponent } from '../settings/security/security.component';
 import { SettingsComponent } from '../settings/settings.component';
-import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import {
+  RESTRICTED_ELEMENTS,
+  UserLevelVisibility,
+} from '../shared/directives/userLevelVisiblity.directive';
 import { BreakPointObserverService } from '../shared/services/breakPoint.service';
 
 @Component({
   selector: 'app-home',
+  imports: [MaterialModule, UserLevelVisibility],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent {
   constructor(

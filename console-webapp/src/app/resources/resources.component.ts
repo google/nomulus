@@ -13,14 +13,16 @@
 // limitations under the License.
 
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { MaterialModule } from '../material.module';
+import { ForceFocusDirective } from '../shared/directives/forceFocus.directive';
 import { UserDataService } from '../shared/services/userData.service';
 
 @Component({
   selector: 'app-resources',
+  imports: [MaterialModule, ForceFocusDirective],
   templateUrl: './resources.component.html',
   styleUrls: ['./resources.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResourcesComponent {
   public static PATH = 'resources';

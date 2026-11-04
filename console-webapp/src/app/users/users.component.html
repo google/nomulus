@@ -1,16 +1,16 @@
 <app-selected-registrar-wrapper>
-  @if(isLoading) {
+  @if(isLoading()) {
   <div class="console-app__users-spinner">
     <mat-spinner />
   </div>
-  } @else if(selectingExistingUser) {
+  } @else if(selectingExistingUser()) {
   <div class="console-app__users" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
-    <h1 class="mat-headline-4">Add existing user</h1>
+    <h1 class="console-app__title">Add existing user</h1>
     <p>
       <button
         mat-icon-button
         aria-label="Back to users list"
-        (click)="selectingExistingUser = false"
+        (click)="selectingExistingUser.set(false)"
       >
         <mat-icon>arrow_back</mat-icon>
       </button>
@@ -32,9 +32,9 @@
         </mat-select>
       </mat-form-field>
     </p>
-    @if(usersSelection.length) {
+    @if(usersSelection().length) {
     <app-users-list
-      [users]="usersSelection"
+      [users]="usersSelection()"
       (onSelect)="existingUserSelected($event)"
     />
     <p class="console-app__users-add-existing">
@@ -50,7 +50,7 @@
       <button
         mat-stroked-button
         aria-label="Cancel adding existing user"
-        (click)="selectingExistingUser = false"
+        (click)="selectingExistingUser.set(false)"
       >
         Cancel
       </button>
@@ -64,7 +64,7 @@
 
   } @else if(isNew) {
   <div cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
-    <h1 class="mat-headline-4">New User Form</h1>
+    <h1 class="console-app__title">New User Form</h1>
     <div class="spacer"></div>
     <p>
       <button
@@ -83,7 +83,7 @@
   } @else {
   <div class="console-app__users">
     <div class="console-app__users-header">
-      <h1 class="mat-headline-4" forceFocus>Users</h1>
+      <h1 class="console-app__title" forceFocus>Users</h1>
       <div class="spacer"></div>
       <div class="console-app__users-header-buttons">
         <button

@@ -3,14 +3,14 @@
   cdkTrapFocus
   [cdkTrapFocusAutoCapture]="true"
 >
-  @if(isEditing) {
-  <h1 class="mat-headline-4">Editing {{ userDetails().emailAddress }}</h1>
+  @if(isEditing()) {
+  <h1 class="console-app__title">Editing {{ userDetails().emailAddress }}</h1>
   <mat-divider></mat-divider>
   <div class="console-app__user-details-controls">
     <button
       mat-icon-button
       aria-label="Back to view user"
-      (click)="isEditing = false"
+      (click)="isEditing.set(false)"
     >
       <mat-icon>arrow_back</mat-icon>
     </button>
@@ -20,11 +20,11 @@
     (onEditComplete)="saveEdit($event)"
   />
   } @else { @if(isNewUser) {
-  <h1 class="mat-headline-4">
+  <h1 class="console-app__title">
     {{ userDetails().emailAddress + " successfully created" }}
   </h1>
   } @else {
-  <h1 class="mat-headline-4">User details</h1>
+  <h1 class="console-app__title">User details</h1>
   }
   <mat-divider></mat-divider>
   <div class="console-app__user-details-controls">
@@ -36,7 +36,7 @@
       mat-flat-button
       color="primary"
       aria-label="Edit User"
-      (click)="isEditing = true"
+      (click)="isEditing.set(true)"
     >
       <mat-icon>edit</mat-icon>
       Edit
@@ -45,7 +45,7 @@
       mat-icon-button
       aria-label="Delete User"
       (click)="deleteUser()"
-      [disabled]="isLoading"
+      [disabled]="isLoading()"
     >
       <mat-icon>delete</mat-icon>
     </button>
@@ -56,7 +56,7 @@
     Please save the password. For your security, we do not store passwords in a
     recoverable format.
   </div>
-  } @if (isLoading) {
+  } @if (isLoading()) {
   <p>
     <mat-progress-bar mode="query"></mat-progress-bar>
   </p>

@@ -18,7 +18,7 @@
       #auto="matAutocomplete"
       (optionSelected)="onSelect($event.option.value)"
     >
-      @for (registrarId of filteredOptions; track registrarId) {
+      @for (registrarId of filteredOptions(); track registrarId) {
       <mat-option
         [value]="registrarId"
         selected="registrarId === registrarService.registrarId()"

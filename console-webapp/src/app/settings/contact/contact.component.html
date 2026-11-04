@@ -1,4 +1,5 @@
-@if(contactService.isContactDetailsView || contactService.isContactNewView) {
+@if(contactService.isContactDetailsView() || contactService.isContactNewView())
+{
 <app-contact-details></app-contact-details>
 } @else {
 <div class="console-app__contacts-controls">

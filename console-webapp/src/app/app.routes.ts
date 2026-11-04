@@ -1,4 +1,4 @@
-// Copyright 2024 The Nomulus Authors. All Rights Reserved.
+// Copyright 2026 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { NgModule } from '@angular/core';
-import { Route, RouterModule } from '@angular/router';
+import { Route } from '@angular/router';
 import { BillingInfoComponent } from './billingInfo/billingInfo.component';
 import { DomainListComponent } from './domains/domainList.component';
+import { HistoryComponent } from './history/history.component';
 import { HomeComponent } from './home/home.component';
 import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component';
 import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
 import { RegistrarComponent } from './registrar/registrarsTable.component';
 import { ResourcesComponent } from './resources/resources.component';
-import ContactComponent from './settings/contact/contact.component';
-import SecurityComponent from './settings/security/security.component';
+import { ContactComponent } from './settings/contact/contact.component';
+import { RdapComponent } from './settings/rdap/rdap.component';
+import { SecurityComponent } from './settings/security/security.component';
 import { SettingsComponent } from './settings/settings.component';
-import { SupportComponent } from './support/support.component';
-import RdapComponent from './settings/rdap/rdap.component';
-import { HistoryComponent } from './history/history.component';
 import { PasswordResetVerifyComponent } from './shared/components/passwordReset/passwordResetVerify.component';
+import { SupportComponent } from './support/support.component';
 
 export interface RouteWithIcon extends Route {
   iconName?: string;
@@ -38,6 +37,7 @@ export const PATHS = {
   OteStatusComponent: 'ote-status/:registrarId',
   UsersComponent: 'users',
 };
+
 export const routes: RouteWithIcon[] = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   {
@@ -147,9 +147,3 @@ export const routes: RouteWithIcon[] = [
     iconName: 'help',
   },
 ];
-
-@NgModule({
-  imports: [RouterModule.forRoot(routes, { useHash: true })],
-  exports: [RouterModule],
-})
-export class AppRoutingModule {}

@@ -21,17 +21,39 @@ import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import { RegistrarSelectorComponent } from './registrarSelector.component';
 import { FormsModule } from '@angular/forms';
+import { Registrar, RegistrarService } from './registrar.service';
+import { signal } from '@angular/core';
 
 describe('RegistrarSelectorComponent', () => {
   let component: RegistrarSelectorComponent;
   let fixture: ComponentFixture<RegistrarSelectorComponent>;
+  let mockRegistrarService: {
+    registrarId: ReturnType<typeof signal<string>>;
+    registrars: ReturnType<typeof signal<Partial<Registrar>[]>>;
+    updateSelectedRegistrar: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
+    mockRegistrarService = {
+      registrarId: signal('alpha'),
+      registrars: signal([
+        { registrarId: 'charlie' },
+        { registrarId: 'alpha' },
+        { registrarId: 'bravo' },
+      ]),
+      updateSelectedRegistrar: vi.fn(),
+    };
+
     await TestBed.configureTestingModule({
-      declarations: [RegistrarSelectorComponent],
-      imports: [MaterialModule, BrowserAnimationsModule, FormsModule],
+      imports: [
+        RegistrarSelectorComponent,
+        MaterialModule,
+        BrowserAnimationsModule,
+        FormsModule,
+      ],
       providers: [
         BackendService,
+        { provide: RegistrarService, useValue: mockRegistrarService },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -42,7 +64,28 @@ describe('RegistrarSelectorComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should compute sorted registrar IDs and filter by input', () => {
+    expect(component.allRegistrarIds()).toEqual(['alpha', 'bravo', 'charlie']);
+    expect(component.filteredOptions()).toEqual(['alpha']);
+
+    component.registrarInput.set('R');
+    TestBed.flushEffects();
+    expect(component.filteredOptions()).toEqual(['bravo', 'charlie']);
+  });
+
+  it('should reset filteredOptions to all sorted registrar IDs on focus', () => {
+    component.registrarInput.set('charlie');
+    TestBed.flushEffects();
+    expect(component.filteredOptions()).toEqual(['charlie']);
+
+    component.onFocus();
+    expect(component.filteredOptions()).toEqual(['alpha', 'bravo', 'charlie']);
+  });
+
+  it('should delegate selection to RegistrarService.updateSelectedRegistrar', () => {
+    component.onSelect('bravo');
+    expect(mockRegistrarService.updateSelectedRegistrar).toHaveBeenCalledWith(
+      'bravo'
+    );
   });
 });

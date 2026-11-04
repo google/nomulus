@@ -1,86 +1,13 @@
-@use "sass:map";
-@use "sass:math";
 @use "@angular/material" as mat;
 
 $secondary-color: #80868b;
 $border-color: #dadce0;
-
-@function rem($valueInPixels, $rootbase: 16px) {
-  @return math.div($valueInPixels, $rootbase) * 1rem;
-}
 
 // Include the common styles for Angular Material. We include this here so that you only
 // have to load a single css file for Angular Material in your app.
 // Be sure that you only ever include this mixin once!
 @include mat.elevation-classes();
 @include mat.app-background();
-
-$typographyConfig: mat.m2-define-typography-config(
-  $headline-1:
-    mat.m2-define-typography-level(
-      rem(29px),
-      rem(36px),
-      500,
-      "Google Sans",
-      normal
-    ),
-  $headline-4:
-    mat.m2-define-typography-level(
-      rem(28px),
-      rem(36px),
-      500,
-      "Google Sans",
-      normal
-    ),
-  $headline-5:
-    mat.m2-define-typography-level(
-      rem(20px),
-      rem(28px),
-      400,
-      "Google Sans",
-      normal
-    ),
-  $headline-6:
-    mat.m2-define-typography-level(
-      rem(16px),
-      rem(2px),
-      500,
-      "Google Sans",
-      normal
-    ),
-  $body-1:
-    mat.m2-define-typography-level(
-      rem(16px),
-      rem(24px),
-      400,
-      "Google Sans Text",
-      normal
-    ),
-  $body-2:
-    mat.m2-define-typography-level(
-      rem(14px),
-      rem(20px),
-      400,
-      "Google Sans Text",
-      normal
-    ),
-  $caption:
-    mat.m2-define-typography-level(
-      rem(14px),
-      rem(24px),
-      400,
-      "Google Sans",
-      0.15px
-    ),
-  $overline:
-    mat.m2-define-typography-level(
-      rem(14px),
-      rem(20px),
-      500,
-      "Google Sans",
-      0.5px
-    ),
-);
 
 .text-xl {
   font-size: 1.1rem;
@@ -135,7 +62,6 @@ $theme: mat.define-theme(
 
 html {
   @include mat.all-component-themes($theme);
-  @include mat.typography-hierarchy($typographyConfig);
   .field-small {
     @include mat.form-field-density(-3);
   }
