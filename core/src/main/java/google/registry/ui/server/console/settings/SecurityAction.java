@@ -97,6 +97,20 @@ public class SecurityAction extends ConsoleApiAction {
 
     try {
       if (!savedRegistrar
+          .getAllowedEppClientCertificateHostnames()
+          .equals(registrarParameter.getAllowedEppClientCertificateHostnames())) {
+        updatedRegistrarBuilder.setAllowedEppClientCertificateHostnames(
+            registrarParameter.getAllowedEppClientCertificateHostnames());
+        updates.add("EPP_CERT_HOSTNAMES_CHANGE");
+      }
+      if (!savedRegistrar
+          .getRevokedClientCertificateHashes()
+          .equals(registrarParameter.getRevokedClientCertificateHashes())) {
+        updatedRegistrarBuilder.setRevokedClientCertificateHashes(
+            registrarParameter.getRevokedClientCertificateHashes());
+        updates.add("REVOKED_CERTS_CHANGE");
+      }
+      if (!savedRegistrar
           .getClientCertificate()
           .equals(registrarParameter.getClientCertificate())) {
         if (registrarParameter.getClientCertificate().isPresent()) {
@@ -116,7 +130,7 @@ public class SecurityAction extends ConsoleApiAction {
           updates.add("FAILOVER_SSL_CERT_CHANGE");
         }
       }
-    } catch (InsecureCertificateException e) {
+    } catch (InsecureCertificateException | IllegalArgumentException e) {
       setFailedResponse(e.getMessage(), SC_BAD_REQUEST);
       return;
     }

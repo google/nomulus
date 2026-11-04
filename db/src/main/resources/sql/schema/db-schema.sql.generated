@@ -498,6 +498,7 @@
     create table "Registrar" (
         registrar_id text not null,
         last_update_time timestamp(6) with time zone not null,
+        allowed_epp_client_certificate_hostnames text[],
         allowed_tlds text[],
         billing_account_map hstore,
         block_premium_names boolean not null,
@@ -539,6 +540,7 @@
         rdap_base_urls text[],
         registrar_name text not null,
         registry_lock_allowed boolean not null,
+        revoked_client_certificate_hashes text[],
         password_salt text,
         state text check ((state in ('PENDING','ACTIVE','SUSPENDED','DISABLED'))),
         type text not null check ((type in ('REAL','OTE','PDT','EXTERNAL_MONITORING','INTERNAL','MONITORING','TEST'))),
