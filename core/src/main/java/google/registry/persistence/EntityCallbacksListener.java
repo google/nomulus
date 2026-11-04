@@ -14,6 +14,12 @@
 
 package google.registry.persistence;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.MappedSuperclass;
@@ -35,8 +41,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.Objects;
-import java.util.stream.Stream;
+import javax.annotation.Nullable;
 
 /**
  * A listener class to invoke entity callbacks.
@@ -88,90 +93,138 @@ public class EntityCallbacksListener {
   @Retention(RetentionPolicy.RUNTIME)
   public @interface RecursivePostLoad {}
 
+  private static final ImmutableSet<Class<? extends Annotation>> CALLBACK_TYPES =
+      ImmutableSet.of(
+          RecursivePrePersist.class,
+          RecursivePreRemove.class,
+          RecursivePostPersist.class,
+          RecursivePostRemove.class,
+          RecursivePreUpdate.class,
+          RecursivePostUpdate.class,
+          RecursivePostLoad.class);
+
+  private static final ClassValue<ClassCallbackInfo> CALLBACK_INFO_CACHE =
+      new ClassValue<>() {
+        @Override
+        protected ClassCallbackInfo computeValue(Class<?> clazz) {
+          return ClassCallbackInfo.create(clazz);
+        }
+      };
+
   @PrePersist
   void prePersist(Object entity) {
-    EntityCallbackExecutor.create(RecursivePrePersist.class).execute(entity, entity.getClass());
+    execute(entity, RecursivePrePersist.class);
   }
 
   @PreRemove
   void preRemove(Object entity) {
-    EntityCallbackExecutor.create(RecursivePreRemove.class).execute(entity, entity.getClass());
+    execute(entity, RecursivePreRemove.class);
   }
 
   @PostPersist
   void postPersist(Object entity) {
-    EntityCallbackExecutor.create(RecursivePostPersist.class).execute(entity, entity.getClass());
+    execute(entity, RecursivePostPersist.class);
   }
 
   @PostRemove
   void postRemove(Object entity) {
-    EntityCallbackExecutor.create(RecursivePostRemove.class).execute(entity, entity.getClass());
+    execute(entity, RecursivePostRemove.class);
   }
 
   @PreUpdate
   void preUpdate(Object entity) {
-    EntityCallbackExecutor.create(RecursivePreUpdate.class).execute(entity, entity.getClass());
+    execute(entity, RecursivePreUpdate.class);
   }
 
   @PostUpdate
   void postUpdate(Object entity) {
-    EntityCallbackExecutor.create(RecursivePostUpdate.class).execute(entity, entity.getClass());
+    execute(entity, RecursivePostUpdate.class);
   }
 
   @PostLoad
   void postLoad(Object entity) {
-    EntityCallbackExecutor.create(RecursivePostLoad.class).execute(entity, entity.getClass());
+    execute(entity, RecursivePostLoad.class);
   }
 
-  private static class EntityCallbackExecutor {
-    Class<? extends Annotation> callbackType;
+  private static void execute(Object entity, Class<? extends Annotation> callbackType) {
+    CALLBACK_INFO_CACHE.get(entity.getClass()).execute(entity, callbackType);
+  }
 
-    private EntityCallbackExecutor(Class<? extends Annotation> callbackType) {
-      this.callbackType = callbackType;
-    }
+  @VisibleForTesting
+  static ClassCallbackInfo getCallbackInfoForTesting(Class<?> clazz) {
+    return CALLBACK_INFO_CACHE.get(clazz);
+  }
 
-    private static EntityCallbackExecutor create(Class<? extends Annotation> callbackType) {
-      return new EntityCallbackExecutor(callbackType);
+  /**
+   * Pre-computed reflection metadata for a single class, cached via {@link #CALLBACK_INFO_CACHE} so
+   * that field and method lookups only happen once per class.
+   */
+  @VisibleForTesting
+  record ClassCallbackInfo(
+      @Nullable ClassCallbackInfo superclassInfo,
+      ImmutableList<Field> embeddedFields,
+      ImmutableMap<Class<? extends Annotation>, Method> methodsByCallback) {
+
+    private static ClassCallbackInfo create(Class<?> currentClass) {
+      Class<?> superclass = currentClass.getSuperclass();
+      ClassCallbackInfo superclassInfo =
+          (superclass != null && superclass.isAnnotationPresent(MappedSuperclass.class))
+              ? CALLBACK_INFO_CACHE.get(superclass)
+              : null;
+
+      ImmutableList<Field> embeddedFields = getRelevantEmbeddedFields(currentClass);
+
+      ImmutableMap.Builder<Class<? extends Annotation>, Method> methodsBuilder =
+          new ImmutableMap.Builder<>();
+      for (Method method : currentClass.getDeclaredMethods()) {
+        for (Class<? extends Annotation> callbackType : CALLBACK_TYPES) {
+          if (method.isAnnotationPresent(callbackType)) {
+            method.setAccessible(true);
+            methodsBuilder.put(callbackType, method);
+          }
+        }
+      }
+
+      return new ClassCallbackInfo(superclassInfo, embeddedFields, methodsBuilder.buildOrThrow());
     }
 
     /**
-     * Executes eligible callbacks in {@link Embedded} properties recursively.
-     *
-     * <p>We pass the class that we're currently inspecting because embedded properties or relevant
-     * methods can be defined on a possible superclass of the root entity class.
-     *
-     * @param entity the Java object of the entity class
+     * Executes eligible callbacks on {@code entity}, its superclasses, and its {@link Embedded}
+     * properties.
      */
-    private void execute(Object entity, Class<?> currentClass) {
-      Class<?> superclass = currentClass.getSuperclass();
-      if (superclass != null && superclass.isAnnotationPresent(MappedSuperclass.class)) {
-        execute(entity, superclass);
+    private void execute(Object entity, Class<? extends Annotation> callbackType) {
+      if (superclassInfo != null) {
+        superclassInfo.execute(entity, callbackType);
       }
 
-      findEmbeddedProperties(entity, currentClass)
-          .forEach(embeddedProperty -> execute(embeddedProperty, embeddedProperty.getClass()));
-
-      for (Method method : currentClass.getDeclaredMethods()) {
-        if (method.isAnnotationPresent(callbackType)) {
-          invokeMethod(method, entity);
+      for (Field field : embeddedFields) {
+        Object embeddedProperty = getFieldObject(field, entity);
+        if (embeddedProperty != null) {
+          CALLBACK_INFO_CACHE
+              .get(embeddedProperty.getClass())
+              .execute(embeddedProperty, callbackType);
         }
+      }
+
+      Method method = methodsByCallback.get(callbackType);
+      if (method != null) {
+        invokeMethod(method, entity);
       }
     }
 
-    private Stream<Object> findEmbeddedProperties(Object object, Class<?> currentClass) {
-      return Arrays.stream(currentClass.getDeclaredFields())
+    private static ImmutableList<Field> getRelevantEmbeddedFields(Class<?> clazz) {
+      return Arrays.stream(clazz.getDeclaredFields())
           .filter(field -> !field.isAnnotationPresent(Transient.class))
           .filter(
               field ->
                   field.isAnnotationPresent(Embedded.class)
                       || field.getType().isAnnotationPresent(Embeddable.class))
           .filter(field -> !Modifier.isStatic(field.getModifiers()))
-          .map(field -> getFieldObject(field, object))
-          .filter(Objects::nonNull);
+          .peek(field -> field.setAccessible(true))
+          .collect(toImmutableList());
     }
 
     private static Object getFieldObject(Field field, Object object) {
-      field.setAccessible(true);
       try {
         return field.get(object);
       } catch (IllegalAccessException e) {
@@ -180,7 +233,6 @@ public class EntityCallbacksListener {
     }
 
     private static void invokeMethod(Method method, Object object) {
-      method.setAccessible(true);
       try {
         method.invoke(object);
       } catch (IllegalAccessException | InvocationTargetException e) {
