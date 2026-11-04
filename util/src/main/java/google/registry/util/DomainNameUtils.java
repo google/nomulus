@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Ascii;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -27,6 +28,10 @@ import java.util.List;
 
 /** Utility methods related to domain names. */
 public final class DomainNameUtils {
+
+  /** Strict validator for ASCII lowercase letters, digits, and "-", allowing "." as a separator. */
+  public static final CharMatcher ALLOWED_CHARS =
+      CharMatcher.inRange('a', 'z').or(CharMatcher.inRange('0', '9').or(CharMatcher.anyOf("-.")));
 
   /** Prefix for unicode domain name parts. */
   public static final String ACE_PREFIX = "xn--";
