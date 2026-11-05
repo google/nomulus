@@ -14,6 +14,7 @@
 
 package google.registry.bsa.persistence;
 
+import com.google.common.base.Objects;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
 import jakarta.persistence.Column;
@@ -21,11 +22,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.time.Instant;
 
-/** A {@link Tld} that is ready to be included in BSA processing.
+/**
+ * A {@link Tld} that is ready to be included in BSA processing.
  *
- * <p>A {@code Tld}'s enrollment in BSA is controlled by configuration (See {@link Tld#getBsaEnrollStartTime}).
- * This table records the {@code Tld}s that have been initialized.
- **/
+ * <p>A {@code Tld}'s enrollment in BSA is controlled by configuration (See {@link
+ * Tld#getBsaEnrollStartTime}). This table records the {@code Tld}s that have been initialized.
+ */
 @Entity
 final class BsaTld {
 
@@ -48,7 +50,20 @@ final class BsaTld {
     return tld;
   }
 
-  static VKey<BsaTld> vkey(String tld) {
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof BsaTld bsaTld)) {
+      return false;
+    }
+    return Objects.equal(tld, bsaTld.tld) && Objects.equal(readyTime, bsaTld.readyTime);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(tld, readyTime);
+  }
+
+  static VKey<BsaTld> createVkey(String tld) {
     return VKey.create(BsaTld.class, tld);
   }
 }
