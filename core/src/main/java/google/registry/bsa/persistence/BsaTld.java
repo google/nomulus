@@ -21,11 +21,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.time.Instant;
 
-/** A {@link Tld} that is ready to be included in BSA processing.
+/**
+ * A {@link Tld} that is ready to be included in BSA processing.
  *
- * <p>A {@code Tld}'s enrollment in BSA is controlled by configuration (See {@link Tld#getBsaEnrollStartTime}).
- * This table records the {@code Tld}s that have been initialized.
- **/
+ * <p>A {@code Tld}'s enrollment in BSA is controlled by configuration (See {@link
+ * Tld#getBsaEnrollStartTime}). This table records the {@code Tld}s that have been initialized.
+ */
 @Entity
 final class BsaTld {
 
@@ -48,7 +49,7 @@ final class BsaTld {
     return tld;
   }
 
-  static VKey<BsaTld> vkey(String tld) {
+  static VKey<BsaTld> vKey(String tld) {
     return VKey.create(BsaTld.class, tld);
   }
 }
