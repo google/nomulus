@@ -78,6 +78,21 @@ class QueriesTest {
   }
 
   @Test
+  void getEnrolledTlds_noneEnrolled() {
+    assertThat(tm().transact(Queries::getEnrolledTlds)).isEmpty();
+  }
+
+  @Test
+  void getEnrolledTlds_hasEnrolled() {
+    tm().transact(
+            () -> {
+              tm().put(new BsaTld("tld1", fakeClock.now()));
+              tm().put(new BsaTld("tld2", fakeClock.now()));
+            });
+    assertThat(tm().transact(Queries::getEnrolledTlds)).containsExactly("tld1", "tld2");
+  }
+
+  @Test
   void queryBsaUnblockableDomainByLabels_oneLabel() {
     assertThat(
             tm().transact(
