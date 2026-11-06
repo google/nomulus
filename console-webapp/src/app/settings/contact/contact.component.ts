@@ -15,23 +15,31 @@
 import {
   Component,
   effect,
+  untracked,
   ViewEncapsulation,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { take } from 'rxjs';
+import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
+import {
+  GlobalLoader,
+  GlobalLoaderService,
+} from 'src/app/shared/services/globalLoader.service';
 import { ContactService, ViewReadyContact } from './contact.service';
+import { ContactDetailsComponent } from './contactDetails.component';
 
 @Component({
   selector: 'app-contact',
+  imports: [MaterialModule, ContactDetailsComponent],
   templateUrl: './contact.component.html',
   styleUrls: ['./contact.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class ContactComponent {
+export class ContactComponent implements GlobalLoader {
   public static PATH = 'contact';
 
   dataSource: MatTableDataSource<ViewReadyContact> =
@@ -62,31 +70,45 @@ export default class ContactComponent {
 
   constructor(
     public contactService: ContactService,
-    private registrarService: RegistrarService
+    private registrarService: RegistrarService,
+    protected globalLoader: GlobalLoaderService,
+    private _snackBar: MatSnackBar
   ) {
     effect(() => {
-      if (this.contactService.contacts()) {
-        this.dataSource = new MatTableDataSource<ViewReadyContact>(
-          this.contactService.contacts()
-        );
+      const contacts = this.contactService.contacts();
+      if (contacts) {
+        this.dataSource.data = contacts;
       }
     });
     effect(() => {
       if (this.registrarService.registrarId()) {
-        this.contactService.isContactDetailsView = false;
-        this.contactService.isContactNewView = false;
-        this.contactService.fetchContacts().pipe(take(1)).subscribe();
+        untracked(() => {
+          this.contactService.isContactDetailsView.set(false);
+          this.contactService.isContactNewView.set(false);
+          this.globalLoader.startGlobalLoader(this);
+          this.contactService
+            .fetchContacts()
+            .pipe(take(1))
+            .subscribe({
+              complete: () => this.globalLoader.stopGlobalLoader(this),
+              error: () => this.globalLoader.stopGlobalLoader(this),
+            });
+        });
       }
     });
   }
 
+  loadingTimeout() {
+    this._snackBar.open('Timeout loading contacts');
+  }
+
   openDetails(contact: ViewReadyContact) {
     this.contactService.setEditableContact(contact);
-    this.contactService.isContactDetailsView = true;
+    this.contactService.isContactDetailsView.set(true);
   }
 
   openNewContact() {
     this.contactService.setEditableContact();
-    this.contactService.isContactNewView = true;
+    this.contactService.isContactNewView.set(true);
   }
 }

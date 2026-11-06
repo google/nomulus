@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-@use "@angular/material" as mat;
 @use "app/registrar/registrarSelector.component.scss";
 
 html,
@@ -29,15 +28,38 @@ body {
 }
 
 .console-app {
-  .mat-headline-4 {
-    margin-top: 6px !important;
-    margin-bottom: 24px !important;
-  }
+  font: 400 0.875rem / 1.25rem "Google Sans Text";
+  letter-spacing: normal;
+
   .spacer {
     flex: 1;
   }
   h1 {
-    margin-bottom: 24px !important;
+    font: 400 1.25rem / 1.75rem "Google Sans";
+    letter-spacing: normal;
+    margin: 0 0 24px;
+  }
+  h1.console-app__title {
+    font: 500 1.75rem / 2.25rem "Google Sans";
+    margin-top: 6px;
+  }
+  h2 {
+    font: 500 1rem / 0.125rem "Google Sans";
+    letter-spacing: normal;
+    margin: 0 0 16px;
+  }
+  h3 {
+    font: 400 16px / 28px Roboto, sans-serif;
+    letter-spacing: 0.009375em;
+    margin: 0 0 16px;
+  }
+  h4 {
+    font: 400 1rem / 1.5rem "Google Sans Text";
+    letter-spacing: normal;
+    margin: 0 0 16px;
+  }
+  p {
+    margin: 0 0 12px;
   }
   a {
     text-decoration: none;

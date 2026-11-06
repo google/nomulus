@@ -9,7 +9,7 @@
     tabindex="0"
     (click)="onClick(node)"
     (keyup.enter)="onClick(node)"
-    [class.active]="router.url.includes(node.path)"
+    [class.active]="(currentUrl() || router.url).includes(node.path)"
     [elementId]="getElementId(node)"
   >
     @if (node.iconName) {
@@ -25,7 +25,10 @@
     tabindex="0"
     (keyup.enter)="onClick(node)"
   >
-    <div class="mat-tree-node" [class.active]="router.url.includes(node.path)">
+    <div
+      class="mat-tree-node"
+      [class.active]="(currentUrl() || router.url).includes(node.path)"
+    >
       <button
         class="console-app__nav-icon_expand"
         mat-icon-button

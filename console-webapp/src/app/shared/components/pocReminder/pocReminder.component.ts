@@ -14,15 +14,17 @@
 
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatSnackBar, MatSnackBarRef } from '@angular/material/snack-bar';
+import { RouterModule } from '@angular/router';
+import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from '../../../registrar/registrar.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-poc-reminder',
+  imports: [MaterialModule, RouterModule],
   templateUrl: './pocReminder.component.html',
   styleUrls: ['./pocReminder.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PocReminderComponent {
   constructor(

@@ -13,12 +13,17 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, effect, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  effect,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { SelectedRegistrarModule } from '../app.module';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
-import { SnackBarModule } from '../snackbar.module';
+import { SelectedRegistrarWrapper } from '../shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
 import { UserDetailsComponent } from './userDetails.component';
 import { User, UsersService } from './users.service';
 import { FormsModule } from '@angular/forms';
@@ -33,21 +38,20 @@ import { UserEditFormComponent } from './userEditForm.component';
   imports: [
     FormsModule,
     MaterialModule,
-    SnackBarModule,
-    SelectedRegistrarModule,
+    SelectedRegistrarWrapper,
     UsersListComponent,
     UserEditFormComponent,
     UserDetailsComponent,
   ],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [UsersService],
 })
 export class UsersComponent {
-  isLoading = false;
+  isLoading = signal(false);
   isNew = false;
-  selectingExistingUser = false;
+  selectingExistingUser = signal(false);
   selectedRegistrarId = '';
-  usersSelection: User[] = [];
+  usersSelection = signal<User[]>([]);
   selectedExistingUser: User | undefined;
 
   constructor(
@@ -57,15 +61,17 @@ export class UsersComponent {
   ) {
     effect(() => {
       if (registrarService.registrarId()) {
-        this.loadUsers();
+        untracked(() => {
+          this.loadUsers();
+        });
       }
     });
   }
 
   addExistingUser() {
-    this.selectingExistingUser = true;
+    this.selectingExistingUser.set(true);
     this.selectedRegistrarId = '';
-    this.usersSelection = [];
+    this.usersSelection.set([]);
     this.selectedExistingUser = undefined;
   }
 
@@ -74,27 +80,27 @@ export class UsersComponent {
   }
 
   loadUsers() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.usersService.fetchUsers().subscribe({
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
-        this.isLoading = false;
+        this.isLoading.set(false);
       },
       complete: () => {
-        this.isLoading = false;
+        this.isLoading.set(false);
       },
     });
   }
 
   createNewUser(user: User) {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.usersService.createOrAddNewUser(user).subscribe({
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
-        this.isLoading = false;
+        this.isLoading.set(false);
       },
       complete: () => {
-        this.isLoading = false;
+        this.isLoading.set(false);
       },
     });
   }
@@ -110,25 +116,25 @@ export class UsersComponent {
           this._snackBar.open(err.error || err.message);
         },
         next: (users) => {
-          this.usersSelection = users;
+          this.usersSelection.set(users);
         },
       });
     }
   }
 
   submitExistingUser() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     if (this.selectedExistingUser) {
       this.usersService
         .createOrAddNewUser(this.selectedExistingUser)
         .subscribe({
           error: (err) => {
             this._snackBar.open(err.error || err.message);
-            this.isLoading = false;
+            this.isLoading.set(false);
           },
           complete: () => {
-            this.isLoading = false;
-            this.selectingExistingUser = false;
+            this.isLoading.set(false);
+            this.selectingExistingUser.set(false);
             this.loadUsers();
           },
         });

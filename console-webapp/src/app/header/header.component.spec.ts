@@ -17,9 +17,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeaderComponent } from './header.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from '../material.module';
-import { ActivatedRoute } from '@angular/router';
-import { AppModule, SelectedRegistrarModule } from '../app.module';
-import { AppRoutingModule } from '../app-routing.module';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { routes } from '../app.routes';
 import { BackendService } from '../shared/services/backend.service';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -31,11 +30,10 @@ describe('HeaderComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        SelectedRegistrarModule,
+        HeaderComponent,
         MaterialModule,
         BrowserAnimationsModule,
-        AppRoutingModule,
-        AppModule,
+        RouterModule.forRoot(routes),
       ],
       providers: [
         BackendService,
@@ -43,7 +41,6 @@ describe('HeaderComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
-      declarations: [HeaderComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HeaderComponent);
@@ -51,7 +48,23 @@ describe('HeaderComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should toggle nav pane state and emit toggleNavOpen event', () => {
+    const emittedValues: boolean[] = [];
+    component.toggleNavOpen.subscribe((val) => emittedValues.push(val));
+
+    component.toggleNavPane();
+    component.toggleNavPane();
+
+    expect(emittedValues).toEqual([true, false]);
+  });
+
+  it('should redirect to IAP logout URL on logOut()', () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    component.logOut();
+    expect(openSpy).toHaveBeenCalledWith(
+      '/console?gcp-iap-mode=CLEAR_LOGIN_COOKIE',
+      '_self'
+    );
+    openSpy.mockRestore();
   });
 });

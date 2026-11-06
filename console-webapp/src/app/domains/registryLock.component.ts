@@ -14,8 +14,14 @@
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, ChangeDetectionStrategy } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  Validators,
+} from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { UserDataService } from '../shared/services/userData.service';
 import { DomainListService } from './domainList.service';
@@ -23,16 +29,16 @@ import { RegistryLockService } from './registryLock.service';
 
 @Component({
   selector: 'app-registry-lock',
+  imports: [FormsModule, MaterialModule],
   templateUrl: './registryLock.component.html',
   styleUrls: ['./registryLock.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistryLockComponent {
   readonly isLocked = computed(() =>
-    this.registryLockService.domainsLocks.some(
-      (dl) => dl.domainName === this.domainListService.selectedDomain
-    )
+    this.registryLockService
+      .domainsLocks()
+      .some((dl) => dl.domainName === this.domainListService.selectedDomain())
   );
 
   relockOptions = [
@@ -60,22 +66,22 @@ export class RegistryLockComponent {
   ) {}
 
   goBack() {
-    this.domainListService.selectedDomain = undefined;
-    this.domainListService.activeActionComponent = null;
+    this.domainListService.selectedDomain.set(undefined);
+    this.domainListService.activeActionComponent.set(null);
   }
 
   save(isLock: boolean) {
     let request;
     if (!isLock) {
       request = this.registryLockService.registryLockDomain(
-        this.domainListService.selectedDomain || '',
+        this.domainListService.selectedDomain() || '',
         this.unlockDomain.value.password || '',
         this.unlockDomain.value.relockTime || undefined,
         isLock
       );
     } else {
       request = this.registryLockService.registryLockDomain(
-        this.domainListService.selectedDomain || '',
+        this.domainListService.selectedDomain() || '',
         this.lockDomain.value.password || '',
         undefined,
         isLock
