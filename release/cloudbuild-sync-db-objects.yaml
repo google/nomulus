@@ -39,13 +39,6 @@ steps:
     gcloud secrets versions access latest \
       --secret nomulus-tool-cloudbuild-credential \
       > nomulus_tool_credential.json
-# Configure the TLDs using the stored configuration files in the internal repo
-- name: 'gcr.io/$PROJECT_ID/db_object_updater:live'
-  args:
-  - ${_ENV}
-  - ./nomulus_tool_credential.json
-  - configure_tld
-  - nomulus-internal/core/src/main/java/google/registry/config/files/tld/
 # Configure the premium lists using the stored configuration files in the internal repo
 - name: 'gcr.io/$PROJECT_ID/db_object_updater:live'
   args:
@@ -60,6 +53,13 @@ steps:
   - ./nomulus_tool_credential.json
   - update_reserved_list
   - nomulus-internal/core/src/main/java/google/registry/config/files/reserved/
+# Configure the TLDs using the stored configuration files in the internal repo
+- name: 'gcr.io/$PROJECT_ID/db_object_updater:live'
+  args:
+  - ${_ENV}
+  - ./nomulus_tool_credential.json
+  - configure_tld
+  - nomulus-internal/core/src/main/java/google/registry/config/files/tld/
 
 timeout: 7200s
 options:
