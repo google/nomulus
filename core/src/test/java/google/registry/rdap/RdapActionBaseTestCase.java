@@ -28,10 +28,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import google.registry.model.ForeignKeyUtils;
+import google.registry.cache.CacheMetrics;
+import google.registry.cache.CacheModule;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
-import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Actions;
@@ -40,6 +40,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.util.Idn;
 import google.registry.util.TypeUtils;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Optional;
@@ -85,9 +86,13 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     actionPath = Actions.getPathForAction(rdapActionClass);
   }
 
+  protected A createAction() {
+    return TypeUtils.instantiate(rdapActionClass);
+  }
+
   @BeforeEach
   public void beforeEachRdapActionBaseTestCase() {
-    action = TypeUtils.instantiate(rdapActionClass);
+    action = createAction();
     action.includeDeletedParam = Optional.empty();
     action.formatOutputParam = Optional.empty();
     action.response = response;
@@ -95,8 +100,9 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     action.rdapMetrics = rdapMetrics;
     action.requestMethod = GET;
     action.domainCache =
-        (domainName) -> ForeignKeyUtils.loadResourceByCache(Domain.class, domainName, clock.now());
-    action.clock = new FakeClock(Instant.parse("2025-01-01T00:00:00.000Z"));
+        CacheModule.provideDomainCache(
+            Optional.empty(), clock, mock(CacheMetrics.class), Duration.ofDays(10));
+    action.clock = clock;
     logout();
   }
 

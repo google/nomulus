@@ -16,7 +16,11 @@ package google.registry.cache;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistDeletedHost;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -96,5 +100,16 @@ public class MultilayerHostCacheTest {
 
     clock.advanceBy(Duration.ofDays(2));
     assertThat(cache.loadByRepoId(host.getRepoId())).isEmpty();
+  }
+
+  @Test
+  void testLoad_softDeletedHostFromDatabase_doesNotPersistToValkey() {
+    Host deletedHost =
+        persistDeletedHost("ns1.deleted.tld", START_INSTANT.minus(Duration.ofDays(1)));
+    assertThat(cache.loadByRepoId(deletedHost.getRepoId())).isEmpty();
+
+    verify(jedisClient).get(Host.class, deletedHost.getRepoId());
+    verify(jedisClient, never()).set(any());
+    verify(cacheMetrics).recordLookup("Host", CacheMetrics.CacheHitType.MISS);
   }
 }
