@@ -1,0 +1,59 @@
+# Builds the proxy image of a proxy release from this repo at the release tag,
+# so that its build provenance records the source repository and this file. It
+# runs as a manual Cloud Build trigger at the release tag.
+#
+# To run it by hand at a release tag that exists in both repositories (the
+# trigger sets _INTERNAL_REPO_URL):
+# gcloud builds triggers run proxy-images --region=[REGION] \
+#   --sha=[COMMIT_OF_TAG] --substitutions=TAG_NAME=[TAG]
+steps:
+# Add the internal overlay at the same tag, and use this release's copies of
+# the base image and Gradle, as cloudbuild-release.yaml does.
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    bash ./release/prepare_release_tree.sh clone-internal \
+      "${_INTERNAL_REPO_URL}" "${TAG_NAME}"
+    bash ./release/prepare_release_tree.sh merge-internal
+    bash ./release/prepare_release_tree.sh pin-base-images "${PROJECT_ID}" \
+      --temurin=":${TAG_NAME}" proxy
+    bash ./release/prepare_release_tree.sh set-proxy-project "${PROJECT_ID}"
+    bash ./release/prepare_release_tree.sh use-gcs-gradle \
+      domain-registry-maven-repository/gradle
+# Download saved Gradle distribution from GCS and install it.
+- name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
+  entrypoint: ./release/install_gradle.sh
+# Build the proxy docker image.
+- name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
+  args:
+  - ./gradlew
+  - :proxy:test
+  - :proxy:buildProxyImage
+  - -PmavenUrl=gcs://domain-registry-maven-repository/maven
+  - -PpluginsUrl=gcs://domain-registry-maven-repository/plugins
+# Tag the image for staging repository.
+- name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    docker tag proxy us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}
+    docker tag proxy us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest
+  dir: 'proxy'
+# Images to upload to staging repository for build provenance generation.
+images:
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}'
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest'
+# Config files to upload to GCS.
+artifacts:
+  objects:
+    location: 'gs://${PROJECT_ID}-deploy/${TAG_NAME}'
+    paths:
+    - 'proxy/kubernetes/proxy-*.yaml'
+timeout: 3600s
+options:
+  machineType: 'E2_HIGHCPU_32'
