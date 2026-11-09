@@ -49,14 +49,18 @@ public abstract class BaseFee extends ImmutableObject {
 
   /** Enum for the type of the fee. */
   public enum FeeType {
-    CREATE("create"),
-    EAP("Early Access Period, fee expires: %s", "Early Access Period"),
+    CREATE("create", /* isRefundable= */ true, /* isStandard= */ true),
+    EAP(
+        "Early Access Period, fee expires: %s",
+        /* isRefundable= */ false, /* isStandard= */ false, "Early Access Period"),
     /**
      * A one-time fee for registering a recently dropped domain, during the Expiry Access Period.
      */
-    XAP("Expiry Access Period, fee expires: %s", "Expiry Access Period"),
-    RENEW("renew"),
-    RESTORE("restore"),
+    XAP(
+        "Expiry Access Period, fee expires: %s",
+        /* isRefundable= */ false, /* isStandard= */ false, "Expiry Access Period"),
+    RENEW("renew", /* isRefundable= */ true, /* isStandard= */ true),
+    RESTORE("restore", /* isRefundable= */ true, /* isStandard= */ true),
     /**
      * A transfer fee.
      *
@@ -64,17 +68,32 @@ public abstract class BaseFee extends ImmutableObject {
      * is the RENEW fee. These exist so that custom pricing logic can create a custom transfer fee
      * if desired.
      */
-    TRANSFER("transfer"),
-    UPDATE("update"),
-    CREDIT("%s credit");
+    TRANSFER("transfer", /* isRefundable= */ true, /* isStandard= */ true),
+    UPDATE("update", /* isRefundable= */ true, /* isStandard= */ true),
+    CREDIT("%s credit", /* isRefundable= */ true, /* isStandard= */ true);
 
     private final String formatString;
-
+    private final boolean isRefundable;
+    private final boolean isStandard;
     private final ImmutableList<String> extraAcceptableDescriptions;
 
-    FeeType(String formatString, String... extraAcceptableDescriptions) {
+    FeeType(
+        String formatString,
+        boolean isRefundable,
+        boolean isStandard,
+        String... extraAcceptableDescriptions) {
       this.formatString = formatString;
+      this.isRefundable = isRefundable;
+      this.isStandard = isStandard;
       this.extraAcceptableDescriptions = ImmutableList.copyOf(extraAcceptableDescriptions);
+    }
+
+    public boolean isRefundable() {
+      return isRefundable;
+    }
+
+    public boolean isStandard() {
+      return isStandard;
     }
 
     String renderDescription(Object... args) {

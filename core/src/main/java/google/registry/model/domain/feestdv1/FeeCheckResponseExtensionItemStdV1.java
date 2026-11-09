@@ -76,6 +76,9 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
     @Override
     public Builder setFees(ImmutableList<Fee> fees) {
       commandBuilder.setFee(fees);
+      if (fees.stream().anyMatch(f -> !f.getType().isStandard())) {
+        commandBuilder.setStandard(false);
+      }
       return this;
     }
 
