@@ -316,4 +316,21 @@ class QueriesTest {
                 .domainName())
         .isEqualTo("label3.app");
   }
+
+  @Test
+  void testQueryUnblockablesByNames_sqlInjectionSafe() {
+    setupUnblockableDomains();
+    // Verify standard lookup works
+    assertThat(tm().transact(() -> queryUnblockablesByNames(ImmutableSet.of("a.tld1"))))
+        .containsExactly("a.tld1");
+
+    // Attempt SQL Injection payload in the name. Should be treated as literal and return empty.
+    assertThat(tm().transact(() -> queryUnblockablesByNames(ImmutableSet.of("a' OR '1'='1.tld1"))))
+        .isEmpty();
+  }
+
+  @Test
+  void testQueryUnblockablesByNames_emptySet() {
+    assertThat(tm().transact(() -> queryUnblockablesByNames(ImmutableSet.of()))).isEmpty();
+  }
 }
