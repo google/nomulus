@@ -57,10 +57,7 @@ public interface RegistryQuery<T> extends Serializable {
       Query query =
           nativeQuery ? entityManager.createNativeQuery(sql) : entityManager.createQuery(sql);
       if (parameters != null) {
-        parameters.forEach(
-            (key, value) -> {
-              query.setParameter(key, value);
-            });
+        parameters.forEach(query::setParameter);
       }
       JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
       @SuppressWarnings("unchecked")
@@ -78,14 +75,12 @@ public interface RegistryQuery<T> extends Serializable {
   static <T> RegistryQuery<T> createQuery(
       String jpql, @Nullable Map<String, Object> parameters, Class<T> clazz) {
     return () -> {
-      // TODO(b/193662898): switch to jpaTm().query() when it can properly detach loaded entities.
-      EntityManager entityManager = tm().getEntityManager();
-      TypedQuery<T> query = entityManager.createQuery(jpql, clazz);
+      TypedQuery<T> query = tm().query(jpql, clazz);
       if (parameters != null) {
         parameters.forEach(query::setParameter);
       }
       JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
-      return query.getResultStream().map(e -> detach(entityManager, e));
+      return query.getResultStream();
     };
   }
 
@@ -100,11 +95,9 @@ public interface RegistryQuery<T> extends Serializable {
    */
   static <T> RegistryQuery<T> createQuery(CriteriaQuerySupplier<T> criteriaQuery) {
     return () -> {
-      // TODO(b/193662898): switch to jpaTm().query() when it can properly detach loaded entities.
-      EntityManager entityManager = tm().getEntityManager();
-      TypedQuery<T> query = entityManager.createQuery(criteriaQuery.get());
+      TypedQuery<T> query = tm().criteriaQuery(criteriaQuery.get());
       JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
-      return query.getResultStream().map(e -> detach(entityManager, e));
+      return query.getResultStream();
     };
   }
 
@@ -125,16 +118,12 @@ public interface RegistryQuery<T> extends Serializable {
     return object;
   }
 
-  static void detachObject(EntityManager entityManager, Object object) {
-    Class<?> objectClass = object.getClass();
-    if (objectClass.isPrimitive() || objectClass == String.class) {
+  private static void detachObject(EntityManager entityManager, @Nullable Object object) {
+    if (object == null || object instanceof String) {
       return;
     }
     try {
-      // TODO(b/193662898): choose detach() or clear() based on the type of transaction.
-      // For context, EntityManager.detach() does not remove all metadata about loaded entities.
-      // See b/193925312 or https://hibernate.atlassian.net/browse/HHH-14735 for details.
-      entityManager.clear();
+      entityManager.detach(object);
     } catch (IllegalArgumentException e) {
       // Not an entity. Do nothing.
     }

@@ -14,7 +14,9 @@
 
 package google.registry.beam.common;
 
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -37,13 +39,13 @@ import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.model.host.HostBase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
+import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.testing.PAssert;
@@ -91,7 +93,11 @@ public class RegistryJpaReadTest {
   void readWithCriteriaQuery() {
     Read<Host, String> read =
         RegistryJpaIO.read(
-                () -> CriteriaQueryBuilder.create(Host.class).build(), HostBase::getHostName)
+                () -> CriteriaQueryBuilder.create(Host.class).build(),
+                host -> {
+                  assertThat(tm().getEntityManager().contains(host)).isFalse();
+                  return host.getHostName();
+                })
             .withCoder(StringUtf8Coder.of());
     PCollection<String> repoIds = testPipeline.apply(read);
 
@@ -112,6 +118,7 @@ public class RegistryJpaReadTest {
                 false,
                 (Object[] row) -> {
                   Domain domain = (Domain) row[0];
+                  assertThat(tm().getEntityManager().contains(domain)).isFalse();
                   String emailAddress = (String) row[1];
                   return domain.getRepoId() + "-" + emailAddress;
                 })
@@ -154,12 +161,32 @@ public class RegistryJpaReadTest {
                     + " and d.deletionTime > CAST(now() AS timestamp)",
                 ImmutableMap.of("type", Registrar.Type.REAL),
                 Domain.class,
-                Domain::getRepoId)
+                domain -> {
+                  assertThat(tm().getEntityManager().contains(domain)).isFalse();
+                  return domain.getRepoId();
+                })
             .withCoder(StringUtf8Coder.of());
     PCollection<String> repoIds = testPipeline.apply(read);
 
     PAssert.that(repoIds).containsInAnyOrder("4-COM");
     testPipeline.run();
+  }
+
+  @Test
+  void detach_detachesOnlySpecifiedEntity() {
+    tm().transact(
+            () -> {
+              EntityManager entityManager = tm().getEntityManager();
+              Host host0 = entityManager.find(Host.class, hosts.get(0).getRepoId());
+              Host host1 = entityManager.find(Host.class, hosts.get(1).getRepoId());
+              assertThat(entityManager.contains(host0)).isTrue();
+              assertThat(entityManager.contains(host1)).isTrue();
+
+              RegistryQuery.detach(entityManager, host0);
+
+              assertThat(entityManager.contains(host0)).isFalse();
+              assertThat(entityManager.contains(host1)).isTrue();
+            });
   }
 
   private void setupForJoinQuery() {

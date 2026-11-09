@@ -18,8 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.Field;
-import java.util.Map;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ModelUtils}. */
@@ -69,26 +67,17 @@ public class ModelUtilsTest {
     }
   }
 
-  @BeforeEach
-  void resetCaches() {
-    ModelUtils.resetCaches();
-  }
-
   @Test
   void testGetAllFields() throws Exception {
-    Map<String, Field> expected =
+    ImmutableMap<String, Field> expected =
         ImmutableMap.of(
             "id", TestClass.class.getDeclaredField("id"),
             "a", TestClass.class.getDeclaredField("a"),
             "b", TestClass.class.getDeclaredField("b"));
-    // More complicated version of isEqualTo() so that we check for ordering.
-    assertThat(ModelUtils.getAllFields(TestClass.class).entrySet())
-        .containsExactlyElementsIn(expected.entrySet())
-        .inOrder();
-    // Test again, to make sure we hit the cache.
-    assertThat(ModelUtils.getAllFields(TestClass.class).entrySet())
-        .containsExactlyElementsIn(expected.entrySet())
-        .inOrder();
+    ImmutableMap<String, Field> firstLookup = ModelUtils.getAllFields(TestClass.class);
+    assertThat(firstLookup).containsExactlyEntriesIn(expected).inOrder();
+    // Verify repeated lookups return the same cached instance.
+    assertThat(ModelUtils.getAllFields(TestClass.class)).isSameInstanceAs(firstLookup);
   }
 
   @Test

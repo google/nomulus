@@ -21,8 +21,6 @@ import static com.google.common.collect.Maps.transformValues;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
@@ -31,9 +29,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.AbstractList;
-import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,33 +42,31 @@ import java.util.stream.Stream;
 public class ModelUtils {
 
   /** Caches all instance fields on an object, including non-public and inherited fields. */
-  private static final LoadingCache<Class<?>, ImmutableMap<String, Field>> ALL_FIELDS_CACHE =
-      CacheUtils.newCacheBuilder()
-          .build(
-              clazz -> {
-                Deque<Class<?>> hierarchy = new ArrayDeque<>();
-                // Walk the hierarchy up to but not including ImmutableObject (to ignore
-                // hashCode).
-                for (; clazz != ImmutableObject.class; clazz = clazz.getSuperclass()) {
-                  // Add to the front, so that shadowed fields show up later in the list.
-                  // This will mean that getFieldValues will show the most derived value.
-                  hierarchy.addFirst(clazz);
-                }
-                Map<String, Field> fields = new LinkedHashMap<>();
-                for (Class<?> hierarchyClass : hierarchy) {
-                  // Don't use hierarchyClass.getFields() because it only picks up public fields.
-                  for (Field field : hierarchyClass.getDeclaredFields()) {
-                    if (!Modifier.isStatic(field.getModifiers())) {
-                      field.setAccessible(true);
-                      fields.put(field.getName(), field);
-                    }
-                  }
-                }
-                return ImmutableMap.copyOf(fields);
-              });
+  private static final ClassValue<ImmutableMap<String, Field>> ALL_FIELDS_CACHE =
+      new ClassValue<>() {
+        @Override
+        protected ImmutableMap<String, Field> computeValue(Class<?> clazz) {
+          // Walk the hierarchy up to but not including ImmutableObject (to ignore hashCode).
+          if (clazz == null || clazz == ImmutableObject.class) {
+            return ImmutableMap.of();
+          }
+          // Start with superclass fields so shadowed fields are overwritten by the subclass while
+          // preserving declaration order from the top of the hierarchy down.
+          Map<String, Field> fields =
+              new LinkedHashMap<>(ALL_FIELDS_CACHE.get(clazz.getSuperclass()));
+          // Don't use clazz.getFields() because it only picks up public fields.
+          for (Field field : clazz.getDeclaredFields()) {
+            if (!Modifier.isStatic(field.getModifiers())) {
+              field.setAccessible(true);
+              fields.put(field.getName(), field);
+            }
+          }
+          return ImmutableMap.copyOf(fields);
+        }
+      };
 
   /** Lists all instance fields on an object, including non-public and inherited fields. */
-  public static Map<String, Field> getAllFields(Class<?> clazz) {
+  public static ImmutableMap<String, Field> getAllFields(Class<?> clazz) {
     return ALL_FIELDS_CACHE.get(clazz);
   }
 
@@ -186,10 +180,5 @@ public class ModelUtils {
   @SuppressWarnings("unchecked")
   protected static <T extends ImmutableObject> T cloneEmptyToNull(T obj) {
     return (T) cloneEmptyToNullRecursive(obj);
-  }
-
-  @VisibleForTesting
-  static void resetCaches() {
-    ALL_FIELDS_CACHE.invalidateAll();
   }
 }
