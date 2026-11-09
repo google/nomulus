@@ -47,7 +47,13 @@ def run_cmd(cmd):
 def check_single_commit():
     print("--- Checking Commit Count ---")
     try:
-        count = int(run_cmd("git rev-list --count HEAD ^master"))
+        base_refs = ["^master"]
+        try:
+            run_cmd("git rev-parse --verify refs/remotes/upstream/master")
+            base_refs.append("^upstream/master")
+        except Exception:
+            pass
+        count = int(run_cmd(f"git rev-list --count HEAD {' '.join(base_refs)}"))
         if count > 1:
             log_error(f"Branch contains {count} commits ahead of master. All changes for a single PR must be squashed into a single commit.")
         else:
