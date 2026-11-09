@@ -52,6 +52,9 @@ public class Fee extends BaseFee {
     instance.cost = cost;
     instance.type = type;
     instance.isPremium = isPremium;
+    if (type == FeeType.EAP || type == FeeType.XAP) {
+      instance.refundable = false;
+    }
     instance.description = type.renderDescription(descriptionArgs);
     return instance;
   }

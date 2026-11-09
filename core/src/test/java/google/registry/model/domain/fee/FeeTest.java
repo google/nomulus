@@ -28,6 +28,15 @@ class FeeTest {
     Fee fee = Fee.create(BigDecimal.valueOf(10.00), FeeType.CREATE, false);
     assertThat(fee.getCost()).isEqualTo(BigDecimal.valueOf(10.00));
     assertThat(fee.getType()).isEqualTo(FeeType.CREATE);
+    assertThat(fee.getRefundable()).isTrue();
+  }
+
+  @Test
+  void testCreate_eapAndXap_nonRefundable() {
+    Fee eapFee = Fee.create(BigDecimal.valueOf(100.00), FeeType.EAP, false, "2026-01-01T00:00:00Z");
+    assertThat(eapFee.getRefundable()).isFalse();
+    Fee xapFee = Fee.create(BigDecimal.valueOf(100.00), FeeType.XAP, false, "2026-01-01T00:00:00Z");
+    assertThat(xapFee.getRefundable()).isFalse();
   }
 
   @Test

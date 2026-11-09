@@ -16,6 +16,7 @@ package google.registry.model.domain.feestdv1;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.Period;
+import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
@@ -76,6 +77,9 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
     @Override
     public Builder setFees(ImmutableList<Fee> fees) {
       commandBuilder.setFee(fees);
+      if (fees.stream().anyMatch(f -> f.getType() == FeeType.EAP || f.getType() == FeeType.XAP)) {
+        commandBuilder.setStandard(false);
+      }
       return this;
     }
 
