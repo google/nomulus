@@ -2647,6 +2647,79 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
+  void testSuccess_eapFee_withNonRefundableAttribute_std_v1() throws Exception {
+    setEppInput(
+        "domain_create_eap_fee_with_attributes.xml",
+        ImmutableMap.of(
+            "FEE_VERSION",
+            "epp:fee-1.0",
+            "DESCRIPTION_1",
+            "create",
+            "ATTRIBUTES_1",
+            "",
+            "DESCRIPTION_2",
+            "Early Access Period, fee expires: 2022-03-01T00:00:00.000Z",
+            "ATTRIBUTES_2",
+            " refundable=\"false\""));
+    persistHosts();
+    setEapForTld("tld");
+    doSuccessfulTest("tld", "domain_create_response_eap_fee.xml", FEE_STD_1_0_MAP);
+  }
+
+  @Test
+  void testFailure_eapFee_refundableTrue_std_v1() {
+    setEppInput(
+        "domain_create_eap_fee_with_attributes.xml",
+        ImmutableMap.of(
+            "FEE_VERSION",
+            "epp:fee-1.0",
+            "DESCRIPTION_1",
+            "create",
+            "ATTRIBUTES_1",
+            "",
+            "DESCRIPTION_2",
+            "Early Access Period",
+            "ATTRIBUTES_2",
+            " refundable=\"true\""));
+    persistHosts();
+    setEapForTld("tld");
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_eapFee_createFeeRefundableFalse_std_v1() {
+    setEppInput(
+        "domain_create_eap_fee_with_attributes.xml",
+        ImmutableMap.of(
+            "FEE_VERSION",
+            "epp:fee-1.0",
+            "DESCRIPTION_1",
+            "create",
+            "ATTRIBUTES_1",
+            " refundable=\"false\"",
+            "DESCRIPTION_2",
+            "Early Access Period",
+            "ATTRIBUTES_2",
+            " refundable=\"false\""));
+    persistHosts();
+    setEapForTld("tld");
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_nonEapDomain_eapDescriptionWithRefundableFalse_std_v1() {
+    setEppInput("domain_create_fee_refundable.xml", FEE_STD_1_0_MAP);
+    eppLoader.replaceAll(
+        "<fee:fee refundable=\"false\">26.00</fee:fee>",
+        "<fee:fee description=\"Early Access Period\" refundable=\"false\">24.00</fee:fee>");
+    persistHosts();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
   void testFailure_eapFee_description_multipleMatch_std_v1() {
     setEppInput(
         "domain_create_eap_fee.xml",
@@ -2815,6 +2888,81 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
               .setRecurrenceEndTime(END_INSTANT)
               .setDomainHistory(historyEntry)
               .build());
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
+  }
+
+  @Test
+  void testSuccess_domainInXap_withNonRefundableAttribute_chargesXapFee() throws Exception {
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    try {
+      persistHosts();
+      Instant deletionTime = Instant.parse("1999-04-03T21:00:00.0Z");
+      setXapForTld("tld", deletionTime);
+      setEppInput(
+          "domain_create_eap_fee_with_attributes.xml",
+          ImmutableMap.of(
+              "FEE_VERSION",
+              "epp:fee-1.0",
+              "DESCRIPTION_1",
+              "create",
+              "ATTRIBUTES_1",
+              "",
+              "DESCRIPTION_2",
+              "Expiry Access Period, fee expires: 1999-04-03T23:00:00Z",
+              "ATTRIBUTES_2",
+              " refundable=\"false\""));
+      runFlowAssertResponse(loadFile("domain_create_response_xap_fee.xml"));
+    } finally {
+      settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+          ImmutableMap.of("USD", originalInitialFee);
+      settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+          ImmutableMap.of("USD", originalFinalFee);
+    }
+  }
+
+  @Test
+  void testFailure_domainInXap_refundableTrue_throwsException() throws Exception {
+    RegistryConfigSettings settings = RegistryConfig.CONFIG_SETTINGS.get();
+    BigDecimal originalInitialFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.initialFee.get("USD");
+    BigDecimal originalFinalFee =
+        settings.registryPolicy.domainExpiryAccessPeriod.finalFee.get("USD");
+    settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    settings.registryPolicy.domainExpiryAccessPeriod.finalFee =
+        ImmutableMap.of("USD", new BigDecimal("100.00"));
+    try {
+      persistHosts();
+      Instant deletionTime = Instant.parse("1999-04-03T21:00:00.0Z");
+      setXapForTld("tld", deletionTime);
+      setEppInput(
+          "domain_create_eap_fee_with_attributes.xml",
+          ImmutableMap.of(
+              "FEE_VERSION",
+              "epp:fee-1.0",
+              "DESCRIPTION_1",
+              "create",
+              "ATTRIBUTES_1",
+              "",
+              "DESCRIPTION_2",
+              "Expiry Access Period",
+              "ATTRIBUTES_2",
+              " refundable=\"true\""));
+      EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+      assertAboutEppExceptions().that(thrown).marshalsToXml();
     } finally {
       settings.registryPolicy.domainExpiryAccessPeriod.initialFee =
           ImmutableMap.of("USD", originalInitialFee);

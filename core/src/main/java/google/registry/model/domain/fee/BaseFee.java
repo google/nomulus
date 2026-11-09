@@ -49,14 +49,14 @@ public abstract class BaseFee extends ImmutableObject {
 
   /** Enum for the type of the fee. */
   public enum FeeType {
-    CREATE("create"),
-    EAP("Early Access Period, fee expires: %s", "Early Access Period"),
+    CREATE("create", true, true),
+    EAP("Early Access Period, fee expires: %s", false, false, "Early Access Period"),
     /**
      * A one-time fee for registering a recently dropped domain, during the Expiry Access Period.
      */
-    XAP("Expiry Access Period, fee expires: %s", "Expiry Access Period"),
-    RENEW("renew"),
-    RESTORE("restore"),
+    XAP("Expiry Access Period, fee expires: %s", false, false, "Expiry Access Period"),
+    RENEW("renew", true, true),
+    RESTORE("restore", true, true),
     /**
      * A transfer fee.
      *
@@ -64,17 +64,42 @@ public abstract class BaseFee extends ImmutableObject {
      * is the RENEW fee. These exist so that custom pricing logic can create a custom transfer fee
      * if desired.
      */
-    TRANSFER("transfer"),
-    UPDATE("update"),
-    CREDIT("%s credit");
+    TRANSFER("transfer", true, true),
+    UPDATE("update", true, true),
+    CREDIT("%s credit", true, true);
 
     private final String formatString;
 
+    /** Whether this fee type is refundable if the domain is deleted within a grace period. */
+    private final boolean isRefundable;
+
+    /**
+     * Whether this fee type is a regular base fee for an EPP command (which may still be either
+     * standard or premium priced depending on {@link BaseFee#isPremium}), as opposed to an
+     * additional one-time fee charged during a special access period (such as {@link #EAP} or
+     * {@link #XAP}) that renders the command's pricing non-standard.
+     */
+    private final boolean isRegularFee;
+
     private final ImmutableList<String> extraAcceptableDescriptions;
 
-    FeeType(String formatString, String... extraAcceptableDescriptions) {
+    FeeType(
+        String formatString,
+        boolean isRefundable,
+        boolean isRegularFee,
+        String... extraAcceptableDescriptions) {
       this.formatString = formatString;
+      this.isRefundable = isRefundable;
+      this.isRegularFee = isRegularFee;
       this.extraAcceptableDescriptions = ImmutableList.copyOf(extraAcceptableDescriptions);
+    }
+
+    public boolean isRefundable() {
+      return isRefundable;
+    }
+
+    public boolean isRegularFee() {
+      return isRegularFee;
     }
 
     String renderDescription(Object... args) {
@@ -163,10 +188,24 @@ public abstract class BaseFee extends ImmutableObject {
     return cost.signum() == 0;
   }
 
+  /**
+   * Returns whether this fee or credit specifies only default XML attributes ({@code grace-period}
+   * of zero, {@code applied="immediate"}, and {@code refundable} either omitted or matching the
+   * default refundability of the fee's {@link FeeType}).
+   *
+   * <p>This is used when validating client-supplied fees and credits in EPP transform commands to
+   * reject unsupported attribute values while allowing clients to echo {@code refundable="false"}
+   * from {@code <fee:check>} responses on non-refundable fees such as {@link FeeType#EAP} and
+   * {@link FeeType#XAP}. When unmarshalled from client XML, {@link #type} is not set, so the
+   * expected refundability is inferred by parsing {@link #description}.
+   */
   public boolean hasDefaultAttributes() {
+    ImmutableList<FeeType> parsedTypes =
+        type != null ? ImmutableList.of(type) : parseDescriptionForTypes();
+    boolean defaultRefundable = parsedTypes.size() != 1 || parsedTypes.get(0).isRefundable();
     return getGracePeriod().equals(Period.ZERO)
         && getApplied().equals(AppliedType.IMMEDIATE)
-        && getRefundable();
+        && (refundable == null || refundable == defaultRefundable);
   }
 
   /**

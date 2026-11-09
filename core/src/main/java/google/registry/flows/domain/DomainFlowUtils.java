@@ -797,12 +797,15 @@ public class DomainFlowUtils {
       throw new FeesRequiredForNonFreeOperationException(feesAndCredits.getTotalCost());
     }
 
+    ImmutableMap<FeeType, Money> expectedFeeMap =
+        buildFeeMap(feesAndCredits.getFees(), feesAndCredits.getCurrency());
     List<Fee> fees = feeCommand.get().getFees();
     // The schema guarantees that at least one fee will be present.
     checkState(!fees.isEmpty());
     BigDecimal total = zeroInCurrency(feeCommand.get().getCurrency());
     for (Fee fee : fees) {
-      if (!fee.hasDefaultAttributes()) {
+      if (!fee.hasDefaultAttributes()
+          || (!fee.getRefundable() && !expectedFeeMap.containsKey(getOrParseType(fee)))) {
         throw new UnsupportedFeeAttributeException();
       }
       total = total.add(fee.getCost());
@@ -825,8 +828,6 @@ public class DomainFlowUtils {
       throw new CurrencyUnitMismatchException();
     }
     // If more than one fees are required, always validate individual fees.
-    ImmutableMap<FeeType, Money> expectedFeeMap =
-        buildFeeMap(feesAndCredits.getFees(), feesAndCredits.getCurrency());
     if (expectedFeeMap.size() > 1) {
       ImmutableMap<FeeType, Money> providedFeeMap =
           buildFeeMap(feeCommand.get().getFees(), feeCommand.get().getCurrency());

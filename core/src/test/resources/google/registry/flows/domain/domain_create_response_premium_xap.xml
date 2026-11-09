@@ -15,7 +15,7 @@
       <fee:creData xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
         <fee:currency>USD</fee:currency>
         <fee:fee description="create">200.00</fee:fee>
-        <fee:fee description="Expiry Access Period, fee expires: 1999-04-03T23:00:00Z">100.00</fee:fee>
+        <fee:fee description="Expiry Access Period, fee expires: 1999-04-03T23:00:00Z" refundable="false">100.00</fee:fee>
       </fee:creData>
     </extension>
     <trID>
