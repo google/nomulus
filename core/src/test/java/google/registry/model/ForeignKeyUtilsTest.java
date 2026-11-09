@@ -38,7 +38,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link ForeignKeyUtils}. */
 class ForeignKeyUtilsTest {
 
-  private final FakeClock fakeClock = new FakeClock(Instant.parse("2024-03-27T10:15:30.105Z"));
+  private static final Instant START_TIME = Instant.parse("2024-03-27T10:15:30.105Z");
+  private final FakeClock fakeClock = new FakeClock(START_TIME);
 
   @RegisterExtension
   public final JpaIntegrationTestExtension jpaIntegrationTestExtension =
@@ -156,5 +157,32 @@ class ForeignKeyUtilsTest {
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.now()))
         .containsExactlyEntriesIn(ImmutableMap.of("ns1.example.com", host1));
+  }
+
+  @Test
+  void testSuccess_loadResourceByCacheIncludingDeleted_includesDeletedDomain() {
+    Domain activeDomain = persistActiveDomain("active.com");
+    Domain deletedDomain =
+        persistResource(
+            persistActiveDomain("deleted.com")
+                .asBuilder()
+                .setDeletionTime(minusDays(START_TIME, 1))
+                .build());
+    assertThat(ForeignKeyUtils.loadResourceByCache(Domain.class, "active.com", START_TIME))
+        .hasValue(activeDomain);
+    assertThat(ForeignKeyUtils.loadResourceByCache(Domain.class, "deleted.com", START_TIME))
+        .isEmpty();
+    assertThat(
+            ForeignKeyUtils.loadResourceByCacheIncludingDeleted(
+                Domain.class, "active.com", START_TIME))
+        .hasValue(activeDomain);
+    assertThat(
+            ForeignKeyUtils.loadResourceByCacheIncludingDeleted(
+                Domain.class, "deleted.com", START_TIME))
+        .hasValue(deletedDomain);
+    assertThat(
+            ForeignKeyUtils.loadResourceByCacheIncludingDeleted(
+                Domain.class, "nonexistent.com", START_TIME))
+        .isEmpty();
   }
 }

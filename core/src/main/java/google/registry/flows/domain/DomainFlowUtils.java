@@ -72,6 +72,7 @@ import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.EppException.UnimplementedOptionException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
@@ -1210,14 +1211,25 @@ public class DomainFlowUtils {
   }
 
   /**
-   * Returns true if the domain was deleted before {@code now} and is eligible for Expiry Access
-   * Period (XAP) evaluation.
+   * Returns true if the domain was deleted at or before {@code now} and is eligible for Expiry
+   * Access Period (XAP) evaluation.
    */
   public static boolean isDomainEligibleForXap(Domain domain, Tld tld, Instant now) {
-    if (domain.getDeletionTime() == null || !domain.getDeletionTime().isBefore(now)) {
+    if (domain.getDeletionTime() == null || domain.getDeletionTime().isAfter(now)) {
       return false;
     }
     return !wasDeletedDuringAddGracePeriod(domain, tld);
+  }
+
+  /**
+   * Loads the domain if it was deleted within the Expiry Access Period (XAP) window and is eligible
+   * for XAP.
+   */
+  public static Optional<Domain> loadDomainIfInXap(
+      String domainName, Instant now, Duration domainExpiryAccessPeriodTotalLength) {
+    return ForeignKeyUtils.loadResource(
+            Domain.class, domainName, now.minus(domainExpiryAccessPeriodTotalLength))
+        .filter(domain -> isDomainEligibleForXap(domain, Tld.get(domain.getTld()), now));
   }
 
   /** Resource linked to this domain does not exist. */

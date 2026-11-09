@@ -32,6 +32,7 @@ import com.google.monitoring.metrics.IncrementableMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.cache.SimplifiedJedisClient;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.Domain;
@@ -87,13 +88,18 @@ public class SyncRemoteCacheAction implements Runnable {
   private final LockHandler lockHandler;
   private final Response response;
   private final Optional<SimplifiedJedisClient> jedisClient;
+  private final Duration domainExpiryAccessPeriodTotalLength;
 
   @Inject
   public SyncRemoteCacheAction(
-      LockHandler lockHandler, Response response, Optional<SimplifiedJedisClient> jedisClient) {
+      LockHandler lockHandler,
+      Response response,
+      Optional<SimplifiedJedisClient> jedisClient,
+      @Config("domainExpiryAccessPeriodTotalLength") Duration domainExpiryAccessPeriodTotalLength) {
     this.lockHandler = lockHandler;
     this.response = response;
     this.jedisClient = jedisClient;
+    this.domainExpiryAccessPeriodTotalLength = domainExpiryAccessPeriodTotalLength;
   }
 
   @Override
@@ -187,10 +193,12 @@ public class SyncRemoteCacheAction implements Runnable {
     ImmutableList.Builder<SimplifiedJedisClient.JedisResource<T>> toSaveBuilder =
         new ImmutableList.Builder<>();
 
+    Instant now = tm().getTxTime();
     for (T resource : resources) {
       String key = getKeyFunction.apply(resource);
-      if (resource.getDeletionTime().isAfter(tm().getTxTime())) {
-        toSaveBuilder.add(new SimplifiedJedisClient.JedisResource<>(key, resource));
+      if (shouldSaveResourceInRemoteCache(resource, now)) {
+        toSaveBuilder.add(
+            new SimplifiedJedisClient.JedisResource<>(key, resource, getExpirationTime(resource)));
       } else {
         toDeleteBuilder.add(key);
       }
@@ -202,6 +210,16 @@ public class SyncRemoteCacheAction implements Runnable {
     logger.atInfo().log("Invalidated %d from the remote cache", toDelete.size());
     jedisClient.get().setAll(toSave);
     logger.atInfo().log("Set %d in the remote cache", toSave.size());
+  }
+
+  private Optional<Instant> getExpirationTime(EppResource resource) {
+    return resource instanceof Domain domain
+        ? Optional.of(domain.getDeletionTime().plus(domainExpiryAccessPeriodTotalLength))
+        : Optional.empty();
+  }
+
+  private boolean shouldSaveResourceInRemoteCache(EppResource resource, Instant now) {
+    return getExpirationTime(resource).orElseGet(resource::getDeletionTime).isAfter(now);
   }
 
   private Instant getPreviousCursorTime(Cursor.CursorType cursorType) {
