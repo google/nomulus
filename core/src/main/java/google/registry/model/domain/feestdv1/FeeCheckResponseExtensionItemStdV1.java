@@ -76,6 +76,9 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
     @Override
     public Builder setFees(ImmutableList<Fee> fees) {
       commandBuilder.setFee(fees);
+      // Leave standard null when true so JAXB omits the attribute on standard commands.
+      commandBuilder.setStandard(
+          fees.stream().anyMatch(f -> !f.getType().isRegularFee()) ? false : null);
       return this;
     }
 

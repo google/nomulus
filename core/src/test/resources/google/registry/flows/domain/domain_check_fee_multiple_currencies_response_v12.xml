@@ -23,7 +23,7 @@
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">800</fee:fee>
-            <fee:fee description="Early Access Period, fee expires: 294247-01-10T04:00:54.775Z">800</fee:fee>
+            <fee:fee description="Early Access Period, fee expires: 294247-01-10T04:00:54.775Z" refundable="false">800</fee:fee>
           </fee:command>
         </fee:cd>
         <fee:cd>

@@ -28,6 +28,59 @@ class FeeTest {
     Fee fee = Fee.create(BigDecimal.valueOf(10.00), FeeType.CREATE, false);
     assertThat(fee.getCost()).isEqualTo(BigDecimal.valueOf(10.00));
     assertThat(fee.getType()).isEqualTo(FeeType.CREATE);
+    assertThat(fee.getRefundable()).isTrue();
+    assertThat(fee.getType().isRefundable()).isTrue();
+    assertThat(fee.getType().isRegularFee()).isTrue();
+    assertThat(fee.hasDefaultAttributes()).isTrue();
+  }
+
+  @Test
+  void testCreate_eapAndXap_nonRefundableAndNonRegular() {
+    Fee eapFee = Fee.create(BigDecimal.valueOf(100.00), FeeType.EAP, false, "2026-01-01T00:00:00Z");
+    assertThat(eapFee.getRefundable()).isFalse();
+    assertThat(eapFee.getType().isRefundable()).isFalse();
+    assertThat(eapFee.getType().isRegularFee()).isFalse();
+    assertThat(eapFee.hasDefaultAttributes()).isTrue();
+    Fee xapFee = Fee.create(BigDecimal.valueOf(100.00), FeeType.XAP, false, "2026-01-01T00:00:00Z");
+    assertThat(xapFee.getRefundable()).isFalse();
+    assertThat(xapFee.getType().isRefundable()).isFalse();
+    assertThat(xapFee.getType().isRegularFee()).isFalse();
+    assertThat(xapFee.hasDefaultAttributes()).isTrue();
+  }
+
+  @Test
+  void testHasDefaultAttributes_parsedFromDescription() {
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(100.00))
+                .setDescription("Expiry Access Period, fee expires: 2026-01-01T00:00:00Z")
+                .setRefundable(false)
+                .build()
+                .hasDefaultAttributes())
+        .isTrue();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(100.00))
+                .setDescription("Early Access Period")
+                .build()
+                .hasDefaultAttributes())
+        .isTrue();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(100.00))
+                .setDescription("Early Access Period")
+                .setRefundable(true)
+                .build()
+                .hasDefaultAttributes())
+        .isFalse();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(24.00))
+                .setDescription("create")
+                .setRefundable(false)
+                .build()
+                .hasDefaultAttributes())
+        .isFalse();
   }
 
   @Test
