@@ -622,11 +622,19 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadAllOfSorted(Class<T> clazz, String... sortFields) {
-    return loadAllOfSortedStream(clazz, sortFields).collect(toImmutableList());
+    // Use getResultList() instead of getResultStream() so Hibernate hydrates all entities into
+    // the PersistenceContext and BatchFetchQueue before initializing collections and detaching.
+    return createLoadAllQuery(clazz, sortFields).getResultList().stream()
+        .map(this::detach)
+        .collect(toImmutableList());
   }
 
   @Override
   public <T> Stream<T> loadAllOfSortedStream(Class<T> clazz, String... sortFields) {
+    return createLoadAllQuery(clazz, sortFields).getResultStream().map(this::detach);
+  }
+
+  private <T> TypedQuery<T> createLoadAllQuery(Class<T> clazz, String... sortFields) {
     checkArgumentNotNull(clazz, "clazz must be specified");
     checkArgumentNotNull(sortFields, "sortFields must not be null");
     assertInTransaction();
@@ -642,10 +650,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       queryString.append(" ORDER BY ");
       queryString.append(String.join(", ", sortFields));
     }
-    return getEntityManager()
-        .createQuery(queryString.toString(), clazz)
-        .getResultStream()
-        .map(this::detach);
+    return getEntityManager().createQuery(queryString.toString(), clazz);
   }
 
   @Override
@@ -1034,13 +1039,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     @Override
     public T getSingleResultOrNull() {
-      return delegate.getSingleResultOrNull();
+      return detachIfEntity(delegate.getSingleResultOrNull());
     }
 
     @Override
     public List<T> getResultList() {
-      return delegate
-          .getResultStream()
+      // Delegate to getResultList() rather than getResultStream() so Hibernate can batch-fetch
+      // child collections across all loaded entities before each entity is detached.
+      return delegate.getResultList().stream()
           .map(JpaTransactionManagerImpl.this::detachIfEntity)
           .collect(toImmutableList());
     }
