@@ -450,8 +450,12 @@ domain’s price range.
 **8.5 What do you do with the "grace-period", "applied" and "refundable"
 attributes as added in draft 0.6 of the Fee Extension?**
 
-Registry does not return any of those fields, and will reject any transform
-commands that attempt to pass in those fields.
+Registry does not return the "grace-period" or "applied" attributes, and only
+returns `refundable="false"` on non-refundable fees (such as Early Access
+Period and Expiry Access Period fees). Transform commands that specify
+non-default values for these attributes (such as a non-zero "grace-period",
+`applied="delayed"`, or a "refundable" value that does not match whether the
+fee is refundable) will be rejected.
 
 **8.6 What currency code do I use for the Fee Extension?**
 
@@ -531,6 +535,10 @@ example:
   <fee:fee description="Early Access Period">80.00</fee:fee>
 </fee:create>
 ```
+
+Note that `<fee:check>` and `<fee:create>` responses include
+`refundable="false"` on the Early Access Period (and Expiry Access Period) fee
+element, which may also be included in `<fee:create>` requests.
 
 ## Security
 

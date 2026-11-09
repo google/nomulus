@@ -41,6 +41,9 @@ public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
   /** The subphase that was checked. */
   @XmlAttribute String subphase;
 
+  /** Whether the fee for this command is the standard or default fee. */
+  @XmlAttribute Boolean standard;
+
   /** The period that was checked. */
   Period period;
 
@@ -66,6 +69,11 @@ public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
 
     public Builder setSubphase(String subphase) {
       getInstance().subphase = subphase;
+      return this;
+    }
+
+    public Builder setStandard(Boolean standard) {
+      getInstance().standard = standard;
       return this;
     }
 

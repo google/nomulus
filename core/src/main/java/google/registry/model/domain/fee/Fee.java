@@ -52,6 +52,8 @@ public class Fee extends BaseFee {
     instance.cost = cost;
     instance.type = type;
     instance.isPremium = isPremium;
+    // Leave refundable null when true so JAXB omits the default attribute in XML responses.
+    instance.refundable = type.isRefundable() ? null : false;
     instance.description = type.renderDescription(descriptionArgs);
     return instance;
   }
