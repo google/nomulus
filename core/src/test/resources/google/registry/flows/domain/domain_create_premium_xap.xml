@@ -18,7 +18,7 @@
       <fee:create xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
         <fee:currency>USD</fee:currency>
         <fee:fee description="create">200.00</fee:fee>
-        <fee:fee description="Expiry Access Period">100.00</fee:fee>
+        <fee:fee description="Expiry Access Period" refundable="false">100.00</fee:fee>
       </fee:create>
     </extension>
     <clTRID>ABC-12345</clTRID>
