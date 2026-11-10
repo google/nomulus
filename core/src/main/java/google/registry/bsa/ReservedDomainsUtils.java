@@ -17,6 +17,7 @@ package google.registry.bsa;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_JOINER;
+import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.label.ReservedList.loadReservedLists;
@@ -25,8 +26,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
-import google.registry.model.tld.Tld.TldType;
-import google.registry.model.tld.Tlds;
 import google.registry.model.tld.label.ReservedList;
 import java.time.Instant;
 import java.util.Map;
@@ -46,8 +45,7 @@ public final class ReservedDomainsUtils {
   private ReservedDomainsUtils() {}
 
   public static Stream<String> getAllReservedNames(Instant now) {
-    return Tlds.getTldEntitiesOfType(TldType.REAL).stream()
-        .filter(tld -> Tld.isEnrolledWithBsa(tld, now))
+    return getEnrolledBsaTlds(now)
         .map(tld -> getAllReservedDomainsInTld(tld, now))
         .flatMap(ImmutableSet::stream);
   }
