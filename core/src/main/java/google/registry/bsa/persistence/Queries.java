@@ -16,6 +16,7 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_SPLITTER;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -42,6 +43,11 @@ public final class Queries {
   private static Object detach(Object obj) {
     tm().getEntityManager().detach(obj);
     return obj;
+  }
+
+  /** Returns the names of all TLDs enrolled in BSA. */
+  public static ImmutableSet<String> getEnrolledTlds() {
+    return tm().loadAllOfStream(BsaTld.class).map(BsaTld::getTld).collect(toImmutableSet());
   }
 
   public static ImmutableList<String> batchReadBsaLabelText(
