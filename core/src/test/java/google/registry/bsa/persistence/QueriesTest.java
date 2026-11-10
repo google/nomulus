@@ -22,18 +22,22 @@ import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.bsa.persistence.Queries.batchReadBsaLabelText;
 import static google.registry.bsa.persistence.Queries.batchReadUnblockableDomains;
 import static google.registry.bsa.persistence.Queries.deleteBsaLabelByLabels;
+import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
 import static google.registry.bsa.persistence.Queries.queryBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaUnblockableDomainByLabels;
 import static google.registry.bsa.persistence.Queries.queryMissedRegisteredUnblockables;
 import static google.registry.bsa.persistence.Queries.queryNewlyCreatedDomains;
 import static google.registry.bsa.persistence.Queries.queryUnblockablesByNames;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.plusHours;
 
 import com.google.common.collect.ImmutableList;
@@ -41,9 +45,12 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.persistence.BsaUnblockableDomain.Reason;
 import google.registry.bsa.persistence.Queries.DomainLifeSpan;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,18 +85,42 @@ class QueriesTest {
   }
 
   @Test
-  void getEnrolledTlds_noneEnrolled() {
-    assertThat(tm().transact(Queries::getEnrolledTlds)).isEmpty();
+  void getActivatedBsaTlds_noActivatedBsa() {
+    assertThat(tm().transact(Queries::getActivatedBsaTlds)).isEmpty();
   }
 
   @Test
-  void getEnrolledTlds_hasEnrolled() {
+  void getActivatedBsaTlds_hasActivatedBsa() {
     tm().transact(
             () -> {
               tm().put(new BsaTld("tld1", fakeClock.now()));
               tm().put(new BsaTld("tld2", fakeClock.now()));
             });
-    assertThat(tm().transact(Queries::getEnrolledTlds)).containsExactly("tld1", "tld2");
+    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("tld1", "tld2");
+  }
+
+  @Test
+  void getEnrolledBsaTlds_filtersEnrolledRealTlds() {
+    createTld("unenrolled");
+    persistResource(
+        createTld("testtld")
+            .asBuilder()
+            .setTldType(TldType.TEST)
+            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
+            .build());
+    persistResource(
+        createTld("enrolled")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(START_INSTANT))
+            .build());
+    persistResource(
+        createTld("future-enrolled")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(fakeClock.now().plus(Duration.ofDays(1))))
+            .build());
+
+    assertThat(getEnrolledBsaTlds(fakeClock.now()).map(Tld::getTldStr).collect(toImmutableList()))
+        .containsExactly("enrolled");
   }
 
   @Test

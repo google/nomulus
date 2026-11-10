@@ -16,15 +16,13 @@ package google.registry.bsa;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.transformValues;
-import static google.registry.model.tld.Tld.isEnrolledWithBsa;
+import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import google.registry.model.tld.Tld;
-import google.registry.model.tld.Tld.TldType;
-import google.registry.model.tld.Tlds;
 import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Clock;
@@ -81,8 +79,7 @@ public class IdnChecker {
 
   private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap(Instant now) {
     var idnToTldMap = new ImmutableMultimap.Builder<IdnTableEnum, Tld>();
-    Tlds.getTldEntitiesOfType(TldType.REAL).stream()
-        .filter(tld -> isEnrolledWithBsa(tld, now))
+    getEnrolledBsaTlds(now)
         .forEach(
             tld -> {
               for (IdnTableEnum idn : IDN_LABEL_VALIDATOR.getIdnTablesForTld(tld)) {

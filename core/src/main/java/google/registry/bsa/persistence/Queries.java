@@ -19,12 +19,16 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_SPLITTER;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
+import static google.registry.model.tld.Tld.isEnrolledWithBsa;
+import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.api.UnblockableDomain;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -45,8 +49,13 @@ public final class Queries {
     return obj;
   }
 
-  /** Returns the names of all TLDs enrolled in BSA. */
-  public static ImmutableSet<String> getEnrolledTlds() {
+  public static Stream<Tld> getEnrolledBsaTlds(Instant cutoffTime) {
+    return getTldEntitiesOfType(TldType.REAL).stream()
+        .filter(tld -> isEnrolledWithBsa(tld, cutoffTime));
+  }
+
+  /** Returns the names of all TLDs ready for BSA processing. */
+  public static ImmutableSet<String> getActivatedBsaTlds() {
     return tm().loadAllOfStream(BsaTld.class).map(BsaTld::getTld).collect(toImmutableSet());
   }
 
