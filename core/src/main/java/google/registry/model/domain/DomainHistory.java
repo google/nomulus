@@ -49,7 +49,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.hibernate.Hibernate;
 
 /**
  * A persisted history entry representing an EPP modification to a domain.
@@ -91,7 +90,7 @@ public class DomainHistory extends HistoryEntry {
 
   // We could have reused domainBase.nsHosts here, but Hibernate throws a weird exception after
   // we change to use a composite primary key.
-  @ElementCollection
+  @ElementCollection(fetch = FetchType.EAGER)
   @JoinTable(
       name = "DomainHistoryHost",
       indexes = {
@@ -206,12 +205,6 @@ public class DomainHistory extends HistoryEntry {
 
   @RecursivePostLoad
   public void domainHistoryPostLoad() {
-    // TODO(b/188044616): Determine why Eager loading doesn't work here.
-    Hibernate.initialize(domainTransactionRecords);
-    Hibernate.initialize(nsHosts);
-    Hibernate.initialize(dsDataHistories);
-    Hibernate.initialize(gracePeriodHistories);
-
     if (resource != null) {
       resource.nsHosts = nullToEmptyImmutableCopy(nsHosts);
       resource.gracePeriods =

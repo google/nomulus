@@ -20,7 +20,6 @@ import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
 import google.registry.model.host.VKeyConverter_Host;
-import google.registry.persistence.EntityCallbacksListener.RecursivePostLoad;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
 import jakarta.persistence.Access;
@@ -39,7 +38,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Set;
-import org.hibernate.Hibernate;
 
 /**
  * A persistable domain resource including mutable and non-mutable fields.
@@ -78,9 +76,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
     return super.getRepoId();
   }
 
-  // It seems like this should be FetchType.EAGER, but for some reason when we do that we get a lazy
-  // load error during the load of a domain.
-  @ElementCollection
+  @ElementCollection(fetch = FetchType.EAGER)
   @JoinTable(
       name = "DomainHost",
       indexes = {
@@ -136,15 +132,6 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
   @SuppressWarnings("unused")
   private Set<DomainDsData> getInternalDelegationSignerData() {
     return dsData;
-  }
-
-  /** Post-load method to eager load the collections. */
-  @RecursivePostLoad
-  protected void postLoad() {
-    // TODO(b/188044616): Determine why Eager loading doesn't work here.
-    Hibernate.initialize(dsData);
-    Hibernate.initialize(gracePeriods);
-    Hibernate.initialize(nsHosts);
   }
 
   @Override
