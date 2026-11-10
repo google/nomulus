@@ -14,18 +14,19 @@
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
-import { routes } from './app-routing.module';
-import { AppModule } from './app.module';
+import { routes } from './app.routes';
 import { PocReminderComponent } from './shared/components/pocReminder/pocReminder.component';
-import { RouterModule } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserData, UserDataService } from './shared/services/userData.service';
 import { Registrar, RegistrarService } from './registrar/registrar.service';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { signal, WritableSignal } from '@angular/core';
+import { BreakPointObserverService } from './shared/services/breakPoint.service';
+import { Subject } from 'rxjs';
 
 describe('AppComponent', () => {
   let component: AppComponent;
@@ -36,9 +37,13 @@ describe('AppComponent', () => {
     registrars: WritableSignal<Array<Partial<Registrar>>>;
   };
   let mockUserDataService: { userData: WritableSignal<Partial<UserData>> };
-  let mockSnackBar: jasmine.SpyObj<MatSnackBar>;
+  let mockBreakPointService: {
+    isMobileView: WritableSignal<boolean>;
+    isTabletView: WritableSignal<boolean>;
+  };
+  let openFromComponentSpy: ReturnType<typeof vi.spyOn>;
 
-  const dummyPocReminderComponent = class {}; // Dummy class for type checking
+  const dummyPocReminderComponent = class {};
 
   beforeEach(async () => {
     mockRegistrarService = {
@@ -53,20 +58,26 @@ describe('AppComponent', () => {
       }),
     };
 
-    mockSnackBar = jasmine.createSpyObj('MatSnackBar', ['openFromComponent']);
+    mockBreakPointService = {
+      isMobileView: signal(false),
+      isTabletView: signal(false),
+    };
 
     await TestBed.configureTestingModule({
       imports: [
         MatSidenavModule,
         NoopAnimationsModule,
         MatSnackBarModule,
-        AppModule,
+        AppComponent,
         RouterModule.forRoot(routes),
       ],
       providers: [
         { provide: RegistrarService, useValue: mockRegistrarService },
         { provide: UserDataService, useValue: mockUserDataService },
-        { provide: MatSnackBar, useValue: mockSnackBar },
+        {
+          provide: BreakPointObserverService,
+          useValue: mockBreakPointService,
+        },
         { provide: PocReminderComponent, useClass: dummyPocReminderComponent },
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -75,27 +86,29 @@ describe('AppComponent', () => {
 
     fixture = TestBed.createComponent(AppComponent);
     component = fixture.componentInstance;
+    const snackBar = fixture.debugElement.injector.get(MatSnackBar);
+    openFromComponentSpy = vi
+      .spyOn(snackBar, 'openFromComponent')
+      .mockReturnValue({} as any);
   });
 
   afterEach(() => {
-    jasmine.clock().uninstall();
+    vi.useRealTimers();
   });
 
   it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(component).toBeTruthy();
   });
 
   describe('PoC Verification Reminder', () => {
     beforeEach(() => {
-      jasmine.clock().install();
+      vi.useFakeTimers();
     });
 
-    it('should open snackbar if lastPocVerificationDate is older than one year', fakeAsync(() => {
+    it('should open snackbar if lastPocVerificationDate is older than one year for NONE role', () => {
       const MOCK_TODAY = new Date('2024-07-15T10:00:00.000Z');
-      jasmine.clock().mockDate(MOCK_TODAY);
+      vi.setSystemTime(MOCK_TODAY);
 
       const twoYearsAgo = new Date(MOCK_TODAY);
       twoYearsAgo.setFullYear(MOCK_TODAY.getFullYear() - 2);
@@ -107,19 +120,16 @@ describe('AppComponent', () => {
       fixture.detectChanges();
       TestBed.flushEffects();
 
-      expect(mockSnackBar.openFromComponent).toHaveBeenCalledWith(
-        PocReminderComponent,
-        {
-          horizontalPosition: 'center',
-          verticalPosition: 'top',
-          duration: 1000000000,
-        }
-      );
-    }));
+      expect(openFromComponentSpy).toHaveBeenCalledWith(PocReminderComponent, {
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        duration: 1000000000,
+      });
+    });
 
-    it('should NOT open snackbar if lastPocVerificationDate is within last year', fakeAsync(() => {
+    it('should NOT open snackbar if lastPocVerificationDate is within last year', () => {
       const MOCK_TODAY = new Date('2024-07-15T10:00:00.000Z');
-      jasmine.clock().mockDate(MOCK_TODAY);
+      vi.setSystemTime(MOCK_TODAY);
 
       const sixMonthsAgo = new Date(MOCK_TODAY);
       sixMonthsAgo.setMonth(MOCK_TODAY.getMonth() - 6);
@@ -131,7 +141,71 @@ describe('AppComponent', () => {
       fixture.detectChanges();
       TestBed.flushEffects();
 
-      expect(mockSnackBar.openFromComponent).not.toHaveBeenCalled();
-    }));
+      expect(openFromComponentSpy).not.toHaveBeenCalled();
+    });
+
+    it('should NOT open snackbar if user has a support globalRole', () => {
+      const MOCK_TODAY = new Date('2024-07-15T10:00:00.000Z');
+      vi.setSystemTime(MOCK_TODAY);
+
+      const twoYearsAgo = new Date(MOCK_TODAY);
+      twoYearsAgo.setFullYear(MOCK_TODAY.getFullYear() - 2);
+
+      mockUserDataService.userData.set({ globalRole: 'SUPPORT_AGENT' });
+      mockRegistrarService.registrar.set({
+        lastPocVerificationDate: twoYearsAgo.toISOString(),
+      });
+
+      fixture.detectChanges();
+      TestBed.flushEffects();
+
+      expect(openFromComponentSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Sidenav behavior', () => {
+    it('should toggle sidenav open and closed', () => {
+      fixture.detectChanges();
+      const closeSpy = vi.spyOn(component.sidenav, 'close');
+      const openSpy = vi.spyOn(component.sidenav, 'open');
+
+      Object.defineProperty(component.sidenav, 'opened', {
+        value: true,
+        configurable: true,
+      });
+      component.toggleSidenav();
+      expect(closeSpy).toHaveBeenCalled();
+
+      Object.defineProperty(component.sidenav, 'opened', {
+        value: false,
+        configurable: true,
+      });
+      component.toggleSidenav();
+      expect(openSpy).toHaveBeenCalled();
+    });
+
+    it('should close sidenav on NavigationEnd when in mobile view', () => {
+      const router = TestBed.inject(Router);
+      const eventsSubject = router.events as unknown as Subject<any>;
+      fixture.detectChanges();
+
+      const closeSpy = vi.spyOn(component.sidenav, 'close');
+      mockBreakPointService.isMobileView.set(true);
+      eventsSubject.next(new NavigationEnd(1, '/home', '/home'));
+
+      expect(closeSpy).toHaveBeenCalled();
+    });
+
+    it('should NOT close sidenav on NavigationEnd when in desktop view', () => {
+      const router = TestBed.inject(Router);
+      const eventsSubject = router.events as unknown as Subject<any>;
+      fixture.detectChanges();
+
+      const closeSpy = vi.spyOn(component.sidenav, 'close');
+      mockBreakPointService.isMobileView.set(false);
+      eventsSubject.next(new NavigationEnd(1, '/home', '/home'));
+
+      expect(closeSpy).not.toHaveBeenCalled();
+    });
   });
 });

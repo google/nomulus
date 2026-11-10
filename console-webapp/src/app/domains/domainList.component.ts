@@ -13,19 +13,26 @@
 // limitations under the License.
 
 import { SelectionModel } from '@angular/cdk/collections';
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
   Component,
   effect,
   Inject,
+  signal,
+  untracked,
   ViewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { debounceTime, filter, Subject, take } from 'rxjs';
+import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
+import { SelectedRegistrarWrapper } from '../shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
+import { ForceFocusDirective } from '../shared/directives/forceFocus.directive';
 import {
   BULK_ACTION_NAME,
   Domain,
@@ -38,7 +45,10 @@ import {
   MatDialog,
   MatDialogRef,
 } from '@angular/material/dialog';
-import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import {
+  RESTRICTED_ELEMENTS,
+  UserLevelVisibility,
+} from '../shared/directives/userLevelVisiblity.directive';
 import { CdkColumnDef } from '@angular/cdk/table';
 
 interface DomainResponse {
@@ -52,6 +62,7 @@ interface DomainData {
 
 @Component({
   selector: 'app-response-dialog',
+  imports: [MaterialModule],
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>
@@ -63,8 +74,7 @@ interface DomainData {
       <button mat-button (click)="onClose()">Close</button>
     </mat-dialog-actions>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResponseDialogComponent {
   constructor(
@@ -86,6 +96,7 @@ enum Operation {
 
 @Component({
   selector: 'app-reason-dialog',
+  imports: [FormsModule, MaterialModule],
   template: `
     <h2 mat-dialog-title>
       Please provide the (EPP) reason for {{ data.operation }} the domain(s):
@@ -102,8 +113,7 @@ enum Operation {
       </button>
     </mat-dialog-actions>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReasonDialogComponent {
   reason: string = '';
@@ -124,10 +134,17 @@ export class ReasonDialogComponent {
 
 @Component({
   selector: 'app-domain-list',
+  imports: [
+    CommonModule,
+    FormsModule,
+    MaterialModule,
+    SelectedRegistrarWrapper,
+    ForceFocusDirective,
+    UserLevelVisibility,
+  ],
   templateUrl: './domainList.component.html',
   styleUrls: ['./domainList.component.scss'],
-  standalone: false,
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CdkColumnDef],
 })
 export class DomainListComponent {
@@ -154,18 +171,18 @@ export class DomainListComponent {
 
   dataSource: MatTableDataSource<Domain> = new MatTableDataSource();
   selection = new SelectionModel<Domain>(true, [], undefined, this.isChecked());
-  isLoading = true;
+  isLoading = signal(true);
 
   searchTermSubject = new Subject<string>();
   searchTerm?: string;
 
   pageNumber?: number;
   resultsPerPage = 50;
-  totalResults?: number = 0;
+  totalResults = signal<number | undefined>(0);
 
   reason: string = '';
 
-  operationResult: DomainData | undefined;
+  operationResult = signal<DomainData | undefined>(undefined);
 
   @ViewChild(MatPaginator, { static: true }) paginator!: MatPaginator;
 
@@ -177,12 +194,15 @@ export class DomainListComponent {
     private dialog: MatDialog
   ) {
     effect(() => {
-      this.pageNumber = 0;
-      this.totalResults = 0;
-      if (this.registrarService.registrarId()) {
-        this.loadLocks();
-        this.reloadData();
-      }
+      const registrarId = this.registrarService.registrarId();
+      untracked(() => {
+        this.pageNumber = 0;
+        this.totalResults.set(0);
+        if (registrarId) {
+          this.loadLocks();
+          this.reloadData();
+        }
+      });
     });
   }
 
@@ -201,8 +221,8 @@ export class DomainListComponent {
   }
 
   openRegistryLock(domainName: string) {
-    this.domainListService.selectedDomain = domainName;
-    this.domainListService.activeActionComponent = RegistryLockComponent;
+    this.domainListService.selectedDomain.set(domainName);
+    this.domainListService.activeActionComponent.set(RegistryLockComponent);
   }
 
   loadLocks() {
@@ -217,29 +237,29 @@ export class DomainListComponent {
   }
 
   isDomainLocked(domainName: string) {
-    return this.registryLockService.domainsLocks.some(
-      (d) => d.domainName === domainName
-    );
+    return this.registryLockService
+      .domainsLocks()
+      .some((d) => d.domainName === domainName);
   }
 
   reloadData() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.domainListService
       .retrieveDomains(
         this.pageNumber,
         this.resultsPerPage,
-        this.totalResults,
+        this.totalResults(),
         this.searchTerm
       )
       .subscribe({
         error: (err: HttpErrorResponse) => {
           this._snackBar.open(err.message);
-          this.isLoading = false;
+          this.isLoading.set(false);
         },
         next: (domainListResult) => {
-          this.dataSource.data = this.domainListService.domainsList;
-          this.totalResults = (domainListResult || {}).totalResults || 0;
-          this.isLoading = false;
+          this.dataSource.data = this.domainListService.domainsList();
+          this.totalResults.set((domainListResult || {}).totalResults || 0);
+          this.isLoading.set(false);
         },
       });
   }
@@ -294,8 +314,8 @@ export class DomainListComponent {
   }
 
   getOperationMessage(domain: string) {
-    if (this.operationResult && this.operationResult[domain])
-      return this.operationResult[domain].message;
+    const opResult = this.operationResult();
+    if (opResult && opResult[domain]) return opResult[domain].message;
     return '';
   }
 
@@ -306,7 +326,7 @@ export class DomainListComponent {
   }
 
   sendDeleteRequest(reason: string) {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.domainListService
       .bulkDomainAction(
         this.selection.selected.map((d) => d.domainName),
@@ -317,7 +337,7 @@ export class DomainListComponent {
       .pipe(take(1))
       .subscribe({
         next: (result: DomainData) => {
-          this.isLoading = false;
+          this.isLoading.set(false);
           const successCount = Object.keys(result).filter((domainName) =>
             result[domainName].responseCode.toString().startsWith('1')
           ).length;
@@ -335,11 +355,11 @@ export class DomainListComponent {
             },
           });
           this.selection.clear();
-          this.operationResult = result;
+          this.operationResult.set(result);
           this.reloadData();
         },
         error: (err: HttpErrorResponse) => {
-          this.isLoading = false;
+          this.isLoading.set(false);
           this._snackBar.open(err.error || err.message);
         },
       });
@@ -366,7 +386,7 @@ export class DomainListComponent {
     reason: string,
     actionName: BULK_ACTION_NAME
   ) {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.domainListService
       .bulkDomainAction(
         [domainName],
@@ -377,7 +397,7 @@ export class DomainListComponent {
       .pipe(take(1))
       .subscribe({
         next: (result: DomainData) => {
-          this.isLoading = false;
+          this.isLoading.set(false);
           if (result[domainName].responseCode.toString().startsWith('2')) {
             this._snackBar.open(result[domainName].message);
           } else {
@@ -385,7 +405,7 @@ export class DomainListComponent {
           }
         },
         error: (err: HttpErrorResponse) => {
-          this.isLoading = false;
+          this.isLoading.set(false);
           this._snackBar.open(err.error || err.message);
         },
       });

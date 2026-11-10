@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Observable, Subscription, timeout } from 'rxjs';
 
 export interface GlobalLoader {
@@ -32,10 +32,10 @@ export interface GlobalLoader {
 export class GlobalLoaderService {
   private static readonly TIMEOUT_MS = 10000;
   private loaders = new Map<GlobalLoader, Subscription>();
-  public isLoading: boolean = false;
+  public isLoading = signal(false);
 
   private syncLoading() {
-    this.isLoading = this.loaders.size > 0;
+    this.isLoading.set(this.loaders.size > 0);
   }
 
   startGlobalLoader(c: GlobalLoader) {

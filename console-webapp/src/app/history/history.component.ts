@@ -12,32 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, effect, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  effect,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MaterialModule } from '../material.module';
 import { UserDataService } from '../shared/services/userData.service';
 import { BackendService } from '../shared/services/backend.service';
 import { RegistrarService } from '../registrar/registrar.service';
 import { HistoryService } from './history.service';
+import { HistoryListComponent } from './historyList.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   GlobalLoader,
   GlobalLoaderService,
 } from '../shared/services/globalLoader.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import { SelectedRegistrarWrapper } from '../shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
+import { ForceFocusDirective } from '../shared/directives/forceFocus.directive';
+import {
+  RESTRICTED_ELEMENTS,
+  UserLevelVisibility,
+} from '../shared/directives/userLevelVisiblity.directive';
 
 @Component({
   selector: 'app-history',
+  imports: [
+    FormsModule,
+    MaterialModule,
+    SelectedRegistrarWrapper,
+    ForceFocusDirective,
+    UserLevelVisibility,
+    HistoryListComponent,
+  ],
   templateUrl: './history.component.html',
   styleUrls: ['./history.component.scss'],
   providers: [HistoryService],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoryComponent implements GlobalLoader {
   public static PATH = 'history';
 
   consoleUserEmail: string = '';
-  isLoading: boolean = false;
+  isLoading = signal(false);
 
   constructor(
     private backendService: BackendService,
@@ -49,7 +70,9 @@ export class HistoryComponent implements GlobalLoader {
   ) {
     effect(() => {
       if (registrarService.registrarId()) {
-        this.loadHistory();
+        untracked(() => {
+          this.loadHistory();
+        });
       }
     });
   }
@@ -64,17 +87,18 @@ export class HistoryComponent implements GlobalLoader {
 
   loadHistory() {
     this.globalLoader.startGlobalLoader(this);
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.historyService
       .getHistoryLog(this.registrarService.registrarId(), this.consoleUserEmail)
       .subscribe({
         error: (err: HttpErrorResponse) => {
           this._snackBar.open(err.error || err.message);
-          this.isLoading = false;
+          this.globalLoader.stopGlobalLoader(this);
+          this.isLoading.set(false);
         },
         next: () => {
           this.globalLoader.stopGlobalLoader(this);
-          this.isLoading = false;
+          this.isLoading.set(false);
         },
       });
   }

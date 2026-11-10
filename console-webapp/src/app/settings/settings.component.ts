@@ -17,21 +17,24 @@ import {
   ViewEncapsulation,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { RouterModule } from '@angular/router';
+import { MaterialModule } from '../material.module';
+import { SelectedRegistrarWrapper } from '../shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
+import { ForceFocusDirective } from '../shared/directives/forceFocus.directive';
 
 @Component({
   selector: 'app-settings',
+  imports: [
+    MaterialModule,
+    RouterModule,
+    SelectedRegistrarWrapper,
+    ForceFocusDirective,
+  ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsComponent {
   public static PATH = 'settings';
-
-  public static matchesUrl(url: string): boolean {
-    return url[0] === '/'
-      ? url.startsWith(`/${this.PATH}`)
-      : url.startsWith(this.PATH);
-  }
 }

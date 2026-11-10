@@ -71,9 +71,9 @@ export function contactTypeToViewReadyContact(c: Contact): ViewReadyContact {
 })
 export class ContactService {
   contacts = signal<ViewReadyContact[]>([]);
-  contactInEdit!: ViewReadyContact;
-  isContactDetailsView: boolean = false;
-  isContactNewView: boolean = false;
+  contactInEdit = signal<ViewReadyContact | undefined>(undefined);
+  isContactDetailsView = signal(false);
+  isContactNewView = signal(false);
 
   constructor(
     private backend: BackendService,
@@ -81,16 +81,18 @@ export class ContactService {
   ) {}
 
   setEditableContact(contact?: ViewReadyContact) {
-    this.contactInEdit = contact
-      ? contact
-      : contactTypeToViewReadyContact({
-          emailAddress: '',
-          name: '',
-          types: ['TECH'],
-          faxNumber: '',
-          phoneNumber: '',
-          registrarId: '',
-        });
+    this.contactInEdit.set(
+      contact
+        ? contact
+        : contactTypeToViewReadyContact({
+            emailAddress: '',
+            name: '',
+            types: ['TECH'],
+            faxNumber: '',
+            phoneNumber: '',
+            registrarId: '',
+          })
+    );
   }
 
   fetchContacts(): Observable<Contact[]> {

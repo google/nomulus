@@ -50,7 +50,7 @@ import { HttpErrorResponse } from '@angular/common/http';
       <button mat-button color="warn" (click)="onSave()">Confirm</button>
     </mat-dialog-actions>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MaterialModule],
 })
 export class ResetRegistryLockPasswordComponent {
@@ -74,7 +74,7 @@ export class ResetRegistryLockPasswordComponent {
   templateUrl: './userEditForm.component.html',
   styleUrls: ['./userEditForm.component.scss'],
   imports: [FormsModule, MaterialModule],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [],
 })
 export class UserEditFormComponent {

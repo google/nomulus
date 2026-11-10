@@ -12,28 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RegistrarService } from '../registrar/registrar.service';
-import { ActivatedRoute, ParamMap } from '@angular/router';
+import { ActivatedRoute, ParamMap, RouterModule } from '@angular/router';
 import { RegistryLockVerifyService } from './registryLockVerify.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { take } from 'rxjs';
-import { DomainListComponent } from '../domains/domainList.component';
+import { PATHS } from '../app.routes';
+import { MaterialModule } from '../material.module';
 
 @Component({
   selector: 'app-registry-lock-verify',
+  imports: [MaterialModule, RouterModule],
   templateUrl: './registryLockVerify.component.html',
   styleUrls: ['./registryLockVerify.component.scss'],
   providers: [RegistryLockVerifyService],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistryLockVerifyComponent {
   public static PATH = 'registry-lock-verify';
 
-  readonly DOMAIN_LIST_COMPONENT_PATH = `/${DomainListComponent.PATH}`;
+  readonly DOMAIN_LIST_COMPONENT_PATH = `/${PATHS.DomainListComponent}`;
 
-  isLoading = true;
+  isLoading = signal(true);
   domainName?: string;
   action?: string;
   errorMessage?: string;
@@ -50,8 +51,8 @@ export class RegistryLockVerifyComponent {
         .verifyRequest(params.get('lockVerificationCode') || '')
         .subscribe({
           error: (err: HttpErrorResponse) => {
-            this.isLoading = false;
             this.errorMessage = err.error;
+            this.isLoading.set(false);
           },
           next: (verificationResponse) => {
             this.domainName = verificationResponse.domainName;
@@ -59,7 +60,7 @@ export class RegistryLockVerifyComponent {
             this.registrarService.registrarId.set(
               verificationResponse.registrarId
             );
-            this.isLoading = false;
+            this.isLoading.set(false);
           },
         });
     });

@@ -23,7 +23,6 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from '../registrar/registrar.service';
 import { MaterialModule } from '../material.module';
-import { SnackBarModule } from '../snackbar.module';
 
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { take } from 'rxjs';
@@ -37,9 +36,9 @@ export interface OteStatusResponse {
 
 @Component({
   selector: 'app-ote-status',
-  imports: [MaterialModule, SnackBarModule],
+  imports: [MaterialModule],
   templateUrl: './oteStatus.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./oteStatus.component.scss'],
 })
 export class OteStatusComponent implements OnInit {

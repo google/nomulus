@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
 import { BackendService } from '../shared/services/backend.service';
@@ -25,7 +25,7 @@ export interface DomainLocksResult {
   providedIn: 'root',
 })
 export class RegistryLockService {
-  public domainsLocks: DomainLocksResult[] = [];
+  public domainsLocks = signal<DomainLocksResult[]>([]);
 
   constructor(
     private backendService: BackendService,
@@ -37,7 +37,7 @@ export class RegistryLockService {
       .getLocks(this.registrarService.registrarId())
       .pipe(
         tap((domainLocksResult) => {
-          this.domainsLocks = domainLocksResult;
+          this.domainsLocks.set(domainLocksResult);
         })
       );
   }

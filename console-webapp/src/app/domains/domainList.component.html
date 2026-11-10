@@ -1,19 +1,18 @@
 <app-selected-registrar-wrapper>
   <div class="console-app-domains">
-    <h1 class="mat-headline-4" forceFocus>Domains</h1>
+    <h1 class="console-app__title" forceFocus>Domains</h1>
 
     <div
       class="console-app-domains__actions-wrapper"
-      [hidden]="!domainListService.activeActionComponent"
+      [hidden]="!domainListService.activeActionComponent()"
     >
       <ng-container
-        v-if="domainListService.activeActionComponent"
-        *ngComponentOutlet="domainListService.activeActionComponent"
+        *ngComponentOutlet="domainListService.activeActionComponent()"
       >
       </ng-container>
     </div>
 
-    @if (!isLoading && totalResults == 0) {
+    @if (!isLoading() && totalResults() == 0) {
     <div class="console-app__empty-domains">
       <h1>
         <mat-icon class="console-app__empty-domains-icon secondary-text"
@@ -59,11 +58,11 @@
     </mat-menu>
     <div
       class="console-app__domains-table-parent"
-      [hidden]="domainListService.activeActionComponent"
+      [hidden]="domainListService.activeActionComponent()"
     >
       <div class="console-app__scrollable-wrapper">
         <div class="console-app__scrollable">
-          @if (isLoading) {
+          @if (isLoading()) {
           <div class="console-app__domains-spinner">
             <mat-spinner />
           </div>
@@ -215,7 +214,7 @@
             </tr>
           </mat-table>
           <mat-paginator
-            [length]="totalResults"
+            [length]="totalResults()"
             [pageIndex]="pageNumber"
             [pageSize]="resultsPerPage"
             [pageSizeOptions]="[10, 25, 50, 100, 500]"

@@ -3,7 +3,7 @@
   cdkTrapFocus
   [cdkTrapFocusAutoCapture]="true"
 >
-  <h1 class="mat-headline-4">Registrars</h1>
+  <h1 class="console-app__title">Registrars</h1>
   <mat-divider></mat-divider>
   <div class="console-app__registrar-view-content">
     <div class="console-app__registrar-view-controls">
@@ -11,7 +11,7 @@
         <mat-icon>arrow_back</mat-icon>
       </button>
       <div class="spacer"></div>
-      @if(!inEdit && !registrarNotFound) { @if (oteButtonVisible) {
+      @if(!inEdit && !registrarNotFound()) { @if (oteButtonVisible) {
       <button
         mat-stroked-button
         (click)="checkOteStatus()"
@@ -35,7 +35,7 @@
       </button>
       }
     </div>
-    @if(registrarNotFound) {
+    @if(registrarNotFound()) {
     <h1>Registrar not found</h1>
     } @else {
     <h1>{{ registrarInEdit.registrarId }}</h1>
