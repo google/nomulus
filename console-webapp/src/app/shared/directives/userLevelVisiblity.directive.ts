@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Directive, ElementRef, Input, effect } from '@angular/core';
+import { Directive, ElementRef, input, effect } from '@angular/core';
 import { UserDataService } from '../services/userData.service';
 
 export enum RESTRICTED_ELEMENTS {
@@ -38,9 +38,9 @@ export const DISABLED_ELEMENTS_PER_ROLE = {
   selector: '[elementId]',
 })
 export class UserLevelVisibility {
-  @Input() elementId!: RESTRICTED_ELEMENTS | null;
+  elementId = input<RESTRICTED_ELEMENTS | null>(null);
 
-  @Input() isReverse: boolean = false;
+  isReverse = input<boolean>(false);
 
   constructor(
     private userDataService: UserDataService,
@@ -51,16 +51,17 @@ export class UserLevelVisibility {
 
   processElement() {
     const globalRole = this.userDataService?.userData()?.globalRole || 'NONE';
-    if (this.elementId === null) {
+    const elementId = this.elementId();
+    if (elementId === null) {
       return;
     }
     if (
       // @ts-ignore
-      (DISABLED_ELEMENTS_PER_ROLE[globalRole] || []).includes(this.elementId)
+      (DISABLED_ELEMENTS_PER_ROLE[globalRole] || []).includes(elementId)
     ) {
-      this.el.nativeElement.style.display = this.isReverse ? '' : 'none';
+      this.el.nativeElement.style.display = this.isReverse() ? '' : 'none';
     } else {
-      this.el.nativeElement.style.display = this.isReverse ? 'none' : '';
+      this.el.nativeElement.style.display = this.isReverse() ? 'none' : '';
     }
   }
 }

@@ -15,10 +15,9 @@
 import {
   Component,
   effect,
-  EventEmitter,
   input,
-  Output,
-  ViewChild,
+  output,
+  viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { MaterialModule } from '../material.module';
@@ -53,18 +52,15 @@ export class UsersListComponent {
   dataSource: MatTableDataSource<User>;
   selectedRow!: User;
   users = input<User[]>([]);
-  @Output() onSelect = new EventEmitter<User>();
-  @ViewChild(MatSort) sort!: MatSort;
+  onSelect = output<User>();
+  sort = viewChild(MatSort);
 
   constructor() {
     this.dataSource = new MatTableDataSource<User>(this.users());
     effect(() => {
       this.dataSource.data = this.users();
+      this.dataSource.sort = this.sort() ?? null;
     });
-  }
-
-  ngAfterViewInit() {
-    this.dataSource.sort = this.sort;
   }
 
   onClick(row: User) {

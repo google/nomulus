@@ -15,6 +15,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  OnDestroy,
   OnInit,
   signal,
   ChangeDetectionStrategy,
@@ -47,7 +48,7 @@ import { environment } from '../../environments/environment';
   styleUrls: ['./registrarDetails.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RegistrarDetailsComponent implements OnInit {
+export class RegistrarDetailsComponent implements OnInit, OnDestroy {
   public static PATH = 'registrars/:id';
   inEdit: boolean = false;
   oteButtonVisible = environment.sandbox;

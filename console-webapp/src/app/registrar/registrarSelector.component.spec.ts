@@ -16,7 +16,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import { RegistrarSelectorComponent } from './registrarSelector.component';
@@ -45,12 +44,7 @@ describe('RegistrarSelectorComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [
-        RegistrarSelectorComponent,
-        MaterialModule,
-        BrowserAnimationsModule,
-        FormsModule,
-      ],
+      imports: [RegistrarSelectorComponent, MaterialModule, FormsModule],
       providers: [
         BackendService,
         { provide: RegistrarService, useValue: mockRegistrarService },

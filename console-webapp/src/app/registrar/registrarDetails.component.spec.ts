@@ -15,7 +15,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -61,7 +60,6 @@ describe('RegistrarDetailsComponent & NewRegistrarComponent', () => {
         RegistrarDetailsComponent,
         NewRegistrarComponent,
         MaterialModule,
-        NoopAnimationsModule,
       ],
       providers: [
         BackendService,
@@ -171,12 +169,10 @@ describe('RegistrarDetailsComponent & NewRegistrarComponent', () => {
         line2: '',
         line3: 'Bldg 43',
       };
-      component.form = {
-        nativeElement: {
-          checkValidity: vi.fn().mockReturnValue(true),
-          reportValidity: vi.fn(),
-        },
-      };
+      vi.spyOn(component.form().nativeElement, 'checkValidity').mockReturnValue(
+        true
+      );
+      vi.spyOn(component.form().nativeElement, 'reportValidity');
 
       const submitEvent = { preventDefault: vi.fn() } as unknown as SubmitEvent;
       component.save(submitEvent);
@@ -191,19 +187,18 @@ describe('RegistrarDetailsComponent & NewRegistrarComponent', () => {
     });
 
     it('should call reportValidity when form is invalid and show snackbar on backend error', () => {
-      const reportValiditySpy = vi.fn();
-      component.form = {
-        nativeElement: {
-          checkValidity: vi.fn().mockReturnValue(false),
-          reportValidity: reportValiditySpy,
-        },
-      };
+      const checkValiditySpy = vi
+        .spyOn(component.form().nativeElement, 'checkValidity')
+        .mockReturnValue(false);
+      const reportValiditySpy = vi
+        .spyOn(component.form().nativeElement, 'reportValidity')
+        .mockImplementation(() => false);
 
       const submitEvent = { preventDefault: vi.fn() } as unknown as SubmitEvent;
       component.save(submitEvent);
       expect(reportValiditySpy).toHaveBeenCalled();
 
-      component.form.nativeElement.checkValidity.mockReturnValue(true);
+      checkValiditySpy.mockReturnValue(true);
       mockRegistrarService.createRegistrar.mockReturnValueOnce(
         throwError(() => new HttpErrorResponse({ error: 'Duplicate ID' }))
       );

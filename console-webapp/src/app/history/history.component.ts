@@ -71,7 +71,7 @@ export class HistoryComponent implements GlobalLoader {
     effect(() => {
       if (registrarService.registrarId()) {
         untracked(() => {
-          this.loadHistory();
+          this.loadRegistrarHistory();
         });
       }
     });
@@ -85,11 +85,23 @@ export class HistoryComponent implements GlobalLoader {
     this._snackBar.open('Timeout loading records history');
   }
 
-  loadHistory() {
+  loadRegistrarHistory() {
+    this.consoleUserEmail = '';
+    this.historyService.historyRecordsRegistrar.set([]);
+    this.historyService.historyRecordsUser.set([]);
+    this.fetchHistory();
+  }
+
+  loadUserHistory() {
+    this.historyService.historyRecordsUser.set([]);
+    this.fetchHistory(this.consoleUserEmail);
+  }
+
+  private fetchHistory(userEmail?: string) {
     this.globalLoader.startGlobalLoader(this);
     this.isLoading.set(true);
     this.historyService
-      .getHistoryLog(this.registrarService.registrarId(), this.consoleUserEmail)
+      .getHistoryLog(this.registrarService.registrarId(), userEmail)
       .subscribe({
         error: (err: HttpErrorResponse) => {
           this._snackBar.open(err.error || err.message);

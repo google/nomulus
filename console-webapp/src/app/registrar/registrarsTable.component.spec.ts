@@ -16,7 +16,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
@@ -51,7 +50,7 @@ describe('RegistrarComponent', () => {
     inNewRegistrarModeSignal = signal(false);
 
     await TestBed.configureTestingModule({
-      imports: [RegistrarComponent, MaterialModule, BrowserAnimationsModule],
+      imports: [RegistrarComponent, MaterialModule],
       providers: [
         BackendService,
         {
@@ -123,9 +122,20 @@ describe('RegistrarComponent', () => {
     expect(navigateSpy).toHaveBeenCalledWith(['new-ote']);
   });
 
-  it('should enable new registrar mode and return OTE restricted element ID', () => {
+  it('should enable new registrar mode, rebind paginator and sort on return, and return OTE restricted element ID', () => {
     expect(component.getElementIdForOteBlock()).toBe(RESTRICTED_ELEMENTS.OTE);
+    expect(component.dataSource.paginator).toBeTruthy();
+    expect(component.dataSource.sort).toBeTruthy();
+
     component.openNewRegistrar();
     expect(inNewRegistrarModeSignal()).toBe(true);
+    fixture.detectChanges();
+    expect(component.dataSource.paginator).toBeNull();
+    expect(component.dataSource.sort).toBeNull();
+
+    inNewRegistrarModeSignal.set(false);
+    fixture.detectChanges();
+    expect(component.dataSource.paginator).toBeTruthy();
+    expect(component.dataSource.sort).toBeTruthy();
   });
 });

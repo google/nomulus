@@ -22,7 +22,6 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar, MatSnackBarRef } from '@angular/material/snack-bar';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { MaterialModule } from '../material.module';
@@ -78,7 +77,6 @@ describe('Shared Services, Directives & Components', () => {
         PasswordResetVerifyComponent,
         PocReminderComponent,
         MaterialModule,
-        NoopAnimationsModule,
       ],
       providers: [
         BackendService,

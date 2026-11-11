@@ -31,7 +31,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { signal } from '@angular/core';
 import { of, Subject, throwError } from 'rxjs';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('ContactComponent & ContactService & ContactDetailsComponent', () => {
   let component: ContactComponent;
@@ -54,12 +53,7 @@ describe('ContactComponent & ContactService & ContactDetailsComponent', () => {
     registrarIdSignal = signal('reg-1');
 
     await TestBed.configureTestingModule({
-      imports: [
-        ContactComponent,
-        ContactDetailsComponent,
-        MaterialModule,
-        NoopAnimationsModule,
-      ],
+      imports: [ContactComponent, ContactDetailsComponent, MaterialModule],
       providers: [
         BackendService,
         ContactService,
@@ -99,6 +93,27 @@ describe('ContactComponent & ContactService & ContactDetailsComponent', () => {
     expect(backendService.getContacts).toHaveBeenCalledWith('reg-1');
     expect(component.dataSource.data).toHaveLength(1);
     expect(component.dataSource.data[0].name).toBe('Jane Doe');
+  });
+
+  it('should clear stale contacts and set isLoading while fetching contacts for a new registrar', () => {
+    const pending$ = new Subject<Contact[]>();
+    vi.spyOn(backendService, 'getContacts').mockReturnValueOnce(
+      pending$.asObservable()
+    );
+
+    registrarIdSignal.set('reg-2');
+    TestBed.flushEffects();
+
+    expect(component.isLoading()).toBe(true);
+    expect(contactService.contacts()).toEqual([]);
+    expect(component.dataSource.data).toEqual([]);
+
+    pending$.next([sampleContact]);
+    pending$.complete();
+    TestBed.flushEffects();
+
+    expect(component.isLoading()).toBe(false);
+    expect(component.dataSource.data).toHaveLength(1);
   });
 
   it('should show snackbar and stop globalLoader when fetchContacts fails', () => {

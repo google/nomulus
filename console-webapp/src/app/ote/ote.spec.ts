@@ -15,7 +15,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { signal } from '@angular/core';
@@ -55,12 +54,7 @@ describe('NewOteComponent & OteStatusComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [
-        NewOteComponent,
-        OteStatusComponent,
-        MaterialModule,
-        NoopAnimationsModule,
-      ],
+      imports: [NewOteComponent, OteStatusComponent, MaterialModule],
       providers: [
         { provide: RegistrarService, useValue: mockRegistrarService },
         {
