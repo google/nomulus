@@ -16,7 +16,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   ElementRef,
-  ViewChild,
+  viewChild,
   ViewEncapsulation,
   ChangeDetectionStrategy,
 } from '@angular/core';
@@ -44,7 +44,7 @@ export class NewRegistrarComponent {
   protected localizedAddressStreet: LocalizedAddressStreet;
   protected billingAccountMap: String = '';
 
-  @ViewChild('form') form!: ElementRef;
+  form = viewChild.required<ElementRef<HTMLFormElement>>('form');
   constructor(
     private registrarService: RegistrarService,
     private _snackBar: MatSnackBar
@@ -81,7 +81,7 @@ export class NewRegistrarComponent {
 
   save(e: SubmitEvent) {
     e.preventDefault();
-    if (this.form.nativeElement.checkValidity()) {
+    if (this.form().nativeElement.checkValidity()) {
       const { line1, line2, line3 } = this.localizedAddressStreet;
       this.newRegistrar.localizedAddress.street = [line1, line2, line3].filter(
         (v) => !!v
@@ -95,7 +95,7 @@ export class NewRegistrarComponent {
         },
       });
     } else {
-      this.form.nativeElement.reportValidity();
+      this.form().nativeElement.reportValidity();
     }
   }
 

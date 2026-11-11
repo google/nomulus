@@ -60,19 +60,36 @@ export class UsersComponent {
     private _snackBar: MatSnackBar
   ) {
     effect(() => {
-      if (registrarService.registrarId()) {
-        untracked(() => {
+      const registrarId = registrarService.registrarId();
+      untracked(() => {
+        this.resetStateForRegistrarChange();
+        if (registrarId) {
           this.loadUsers();
-        });
-      }
+        }
+      });
     });
+  }
+
+  /**
+   * Clears cached users and exits any open user detail or creation flow when
+   * switching to a different registrar.
+   */
+  private resetStateForRegistrarChange() {
+    this.usersService.resetState();
+    this.isNew = false;
+    this.selectingExistingUser.set(false);
+    this.resetExistingUserSelection();
+  }
+
+  private resetExistingUserSelection() {
+    this.selectedRegistrarId = '';
+    this.usersSelection.set([]);
+    this.selectedExistingUser = undefined;
   }
 
   addExistingUser() {
     this.selectingExistingUser.set(true);
-    this.selectedRegistrarId = '';
-    this.usersSelection.set([]);
-    this.selectedExistingUser = undefined;
+    this.resetExistingUserSelection();
   }
 
   existingUserSelected(user: User) {

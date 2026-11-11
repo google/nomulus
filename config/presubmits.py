@@ -26,10 +26,11 @@ import re
 
 # We should never analyze any generated files
 UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/",
-     ".gradle/", "/dist/", "/console-alpha/", "/console-crash/", "/console-qa",
-     "/console-sandbox", "/console-production", "karma.conf.js", "polyfills.ts",
-     "test.ts", "/docs/console-endpoints/", "/bin/generated-sources/",
-     "/bin/generated-test-sources/", "src/main/generated", "src/test/generated"}
+     ".gradle/", "/.angular/", "/dist/", "/console-alpha/", "/console-crash/",
+     "/console-qa", "/console-sandbox", "/console-production", "karma.conf.js",
+     "polyfills.ts", "test.ts", "/docs/console-endpoints/",
+     "/bin/generated-sources/", "/bin/generated-test-sources/",
+     "src/main/generated", "src/test/generated"}
 # We can't rely on CI to have the Enum package installed so we do this instead.
 FORBIDDEN = 1
 REQUIRED = 2

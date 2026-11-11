@@ -13,7 +13,13 @@
 // limitations under the License.
 
 import { NestedTreeControl } from '@angular/cdk/tree';
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { MatTreeNestedDataSource } from '@angular/material/tree';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -39,7 +45,7 @@ interface NavMenuNode extends RouteWithIcon {
   styleUrls: ['./navigation.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NavigationComponent {
+export class NavigationComponent implements OnInit, OnDestroy {
   renderRouter: boolean = true;
   currentUrl = signal('');
   treeControl = new NestedTreeControl<RouteWithIcon>((node) => node.children);

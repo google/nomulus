@@ -16,7 +16,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { SettingsComponent } from './settings.component';
 import { MaterialModule } from '../material.module';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { BackendService } from '../shared/services/backend.service';
 import { provideHttpClient } from '@angular/common/http';
@@ -32,7 +31,6 @@ describe('SettingsComponent', () => {
       imports: [
         SettingsComponent,
         MaterialModule,
-        BrowserAnimationsModule,
         RouterModule.forRoot(routes),
       ],
       providers: [

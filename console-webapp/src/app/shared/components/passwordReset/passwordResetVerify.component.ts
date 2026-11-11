@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import {
   ActivatedRoute,
   ParamMap,
@@ -43,7 +48,7 @@ export interface PasswordResetVerifyResponse {
   templateUrl: './passwordResetVerify.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PasswordResetVerifyComponent {
+export class PasswordResetVerifyComponent implements OnInit {
   public static PATH = 'password-reset-verify';
 
   REGISTRY_LOCK_PASSWORD_VALIDATORS = [
