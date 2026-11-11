@@ -31,7 +31,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { signal } from '@angular/core';
 import { of, Subject, throwError } from 'rxjs';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('ContactComponent & ContactService & ContactDetailsComponent', () => {
   let component: ContactComponent;
@@ -54,12 +53,7 @@ describe('ContactComponent & ContactService & ContactDetailsComponent', () => {
     registrarIdSignal = signal('reg-1');
 
     await TestBed.configureTestingModule({
-      imports: [
-        ContactComponent,
-        ContactDetailsComponent,
-        MaterialModule,
-        NoopAnimationsModule,
-      ],
+      imports: [ContactComponent, ContactDetailsComponent, MaterialModule],
       providers: [
         BackendService,
         ContactService,
@@ -97,6 +91,46 @@ describe('ContactComponent & ContactService & ContactDetailsComponent', () => {
 
   it('should fetch contacts when registrarId is set and populate dataSource', () => {
     expect(backendService.getContacts).toHaveBeenCalledWith('reg-1');
+    expect(component.dataSource.data).toHaveLength(1);
+    expect(component.dataSource.data[0].name).toBe('Jane Doe');
+  });
+
+  it('should clear stale contacts and cancel in-flight requests when switching registrars', () => {
+    const globalLoader = TestBed.inject(GlobalLoaderService);
+    const pendingReg2$ = new Subject<Contact[]>();
+    const pendingReg3$ = new Subject<Contact[]>();
+    vi.spyOn(backendService, 'getContacts')
+      .mockReturnValueOnce(pendingReg2$.asObservable())
+      .mockReturnValueOnce(pendingReg3$.asObservable());
+
+    registrarIdSignal.set('reg-2');
+    TestBed.flushEffects();
+
+    expect(component.isLoading()).toBe(true);
+    expect(globalLoader.isLoading()).toBe(true);
+    expect(contactService.contacts()).toEqual([]);
+    expect(component.dataSource.data).toEqual([]);
+    expect(pendingReg2$.observed).toBe(true);
+
+    // Switch to reg-3 before reg-2 resolves; stale reg-2 emission must not overwrite or stop loader
+    registrarIdSignal.set('reg-3');
+    TestBed.flushEffects();
+    expect(pendingReg2$.observed).toBe(false);
+
+    pendingReg2$.next([{ ...sampleContact, name: 'Stale Contact' }]);
+    pendingReg2$.complete();
+    TestBed.flushEffects();
+
+    expect(component.isLoading()).toBe(true);
+    expect(globalLoader.isLoading()).toBe(true);
+    expect(contactService.contacts()).toEqual([]);
+
+    pendingReg3$.next([sampleContact]);
+    pendingReg3$.complete();
+    TestBed.flushEffects();
+
+    expect(component.isLoading()).toBe(false);
+    expect(globalLoader.isLoading()).toBe(false);
     expect(component.dataSource.data).toHaveLength(1);
     expect(component.dataSource.data[0].name).toBe('Jane Doe');
   });

@@ -15,10 +15,9 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import { GlobalLoaderService } from '../shared/services/globalLoader.service';
@@ -32,6 +31,7 @@ import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.dir
 describe('HistoryComponent, HistoryListComponent & HistoryService', () => {
   let backendService: BackendService;
   let globalLoader: GlobalLoaderService;
+  let registrarIdSignal: ReturnType<typeof signal<string>>;
   let mockSnackBar: { open: ReturnType<typeof vi.fn> };
 
   const sampleRecords: HistoryRecord[] = [
@@ -44,13 +44,10 @@ describe('HistoryComponent, HistoryListComponent & HistoryService', () => {
   ];
 
   beforeEach(async () => {
+    registrarIdSignal = signal('reg-1');
+
     await TestBed.configureTestingModule({
-      imports: [
-        HistoryComponent,
-        HistoryListComponent,
-        MaterialModule,
-        NoopAnimationsModule,
-      ],
+      imports: [HistoryComponent, HistoryListComponent, MaterialModule],
       providers: [
         BackendService,
         HistoryService,
@@ -58,7 +55,7 @@ describe('HistoryComponent, HistoryListComponent & HistoryService', () => {
         {
           provide: RegistrarService,
           useValue: {
-            registrarId: signal('reg-1'),
+            registrarId: registrarIdSignal,
           },
         },
         {
@@ -89,8 +86,9 @@ describe('HistoryComponent, HistoryListComponent & HistoryService', () => {
     expect(historyService.historyRecordsUser()).toEqual(sampleRecords);
   });
 
-  it('should load history on registrarId effect, manage globalLoader, and handle errors', () => {
+  it('should load registrar and user history separately, manage globalLoader, and handle errors', () => {
     const fixture = TestBed.createComponent(HistoryComponent);
+    const historyService = fixture.debugElement.injector.get(HistoryService);
     mockSnackBar = {
       open: vi
         .spyOn(fixture.debugElement.injector.get(MatSnackBar), 'open')
@@ -99,12 +97,37 @@ describe('HistoryComponent, HistoryListComponent & HistoryService', () => {
     const component = fixture.componentInstance;
     fixture.detectChanges();
 
-    expect(backendService.getHistoryLog).toHaveBeenCalledWith('reg-1', '');
+    expect(backendService.getHistoryLog).toHaveBeenCalledWith(
+      'reg-1',
+      undefined
+    );
+    expect(historyService.historyRecordsRegistrar()).toEqual(sampleRecords);
     expect(component.isLoading()).toBe(false);
     expect(globalLoader.isLoading()).toBe(false);
     expect(component.getElementIdForUserLog()).toBe(
       RESTRICTED_ELEMENTS.ACTIVITY_PER_USER
     );
+
+    const userRecords: HistoryRecord[] = [
+      {
+        modificationTime: '2025-02-01T12:00:00Z',
+        type: 'USER_UPDATE',
+        description: 'Updated user',
+        actingUser: { emailAddress: 'user@example.com' },
+      },
+    ];
+    vi.spyOn(backendService, 'getHistoryLog').mockReturnValueOnce(
+      of(userRecords)
+    );
+    component.consoleUserEmail = 'user@example.com';
+    component.loadUserHistory();
+
+    expect(backendService.getHistoryLog).toHaveBeenCalledWith(
+      'reg-1',
+      'user@example.com'
+    );
+    expect(historyService.historyRecordsUser()).toEqual(userRecords);
+    expect(historyService.historyRecordsRegistrar()).toEqual(sampleRecords);
 
     component.loadingTimeout();
     expect(mockSnackBar.open).toHaveBeenCalledWith(
@@ -114,10 +137,39 @@ describe('HistoryComponent, HistoryListComponent & HistoryService', () => {
     vi.spyOn(backendService, 'getHistoryLog').mockReturnValueOnce(
       throwError(() => new HttpErrorResponse({ error: 'History fetch error' }))
     );
-    component.loadHistory();
+    component.loadUserHistory();
     expect(mockSnackBar.open).toHaveBeenCalledWith('History fetch error');
     expect(globalLoader.isLoading()).toBe(false);
     expect(component.isLoading()).toBe(false);
+
+    // Switching registrars must cancel in-flight history requests and keep loader active for new registrar
+    const pendingReg2$ = new Subject<HistoryRecord[]>();
+    const pendingReg3$ = new Subject<HistoryRecord[]>();
+    vi.spyOn(backendService, 'getHistoryLog')
+      .mockReturnValueOnce(pendingReg2$.asObservable())
+      .mockReturnValueOnce(pendingReg3$.asObservable());
+
+    registrarIdSignal.set('reg-2');
+    TestBed.flushEffects();
+    expect(pendingReg2$.observed).toBe(true);
+    expect(component.isLoading()).toBe(true);
+    expect(globalLoader.isLoading()).toBe(true);
+
+    registrarIdSignal.set('reg-3');
+    TestBed.flushEffects();
+    expect(pendingReg2$.observed).toBe(false);
+
+    pendingReg2$.next(sampleRecords);
+    pendingReg2$.complete();
+    expect(component.isLoading()).toBe(true);
+    expect(globalLoader.isLoading()).toBe(true);
+    expect(historyService.historyRecordsRegistrar()).toEqual([]);
+
+    pendingReg3$.next(sampleRecords);
+    pendingReg3$.complete();
+    expect(component.isLoading()).toBe(false);
+    expect(globalLoader.isLoading()).toBe(false);
+    expect(historyService.historyRecordsRegistrar()).toEqual(sampleRecords);
   });
 
   it('should map icons, icon classes, and split descriptions in HistoryListComponent', () => {

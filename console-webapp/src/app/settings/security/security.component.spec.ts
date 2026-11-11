@@ -17,7 +17,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
@@ -47,7 +46,6 @@ describe('SecurityComponent & EppPasswordEditComponent', () => {
         EppPasswordEditComponent,
         SecurityComponent,
         MaterialModule,
-        BrowserAnimationsModule,
         FormsModule,
       ],
       providers: [

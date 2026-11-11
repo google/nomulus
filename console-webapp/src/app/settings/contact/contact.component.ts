@@ -16,13 +16,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   effect,
+  OnDestroy,
+  signal,
   untracked,
   ViewEncapsulation,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
-import { take } from 'rxjs';
+import { finalize, Subscription, take } from 'rxjs';
 import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import {
@@ -40,9 +42,11 @@ import { ContactDetailsComponent } from './contactDetails.component';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContactComponent implements GlobalLoader {
+export class ContactComponent implements GlobalLoader, OnDestroy {
   public static PATH = 'contact';
 
+  isLoading = signal(false);
+  private contactsSubscription?: Subscription;
   dataSource: MatTableDataSource<ViewReadyContact> =
     new MatTableDataSource<ViewReadyContact>([]);
   columns = [
@@ -82,24 +86,45 @@ export class ContactComponent implements GlobalLoader {
       }
     });
     effect(() => {
-      if (this.registrarService.registrarId()) {
-        untracked(() => {
-          this.contactService.isContactDetailsView.set(false);
-          this.contactService.isContactNewView.set(false);
-          this.globalLoader.startGlobalLoader(this);
-          this.contactService
-            .fetchContacts()
-            .pipe(take(1))
-            .subscribe({
-              complete: () => this.globalLoader.stopGlobalLoader(this),
-              error: (err: HttpErrorResponse) => {
-                this._snackBar.open(err.error || err.message);
-                this.globalLoader.stopGlobalLoader(this);
-              },
-            });
-        });
-      }
+      const registrarId = this.registrarService.registrarId();
+      untracked(() => {
+        this.resetStateForRegistrarChange();
+        if (registrarId) {
+          this.loadContacts();
+        }
+      });
     });
+  }
+
+  private resetStateForRegistrarChange() {
+    this.contactsSubscription?.unsubscribe();
+    this.contactService.isContactDetailsView.set(false);
+    this.contactService.isContactNewView.set(false);
+    this.contactService.contacts.set([]);
+  }
+
+  private loadContacts() {
+    this.contactsSubscription?.unsubscribe();
+    this.isLoading.set(true);
+    this.globalLoader.startGlobalLoader(this);
+    this.contactsSubscription = this.contactService
+      .fetchContacts()
+      .pipe(
+        take(1),
+        finalize(() => {
+          this.isLoading.set(false);
+          this.globalLoader.stopGlobalLoader(this);
+        })
+      )
+      .subscribe({
+        error: (err: HttpErrorResponse) => {
+          this._snackBar.open(err.error || err.message);
+        },
+      });
+  }
+
+  ngOnDestroy() {
+    this.contactsSubscription?.unsubscribe();
   }
 
   loadingTimeout() {

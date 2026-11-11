@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Component,
-  EventEmitter,
-  Output,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, output, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { MaterialModule } from '../material.module';
 import { RegistrarSelectorComponent } from '../registrar/registrarSelector.component';
@@ -35,7 +30,7 @@ export class HeaderComponent {
 
   constructor(protected breakpointObserver: BreakPointObserverService) {}
 
-  @Output() toggleNavOpen = new EventEmitter<boolean>();
+  toggleNavOpen = output<boolean>();
 
   toggleNavPane() {
     this.isNavOpen = !this.isNavOpen;

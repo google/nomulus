@@ -1,15 +1,15 @@
-@if (!isLoading && historyRecords.length == 0) {
+@if (!isLoading() && historyRecords().length == 0) {
 <div class="history-list__no-records">
   <mat-icon class="history-list__no-records-icon secondary-text"
     >apps_outage</mat-icon
   >
   <h1>No records found</h1>
 </div>
-} @else {
+} @else if (!isLoading()) {
 <mat-card>
   <mat-card-content>
     <mat-list role="list">
-      @for (item of historyRecords; track item; let last = $last) {
+      @for (item of historyRecords(); track item; let last = $last) {
       <mat-list-item class="history-list__item">
         <mat-icon
           [ngClass]="getIconClass(item.type)"

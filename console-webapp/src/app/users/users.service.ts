@@ -47,6 +47,12 @@ export class UsersService {
     private registrarService: RegistrarService
   ) {}
 
+  resetState() {
+    this.users.set([]);
+    this.currentlyOpenUserEmail.set('');
+    this.isNewUser = false;
+  }
+
   fetchUsersForRegistrar(registrarId: string) {
     return this.backendService.getUsers(registrarId);
   }

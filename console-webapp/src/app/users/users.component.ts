@@ -16,11 +16,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   effect,
+  OnDestroy,
   signal,
   untracked,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Subscription } from 'rxjs';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { SelectedRegistrarWrapper } from '../shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
@@ -46,13 +48,15 @@ import { UserEditFormComponent } from './userEditForm.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [UsersService],
 })
-export class UsersComponent {
+export class UsersComponent implements OnDestroy {
   isLoading = signal(false);
   isNew = false;
   selectingExistingUser = signal(false);
   selectedRegistrarId = '';
   usersSelection = signal<User[]>([]);
   selectedExistingUser: User | undefined;
+  private usersSubscription?: Subscription;
+  private existingUsersSubscription?: Subscription;
 
   constructor(
     protected registrarService: RegistrarService,
@@ -60,19 +64,44 @@ export class UsersComponent {
     private _snackBar: MatSnackBar
   ) {
     effect(() => {
-      if (registrarService.registrarId()) {
-        untracked(() => {
+      const registrarId = registrarService.registrarId();
+      untracked(() => {
+        this.resetStateForRegistrarChange();
+        if (registrarId) {
           this.loadUsers();
-        });
-      }
+        }
+      });
     });
+  }
+
+  /**
+   * Cancels in-flight user queries, clears cached users, and exits any open
+   * user detail or creation flow when switching to a different registrar.
+   */
+  private resetStateForRegistrarChange() {
+    this.usersSubscription?.unsubscribe();
+    this.isLoading.set(false);
+    this.usersService.resetState();
+    this.isNew = false;
+    this.selectingExistingUser.set(false);
+    this.resetExistingUserSelection();
+  }
+
+  private resetExistingUserSelection() {
+    this.existingUsersSubscription?.unsubscribe();
+    this.selectedRegistrarId = '';
+    this.usersSelection.set([]);
+    this.selectedExistingUser = undefined;
+  }
+
+  ngOnDestroy() {
+    this.usersSubscription?.unsubscribe();
+    this.existingUsersSubscription?.unsubscribe();
   }
 
   addExistingUser() {
     this.selectingExistingUser.set(true);
-    this.selectedRegistrarId = '';
-    this.usersSelection.set([]);
-    this.selectedExistingUser = undefined;
+    this.resetExistingUserSelection();
   }
 
   existingUserSelected(user: User) {
@@ -80,8 +109,9 @@ export class UsersComponent {
   }
 
   loadUsers() {
+    this.usersSubscription?.unsubscribe();
     this.isLoading.set(true);
-    this.usersService.fetchUsers().subscribe({
+    this.usersSubscription = this.usersService.fetchUsers().subscribe({
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
         this.isLoading.set(false);
@@ -110,15 +140,18 @@ export class UsersComponent {
   }
 
   onRegistrarSelectionChange(e: MatSelectChange) {
+    this.existingUsersSubscription?.unsubscribe();
     if (e.value) {
-      this.usersService.fetchUsersForRegistrar(e.value).subscribe({
-        error: (err) => {
-          this._snackBar.open(err.error || err.message);
-        },
-        next: (users) => {
-          this.usersSelection.set(users);
-        },
-      });
+      this.existingUsersSubscription = this.usersService
+        .fetchUsersForRegistrar(e.value)
+        .subscribe({
+          error: (err) => {
+            this._snackBar.open(err.error || err.message);
+          },
+          next: (users) => {
+            this.usersSelection.set(users);
+          },
+        });
     }
   }
 

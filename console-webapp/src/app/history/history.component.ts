@@ -15,11 +15,13 @@
 import {
   Component,
   effect,
+  OnDestroy,
   signal,
   untracked,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, Subscription } from 'rxjs';
 import { MaterialModule } from '../material.module';
 import { UserDataService } from '../shared/services/userData.service';
 import { BackendService } from '../shared/services/backend.service';
@@ -54,11 +56,12 @@ import {
   providers: [HistoryService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HistoryComponent implements GlobalLoader {
+export class HistoryComponent implements GlobalLoader, OnDestroy {
   public static PATH = 'history';
 
   consoleUserEmail: string = '';
   isLoading = signal(false);
+  private historySubscription?: Subscription;
 
   constructor(
     private backendService: BackendService,
@@ -69,12 +72,25 @@ export class HistoryComponent implements GlobalLoader {
     private _snackBar: MatSnackBar
   ) {
     effect(() => {
-      if (registrarService.registrarId()) {
-        untracked(() => {
-          this.loadHistory();
-        });
-      }
+      const registrarId = registrarService.registrarId();
+      untracked(() => {
+        this.resetStateForRegistrarChange();
+        if (registrarId) {
+          this.fetchHistory();
+        }
+      });
     });
+  }
+
+  private resetStateForRegistrarChange() {
+    this.historySubscription?.unsubscribe();
+    this.consoleUserEmail = '';
+    this.historyService.historyRecordsRegistrar.set([]);
+    this.historyService.historyRecordsUser.set([]);
+  }
+
+  ngOnDestroy() {
+    this.historySubscription?.unsubscribe();
   }
 
   getElementIdForUserLog() {
@@ -85,20 +101,31 @@ export class HistoryComponent implements GlobalLoader {
     this._snackBar.open('Timeout loading records history');
   }
 
-  loadHistory() {
+  loadRegistrarHistory() {
+    this.resetStateForRegistrarChange();
+    this.fetchHistory();
+  }
+
+  loadUserHistory() {
+    this.historyService.historyRecordsUser.set([]);
+    this.fetchHistory(this.consoleUserEmail);
+  }
+
+  private fetchHistory(userEmail?: string) {
+    this.historySubscription?.unsubscribe();
     this.globalLoader.startGlobalLoader(this);
     this.isLoading.set(true);
-    this.historyService
-      .getHistoryLog(this.registrarService.registrarId(), this.consoleUserEmail)
+    this.historySubscription = this.historyService
+      .getHistoryLog(this.registrarService.registrarId(), userEmail)
+      .pipe(
+        finalize(() => {
+          this.globalLoader.stopGlobalLoader(this);
+          this.isLoading.set(false);
+        })
+      )
       .subscribe({
         error: (err: HttpErrorResponse) => {
           this._snackBar.open(err.error || err.message);
-          this.globalLoader.stopGlobalLoader(this);
-          this.isLoading.set(false);
-        },
-        next: () => {
-          this.globalLoader.stopGlobalLoader(this);
-          this.isLoading.set(false);
         },
       });
   }

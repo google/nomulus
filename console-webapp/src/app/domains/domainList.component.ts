@@ -19,16 +19,17 @@ import {
   Component,
   effect,
   Inject,
+  OnDestroy,
+  OnInit,
   signal,
   untracked,
-  ViewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { PageEvent } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
-import { debounceTime, filter, Subject, take } from 'rxjs';
+import { debounceTime, filter, Subject, Subscription, take } from 'rxjs';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { SelectedRegistrarWrapper } from '../shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
@@ -147,7 +148,7 @@ export class ReasonDialogComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CdkColumnDef],
 })
-export class DomainListComponent {
+export class DomainListComponent implements OnInit, OnDestroy {
   public static PATH = 'domain-list';
   private static SUSPENDED_STATUSES = [
     'SERVER_RENEW_PROHIBITED',
@@ -183,8 +184,8 @@ export class DomainListComponent {
   reason: string = '';
 
   operationResult = signal<DomainData | undefined>(undefined);
-
-  @ViewChild(MatPaginator, { static: true }) paginator!: MatPaginator;
+  private domainsSubscription?: Subscription;
+  private locksSubscription?: Subscription;
 
   constructor(
     protected domainListService: DomainListService,
@@ -196,8 +197,7 @@ export class DomainListComponent {
     effect(() => {
       const registrarId = this.registrarService.registrarId();
       untracked(() => {
-        this.pageNumber = 0;
-        this.totalResults.set(0);
+        this.resetStateForRegistrarChange();
         if (registrarId) {
           this.loadLocks();
           this.reloadData();
@@ -206,8 +206,25 @@ export class DomainListComponent {
     });
   }
 
+  /**
+   * Cancels in-flight requests and clears registrar-scoped table, selection,
+   * and service state so stale data cannot bleed across registrars.
+   */
+  private resetStateForRegistrarChange() {
+    this.domainsSubscription?.unsubscribe();
+    this.locksSubscription?.unsubscribe();
+    this.isLoading.set(false);
+    this.pageNumber = 0;
+    this.totalResults.set(0);
+    this.selection.clear();
+    this.isAllSelected = false;
+    this.operationResult.set(undefined);
+    this.dataSource.data = [];
+    this.domainListService.resetState();
+    this.registryLockService.domainsLocks.set([]);
+  }
+
   ngOnInit() {
-    this.dataSource.paginator = this.paginator;
     // Don't spam the server unnecessarily while the user is typing
     this.searchTermSubject
       .pipe(debounceTime(this.DEBOUNCE_MS))
@@ -218,6 +235,8 @@ export class DomainListComponent {
 
   ngOnDestroy() {
     this.searchTermSubject.complete();
+    this.domainsSubscription?.unsubscribe();
+    this.locksSubscription?.unsubscribe();
   }
 
   openRegistryLock(domainName: string) {
@@ -226,14 +245,17 @@ export class DomainListComponent {
   }
 
   loadLocks() {
-    this.registryLockService.retrieveLocks().subscribe({
-      error: (err: HttpErrorResponse) => {
-        if (err.status !== HttpStatusCode.Forbidden) {
-          // Some users may not have registry lock permissions and that's OK
-          this._snackBar.open(err.message);
-        }
-      },
-    });
+    this.locksSubscription?.unsubscribe();
+    this.locksSubscription = this.registryLockService
+      .retrieveLocks()
+      .subscribe({
+        error: (err: HttpErrorResponse) => {
+          if (err.status !== HttpStatusCode.Forbidden) {
+            // Some users may not have registry lock permissions and that's OK
+            this._snackBar.open(err.message);
+          }
+        },
+      });
   }
 
   isDomainLocked(domainName: string) {
@@ -243,8 +265,9 @@ export class DomainListComponent {
   }
 
   reloadData() {
+    this.domainsSubscription?.unsubscribe();
     this.isLoading.set(true);
-    this.domainListService
+    this.domainsSubscription = this.domainListService
       .retrieveDomains(
         this.pageNumber,
         this.resultsPerPage,

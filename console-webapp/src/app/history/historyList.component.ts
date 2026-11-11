@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MaterialModule } from '../material.module';
 import { HistoryRecord } from './history.service';
 
@@ -25,8 +25,8 @@ import { HistoryRecord } from './history.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoryListComponent {
-  @Input() historyRecords: HistoryRecord[] = [];
-  @Input() isLoading: boolean = false;
+  historyRecords = input<HistoryRecord[]>([]);
+  isLoading = input<boolean>(false);
 
   getIconForType(type: string): string {
     switch (type) {

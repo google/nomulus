@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { RdapService } from './rdap.service';
@@ -51,5 +57,12 @@ export class RdapComponent {
   constructor(
     public rdapService: RdapService,
     public registrarService: RegistrarService
-  ) {}
+  ) {
+    effect(() => {
+      this.registrarService.registrarId();
+      untracked(() => {
+        this.rdapService.editing.set(false);
+      });
+    });
+  }
 }

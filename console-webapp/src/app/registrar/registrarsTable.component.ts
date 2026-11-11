@@ -15,7 +15,7 @@
 import {
   Component,
   effect,
-  ViewChild,
+  viewChild,
   ViewEncapsulation,
   ChangeDetectionStrategy,
 } from '@angular/core';
@@ -105,8 +105,8 @@ export class RegistrarComponent {
   oteButtonVisible = environment.sandbox;
   displayedColumns = this.columns.map((c) => c.columnDef);
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  paginator = viewChild(MatPaginator);
+  sort = viewChild(MatSort);
 
   constructor(
     protected registrarService: RegistrarService,
@@ -115,14 +115,21 @@ export class RegistrarComponent {
     this.dataSource = new MatTableDataSource<Registrar>(
       registrarService.registrars()
     );
+    const columnByDef = new Map(this.columns.map((c) => [c.columnDef, c]));
+    this.dataSource.sortingDataAccessor = (
+      item: Registrar,
+      property: string
+    ): string | number => {
+      if (property === 'ianaIdentifier') {
+        return item.ianaIdentifier ?? -1;
+      }
+      return (columnByDef.get(property)?.cell(item) ?? '').toLowerCase();
+    };
     effect(() => {
       this.dataSource.data = registrarService.registrars();
+      this.dataSource.paginator = this.paginator() ?? null;
+      this.dataSource.sort = this.sort() ?? null;
     });
-  }
-
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
   }
 
   createOteAccount() {
