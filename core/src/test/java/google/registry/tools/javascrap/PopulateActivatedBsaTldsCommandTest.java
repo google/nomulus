@@ -102,14 +102,24 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
   }
 
   @Test
+  void testSuccess_flagsActivatedTldNotEnrolled_noTldsToAdd() throws Exception {
+    tm().transact(() -> tm().put(new BsaTld("unEnrolled", NOW)));
+
+    runCommand();
+
+    assertThat(getStdoutAsString())
+        .isEqualTo("Activated TLD(s) that are not enrolled in BSA: [unEnrolled]\n");
+    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("unEnrolled");
+  }
+
+  @Test
   void testSuccess_noTldsToAdd() throws Exception {
     createEnrolledTld("app");
     tm().transact(() -> tm().put(new BsaTld("app", NOW)));
 
-    runCommandForced();
+    runCommand();
 
-    assertInStdout("Add 0 enrolled TLD(s) to BsaTld: []?");
-    assertInStdout("Added 0 TLD(s) to BsaTld: []");
+    assertThat(getStdoutAsString()).isEmpty();
     assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("app");
   }
 
@@ -123,9 +133,9 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
             .setBsaEnrollStartTime(Optional.of(START_INSTANT))
             .build());
 
-    runCommandForced();
+    runCommand();
 
-    assertInStdout("Add 0 enrolled TLD(s) to BsaTld: []?");
+    assertThat(getStdoutAsString()).isEmpty();
     assertThat(tm().transact(Queries::getActivatedBsaTlds)).isEmpty();
   }
 
@@ -138,9 +148,9 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
             .setBsaEnrollStartTime(Optional.of(NOW.plus(Duration.ofDays(1))))
             .build());
 
-    runCommandForced();
+    runCommand();
 
-    assertInStdout("Add 0 enrolled TLD(s) to BsaTld: []?");
+    assertThat(getStdoutAsString()).isEmpty();
     assertThat(tm().transact(Queries::getActivatedBsaTlds)).isEmpty();
   }
 

@@ -34,7 +34,6 @@ public final class BsaTld {
   @Id String tld;
 
   /** The time when this tld was properly set up for BSA processing. */
-  @SuppressWarnings("unused") // Field is for record and troubleshooting.
   @Column(nullable = false)
   Instant readyTime;
 

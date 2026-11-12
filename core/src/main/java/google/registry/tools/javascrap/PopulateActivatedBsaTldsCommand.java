@@ -60,11 +60,11 @@ public class PopulateActivatedBsaTldsCommand extends ConfirmingCommand {
                   getEnrolledBsaTlds(clock.now()).map(Tld::getTldStr).collect(toImmutableSet());
               ImmutableSet<String> activatedTlds = getActivatedBsaTlds();
               activatedNotEnrolled =
-                  Sets.difference(activatedTlds, enrolledTlds).stream()
-                      .collect(toImmutableSortedSet(naturalOrder()));
+                  ImmutableSortedSet.copyOf(
+                      naturalOrder(), Sets.difference(activatedTlds, enrolledTlds));
               tldsToAdd =
-                  Sets.difference(enrolledTlds, activatedTlds).stream()
-                      .collect(toImmutableSortedSet(naturalOrder()));
+                  ImmutableSortedSet.copyOf(
+                      naturalOrder(), Sets.difference(enrolledTlds, activatedTlds));
             });
     if (!activatedNotEnrolled.isEmpty()) {
       logger.atWarning().log(
@@ -76,7 +76,15 @@ public class PopulateActivatedBsaTldsCommand extends ConfirmingCommand {
 
   @Override
   protected String prompt() {
+    if (tldsToAdd.isEmpty()) {
+      return "";
+    }
     return String.format("Add %d enrolled TLD(s) to BsaTld: %s?", tldsToAdd.size(), tldsToAdd);
+  }
+
+  @Override
+  protected boolean dontRunCommand() {
+    return tldsToAdd.isEmpty();
   }
 
   @Override
