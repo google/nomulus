@@ -17,8 +17,7 @@ package google.registry.bsa;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getLast;
-import static google.registry.model.tld.Tld.isEnrolledWithBsa;
-import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
+import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
 import static google.registry.model.tld.label.ReservedList.loadReservedLists;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
@@ -39,7 +38,6 @@ import google.registry.bsa.api.BsaCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.tld.Tld;
-import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
@@ -217,10 +215,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
 
   private ImmutableSortedSet<String> getUnavailableDomains(Instant runTime) {
     // Get list of TLDs to process.
-    ImmutableSet<Tld> bsaEnabledTlds =
-        getTldEntitiesOfType(TldType.REAL).stream()
-            .filter(tld -> isEnrolledWithBsa(tld, runTime))
-            .collect(toImmutableSet());
+    ImmutableSet<Tld> bsaEnabledTlds = getEnrolledBsaTlds(runTime).collect(toImmutableSet());
 
     logger.atInfo().log(
         "Getting unavailable domains in TLDs: %s ...",

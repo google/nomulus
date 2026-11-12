@@ -24,10 +24,9 @@ import static google.registry.bsa.ReservedDomainsUtils.getAllReservedNames;
 import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
 import static google.registry.bsa.persistence.Queries.batchReadBsaLabelText;
+import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
 import static google.registry.bsa.persistence.Queries.queryMissedRegisteredUnblockables;
 import static google.registry.bsa.persistence.Queries.queryUnblockableDomainByLabels;
-import static google.registry.model.tld.Tld.isEnrolledWithBsa;
-import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.BatchedStreams.toBatches;
@@ -51,7 +50,6 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
-import google.registry.model.tld.Tld.TldType;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -271,12 +269,8 @@ public class BsaValidateAction implements Runnable {
 
   ImmutableList<String> checkForMissingRegisteredUnblockables(Instant now) {
     ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
-    ImmutableList<Tld> bsaEnabledTlds =
-        getTldEntitiesOfType(TldType.REAL).stream()
-            .filter(tld -> isEnrolledWithBsa(tld, now))
-            .collect(toImmutableList());
     Instant stalenessThreshold = now.minus(maxStaleness);
-    bsaEnabledTlds.stream()
+    getEnrolledBsaTlds(now)
         .map(Tld::getTldStr)
         .map(tld -> bsaQuery(() -> queryMissedRegisteredUnblockables(tld, now)))
         .flatMap(ImmutableList::stream)
