@@ -241,4 +241,69 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^example3.bar$",
         "^example4.foo$");
   }
+
+  @Test
+  void testRun_moreThanMaxDomainsWithoutLimit_returnsError() {
+    action.tlds = ImmutableSet.of("foo");
+    action.maxDomains = 2;
+    persistActiveDomain("example1.foo", Instant.parse("2017-01-01T00:00:00Z"));
+    persistActiveDomain("example2.foo", Instant.parse("2017-02-01T00:00:00Z"));
+    persistActiveDomain("example3.foo", Instant.parse("2017-03-01T00:00:00Z"));
+    testRunError(
+        action,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        "^Found more than 2 matching domains, which is the most that can be listed in one"
+            + " request\\. Specify --limit=2 or less to list only the most recently created"
+            + " domains, or export the full list directly from the database\\.$");
+  }
+
+  @Test
+  void testRun_exactlyMaxDomainsWithoutLimit_listsAll() {
+    action.tlds = ImmutableSet.of("foo");
+    action.maxDomains = 2;
+    persistActiveDomain("example1.foo", Instant.parse("2017-01-01T00:00:00Z"));
+    persistActiveDomain("example2.foo", Instant.parse("2017-02-01T00:00:00Z"));
+    testRunSuccess(
+        action,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        "^example1.foo$",
+        "^example2.foo$");
+  }
+
+  @Test
+  void testRun_limitWithinMax_listsMostRecentEvenIfMoreMatch() {
+    action.tlds = ImmutableSet.of("foo");
+    action.maxDomains = 2;
+    action.limit = 2;
+    persistActiveDomain("example1.foo", Instant.parse("2017-01-01T00:00:00Z"));
+    persistActiveDomain("example2.foo", Instant.parse("2017-02-01T00:00:00Z"));
+    persistActiveDomain("example3.foo", Instant.parse("2017-03-01T00:00:00Z"));
+    testRunSuccess(
+        action,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        "^example2.foo$",
+        "^example3.foo$");
+  }
+
+  @Test
+  void testRun_limitAboveMax_returnsErrorIfMoreMatch() {
+    action.tlds = ImmutableSet.of("foo");
+    action.maxDomains = 2;
+    action.limit = 3;
+    persistActiveDomain("example1.foo", Instant.parse("2017-01-01T00:00:00Z"));
+    persistActiveDomain("example2.foo", Instant.parse("2017-02-01T00:00:00Z"));
+    persistActiveDomain("example3.foo", Instant.parse("2017-03-01T00:00:00Z"));
+    testRunError(
+        action,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        "^Found more than 2 matching domains");
+  }
 }
