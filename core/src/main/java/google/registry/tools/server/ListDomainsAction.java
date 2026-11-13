@@ -21,7 +21,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
+import static java.lang.Math.min;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResourceUtils;
@@ -42,6 +44,9 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
 
   public static final String PATH = "/_dr/admin/list/domains";
 
+  /** The maximum number of domains a request can list, since they are all held in memory. */
+  public static final int MAX_DOMAINS = 10_000;
+
   @Inject
   @Parameter(PARAM_TLDS)
   ImmutableSet<String> tlds;
@@ -52,8 +57,16 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
 
   @Inject Clock clock;
 
+  /** The maximum number of domains to list, which is only overridden in tests. */
+  private int maxDomains = MAX_DOMAINS;
+
   @Inject
   ListDomainsAction() {}
+
+  @VisibleForTesting
+  void setMaxDomainsForTest(int maxDomains) {
+    this.maxDomains = maxDomains;
+  }
 
   @Override
   public ImmutableSet<String> getPrimaryKeyFields() {
@@ -64,11 +77,22 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
   public ImmutableSet<Domain> loadObjects() {
     checkArgument(!tlds.isEmpty(), "Must specify TLDs to query");
     assertTldsExist(tlds);
-    ImmutableList<Domain> domains = loadDomains();
+    // Load at most one domain more than the maximum, which tells us whether the request would have
+    // exceeded it without loading the full (and potentially very large) result set.
+    ImmutableList<Domain> domains = loadDomains(min(limit, maxDomains + 1));
+    checkArgument(
+        domains.size() <= maxDomains,
+        """
+        Found more than %s matching domains, which is the most that can be listed in one \
+        request. Specify --limit=%s or less to list only the most recently created domains, \
+        or export the full list directly from the database.\
+        """,
+        maxDomains,
+        maxDomains);
     return ImmutableSet.copyOf(domains.reverse());
   }
 
-  private ImmutableList<Domain> loadDomains() {
+  private ImmutableList<Domain> loadDomains(int maxResults) {
     return tm().transact(
             () ->
                 tm().query(
@@ -76,7 +100,7 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
                             + "current_timestamp() ORDER BY creationTime DESC",
                         Domain.class)
                     .setParameter("tlds", tlds)
-                    .setMaxResults(limit)
+                    .setMaxResults(maxResults)
                     .getResultStream()
                     .map(EppResourceUtils.transformAtTime(tm().getTxTime()))
                     .collect(toImmutableList()));

@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.tld.Tlds.getTldsOfType;
+import static google.registry.tools.server.ListDomainsAction.MAX_DOMAINS;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.beust.jcommander.Parameter;
@@ -37,8 +38,11 @@ final class ListDomainsCommand extends ListObjectsCommand {
 
   @Parameter(
       names = {"-n", "--limit"},
-      description = "Max number of domains to list, most recent first; defaults to no limit."
-  )
+      description =
+          "Max number of domains to list, most recent first; defaults to all matching domains."
+              + " The server lists at most "
+              + MAX_DOMAINS
+              + " domains per request and returns an error if more match.")
   private int maxDomains = Integer.MAX_VALUE;
 
   @Override
