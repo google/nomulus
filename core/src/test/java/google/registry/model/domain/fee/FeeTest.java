@@ -17,8 +17,12 @@ package google.registry.model.domain.fee;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
+import google.registry.model.domain.fee.BaseFee.AppliedType;
 import google.registry.model.domain.fee.BaseFee.FeeType;
+import google.registry.model.domain.feestdv1.FeeCheckResponseExtensionItemStdV1;
 import java.math.BigDecimal;
+import java.time.Period;
 import org.junit.jupiter.api.Test;
 
 class FeeTest {
@@ -28,6 +32,134 @@ class FeeTest {
     Fee fee = Fee.create(BigDecimal.valueOf(10.00), FeeType.CREATE, false);
     assertThat(fee.getCost()).isEqualTo(BigDecimal.valueOf(10.00));
     assertThat(fee.getType()).isEqualTo(FeeType.CREATE);
+    assertThat(fee.getRefundable()).isTrue();
+    assertThat(fee.getType().isRefundable()).isTrue();
+    assertThat(fee.getType().isRegularFee()).isTrue();
+    assertThat(fee.hasDefaultAttributes()).isTrue();
+    for (FeeType regularType :
+        ImmutableList.of(
+            FeeType.CREATE,
+            FeeType.RENEW,
+            FeeType.RESTORE,
+            FeeType.TRANSFER,
+            FeeType.UPDATE,
+            FeeType.CREDIT)) {
+      assertThat(regularType.isRefundable()).isTrue();
+      assertThat(regularType.isRegularFee()).isTrue();
+    }
+  }
+
+  @Test
+  void testCreate_eapAndXap_nonRefundableAndNonRegular() {
+    Fee eapFee = Fee.create(BigDecimal.valueOf(100.00), FeeType.EAP, false, "2026-01-01T00:00:00Z");
+    assertThat(eapFee.getRefundable()).isFalse();
+    assertThat(eapFee.getType().isRefundable()).isFalse();
+    assertThat(eapFee.getType().isRegularFee()).isFalse();
+    assertThat(eapFee.hasDefaultAttributes()).isTrue();
+    Fee xapFee = Fee.create(BigDecimal.valueOf(100.00), FeeType.XAP, false, "2026-01-01T00:00:00Z");
+    assertThat(xapFee.getRefundable()).isFalse();
+    assertThat(xapFee.getType().isRefundable()).isFalse();
+    assertThat(xapFee.getType().isRegularFee()).isFalse();
+    assertThat(xapFee.hasDefaultAttributes()).isTrue();
+  }
+
+  @Test
+  void testHasDefaultAttributes_parsedFromDescription() {
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(100.00))
+                .setDescription("Expiry Access Period, fee expires: 2026-01-01T00:00:00Z")
+                .setRefundable(false)
+                .build()
+                .hasDefaultAttributes())
+        .isTrue();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(100.00))
+                .setDescription("Early Access Period")
+                .build()
+                .hasDefaultAttributes())
+        .isTrue();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(100.00))
+                .setDescription("Early Access Period")
+                .setRefundable(true)
+                .build()
+                .hasDefaultAttributes())
+        .isFalse();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(24.00))
+                .setDescription("create")
+                .setRefundable(true)
+                .build()
+                .hasDefaultAttributes())
+        .isTrue();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(24.00))
+                .setDescription("create")
+                .setRefundable(false)
+                .build()
+                .hasDefaultAttributes())
+        .isFalse();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(24.00))
+                .setDescription("unknown")
+                .setRefundable(false)
+                .build()
+                .hasDefaultAttributes())
+        .isFalse();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(24.00))
+                .setDescription("create Early Access Period")
+                .setRefundable(false)
+                .build()
+                .hasDefaultAttributes())
+        .isFalse();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(24.00))
+                .setDescription("create")
+                .setGracePeriod(Period.ofDays(5))
+                .build()
+                .hasDefaultAttributes())
+        .isFalse();
+    assertThat(
+            new Fee.Builder()
+                .setCost(BigDecimal.valueOf(24.00))
+                .setDescription("create")
+                .setApplied(AppliedType.DELAYED)
+                .build()
+                .hasDefaultAttributes())
+        .isFalse();
+  }
+
+  @Test
+  void testFeeCheckResponseExtensionItemStdV1_setFees_updatesAndResetsStandard() {
+    Fee regularFee = Fee.create(BigDecimal.valueOf(10.00), FeeType.CREATE, false);
+    Fee eapFee = Fee.create(BigDecimal.valueOf(100.00), FeeType.EAP, false, "2026-01-01T00:00:00Z");
+    Fee untypedFee = new Fee.Builder().setCost(BigDecimal.valueOf(10.00)).build();
+
+    FeeCheckResponseExtensionItemStdV1 regularItem =
+        new FeeCheckResponseExtensionItemStdV1.Builder()
+            .setFees(ImmutableList.of(regularFee, untypedFee))
+            .build();
+    FeeCheckResponseExtensionItemStdV1 nonStandardItem =
+        new FeeCheckResponseExtensionItemStdV1.Builder()
+            .setFees(ImmutableList.of(regularFee, eapFee))
+            .build();
+    assertThat(nonStandardItem).isNotEqualTo(regularItem);
+
+    FeeCheckResponseExtensionItemStdV1 resetToRegularItem =
+        new FeeCheckResponseExtensionItemStdV1.Builder()
+            .setFees(ImmutableList.of(regularFee, eapFee))
+            .setFees(ImmutableList.of(regularFee, untypedFee))
+            .build();
+    assertThat(resetToRegularItem).isEqualTo(regularItem);
   }
 
   @Test

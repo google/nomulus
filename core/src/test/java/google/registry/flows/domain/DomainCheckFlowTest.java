@@ -2462,6 +2462,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         Tld.get("tld")
             .asBuilder()
+            .setPremiumList(persistPremiumList("tld2", USD, "example2,USD 100"))
             .setExpiryAccessPeriodTransitions(
                 ImmutableSortedMap.of(START_INSTANT, Tld.ExpiryAccessPeriodMode.ENABLED))
             .build());
@@ -2481,6 +2482,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
       clock.setTo(Instant.parse("2009-01-06T00:00:00Z"));
       Instant deletionTime = Instant.parse("2009-01-01T00:00:00Z");
       persistDeletedDomain("example1.tld", deletionTime);
+      persistDeletedDomain("example2.tld", deletionTime);
 
       setEppInput("domain_check_fee_stdv1.xml");
       runFlowAssertResponse(loadFile("domain_check_fee_xap_response.xml"));

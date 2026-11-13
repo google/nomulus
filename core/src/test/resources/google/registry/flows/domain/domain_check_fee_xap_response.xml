@@ -22,18 +22,19 @@
         <fee:cd>
           <fee:objID>example1.tld</fee:objID>
           <fee:class>standard</fee:class>
-          <fee:command name="create">
+          <fee:command name="create" standard="false">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">13.00</fee:fee>
-            <fee:fee description="Expiry Access Period, fee expires: 2009-01-06T01:00:00Z">110.00</fee:fee>
+            <fee:fee description="Expiry Access Period, fee expires: 2009-01-06T01:00:00Z" refundable="false">110.00</fee:fee>
           </fee:command>
         </fee:cd>
         <fee:cd>
           <fee:objID>example2.tld</fee:objID>
-          <fee:class>standard</fee:class>
-          <fee:command name="create">
+          <fee:class>premium</fee:class>
+          <fee:command name="create" standard="false">
             <fee:period unit="y">1</fee:period>
-            <fee:fee description="create">13.00</fee:fee>
+            <fee:fee description="create">100.00</fee:fee>
+            <fee:fee description="Expiry Access Period, fee expires: 2009-01-06T01:00:00Z" refundable="false">110.00</fee:fee>
           </fee:command>
         </fee:cd>
         <fee:cd>

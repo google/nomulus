@@ -37,15 +37,15 @@ This skill is designed to evolve. If a human code reviewer (or presubmit hook) p
    ```
 
 3. **Run Presubmits and Compilation**
-   Ensure that the project builds correctly and all presubmit checks pass. Use scoped builds when possible to save time and avoid unwanted side effects (like modifying `console-webapp/package-lock.json`).
+   Ensure that the project builds correctly and all presubmit checks pass. Use scoped builds and pass `-x :console-webapp:buildConsoleWebapp` when only modifying backend Java code to save time, avoid modifying `console-webapp/package-lock.json`, and prevent Angular CLI Node.js version mismatch failures.
    ```bash
    # Run presubmits
    ./gradlew runPresubmits
 
    # Verify compilation (use a scoped build if you only modified one module, e.g., :core)
-   ./gradlew :core:build -x test
+   ./gradlew :core:build -x test -x :console-webapp:buildConsoleWebapp
    # Run standard test suite if modifying core
-   ./gradlew :core:standardTest
+   ./gradlew :core:standardTest -x :console-webapp:buildConsoleWebapp
    ```
 
 4. **Verify PR Scope and Extraneous Files (Line-by-Line Inspection)**
