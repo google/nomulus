@@ -77,9 +77,11 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
     ImmutableList<Domain> domains = loadDomains(min(limit, maxDomains + 1));
     checkArgument(
         domains.size() <= maxDomains,
-        "Found more than %s matching domains, which is the most that can be listed in one request."
-            + " Specify --limit=%s or less to list only the most recently created domains, or"
-            + " export the full list directly from the database.",
+        """
+        Found more than %s matching domains, which is the most that can be listed in one \
+        request. Specify --limit=%s or less to list only the most recently created domains, \
+        or export the full list directly from the database.\
+        """,
         maxDomains,
         maxDomains);
     return ImmutableSet.copyOf(domains.reverse());
