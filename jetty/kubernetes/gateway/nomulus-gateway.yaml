@@ -41,4 +41,16 @@ spec:
     - type: RequestRedirect
       requestRedirect:
         scheme: https
+---
+apiVersion: networking.gke.io/v1
+kind: GCPGatewayPolicy
+metadata:
+  name: nomulus
+spec:
+  default:
+    sslPolicy: nomulus-ssl-policy
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: nomulus
 
