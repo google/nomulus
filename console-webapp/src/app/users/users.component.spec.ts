@@ -15,7 +15,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSelectChange } from '@angular/material/select';
@@ -51,7 +50,6 @@ describe('Users Feature (UsersService, UsersComponent, UserDetailsComponent, Use
         UsersListComponent,
         UserEditFormComponent,
         MaterialModule,
-        NoopAnimationsModule,
       ],
       providers: [
         BackendService,
@@ -162,6 +160,7 @@ describe('Users Feature (UsersService, UsersComponent, UserDetailsComponent, Use
     fixture.detectChanges();
 
     expect(component.dataSource.data).toEqual([sampleUser]);
+    expect(component.dataSource.sort).toBeTruthy();
     expect(columns[0].cell(sampleUser)).toBe('alice@example.com');
     expect(columns[1].cell(sampleUser)).toBe('Viewer');
 
@@ -188,12 +187,10 @@ describe('Users Feature (UsersService, UsersComponent, UserDetailsComponent, Use
     let emittedUser: User | undefined;
     component.onEditComplete.subscribe((u) => (emittedUser = u));
 
-    component.form = {
-      nativeElement: {
-        checkValidity: vi.fn().mockReturnValue(true),
-        reportValidity: vi.fn(),
-      },
-    };
+    vi.spyOn(component.form().nativeElement, 'checkValidity').mockReturnValue(
+      true
+    );
+    vi.spyOn(component.form().nativeElement, 'reportValidity');
     component.saveEdit({ preventDefault: vi.fn() } as unknown as SubmitEvent);
     expect(emittedUser).toEqual(sampleUser);
 

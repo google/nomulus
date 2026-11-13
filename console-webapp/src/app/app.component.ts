@@ -16,7 +16,7 @@ import {
   AfterViewInit,
   Component,
   effect,
-  ViewChild,
+  viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { MatSidenav } from '@angular/material/sidenav';
@@ -39,8 +39,7 @@ import { PocReminderComponent } from './shared/components/pocReminder/pocReminde
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements AfterViewInit {
-  @ViewChild(MatSidenav)
-  sidenav!: MatSidenav;
+  sidenav = viewChild.required(MatSidenav);
 
   constructor(
     protected registrarService: RegistrarService,
@@ -74,17 +73,17 @@ export class AppComponent implements AfterViewInit {
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         if (this.breakpointObserver.isMobileView()) {
-          this.sidenav.close();
+          this.sidenav().close();
         }
       }
     });
   }
 
   toggleSidenav() {
-    if (this.sidenav.opened) {
-      this.sidenav.close();
+    if (this.sidenav().opened) {
+      this.sidenav().close();
     } else {
-      this.sidenav.open();
+      this.sidenav().open();
     }
   }
 }

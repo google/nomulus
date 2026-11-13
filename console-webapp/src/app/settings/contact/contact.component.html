@@ -14,7 +14,7 @@
   </button>
 </div>
 <div class="console-app__contacts">
-  @if (contactService.contacts().length === 0) {
+  @if (!isLoading()) { @if (contactService.contacts().length === 0) {
   <div class="console-app__empty-contacts">
     <mat-icon class="console-app__empty-contacts-icon secondary-text"
       >apps_outage</mat-icon
@@ -48,6 +48,6 @@
       (keyup.enter)="openDetails(row)"
     ></mat-row>
   </mat-table>
-  }
+  } }
 </div>
 }

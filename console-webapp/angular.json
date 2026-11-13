@@ -173,7 +173,7 @@
   },
   "cli": {
     "cache": {
-      "enabled": false
+      "enabled": true
     },
     "analytics": false,
     "schematicCollections": ["@angular-eslint/schematics"]

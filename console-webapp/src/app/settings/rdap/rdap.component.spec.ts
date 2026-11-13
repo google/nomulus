@@ -16,7 +16,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from 'src/app/material.module';
 import {
   Registrar,
@@ -61,12 +60,7 @@ describe('RdapComponent & RdapEditComponent & RdapService', () => {
     loadRegistrarsSpy = vi.fn().mockReturnValue(of([sampleRegistrar]));
 
     await TestBed.configureTestingModule({
-      imports: [
-        RdapComponent,
-        RdapEditComponent,
-        MaterialModule,
-        BrowserAnimationsModule,
-      ],
+      imports: [RdapComponent, RdapEditComponent, MaterialModule],
       providers: [
         BackendService,
         RdapService,
