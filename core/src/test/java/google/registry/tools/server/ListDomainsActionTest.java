@@ -245,7 +245,7 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_moreThanMaxDomainsWithoutLimit_returnsError() {
     action.tlds = ImmutableSet.of("foo");
-    action.maxDomains = 2;
+    action.setMaxDomainsForTest(2);
     persistActiveDomain("example1.foo", Instant.parse("2017-01-01T00:00:00Z"));
     persistActiveDomain("example2.foo", Instant.parse("2017-02-01T00:00:00Z"));
     persistActiveDomain("example3.foo", Instant.parse("2017-03-01T00:00:00Z"));
@@ -262,7 +262,7 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_exactlyMaxDomainsWithoutLimit_listsAll() {
     action.tlds = ImmutableSet.of("foo");
-    action.maxDomains = 2;
+    action.setMaxDomainsForTest(2);
     persistActiveDomain("example1.foo", Instant.parse("2017-01-01T00:00:00Z"));
     persistActiveDomain("example2.foo", Instant.parse("2017-02-01T00:00:00Z"));
     testRunSuccess(
@@ -277,7 +277,7 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_limitWithinMax_listsMostRecentEvenIfMoreMatch() {
     action.tlds = ImmutableSet.of("foo");
-    action.maxDomains = 2;
+    action.setMaxDomainsForTest(2);
     action.limit = 2;
     persistActiveDomain("example1.foo", Instant.parse("2017-01-01T00:00:00Z"));
     persistActiveDomain("example2.foo", Instant.parse("2017-02-01T00:00:00Z"));
@@ -294,7 +294,7 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_limitAboveMax_returnsErrorIfMoreMatch() {
     action.tlds = ImmutableSet.of("foo");
-    action.maxDomains = 2;
+    action.setMaxDomainsForTest(2);
     action.limit = 3;
     persistActiveDomain("example1.foo", Instant.parse("2017-01-01T00:00:00Z"));
     persistActiveDomain("example2.foo", Instant.parse("2017-02-01T00:00:00Z"));

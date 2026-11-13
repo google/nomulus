@@ -58,10 +58,15 @@ public final class ListDomainsAction extends ListObjectsAction<Domain> {
   @Inject Clock clock;
 
   /** The maximum number of domains to list, which is only overridden in tests. */
-  @VisibleForTesting int maxDomains = MAX_DOMAINS;
+  private int maxDomains = MAX_DOMAINS;
 
   @Inject
   ListDomainsAction() {}
+
+  @VisibleForTesting
+  void setMaxDomainsForTest(int maxDomains) {
+    this.maxDomains = maxDomains;
+  }
 
   @Override
   public ImmutableSet<String> getPrimaryKeyFields() {
