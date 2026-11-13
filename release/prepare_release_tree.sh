@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 # This script prepares the source tree of a release image build. It adds the
-# internal overlay, and points the Dockerfiles at the copies of the base images
-# that release/cloudbuild-release.yaml saves for each release.
+# internal overlay, and pins the Dockerfiles by digest to the copies of the
+# base images that release/cloudbuild-release.yaml saves for each release.
 #
 # The builds that start from this repository at a release tag,
 # release/cloudbuild-nomulus-images.yaml and release/cloudbuild-proxy-images.yaml,
@@ -27,12 +27,13 @@
 #     Clones the internal repository at <tag> into nomulus-internal/.
 #   prepare_release_tree.sh merge-internal
 #     Copies nomulus-internal/ over the tree, then deletes it and .git/.
-#   prepare_release_tree.sh pin-base-images <project_id> [--temurin=<ref>]
-#       [--jetty=<ref>] <component>...
-#     Points <component>/Dockerfile (core, jetty or proxy) at the release's
-#     copy of its base image: gcr.io/<project_id>/temurin<ref> for core and
-#     proxy, gcr.io/<project_id>/jetty<ref> for jetty. A <ref> is a digest
-#     (@sha256:...) or a tag (:<tag>).
+#   prepare_release_tree.sh pin-base-images <project_id> [--temurin=@<digest>]
+#       [--jetty=@<digest>] <component>...
+#     Pins <component>/Dockerfile (core, jetty or proxy) to the release's copy
+#     of its base image: gcr.io/<project_id>/temurin@<digest> for core and
+#     proxy, gcr.io/<project_id>/jetty@<digest> for jetty. A <digest> is
+#     sha256: and 64 lowercase hex digits. Checks every component before it
+#     edits any Dockerfile, and logs each pin.
 #   prepare_release_tree.sh set-proxy-project <project_id>
 #     Sets the project in the proxy's Kubernetes manifests.
 
@@ -48,7 +49,7 @@ usage() {
 Usage:
   $0 clone-internal <repo_url> <tag>
   $0 merge-internal
-  $0 pin-base-images <project_id> [--temurin=<ref>] [--jetty=<ref>] <component>...
+  $0 pin-base-images <project_id> [--temurin=@<digest>] [--jetty=@<digest>] <component>...
   $0 set-proxy-project <project_id>
 EOF
   exit 1
@@ -89,15 +90,18 @@ pin_base_images() {
     esac
   done
   (( ${#components[@]} > 0 )) || usage
+  # Check every component before editing any Dockerfile.
   local component base_image copy ref
+  local -a dockerfiles=() base_images=() pinned_images=()
   for component in "${components[@]}"; do
     case "${component}" in
       core|proxy) base_image="${TEMURIN_BASE_IMAGE}"; copy=temurin; ref="${temurin_ref}" ;;
       jetty) base_image="${JETTY_BASE_IMAGE}"; copy=jetty; ref="${jetty_ref}" ;;
       *) echo "Unknown component: ${component}" >&2; exit 1 ;;
     esac
-    if [[ "${ref}" != [@:]* ]]; then
-      echo "${component} needs --${copy}=<ref>, where <ref> is @<digest> or :<tag>." >&2
+    # A lookup that finds no image with the release's tag leaves just the @.
+    if [[ ! "${ref}" =~ ^@sha256:[0-9a-f]{64}$ ]]; then
+      echo "${component} needs --${copy}=@sha256:<64 hex digits>, not '${ref}'." >&2
       exit 1
     fi
     # Fail rather than leave the Dockerfile on the public base image.
@@ -105,7 +109,14 @@ pin_base_images() {
       echo "${component}/Dockerfile doesn't use ${base_image}; update $0." >&2
       exit 1
     fi
-    sed -i "s%${base_image}%gcr.io/${project_id}/${copy}${ref}%g" "${component}/Dockerfile"
+    dockerfiles+=("${component}/Dockerfile")
+    base_images+=("${base_image}")
+    pinned_images+=("gcr.io/${project_id}/${copy}${ref}")
+  done
+  local i
+  for i in "${!dockerfiles[@]}"; do
+    sed -i "s%${base_images[i]}%${pinned_images[i]}%g" "${dockerfiles[i]}"
+    echo "${dockerfiles[i]}: ${base_images[i]} -> ${pinned_images[i]}"
   done
 }
 

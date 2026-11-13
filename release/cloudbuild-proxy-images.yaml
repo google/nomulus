@@ -7,8 +7,8 @@
 # gcloud builds triggers run proxy-images --region=[REGION] \
 #   --sha=[COMMIT_OF_TAG] --substitutions=TAG_NAME=[TAG]
 steps:
-# Add the internal overlay at the same tag, and use this release's copy of
-# the base image, as cloudbuild-release.yaml does.
+# Add the internal overlay at the same tag, and set the project in the proxy
+# manifests, as cloudbuild-release.yaml does.
 - name: 'gcr.io/cloud-builders/git'
   entrypoint: /bin/bash
   args:
@@ -18,9 +18,19 @@ steps:
     bash ./release/prepare_release_tree.sh clone-internal \
       "${_INTERNAL_REPO_URL}" "${TAG_NAME}"
     bash ./release/prepare_release_tree.sh merge-internal
-    bash ./release/prepare_release_tree.sh pin-base-images "${PROJECT_ID}" \
-      --temurin=":${TAG_NAME}" proxy
     bash ./release/prepare_release_tree.sh set-proxy-project "${PROJECT_ID}"
+# Pin the Dockerfile by digest to this release's copy of the base image, as
+# cloudbuild-release.yaml does.
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    temurin_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/temurin" \
+      --format='get(digest)' --filter="tags = ${TAG_NAME}")
+    bash ./release/prepare_release_tree.sh pin-base-images "${PROJECT_ID}" \
+      --temurin="@$temurin_digest" proxy
 # Download saved Gradle distribution from GCS and install it.
 - name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
   entrypoint: ./release/install_gradle.sh
