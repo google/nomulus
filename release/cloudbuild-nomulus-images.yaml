@@ -9,7 +9,7 @@
 #   --sha=[COMMIT_OF_TAG] --substitutions=TAG_NAME=[TAG]
 steps:
 # Add the internal overlay at the same tag, and use this release's copies of
-# the base images and Gradle, as cloudbuild-release.yaml does.
+# the base images, as cloudbuild-release.yaml does.
 - name: 'gcr.io/cloud-builders/git'
   entrypoint: /bin/bash
   args:
@@ -21,8 +21,6 @@ steps:
     bash ./release/prepare_release_tree.sh merge-internal
     bash ./release/prepare_release_tree.sh pin-base-images "${PROJECT_ID}" \
       --temurin=":${TAG_NAME}" --jetty=":${TAG_NAME}" proxy jetty
-    bash ./release/prepare_release_tree.sh use-gcs-gradle \
-      domain-registry-maven-repository/gradle
 # Download saved Gradle distribution from GCS and install it.
 - name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
   entrypoint: ./release/install_gradle.sh

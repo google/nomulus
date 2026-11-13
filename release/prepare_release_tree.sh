@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 # This script prepares the source tree of a release image build. It adds the
-# internal overlay, and points the build at the copies of the base images and
-# of Gradle that release/cloudbuild-release.yaml saves for each release.
+# internal overlay, and points the Dockerfiles at the copies of the base images
+# that release/cloudbuild-release.yaml saves for each release.
 #
 # The builds that start from this repository at a release tag,
 # release/cloudbuild-nomulus-images.yaml and release/cloudbuild-proxy-images.yaml,
@@ -35,8 +35,6 @@
 #     (@sha256:...) or a tag (:<tag>).
 #   prepare_release_tree.sh set-proxy-project <project_id>
 #     Sets the project in the proxy's Kubernetes manifests.
-#   prepare_release_tree.sh use-gcs-gradle <gcs_location>
-#     Points the Gradle wrapper at the copy of Gradle in gs://<gcs_location>.
 
 set -e
 
@@ -52,7 +50,6 @@ Usage:
   $0 merge-internal
   $0 pin-base-images <project_id> [--temurin=<ref>] [--jetty=<ref>] <component>...
   $0 set-proxy-project <project_id>
-  $0 use-gcs-gradle <gcs_location>
 EOF
   exit 1
 }
@@ -67,6 +64,7 @@ clone_internal() {
   sed -i 's@/usr/bin/python@/usr/bin/python3@g' "${tools}/git-cookie-authdaemon"
   "${tools}/git-cookie-authdaemon"
   git clone --depth 1 --branch "${tag}" "${repo_url}" nomulus-internal
+  echo "nomulus-internal ${tag} at $(git -C nomulus-internal rev-parse HEAD)"
 }
 
 merge_internal() {
@@ -116,12 +114,6 @@ set_proxy_project() {
   sed -i "s/GCP_PROJECT/$1/" proxy/kubernetes/proxy-*.yaml
 }
 
-use_gcs_gradle() {
-  (( $# == 1 )) || usage
-  sed -i "s%services.gradle.org/distributions%storage.googleapis.com/$1%" \
-    gradle/wrapper/gradle-wrapper.properties
-}
-
 (( $# >= 1 )) || usage
 subcommand="$1"
 shift
@@ -131,6 +123,5 @@ case "${subcommand}" in
   merge-internal) merge_internal "$@" ;;
   pin-base-images) pin_base_images "$@" ;;
   set-proxy-project) set_proxy_project "$@" ;;
-  use-gcs-gradle) use_gcs_gradle "$@" ;;
   *) usage ;;
 esac

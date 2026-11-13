@@ -7,8 +7,8 @@
 # gcloud builds triggers run proxy-images --region=[REGION] \
 #   --sha=[COMMIT_OF_TAG] --substitutions=TAG_NAME=[TAG]
 steps:
-# Add the internal overlay at the same tag, and use this release's copies of
-# the base image and Gradle, as cloudbuild-release.yaml does.
+# Add the internal overlay at the same tag, and use this release's copy of
+# the base image, as cloudbuild-release.yaml does.
 - name: 'gcr.io/cloud-builders/git'
   entrypoint: /bin/bash
   args:
@@ -21,8 +21,6 @@ steps:
     bash ./release/prepare_release_tree.sh pin-base-images "${PROJECT_ID}" \
       --temurin=":${TAG_NAME}" proxy
     bash ./release/prepare_release_tree.sh set-proxy-project "${PROJECT_ID}"
-    bash ./release/prepare_release_tree.sh use-gcs-gradle \
-      domain-registry-maven-repository/gradle
 # Download saved Gradle distribution from GCS and install it.
 - name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
   entrypoint: ./release/install_gradle.sh
