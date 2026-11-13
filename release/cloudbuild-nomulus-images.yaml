@@ -1,0 +1,61 @@
+# Builds the nomulus and proxy images of a nomulus release from this repo at
+# the release tag, so that their build provenance records the source repository
+# and this file. It runs as a manual Cloud Build trigger at the release tag; the
+# rest of a nomulus release is built by cloudbuild-nomulus.yaml.
+#
+# To run it by hand at a release tag that exists in both repositories (the
+# trigger sets _INTERNAL_REPO_URL):
+# gcloud builds triggers run nomulus-images --region=[REGION] \
+#   --sha=[COMMIT_OF_TAG] --substitutions=TAG_NAME=[TAG]
+steps:
+# Add the internal overlay at the same tag, as cloudbuild-release.yaml does.
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    bash ./release/prepare_release_tree.sh clone-internal \
+      "${_INTERNAL_REPO_URL}" "${TAG_NAME}"
+    bash ./release/prepare_release_tree.sh merge-internal
+# Pin the Dockerfiles by digest to this release's copies of the base images, as
+# cloudbuild-release.yaml does.
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    jetty_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/jetty" \
+      --format='get(digest)' --filter="tags = ${TAG_NAME}")
+    temurin_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/temurin" \
+      --format='get(digest)' --filter="tags = ${TAG_NAME}")
+    bash ./release/prepare_release_tree.sh pin-base-images "${PROJECT_ID}" \
+      --temurin="@$temurin_digest" --jetty="@$jetty_digest" proxy jetty
+# Download saved Gradle distribution from GCS and install it.
+- name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
+  entrypoint: ./release/install_gradle.sh
+# Build the images and tag them for the staging repository.
+- name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
+  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches', 'DOCKER_API_VERSION=1.41' ]
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    ./gradlew :jetty:buildNomulusImage :proxy:buildProxyImage \
+      -PmavenUrl=gcs://domain-registry-maven-repository/maven \
+      -PpluginsUrl=gcs://domain-registry-maven-repository/plugins
+    docker tag nomulus us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:${TAG_NAME}
+    docker tag nomulus us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:latest
+    docker tag proxy us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}
+    docker tag proxy us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest
+# Images to upload to staging repository for build provenance generation.
+images:
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:${TAG_NAME}'
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/nomulus:latest'
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:${TAG_NAME}'
+  - 'us-docker.pkg.dev/${PROJECT_ID}/staging/proxy:latest'
+timeout: 3600s
+options:
+  machineType: 'E2_HIGHCPU_32'
