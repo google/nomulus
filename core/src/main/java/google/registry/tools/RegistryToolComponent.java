@@ -36,6 +36,7 @@ import google.registry.rde.RdeModule;
 import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
+import google.registry.tools.javascrap.PopulateActivatedBsaTldsCommand;
 import google.registry.util.UtilsModule;
 import jakarta.inject.Singleton;
 import javax.annotation.Nullable;
@@ -140,6 +141,8 @@ interface RegistryToolComponent {
   void inject(LogoutCommand command);
 
   void inject(PendingEscrowCommand command);
+
+  void inject(PopulateActivatedBsaTldsCommand command);
 
   void inject(RdapQueryCommand command);
 

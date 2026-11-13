@@ -29,25 +29,28 @@ import java.time.Instant;
  * Tld#getBsaEnrollStartTime}). This table records the {@code Tld}s that have been initialized.
  */
 @Entity
-final class BsaTld {
+public final class BsaTld {
 
   @Id String tld;
 
   /** The time when this tld was properly set up for BSA processing. */
-  @SuppressWarnings("unused") // Field is for record and troubleshooting.
   @Column(nullable = false)
   Instant readyTime;
 
   @SuppressWarnings("unused") // For Hibernate
   private BsaTld() {}
 
-  BsaTld(String tld, Instant readyTime) {
+  public BsaTld(String tld, Instant readyTime) {
     this.tld = tld;
     this.readyTime = readyTime;
   }
 
-  String getTld() {
+  public String getTld() {
     return tld;
+  }
+
+  public Instant getReadyTime() {
+    return readyTime;
   }
 
   @Override
@@ -63,7 +66,7 @@ final class BsaTld {
     return Objects.hashCode(tld, readyTime);
   }
 
-  static VKey<BsaTld> createVkey(String tld) {
+  public static VKey<BsaTld> createVkey(String tld) {
     return VKey.create(BsaTld.class, tld);
   }
 }

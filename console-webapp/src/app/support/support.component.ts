@@ -13,14 +13,15 @@
 // limitations under the License.
 
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { MaterialModule } from '../material.module';
 import { UserDataService } from '../shared/services/userData.service';
 
 @Component({
   selector: 'app-support',
+  imports: [MaterialModule],
   templateUrl: './support.component.html',
   styleUrls: ['./support.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SupportComponent {
   public static PATH = 'support';

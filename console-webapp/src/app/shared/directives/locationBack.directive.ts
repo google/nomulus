@@ -17,7 +17,6 @@ import { Directive, HostListener } from '@angular/core';
 
 @Directive({
   selector: '[backButton]',
-  standalone: false,
 })
 export class LocationBackDirective {
   constructor(private location: Location) {}

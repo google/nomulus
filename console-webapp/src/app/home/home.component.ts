@@ -14,19 +14,20 @@
 
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
-import { DomainListComponent } from '../domains/domainList.component';
-import { RegistrarComponent } from '../registrar/registrarsTable.component';
-import SecurityComponent from '../settings/security/security.component';
-import { SettingsComponent } from '../settings/settings.component';
-import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import { PATHS } from '../app.routes';
+import { MaterialModule } from '../material.module';
+import {
+  RESTRICTED_ELEMENTS,
+  UserLevelVisibility,
+} from '../shared/directives/userLevelVisiblity.directive';
 import { BreakPointObserverService } from '../shared/services/breakPoint.service';
 
 @Component({
   selector: 'app-home',
+  imports: [MaterialModule, UserLevelVisibility],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent {
   constructor(
@@ -37,18 +38,18 @@ export class HomeComponent {
     return RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT;
   }
   viewRegistrars() {
-    this.router.navigate([RegistrarComponent.PATH], {
+    this.router.navigate([PATHS.RegistrarComponent], {
       queryParamsHandling: 'merge',
     });
   }
   updateEppPassword() {
     this.router.navigate(
-      [SettingsComponent.PATH + '/' + SecurityComponent.PATH],
+      [PATHS.SettingsComponent + '/' + PATHS.SecurityComponent],
       { queryParamsHandling: 'merge' }
     );
   }
   viewDums() {
-    this.router.navigate([DomainListComponent.PATH], {
+    this.router.navigate([PATHS.DomainListComponent], {
       queryParamsHandling: 'merge',
     });
   }

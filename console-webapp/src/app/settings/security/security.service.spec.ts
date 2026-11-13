@@ -18,16 +18,19 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BackendService } from 'src/app/shared/services/backend.service';
-import SecurityComponent from './security.component';
 import {
+  EppPasswordBackendModel,
   SecurityService,
   apiToUiConverter,
   uiToApiConverter,
 } from './security.service';
 import {
+  RegistrarService,
   SecuritySettings,
   SecuritySettingsBackendModel,
 } from 'src/app/registrar/registrar.service';
+import { signal } from '@angular/core';
+import { of } from 'rxjs';
 
 describe('SecurityService', () => {
   const uiMockData: SecuritySettings = {
@@ -42,31 +45,70 @@ describe('SecurityService', () => {
   };
 
   let service: SecurityService;
+  let backendService: BackendService;
+  let loadRegistrarsSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    loadRegistrarsSpy = vi.fn().mockReturnValue(of([]));
     TestBed.configureTestingModule({
-      declarations: [SecurityComponent],
-      imports: [],
       providers: [
         MatSnackBar,
         SecurityService,
         BackendService,
+        {
+          provide: RegistrarService,
+          useValue: {
+            registrarId: signal('reg-1'),
+            loadRegistrars: loadRegistrarsSpy,
+          },
+        },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
     });
+    backendService = TestBed.inject(BackendService);
     service = TestBed.inject(SecurityService);
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
-
-  it('should convert from api to ui', () => {
+  it('should convert from api to ui including empty defaults', () => {
     expect(apiToUiConverter(apiMockData)).toEqual(uiMockData);
+    expect(apiToUiConverter()).toEqual({ ipAddressAllowList: [] });
   });
 
-  it('should convert from ui to api', () => {
-    expect(uiToApiConverter(uiMockData)).toEqual(apiMockData);
+  it('should convert from ui to api and filter out empty IP entries', () => {
+    expect(
+      uiToApiConverter({
+        ...uiMockData,
+        ipAddressAllowList: [{ value: '123.123.123.123' }, { value: '' }],
+      })
+    ).toEqual(apiMockData);
+  });
+
+  it('should save security settings via backend and reload registrars', () => {
+    const postSpy = vi
+      .spyOn(backendService, 'postSecuritySettings')
+      .mockReturnValue(of(apiMockData));
+
+    service.saveChanges(uiMockData).subscribe();
+
+    expect(postSpy).toHaveBeenCalledWith('reg-1', apiMockData);
+    expect(loadRegistrarsSpy).toHaveBeenCalled();
+  });
+
+  it('should save EPP password update via backend and reload registrars', () => {
+    const payload: EppPasswordBackendModel = {
+      registrarId: 'reg-1',
+      oldPassword: 'oldPassword1',
+      newPassword: 'newPassword1',
+      newPasswordRepeat: 'newPassword1',
+    };
+    const postSpy = vi
+      .spyOn(backendService, 'postEppPasswordUpdate')
+      .mockReturnValue(of(payload));
+
+    service.saveEppPassword(payload).subscribe();
+
+    expect(postSpy).toHaveBeenCalledWith(payload);
+    expect(loadRegistrarsSpy).toHaveBeenCalled();
   });
 });

@@ -23,7 +23,6 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from '../registrar/registrar.service';
 import { MaterialModule } from '../material.module';
-import { SnackBarModule } from '../snackbar.module';
 
 export interface OteCreateResponse extends Map<string, string> {
   password: string;
@@ -31,12 +30,13 @@ export interface OteCreateResponse extends Map<string, string> {
 
 @Component({
   selector: 'app-ote',
-  imports: [MaterialModule, SnackBarModule],
+  imports: [MaterialModule],
   templateUrl: './newOte.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./newOte.component.scss'],
 })
 export class NewOteComponent {
+  public static PATH = 'new-ote';
   oteCreateResponse = signal<OteCreateResponse | undefined>(undefined);
 
   readonly oteCreateResponseFormatted = computed(() => {

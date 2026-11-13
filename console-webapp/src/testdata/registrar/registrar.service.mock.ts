@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { signal } from '@angular/core';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 
 export const MOCK_REGISTRAR_SERVICE = {
-  registrar: function () {
-    return { ipAddressAllowList: ['123.123.123.123'] };
-  },
-} as RegistrarService;
+  registrar: signal({ ipAddressAllowList: ['123.123.123.123'] }),
+} as unknown as RegistrarService;

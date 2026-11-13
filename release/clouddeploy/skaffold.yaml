@@ -21,6 +21,19 @@ profiles:
     - ../../jetty/kubernetes/nomulus-crash-frontend-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-crash-pubapi-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-crash-epp-server-partial-phase-5.yaml
+    # Gateway, HTTPRoutes (+ HealthCheckPolicies) and GCPBackendPolicies. Stable profile only,
+    # so they are applied once per rollout. They go out in the same `kubectl apply` as the
+    # workloads above (after them, but before their rollout finishes), so ship networking
+    # changes that need new code in a later release than the code itself.
+    - ../../jetty/kubernetes/gateway/nomulus-gateway.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-crash-backend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-crash-console.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-crash-frontend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-crash-pubapi.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-crash-backend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-crash-console.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-crash-frontend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-crash-pubapi.yaml
   deploy:
     kubectl: { }
 - name: crash-partial-phase-1
@@ -60,6 +73,19 @@ profiles:
     - ../../jetty/kubernetes/nomulus-sandbox-frontend-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-sandbox-pubapi-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-sandbox-epp-server-partial-phase-5.yaml
+    # Gateway, HTTPRoutes (+ HealthCheckPolicies) and GCPBackendPolicies. Stable profile only,
+    # so they are applied once per rollout. They go out in the same `kubectl apply` as the
+    # workloads above (after them, but before their rollout finishes), so ship networking
+    # changes that need new code in a later release than the code itself.
+    - ../../jetty/kubernetes/gateway/nomulus-gateway.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-sandbox-backend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-sandbox-console.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-sandbox-frontend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-sandbox-pubapi.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-sandbox-backend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-sandbox-console.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-sandbox-frontend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-sandbox-pubapi.yaml
   deploy:
     kubectl: { }
 - name: sandbox-partial-phase-1
@@ -99,6 +125,19 @@ profiles:
     - ../../jetty/kubernetes/nomulus-production-frontend-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-production-pubapi-partial-phase-5.yaml
     - ../../jetty/kubernetes/nomulus-production-epp-server-partial-phase-5.yaml
+    # Gateway, HTTPRoutes (+ HealthCheckPolicies) and GCPBackendPolicies. Stable profile only,
+    # so they are applied once per rollout. They go out in the same `kubectl apply` as the
+    # workloads above (after them, but before their rollout finishes), so ship networking
+    # changes that need new code in a later release than the code itself.
+    - ../../jetty/kubernetes/gateway/nomulus-gateway.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-production-backend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-production-console.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-production-frontend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-route-production-pubapi.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-production-backend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-production-console.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-production-frontend.yaml
+    - ../../jetty/kubernetes/gateway/nomulus-backend-policy-production-pubapi.yaml
   deploy:
     kubectl: { }
 - name: production-partial-phase-1

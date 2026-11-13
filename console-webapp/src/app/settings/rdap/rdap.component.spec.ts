@@ -14,43 +14,151 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from 'src/app/material.module';
-import { RegistrarService } from 'src/app/registrar/registrar.service';
+import {
+  Registrar,
+  RegistrarService,
+} from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
-import RdapComponent from './rdap.component';
+import { GlobalLoaderService } from 'src/app/shared/services/globalLoader.service';
+import { UserDataService } from 'src/app/shared/services/userData.service';
+import { RdapComponent } from './rdap.component';
+import { RdapEditComponent } from './rdapEdit.component';
+import { RdapService } from './rdap.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { signal } from '@angular/core';
+import { of, Subject, throwError } from 'rxjs';
 
-describe('RdapComponent', () => {
+describe('RdapComponent & RdapEditComponent & RdapService', () => {
   let component: RdapComponent;
   let fixture: ComponentFixture<RdapComponent>;
+  let rdapService: RdapService;
+  let backendService: BackendService;
+  let registrarSignal: ReturnType<
+    typeof signal<Partial<Registrar> | undefined>
+  >;
+  let loadRegistrarsSpy: ReturnType<typeof vi.fn>;
+
+  const sampleRegistrar: Registrar = {
+    registrarId: 'reg-1',
+    registrarName: 'Example Registrar',
+    icannReferralEmail: 'referral@example.com',
+    url: 'https://example.com',
+    localizedAddress: {
+      street: ['100 Main St', 'Suite 200'],
+      city: 'New York',
+      state: 'NY',
+      countryCode: 'US',
+      zip: '10001',
+    },
+  };
 
   beforeEach(async () => {
+    registrarSignal = signal<Partial<Registrar> | undefined>(sampleRegistrar);
+    loadRegistrarsSpy = vi.fn().mockReturnValue(of([sampleRegistrar]));
+
     await TestBed.configureTestingModule({
-      declarations: [RdapComponent],
-      imports: [MaterialModule, BrowserAnimationsModule],
+      imports: [
+        RdapComponent,
+        RdapEditComponent,
+        MaterialModule,
+        BrowserAnimationsModule,
+      ],
       providers: [
         BackendService,
+        RdapService,
         {
           provide: RegistrarService,
           useValue: {
-            registrar: function () {
-              return {};
-            },
+            registrar: registrarSignal,
+            registrarId: signal('reg-1'),
+            registrars: signal([sampleRegistrar]),
+            loadRegistrars: loadRegistrarsSpy,
           },
+        },
+        {
+          provide: UserDataService,
+          useValue: { userData: signal({ isAdmin: true }) },
         },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
     }).compileComponents();
 
+    rdapService = TestBed.inject(RdapService);
+    backendService = TestBed.inject(BackendService);
     fixture = TestBed.createComponent(RdapComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should format full and partial localized addresses in formattedAddress signal', () => {
+    expect(component.formattedAddress()).toBe(
+      '100 Main St Suite 200 New York NY US 10001'
+    );
+
+    registrarSignal.set({
+      localizedAddress: {
+        city: 'London',
+        countryCode: 'GB',
+      },
+    });
+    expect(component.formattedAddress()).toBe('London GB ');
+
+    registrarSignal.set(undefined);
+    expect(component.formattedAddress()).toBe('');
+  });
+
+  it('should post RDAP registrar fields and reload registrars via RdapService', () => {
+    const postSpy = vi
+      .spyOn(backendService, 'postRdapRegistrarFields')
+      .mockReturnValue(of(sampleRegistrar));
+
+    rdapService.saveChanges(sampleRegistrar).subscribe();
+
+    expect(postSpy).toHaveBeenCalledWith(sampleRegistrar);
+    expect(loadRegistrarsSpy).toHaveBeenCalled();
+  });
+
+  it('should clone active registrar in RdapEditComponent and save or handle errors', () => {
+    const editFixture = TestBed.createComponent(RdapEditComponent);
+    const snackBarSpy = vi
+      .spyOn(editFixture.debugElement.injector.get(MatSnackBar), 'open')
+      .mockReturnValue({} as any);
+    const editComponent = editFixture.componentInstance;
+    editFixture.detectChanges();
+
+    expect(editComponent.registrarInEdit()).toEqual(sampleRegistrar);
+    expect(editComponent.registrarInEdit()).not.toBe(sampleRegistrar);
+
+    rdapService.editing.set(true);
+    const globalLoader = TestBed.inject(GlobalLoaderService);
+    const pending$ = new Subject<Registrar[]>();
+    const saveSpy = vi
+      .spyOn(rdapService, 'saveChanges')
+      .mockReturnValueOnce(pending$.asObservable())
+      .mockReturnValueOnce(
+        throwError(() => new HttpErrorResponse({ error: 'Invalid RDAP URL' }))
+      );
+
+    const submitEvent = { preventDefault: vi.fn() } as unknown as SubmitEvent;
+    editComponent.save(submitEvent);
+    expect(saveSpy).toHaveBeenCalledWith(sampleRegistrar);
+    expect(editComponent.isUpdating()).toBe(true);
+    expect(globalLoader.isLoading()).toBe(true);
+
+    pending$.next([sampleRegistrar]);
+    pending$.complete();
+    expect(editComponent.isUpdating()).toBe(false);
+    expect(globalLoader.isLoading()).toBe(false);
+    expect(rdapService.editing()).toBe(false);
+
+    editComponent.save(submitEvent);
+    expect(editComponent.isUpdating()).toBe(false);
+    expect(globalLoader.isLoading()).toBe(false);
+    expect(snackBarSpy).toHaveBeenCalledWith('Invalid RDAP URL');
   });
 });

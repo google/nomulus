@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { switchMap } from 'rxjs';
 import {
   IpAllowListItem,
@@ -54,8 +54,8 @@ export function uiToApiConverter(
 })
 export class SecurityService {
   securitySettings: SecuritySettings = {};
-  isEditingSecurity: boolean = false;
-  isEditingPassword: boolean = false;
+  isEditingSecurity = signal(false);
+  isEditingPassword = signal(false);
 
   constructor(
     private backend: BackendService,

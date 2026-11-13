@@ -13,49 +13,65 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, effect, ChangeDetectionStrategy } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import {
-  Registrar,
-  RegistrarService,
-} from 'src/app/registrar/registrar.service';
+  Component,
+  linkedSignal,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MaterialModule } from 'src/app/material.module';
+import { RegistrarService } from 'src/app/registrar/registrar.service';
+import {
+  GlobalLoader,
+  GlobalLoaderService,
+} from 'src/app/shared/services/globalLoader.service';
 import { UserDataService } from 'src/app/shared/services/userData.service';
 import { RdapService } from './rdap.service';
 
 @Component({
   selector: 'app-rdap-edit',
+  imports: [FormsModule, MaterialModule],
   templateUrl: './rdapEdit.component.html',
   styleUrls: ['./rdapEdit.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class RdapEditComponent {
-  registrarInEdit: Registrar | undefined;
+export class RdapEditComponent implements GlobalLoader {
+  registrarInEdit = linkedSignal(() =>
+    structuredClone(this.registrarService.registrar())
+  );
+  isUpdating = signal(false);
 
   constructor(
     public userDataService: UserDataService,
     public rdapService: RdapService,
     public registrarService: RegistrarService,
-    private _snackBar: MatSnackBar
-  ) {
-    effect(() => {
-      const registrar = this.registrarService.registrar();
-      if (registrar) {
-        this.registrarInEdit = structuredClone(registrar);
-      }
-    });
+    private _snackBar: MatSnackBar,
+    protected globalLoader: GlobalLoaderService
+  ) {}
+
+  loadingTimeout() {
+    this._snackBar.open('Timeout updating RDAP settings');
   }
 
   save(e: SubmitEvent) {
     e.preventDefault();
-    if (!this.registrarInEdit) return;
+    const registrar = this.registrarInEdit();
+    if (!registrar) return;
 
-    this.rdapService.saveChanges(this.registrarInEdit).subscribe({
+    this.isUpdating.set(true);
+    this.globalLoader.startGlobalLoader(this);
+    this.rdapService.saveChanges(registrar).subscribe({
       complete: () => {
-        this.rdapService.editing = false;
+        this.isUpdating.set(false);
+        this.globalLoader.stopGlobalLoader(this);
+        this.rdapService.editing.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.error);
+        this._snackBar.open(err.error || err.message);
+        this.isUpdating.set(false);
+        this.globalLoader.stopGlobalLoader(this);
       },
     });
   }

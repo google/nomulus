@@ -1,6 +1,6 @@
-@if(securityService.isEditingSecurity) {
+@if(securityService.isEditingSecurity()) {
 <app-security-edit></app-security-edit>
-} @else if(securityService.isEditingPassword) {
+} @else if(securityService.isEditingPassword()) {
 <app-epp-password-edit></app-epp-password-edit>
 } @else {
 <div class="settings-security">
@@ -31,12 +31,12 @@
           <span class="console-app__list-key">Password</span>
           <span class="console-app__list-value">••••••••••••••</span>
         </mat-list-item>
-        @if(dataSource.eppPasswordLastUpdated) {
+        @if(dataSource().eppPasswordLastUpdated) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">Last Changed</span>
           <span class="console-app__list-value">{{
-            dataSource.eppPasswordLastUpdated
+            dataSource().eppPasswordLastUpdated
           }}</span>
         </mat-list-item>
         }
@@ -68,7 +68,7 @@
           >
         </mat-list-item>
         <mat-divider></mat-divider>
-        @for (item of dataSource.ipAddressAllowList; track $index){
+        @for (item of dataSource().ipAddressAllowList; track $index){
         <mat-list-item role="listitem">
           <span class="console-app__list-value">{{ item.value }}</span>
         </mat-list-item>
@@ -93,7 +93,7 @@
         <mat-divider></mat-divider>
         <mat-list-item role="listitem" lines="10">
           <span class="console-app__list-value">{{
-            dataSource.clientCertificate || "No client certificate on file."
+            dataSource().clientCertificate || "No client certificate on file."
           }}</span>
         </mat-list-item>
         <mat-list-item role="listitem"> </mat-list-item>
@@ -111,7 +111,7 @@
         <mat-divider></mat-divider>
         <mat-list-item role="listitem" lines="10">
           <span class="console-app__list-value">{{
-            dataSource.failoverClientCertificate ||
+            dataSource().failoverClientCertificate ||
               "No failover certificate on file."
           }}</span>
         </mat-list-item>

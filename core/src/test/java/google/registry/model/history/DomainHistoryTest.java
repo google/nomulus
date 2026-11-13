@@ -14,6 +14,7 @@
 
 package google.registry.model.history;
 
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -66,6 +67,15 @@ public class DomainHistoryTest extends EntityTestCase {
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
               assertThat(fromDatabase.getRepoId()).isEqualTo(domainHistory.getRepoId());
             });
+    // Verify that HQL query loading (which detaches entities on stream consumption)
+    // eagerly initializes all child collections before the transaction closes.
+    DomainHistory loadedByStream =
+        tm().transact(() -> tm().loadAllOfStream(DomainHistory.class).collect(onlyElement()));
+    assertThat(loadedByStream.getNsHosts()).isNotEmpty();
+    assertThat(loadedByStream.getDsDataHistories()).isNotEmpty();
+    assertThat(loadedByStream.getGracePeriodHistories()).isNotEmpty();
+    assertThat(loadedByStream.getDomainTransactionRecords()).isNotEmpty();
+    assertDomainHistoriesEqual(loadedByStream, domainHistory);
   }
 
   @Test
