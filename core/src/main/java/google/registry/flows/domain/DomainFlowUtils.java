@@ -161,7 +161,7 @@ public class DomainFlowUtils {
           + "name collision.";
 
   /** Strict validator for ascii lowercase letters, digits, and "-", allowing "." as a separator */
-  private static final CharMatcher ALLOWED_CHARS =
+  public static final CharMatcher ALLOWED_CHARS =
       CharMatcher.inRange('a', 'z').or(CharMatcher.inRange('0', '9').or(CharMatcher.anyOf("-.")));
 
   /** Default validator used to determine if an IDN name can be provisioned on a TLD. */
