@@ -23,16 +23,31 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.ssl.SslHandler;
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -49,6 +64,8 @@ public final class SslInitializerTestUtils {
 
   private static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
   private static final KeyPairGenerator KEY_PAIR_GENERATOR = getKeyPairGenerator();
+  private static final KeyPairGenerator EC_KEY_PAIR_GENERATOR = getEcKeyPairGenerator();
+  private static final AtomicLong SERIAL_NUMBER = new AtomicLong(1);
 
   private SslInitializerTestUtils() {}
 
@@ -62,8 +79,82 @@ public final class SslInitializerTestUtils {
     }
   }
 
+  private static KeyPairGenerator getEcKeyPairGenerator() {
+    try {
+      KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC", PROVIDER);
+      keyPairGenerator.initialize(new ECGenParameterSpec("secp256r1"), new SecureRandom());
+      return keyPairGenerator;
+    } catch (GeneralSecurityException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static KeyPair getKeyPair() throws Exception {
     return KEY_PAIR_GENERATOR.generateKeyPair();
+  }
+
+  public static KeyPair getEcKeyPair() {
+    return EC_KEY_PAIR_GENERATOR.generateKeyPair();
+  }
+
+  /**
+   * Signs the given key pair with the given issuer key and certificate to generate a certificate
+   * with the given validity range.
+   *
+   * @return signed public key (of the key pair) certificate
+   */
+  public static X509Certificate signKeyPair(
+      PrivateKey issuerKey,
+      X509Certificate issuerCert,
+      KeyPair keyPair,
+      String hostname,
+      Instant from,
+      Instant to,
+      String... dnsSans)
+      throws Exception {
+    return signKeyPair(
+        issuerKey, issuerCert, keyPair, hostname, from, to, Optional.empty(), dnsSans);
+  }
+
+  private static X509Certificate signKeyPair(
+      PrivateKey issuerKey,
+      X509Certificate issuerCert,
+      KeyPair keyPair,
+      String hostname,
+      Instant from,
+      Instant to,
+      Optional<KeyPurposeId> eku,
+      String... dnsSans)
+      throws Exception {
+    X500Name subjectDnName = new X500Name("CN=" + hostname);
+    BigInteger serialNumber = BigInteger.valueOf(SERIAL_NUMBER.incrementAndGet());
+    X500Name issuerDnName = X500Name.getInstance(issuerCert.getSubjectX500Principal().getEncoded());
+    ContentSigner sigGen =
+        new JcaContentSignerBuilder(signatureAlgorithmFor(issuerKey)).build(issuerKey);
+    X509v3CertificateBuilder v3CertGen =
+        new JcaX509v3CertificateBuilder(
+            issuerDnName,
+            serialNumber,
+            Date.from(from),
+            Date.from(to),
+            subjectDnName,
+            keyPair.getPublic());
+    if (eku.isPresent()) {
+      v3CertGen.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(eku.get()));
+    }
+    if (dnsSans.length > 0) {
+      GeneralName[] generalNames =
+          Arrays.stream(dnsSans)
+              .map(san -> new GeneralName(GeneralName.dNSName, san))
+              .toArray(GeneralName[]::new);
+      v3CertGen.addExtension(
+          Extension.subjectAlternativeName, false, new GeneralNames(generalNames));
+    }
+
+    X509CertificateHolder certificateHolder = v3CertGen.build(sigGen);
+    return new JcaX509CertificateConverter()
+        .setProvider(PROVIDER)
+        .getCertificate(certificateHolder);
   }
 
   /**
@@ -73,12 +164,26 @@ public final class SslInitializerTestUtils {
    * @return signed public key (of the key pair) certificate
    */
   public static X509Certificate signKeyPair(
-      SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname, Instant from, Instant to)
+      SelfSignedCaCertificate ssc,
+      KeyPair keyPair,
+      String hostname,
+      Instant from,
+      Instant to,
+      String... dnsSans)
       throws Exception {
-    X500Name subjectDnName = new X500Name("CN=" + hostname);
-    BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
-    X500Name issuerDnName = new X500Name(ssc.cert().getIssuerX500Principal().getName());
-    ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(ssc.key());
+    return signKeyPair(ssc.key(), ssc.cert(), keyPair, hostname, from, to, dnsSans);
+  }
+
+  /** Signs the given key pair as an intermediate CA certificate. */
+  public static X509Certificate signIntermediateCa(
+      SelfSignedCaCertificate issuer, KeyPair keyPair, String cn, Instant from, Instant to)
+      throws Exception {
+    X500Name subjectDnName = new X500Name("CN=" + cn);
+    BigInteger serialNumber = BigInteger.valueOf(SERIAL_NUMBER.incrementAndGet());
+    X500Name issuerDnName =
+        X500Name.getInstance(issuer.cert().getSubjectX500Principal().getEncoded());
+    ContentSigner sigGen =
+        new JcaContentSignerBuilder(signatureAlgorithmFor(issuer.key())).build(issuer.key());
     X509v3CertificateBuilder v3CertGen =
         new JcaX509v3CertificateBuilder(
             issuerDnName,
@@ -87,11 +192,10 @@ public final class SslInitializerTestUtils {
             Date.from(to),
             subjectDnName,
             keyPair.getPublic());
-
-    X509CertificateHolder certificateHolder = v3CertGen.build(sigGen);
+    v3CertGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
     return new JcaX509CertificateConverter()
         .setProvider(PROVIDER)
-        .getCertificate(certificateHolder);
+        .getCertificate(v3CertGen.build(sigGen));
   }
 
   /**
@@ -108,6 +212,60 @@ public final class SslInitializerTestUtils {
         hostname,
         Instant.now().minus(1, ChronoUnit.DAYS),
         Instant.now().plus(1, ChronoUnit.DAYS));
+  }
+
+  /**
+   * Signs the given key pair with the given self-signed certificate and DNS Subject Alternative
+   * Names using the issuer certificate's validity window.
+   */
+  public static X509Certificate signKeyPairWithSans(
+      SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname, String... dnsSans)
+      throws Exception {
+    return signKeyPair(
+        ssc,
+        keyPair,
+        hostname,
+        ssc.cert().getNotBefore().toInstant(),
+        ssc.cert().getNotAfter().toInstant(),
+        dnsSans);
+  }
+
+  /**
+   * Signs the given key pair with the given self-signed certificate, Extended Key Usage, and DNS
+   * Subject Alternative Names using the issuer certificate's validity window.
+   */
+  public static X509Certificate signKeyPairWithEku(
+      SelfSignedCaCertificate ssc,
+      KeyPair keyPair,
+      String hostname,
+      KeyPurposeId eku,
+      String... dnsSans)
+      throws Exception {
+    return signKeyPair(
+        ssc.key(),
+        ssc.cert(),
+        keyPair,
+        hostname,
+        ssc.cert().getNotBefore().toInstant(),
+        ssc.cert().getNotAfter().toInstant(),
+        Optional.of(eku),
+        dnsSans);
+  }
+
+  private static String signatureAlgorithmFor(PrivateKey key) {
+    return "EC".equals(key.getAlgorithm()) ? "SHA256WithECDSA" : "SHA256WithRSAEncryption";
+  }
+
+  /** Creates a PKIX {@link X509TrustManager} trusting the given CA certificates. */
+  static X509TrustManager createTrustManager(X509Certificate... trustedCerts) throws Exception {
+    KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+    keyStore.load(null, null);
+    for (int i = 0; i < trustedCerts.length; i++) {
+      keyStore.setCertificateEntry("ca-" + i, trustedCerts[i]);
+    }
+    TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
+    trustManagerFactory.init(keyStore);
+    return (X509TrustManager) trustManagerFactory.getTrustManagers()[0];
   }
 
   /**
