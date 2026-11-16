@@ -15,10 +15,17 @@
 package google.registry.networking.handler;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static google.registry.util.X509Utils.extractHostnames;
 import static google.registry.util.X509Utils.getCertificateHash;
+import static google.registry.util.X509Utils.getDefaultTrustManager;
+import static google.registry.util.X509Utils.validateCertificateChain;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import google.registry.util.X509Utils.CertificateChainValidationResult;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -36,12 +43,16 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Adds a server side SSL handler to the channel pipeline.
@@ -53,9 +64,11 @@ import javax.net.ssl.SSLSession;
  *
  * <p>The ssl handler added can require client authentication, but it uses an {@link
  * InsecureTrustManagerFactory}, which accepts any ssl certificate presented by the client, as long
- * as the client uses the corresponding private key to establish SSL handshake. The client
- * certificate hash will be passed along to the service as an HTTP header for verification (not
- * handled by this handler).
+ * as the client uses the corresponding private key to establish SSL handshake. After handshake
+ * completion, this handler validates the presented certificate chain against the configured
+ * truststore (without failing the handshake for legacy hash-pinned certificates) and extracts
+ * canonicalized DNS hostnames when chain validation succeeds so downstream handlers can forward the
+ * certificate hash, chain-validation status, and hostnames as HTTP headers.
  */
 @Sharable
 public class SslServerInitializer<C extends Channel> extends ChannelInitializer<C> {
@@ -66,6 +79,22 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
    */
   public static final AttributeKey<Promise<X509Certificate>> CLIENT_CERTIFICATE_PROMISE_KEY =
       AttributeKey.valueOf("CLIENT_CERTIFICATE_PROMISE_KEY");
+
+  /**
+   * Attribute key to whether the client certificate chain was validated against trusted root CAs,
+   * set before {@link #CLIENT_CERTIFICATE_PROMISE_KEY} completes.
+   */
+  public static final AttributeKey<Boolean> CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY =
+      AttributeKey.valueOf("CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY");
+
+  /**
+   * Attribute key to the canonicalized, deduplicated DNS hostnames (excluding wildcard names)
+   * extracted from a validated client certificate's Subject Alternative Names (or Subject CN when
+   * no SAN extension is present), set before {@link #CLIENT_CERTIFICATE_PROMISE_KEY} completes.
+   * Empty when chain validation fails or the certificate contains no valid hostnames.
+   */
+  public static final AttributeKey<ImmutableList<String>> CLIENT_CERTIFICATE_HOSTNAMES_KEY =
+      AttributeKey.valueOf("CLIENT_CERTIFICATE_HOSTNAMES_KEY");
 
   /**
    * The list of cipher suites that are currently acceptable to create a successful handshake.
@@ -94,6 +123,9 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   private static final ImmutableList<String> SUPPORTED_TLS_VERSIONS =
       ImmutableList.of("TLSv1.3", "TLSv1.2");
 
+  private static final int MAX_LOGGED_HOSTNAMES = 10;
+  private static final int MAX_LOGGED_FAILURE_REASON_CHARS = 512;
+
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final boolean requireClientCert;
   // TODO(jianglai): Always validate client certs (if required).
@@ -103,6 +135,7 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   // change when the artifacts on GCS changes.
   private final Supplier<PrivateKey> privateKeySupplier;
   private final Supplier<ImmutableList<X509Certificate>> certificatesSupplier;
+  private final Optional<X509TrustManager> trustManager;
 
   public SslServerInitializer(
       boolean requireClientCert,
@@ -110,15 +143,37 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
       Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
+    this(
+        requireClientCert,
+        validateClientCert,
+        sslProvider,
+        privateKeySupplier,
+        certificatesSupplier,
+        requireClientCert ? Optional.of(getDefaultTrustManager()) : Optional.empty());
+  }
+
+  @VisibleForTesting
+  SslServerInitializer(
+      boolean requireClientCert,
+      boolean validateClientCert,
+      SslProvider sslProvider,
+      Supplier<PrivateKey> privateKeySupplier,
+      Supplier<ImmutableList<X509Certificate>> certificatesSupplier,
+      Optional<X509TrustManager> trustManager) {
     logger.atInfo().log("Server SSL Provider: %s", sslProvider);
     checkArgument(
         requireClientCert || !validateClientCert,
         "Cannot validate client certificate if client certificate is not required.");
+    checkNotNull(trustManager, "trustManager");
+    checkArgument(
+        !requireClientCert || trustManager.isPresent(),
+        "Trust manager is required when client certificates are required.");
     this.requireClientCert = requireClientCert;
     this.validateClientCert = validateClientCert;
     this.sslProvider = sslProvider;
     this.privateKeySupplier = privateKeySupplier;
     this.certificatesSupplier = certificatesSupplier;
+    this.trustManager = trustManager;
   }
 
   @Override
@@ -147,18 +202,37 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
                   future -> {
                     if (future.isSuccess()) {
                       SSLSession sslSession = sslHandler.engine().getSession();
-                      X509Certificate clientCertificate =
-                          (X509Certificate) sslSession.getPeerCertificates()[0];
+                      Certificate[] peerCertificates = sslSession.getPeerCertificates();
+                      X509Certificate clientCertificate = (X509Certificate) peerCertificates[0];
+                      String clientCertificateHash = getCertificateHash(clientCertificate);
                       PublicKey clientPublicKey = clientCertificate.getPublicKey();
                       // Note that for non-RSA keys the length would be -1.
                       int clientCertificateLength = -1;
                       if (clientPublicKey instanceof RSAPublicKey rsaPublicKey) {
                         clientCertificateLength = rsaPublicKey.getModulus().bitLength();
                       }
+                      CertificateException validityException = null;
+                      try {
+                        clientCertificate.checkValidity();
+                      } catch (CertificateNotYetValidException | CertificateExpiredException e) {
+                        validityException = e;
+                      }
+                      CertificateChainValidationResult validationResult =
+                          validityException != null
+                              ? CertificateChainValidationResult.failed(
+                                  validityException.toString())
+                              : validateCertificateChain(
+                                  peerCertificates, trustManager.orElseThrow());
+                      boolean chainValidated = validationResult.valid();
+                      ImmutableList<String> hostnames =
+                          chainValidated ? extractHostnames(clientCertificate) : ImmutableList.of();
                       logger.atInfo().log(
                           """
                           --SSL Information--
                           Client Certificate Hash: %s
+                          Client Certificate Chain Validated: %s
+                          Client Certificate Chain Failure Reason: %s
+                          Client Certificate Hostnames: %s
                           SSL Protocol: %s
                           Cipher Suite: %s
                           Not Before: %s
@@ -166,26 +240,28 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
                           Client Certificate Type: %s
                           Client Certificate Length: %s
                           """,
-                          getCertificateHash(clientCertificate),
+                          clientCertificateHash,
+                          chainValidated,
+                          formatFailureReasonForLog(validationResult.failureReason()),
+                          formatHostnamesForLog(hostnames),
                           sslSession.getProtocol(),
                           sslSession.getCipherSuite(),
                           clientCertificate.getNotBefore(),
                           clientCertificate.getNotAfter(),
                           clientPublicKey.getClass().getName(),
                           clientCertificateLength);
-                      try {
-                        clientCertificate.checkValidity();
-                      } catch (CertificateNotYetValidException | CertificateExpiredException e) {
-                        logger.atWarning().withCause(e).log(
-                            "Client certificate is not valid.\nHash: %s",
-                            getCertificateHash(clientCertificate));
+                      if (validityException != null) {
+                        logger.atWarning().withCause(validityException).log(
+                            "Client certificate is not valid.\nHash: %s", clientCertificateHash);
                         if (validateClientCert) {
                           Promise<X509Certificate> unusedPromise =
-                              clientCertificatePromise.setFailure(e);
+                              clientCertificatePromise.setFailure(validityException);
                           ChannelFuture unusedFuture2 = channel.close();
                           return;
                         }
                       }
+                      channel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).set(chainValidated);
+                      channel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).set(hostnames);
                       Promise<X509Certificate> unusedPromise =
                           clientCertificatePromise.setSuccess(clientCertificate);
                     } else {
@@ -196,5 +272,32 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
       channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).set(clientCertificatePromise);
     }
     channel.pipeline().addLast(sslHandler);
+  }
+
+  @VisibleForTesting
+  static String formatHostnamesForLog(ImmutableList<String> hostnames) {
+    checkNotNull(hostnames, "hostnames");
+    if (hostnames.size() <= MAX_LOGGED_HOSTNAMES) {
+      return hostnames.toString();
+    }
+    return String.format(
+        "[%s, ... (%d total)]",
+        Joiner.on(", ").join(hostnames.subList(0, MAX_LOGGED_HOSTNAMES)), hostnames.size());
+  }
+
+  // Sanitize and bound the failure reason logged at INFO: because this handler accepts arbitrary
+  // unauthenticated client certificates, a crafted or malformed cert can cause JDK X.509/PKIX
+  // exceptions to echo long or newline-containing fields (e.g., invalid extension values during
+  // lazy OpenSSL parsing or large sets of unsupported critical OIDs).
+  @VisibleForTesting
+  static String formatFailureReasonForLog(Optional<String> failureReason) {
+    checkNotNull(failureReason, "failureReason");
+    if (failureReason.isEmpty()) {
+      return "none";
+    }
+    String sanitized = failureReason.get().replace('\r', ' ').replace('\n', ' ');
+    return sanitized.length() <= MAX_LOGGED_FAILURE_REASON_CHARS
+        ? sanitized
+        : sanitized.substring(0, MAX_LOGGED_FAILURE_REASON_CHARS - 3) + "...";
   }
 }

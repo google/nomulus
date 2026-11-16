@@ -14,10 +14,14 @@
 
 package google.registry.proxy.handler;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY;
+import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_HOSTNAMES_KEY;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
+import static google.registry.util.X509Utils.formatHostnamesHeader;
 import static google.registry.util.X509Utils.getCertificateHash;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -62,6 +66,8 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
   private final byte[] helloBytes;
 
   private String sslClientCertificateHash;
+  private boolean sslClientCertificateChainValidated;
+  private Optional<String> sslClientCertificateHostnamesHeader = Optional.empty();
   private String clientAddress;
 
   private Optional<String> maybeRegistrarId = Optional.empty();
@@ -107,6 +113,16 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
                 (Promise<X509Certificate> promise) -> {
                   if (promise.isSuccess()) {
                     sslClientCertificateHash = getCertificateHash(promise.get());
+                    sslClientCertificateChainValidated =
+                        firstNonNull(
+                            ctx.channel().attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get(),
+                            false);
+                    sslClientCertificateHostnamesHeader =
+                        sslClientCertificateChainValidated
+                            ? formatHostnamesHeader(
+                                ctx.channel().attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get(),
+                                sslClientCertificateHash)
+                            : Optional.empty();
                     // Set the client cert hash key attribute for both this channel,
                     // used for collecting metrics on specific clients.
                     ctx.channel().attr(CLIENT_CERTIFICATE_HASH_KEY).set(sslClientCertificateHash);
@@ -133,10 +149,15 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
     request
         .headers()
         .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
+        .set(
+            ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED,
+            Boolean.toString(sslClientCertificateChainValidated))
         .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress)
         .set(ProxyHttpHeaders.FALLBACK_IP_ADDRESS, clientAddress)
         .set(HttpHeaderNames.CONTENT_TYPE, EPP_CONTENT_TYPE)
         .set(HttpHeaderNames.ACCEPT, EPP_CONTENT_TYPE);
+    sslClientCertificateHostnamesHeader.ifPresent(
+        header -> request.headers().set(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES, header));
 
     maybeSetRegistrarIdHeader(request);
 

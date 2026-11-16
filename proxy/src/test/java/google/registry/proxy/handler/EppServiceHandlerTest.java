@@ -14,11 +14,16 @@
 
 package google.registry.proxy.handler;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY;
+import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_HOSTNAMES_KEY;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
 import static google.registry.proxy.TestUtils.assertHttpRequestEquivalent;
 import static google.registry.proxy.TestUtils.makeEppHttpResponse;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
+import static google.registry.util.X509Utils.MAX_HOSTNAMES_HEADER_BYTES;
+import static google.registry.util.X509Utils.formatHostnamesHeader;
 import static google.registry.util.X509Utils.getCertificateHash;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -28,6 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.BaseEncoding;
 import google.registry.proxy.TestUtils;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
@@ -49,6 +55,7 @@ import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -435,6 +442,138 @@ class EppServiceHandlerTest {
 
     assertHttpRequestEquivalent(relayedRequest, expectedRequest);
     assertThat(relayedRequest.headers().contains(ProxyHttpHeaders.REGISTRAR_ID)).isFalse();
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_forwardsCertificateChainValidatedAndHostnamesHeaders() throws Exception {
+    channel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).set(true);
+    channel
+        .attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY)
+        .set(ImmutableList.of("epp1.example.tld", "epp2.example.tld"));
+    setHandshakeSuccess();
+
+    FullHttpRequest helloRequest = channel.readInbound();
+    FullHttpRequest expectedHelloRequest = makeEppHttpRequest(HELLO);
+    expectedHelloRequest.headers().set(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED, "true");
+    expectedHelloRequest
+        .headers()
+        .set(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES, "epp1.example.tld,epp2.example.tld");
+    assertHttpRequestEquivalent(helloRequest, expectedHelloRequest);
+
+    String loginContent = "<epp><command><login/></command></epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(loginContent.getBytes(UTF_8)));
+    FullHttpRequest loginRequest = channel.readInbound();
+    FullHttpRequest expectedLoginRequest = makeEppHttpRequest(loginContent);
+    expectedLoginRequest.headers().set(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED, "true");
+    expectedLoginRequest
+        .headers()
+        .set(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES, "epp1.example.tld,epp2.example.tld");
+    assertHttpRequestEquivalent(loginRequest, expectedLoginRequest);
+
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_omitsCertificateHostnamesHeaderWhenEmpty() throws Exception {
+    channel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).set(true);
+    channel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).set(ImmutableList.of());
+    setHandshakeSuccess();
+
+    FullHttpRequest helloRequest = channel.readInbound();
+    FullHttpRequest expectedRequest = makeEppHttpRequest(HELLO);
+    expectedRequest.headers().set(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED, "true");
+
+    assertHttpRequestEquivalent(helloRequest, expectedRequest);
+    assertThat(helloRequest.headers().contains(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES)).isFalse();
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_omitsCertificateHostnamesHeaderWhenHostnamesAttrUnset() throws Exception {
+    channel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).set(true);
+    setHandshakeSuccess();
+
+    FullHttpRequest helloRequest = channel.readInbound();
+    FullHttpRequest expectedRequest = makeEppHttpRequest(HELLO);
+    expectedRequest.headers().set(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED, "true");
+
+    assertHttpRequestEquivalent(helloRequest, expectedRequest);
+    assertThat(helloRequest.headers().contains(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES)).isFalse();
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_forwardsChainValidatedFalseWhenChainNotValidated() throws Exception {
+    channel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).set(false);
+    channel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).set(ImmutableList.of("epp.untrusted.tld"));
+    setHandshakeSuccess();
+
+    FullHttpRequest helloRequest = channel.readInbound();
+    FullHttpRequest expectedHelloRequest = makeEppHttpRequest(HELLO);
+    assertHttpRequestEquivalent(helloRequest, expectedHelloRequest);
+    assertThat(helloRequest.headers().get(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED))
+        .isEqualTo("false");
+    assertThat(helloRequest.headers().contains(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES)).isFalse();
+
+    String loginContent = "<epp><command><login/></command></epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(loginContent.getBytes(UTF_8)));
+    FullHttpRequest loginRequest = channel.readInbound();
+    FullHttpRequest expectedLoginRequest = makeEppHttpRequest(loginContent);
+    assertHttpRequestEquivalent(loginRequest, expectedLoginRequest);
+    assertThat(loginRequest.headers().get(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED))
+        .isEqualTo("false");
+    assertThat(loginRequest.headers().contains(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES)).isFalse();
+
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_defaultsChainValidatedToFalseWhenAttributesUnset() throws Exception {
+    setHandshakeSuccess();
+
+    FullHttpRequest helloRequest = channel.readInbound();
+    assertHttpRequestEquivalent(helloRequest, makeEppHttpRequest(HELLO));
+    assertThat(helloRequest.headers().get(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED))
+        .isEqualTo("false");
+    assertThat(helloRequest.headers().contains(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES)).isFalse();
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_truncatesOversizedCertificateHostnamesHeader() throws Exception {
+    ImmutableList<String> oversizedHostnames =
+        IntStream.range(0, 200)
+            .mapToObj(i -> String.format("epp-host-%03d.registrar.example.tld", i))
+            .collect(toImmutableList());
+    channel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).set(true);
+    channel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).set(oversizedHostnames);
+    setHandshakeSuccess();
+
+    String expectedHeader =
+        formatHostnamesHeader(oversizedHostnames, getCertificateHash(clientCertificate))
+            .orElseThrow();
+    assertThat(expectedHeader.length()).isAtMost(MAX_HOSTNAMES_HEADER_BYTES);
+    assertThat(expectedHeader.length()).isLessThan(String.join(",", oversizedHostnames).length());
+    FullHttpRequest helloRequest = channel.readInbound();
+    assertThat(helloRequest.headers().get(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED))
+        .isEqualTo("true");
+    assertThat(helloRequest.headers().get(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES))
+        .isEqualTo(expectedHeader);
+
+    String loginContent = "<epp><command><login/></command></epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(loginContent.getBytes(UTF_8)));
+    FullHttpRequest loginRequest = channel.readInbound();
+    assertThat(loginRequest.headers().get(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED))
+        .isEqualTo("true");
+    assertThat(loginRequest.headers().get(ProxyHttpHeaders.CERTIFICATE_HOSTNAMES))
+        .isEqualTo(expectedHeader);
     assertThat((Object) channel.readInbound()).isNull();
     assertThat(channel.isActive()).isTrue();
   }
