@@ -179,7 +179,7 @@ public final class OteAccountBuilder {
   }
 
   /**
-   * Adds a {@link User} with Web Console access.
+   * Adds a {@link User} with {@link RegistrarRole#TECH_CONTACT} Web Console access.
    *
    * <p>NOTE: can be called more than once, adding multiple users. Each user will have access to all
    * OT&amp;E Registrars.
@@ -197,7 +197,7 @@ public final class OteAccountBuilder {
                         registrars.stream()
                             .collect(
                                 toImmutableMap(
-                                    Registrar::getRegistrarId, _ -> RegistrarRole.ACCOUNT_MANAGER)))
+                                    Registrar::getRegistrarId, _ -> RegistrarRole.TECH_CONTACT)))
                     .build())
             .build());
     return this;
