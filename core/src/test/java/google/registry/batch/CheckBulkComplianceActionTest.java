@@ -56,7 +56,8 @@ import org.mockito.ArgumentCaptor;
 /** Unit tests for {@link CheckBulkComplianceAction}. */
 public class CheckBulkComplianceActionTest {
   // This is the default creation time for test data.
-  private final FakeClock clock = new FakeClock(Instant.parse("2012-03-25T00:00:00Z"));
+  private static final Instant START_TIME = Instant.parse("2012-03-25T00:00:00Z");
+  private final FakeClock clock = new FakeClock(START_TIME);
   private static final String CREATE_LIMIT_EMAIL_SUBJECT = "create limit subject";
   private static final String DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT = "domain limit warning subject";
   private static final String DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT = "domain limit upgrade subject";
@@ -579,5 +580,173 @@ public class CheckBulkComplianceActionTest {
     BulkPricingPackage packageAfterCheck =
         tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.now());
+  }
+
+  @Test
+  void testSuccess_activeDomainOverage_neverNotified_sendsWarningEmail() throws Exception {
+    bulkPricingPackage =
+        bulkPricingPackage
+            .asBuilder()
+            .setMaxCreates(4)
+            .setMaxDomains(1)
+            .setLastNotificationSent(null)
+            .build();
+    tm().transact(() -> tm().put(bulkPricingPackage));
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+
+    action.run();
+
+    verify(gmailClient).sendEmail(emailCaptor.capture());
+    EmailMessage emailMessage = emailCaptor.getValue();
+    assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
+    assertThat(emailMessage.body())
+        .isEqualTo(
+            String.format(DOMAIN_LIMIT_WARNING_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
+    BulkPricingPackage packageAfterCheck =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
+    assertThat(packageAfterCheck.getLastNotificationSent()).hasValue(START_TIME);
+  }
+
+  @Test
+  void testSuccess_activeDomainOverage_notified29DaysAgo_doesNotSendEmail() {
+    Instant twentyNineDaysAgo = minusDays(START_TIME, 29);
+    bulkPricingPackage =
+        bulkPricingPackage
+            .asBuilder()
+            .setMaxCreates(4)
+            .setMaxDomains(1)
+            .setLastNotificationSent(twentyNineDaysAgo)
+            .build();
+    tm().transact(() -> tm().put(bulkPricingPackage));
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+
+    action.run();
+
+    verifyNoInteractions(gmailClient);
+    BulkPricingPackage packageAfterCheck =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
+    assertThat(packageAfterCheck.getLastNotificationSent()).hasValue(twentyNineDaysAgo);
+  }
+
+  @Test
+  void testSuccess_activeDomainOverage_notifiedExactly30DaysAgo_sendsUpgradeEmail()
+      throws Exception {
+    bulkPricingPackage =
+        bulkPricingPackage
+            .asBuilder()
+            .setMaxCreates(4)
+            .setMaxDomains(1)
+            .setLastNotificationSent(minusDays(START_TIME, 30))
+            .build();
+    tm().transact(() -> tm().put(bulkPricingPackage));
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+
+    action.run();
+
+    verify(gmailClient).sendEmail(emailCaptor.capture());
+    EmailMessage emailMessage = emailCaptor.getValue();
+    assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT);
+    assertThat(emailMessage.body())
+        .isEqualTo(
+            String.format(DOMAIN_LIMIT_UPGRADE_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
+    BulkPricingPackage packageAfterCheck =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
+    assertThat(packageAfterCheck.getLastNotificationSent()).hasValue(START_TIME);
+  }
+
+  @Test
+  void testSuccess_activeDomainOverage_notified39DaysAgo_sendsUpgradeEmail() throws Exception {
+    bulkPricingPackage =
+        bulkPricingPackage
+            .asBuilder()
+            .setMaxCreates(4)
+            .setMaxDomains(1)
+            .setLastNotificationSent(minusDays(START_TIME, 39))
+            .build();
+    tm().transact(() -> tm().put(bulkPricingPackage));
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+
+    action.run();
+
+    verify(gmailClient).sendEmail(emailCaptor.capture());
+    EmailMessage emailMessage = emailCaptor.getValue();
+    assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT);
+    assertThat(emailMessage.body())
+        .isEqualTo(
+            String.format(DOMAIN_LIMIT_UPGRADE_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
+    BulkPricingPackage packageAfterCheck =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
+    assertThat(packageAfterCheck.getLastNotificationSent()).hasValue(START_TIME);
+  }
+
+  @Test
+  void testSuccess_activeDomainOverage_notifiedExactly40DaysAgo_sendsWarningEmail()
+      throws Exception {
+    bulkPricingPackage =
+        bulkPricingPackage
+            .asBuilder()
+            .setMaxCreates(4)
+            .setMaxDomains(1)
+            .setLastNotificationSent(minusDays(START_TIME, 40))
+            .build();
+    tm().transact(() -> tm().put(bulkPricingPackage));
+    persistEppResource(
+        DatabaseHelper.newDomain("foo.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+    persistEppResource(
+        DatabaseHelper.newDomain("buzz.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+
+    action.run();
+
+    verify(gmailClient).sendEmail(emailCaptor.capture());
+    EmailMessage emailMessage = emailCaptor.getValue();
+    assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
+    assertThat(emailMessage.body())
+        .isEqualTo(
+            String.format(DOMAIN_LIMIT_WARNING_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
+    BulkPricingPackage packageAfterCheck =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
+    assertThat(packageAfterCheck.getLastNotificationSent()).hasValue(START_TIME);
   }
 }

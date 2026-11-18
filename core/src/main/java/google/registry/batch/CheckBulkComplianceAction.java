@@ -33,6 +33,7 @@ import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -56,7 +57,9 @@ public class CheckBulkComplianceAction implements Runnable {
   private final String bulkPricingPackageDomainLimitWarningEmailBody;
   private final String bulkPricingPackageDomainLimitUpgradeEmailBody;
   private final String registrySupportEmail;
+  // Registrars receive a 30-day cure window after an active-domain overage warning before upgrade.
   private static final int THIRTY_DAYS = 30;
+  // Notifications 40+ days old indicate the prior 30-39 day upgrade window passed without overage.
   private static final int FORTY_DAYS = 40;
 
   @Inject
@@ -182,18 +185,26 @@ public class CheckBulkComplianceAction implements Runnable {
     logger.atInfo().log(
         "Found %d bulk pricing packages over their active domains limit.", overageList.size());
     for (BulkPricingPackage bulkPricingPackage : overageList.keySet()) {
-      int daysSinceLastNotification =
-          bulkPricingPackage
-              .getLastNotificationSent()
-              .map(sentDate -> (int) Duration.between(sentDate, clock.now()).toDays())
-              .orElse(Integer.MAX_VALUE);
-      // Send a warning email if 30-39 days since last notification and an upgrade email if 40+ days
-      if (daysSinceLastNotification >= THIRTY_DAYS) {
-        sendActiveDomainOverageEmail(
-            /* warning= */ daysSinceLastNotification >= FORTY_DAYS,
-            bulkPricingPackage,
-            overageList.get(bulkPricingPackage));
+      long activeDomains = overageList.get(bulkPricingPackage);
+      Optional<Instant> lastNotificationSent = bulkPricingPackage.getLastNotificationSent();
+      if (lastNotificationSent.isEmpty()) {
+        // First active-domain overage for this package: send initial 30-day cure warning.
+        sendActiveDomainOverageEmail(/* warning= */ true, bulkPricingPackage, activeDomains);
+        continue;
       }
+      long daysSinceLastNotification =
+          Duration.between(lastNotificationSent.get(), clock.now()).toDays();
+      if (daysSinceLastNotification < THIRTY_DAYS) {
+        // Still within the 30-day cure window after a warning; do not send another email yet.
+        continue;
+      }
+      // Because lastNotificationSent is not cleared when a package returns below maxDomains,
+      // an elapsed interval of 30-39 days means the warning went uncured and requires an upgrade
+      // notice, whereas 40+ days means the prior violation was cured during days 30-39 and this
+      // is a new overage episode warranting a fresh 30-day warning.
+      boolean isNewViolationEpisode = daysSinceLastNotification >= FORTY_DAYS;
+      sendActiveDomainOverageEmail(
+          /* warning= */ isNewViolationEpisode, bulkPricingPackage, activeDomains);
     }
   }
 
