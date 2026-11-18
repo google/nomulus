@@ -46,3 +46,7 @@ spec:
               fieldPath: metadata.namespace
         - name: CONTAINER_NAME
           value: proxy-canary
+        # TODO(b/587369531): Remove once all rollback-eligible images disable
+        # Base64 intrinsics or bundle a patched JDK 25.
+        - name: JDK_JAVA_OPTIONS
+          value: "-XX:-UseBASE64Intrinsics"
