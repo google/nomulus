@@ -68,6 +68,7 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
 
   private final EppController eppController;
   private final String registrarId;
+  private final String registryAdminClientId;
   private final String bulkDomainAction;
   private final Optional<JsonElement> optionalJsonPayload;
   private final int bulkDomainActionLimit;
@@ -77,12 +78,14 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
       ConsoleApiParams consoleApiParams,
       EppController eppController,
       @Config("consoleBulkDomainActionLimit") int bulkDomainActionLimit,
+      @Config("registryAdminClientId") String registryAdminClientId,
       @Parameter("registrarId") String registrarId,
       @Parameter("bulkDomainAction") String bulkDomainAction,
       @OptionalJsonPayload Optional<JsonElement> optionalJsonPayload) {
     super(consoleApiParams);
     this.eppController = eppController;
     this.registrarId = registrarId;
+    this.registryAdminClientId = registryAdminClientId;
     this.bulkDomainAction = bulkDomainAction;
     this.optionalJsonPayload = optionalJsonPayload;
     this.bulkDomainActionLimit = bulkDomainActionLimit;
@@ -111,19 +114,18 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
     checkPermission(user, registrarId, actionType.getNecessaryPermission());
 
     ImmutableMap<String, ConsoleEppOutput> result =
-        domainNames.stream()
-            .collect(toImmutableMap(d -> d, d -> executeIfOwned(d, actionType, user)));
+        domainNames.stream().collect(toImmutableMap(d -> d, d -> executeIfOwned(d, actionType)));
     handleHistoryAdditions(result, actionType);
     // Front end should parse situations where only some commands worked
     consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(result));
     consoleApiParams.response().setStatus(SC_OK);
   }
 
-  private ConsoleEppOutput executeIfOwned(
-      String domainName, ConsoleDomainActionType actionType, User user) {
-    // Admin requests execute EPP with isSuperuser=true, which bypasses EPP's own
-    // verifyResourceOwnership check. Load the domain inside the same transaction that the EPP
-    // flow enlists in so ownership is verified atomically at the flow's transaction timestamp.
+  private ConsoleEppOutput executeIfOwned(String domainName, ConsoleDomainActionType actionType) {
+    // Actions with runAsSuperuser() == true (SUSPEND and UNSUSPEND) execute EPP with
+    // isSuperuser=true, which bypasses EPP's own verifyResourceOwnership check. Load the domain
+    // inside the same transaction that the EPP flow enlists in so ownership is verified atomically
+    // at the flow's transaction timestamp.
     return tm().transact(
             () -> {
               Optional<Domain> domain =
@@ -138,7 +140,7 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
                     Result.Code.AUTHORIZATION_ERROR.code);
               }
               return executeEpp(
-                  actionType.getXmlContentsToRun(domainName), user.getUserRoles().isAdmin());
+                  actionType.getXmlContentsToRun(domainName), actionType.runAsSuperuser());
             });
   }
 
@@ -155,7 +157,12 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
                         e ->
                             finishAndPersistConsoleUpdateHistory(
                                 new ConsoleUpdateHistory.Builder()
-                                    .setDescription(e.getKey())
+                                    .setDescription(
+                                        String.format(
+                                            "%s%s%s",
+                                            registrarId,
+                                            ConsoleUpdateHistory.DESCRIPTION_SEPARATOR,
+                                            e.getKey()))
                                     .setType(actionType.getConsoleUpdateHistoryType()))));
   }
 
@@ -163,7 +170,8 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
     return ConsoleEppOutput.fromEppOutput(
         eppController.handleEppCommand(
             new StatelessRequestSessionMetadata(
-                registrarId, ProtocolDefinition.getVisibleServiceExtensionUris()),
+                isSuperuser ? registryAdminClientId : registrarId,
+                ProtocolDefinition.getVisibleServiceExtensionUris()),
             new PasswordOnlyTransportCredentials(),
             EppRequestSource.CONSOLE,
             false,
