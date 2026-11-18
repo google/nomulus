@@ -102,10 +102,12 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
 
     checkPermission(user, registrarId, actionType.getNecessaryPermission());
 
+    boolean isSuperuser = actionType.runAsSuperuser();
     ImmutableMap<String, ConsoleEppOutput> result =
         domainList.domainList.stream()
             .collect(
-                toImmutableMap(d -> d, d -> executeEpp(actionType.getXmlContentsToRun(d), user)));
+                toImmutableMap(
+                    d -> d, d -> executeEpp(actionType.getXmlContentsToRun(d), isSuperuser)));
     handleHistoryAdditions(result, actionType);
     // Front end should parse situations where only some commands worked
     consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(result));
@@ -125,11 +127,16 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
                         e ->
                             finishAndPersistConsoleUpdateHistory(
                                 new ConsoleUpdateHistory.Builder()
-                                    .setDescription(e.getKey())
+                                    .setDescription(
+                                        String.format(
+                                            "%s%s%s",
+                                            registrarId,
+                                            ConsoleUpdateHistory.DESCRIPTION_SEPARATOR,
+                                            e.getKey()))
                                     .setType(actionType.getConsoleUpdateHistoryType()))));
   }
 
-  private ConsoleEppOutput executeEpp(String xml, User user) {
+  private ConsoleEppOutput executeEpp(String xml, boolean isSuperuser) {
     return ConsoleEppOutput.fromEppOutput(
         eppController.handleEppCommand(
             new StatelessRequestSessionMetadata(
@@ -137,7 +144,7 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
             new PasswordOnlyTransportCredentials(),
             EppRequestSource.CONSOLE,
             false,
-            user.getUserRoles().isAdmin(),
+            isSuperuser,
             xml.getBytes(UTF_8)));
   }
 

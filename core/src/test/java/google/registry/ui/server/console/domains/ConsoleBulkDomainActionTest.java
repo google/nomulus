@@ -36,6 +36,7 @@ import google.registry.flows.DaggerEppTestComponent;
 import google.registry.flows.EppController;
 import google.registry.flows.EppTestComponent;
 import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -47,6 +48,7 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.console.ConsoleActionBaseTestCase;
 import google.registry.ui.server.console.ConsoleApiParams;
+import google.registry.ui.server.console.ConsoleHistoryDataAction;
 import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,7 +103,7 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(plusDays(clock.now(), 35));
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_DELETE);
-    assertThat(history.getDescription()).hasValue("example.tld");
+    assertThat(history.getDescription()).hasValue("TheRegistrar|example.tld");
   }
 
   @Test
@@ -122,7 +124,7 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
         .containsAtLeastElementsIn(serverSuspensionStatuses);
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_SUSPEND);
-    assertThat(history.getDescription()).hasValue("example.tld");
+    assertThat(history.getDescription()).hasValue("TheRegistrar|example.tld");
   }
 
   @Test
@@ -145,7 +147,7 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspensionStatuses);
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_UNSUSPEND);
-    assertThat(history.getDescription()).hasValue("example.tld");
+    assertThat(history.getDescription()).hasValue("TheRegistrar|example.tld");
   }
 
   @Test
@@ -171,7 +173,7 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(plusDays(clock.now(), 35));
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_DELETE);
-    assertThat(history.getDescription()).hasValue("example.tld");
+    assertThat(history.getDescription()).hasValue("TheRegistrar|example.tld");
   }
 
   @Test
@@ -261,25 +263,260 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
-  // @ptkach - reenable with suspend change
-  // @Test
-  // void testFailure_suspend_nonAdmin() {
-  //   ConsoleBulkDomainAction action =
-  //       createAction(
-  //           "SUSPEND",
-  //           GSON.toJsonTree(
-  //               ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason",
-  // "test")),
-  //           user);
-  //   action.run();
-  //   assertThat(fakeResponse.getStatus()).isEqualTo(SC_OK);
-  //   Map<String, ConsoleBulkDomainAction.ConsoleEppOutput> payload =
-  //       GSON.fromJson(fakeResponse.getPayload(), new TypeToken<>() {});
-  //   assertThat(payload).containsKey("example.tld");
-  //   assertThat(payload.get("example.tld").responseCode()).isEqualTo(2004);
-  //   assertThat(payload.get("example.tld").message()).contains("cannot be set by clients");
-  //   assertThat(loadByEntity(domain)).isEqualTo(domain);
-  // }
+  @Test
+  void testSuccess_suspend_nonAdminFte() {
+    User nonAdminFte =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("nonadmin-fte@example.com")
+                .setUserRoles(
+                    new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(false).build())
+                .build());
+    assertThat(nonAdminFte.getUserRoles().isAdmin()).isFalse();
+    persistResource(
+        domain.asBuilder().addStatusValue(StatusValue.CLIENT_UPDATE_PROHIBITED).build());
+
+    ConsoleBulkDomainAction action =
+        createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "policy")),
+            nonAdminFte);
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues())
+        .containsAtLeastElementsIn(serverSuspensionStatuses);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_SUSPEND);
+    assertThat(history.getDescription()).hasValue("TheRegistrar|example.tld");
+    assertThat(history.getActingUser().getEmailAddress()).isEqualTo("nonadmin-fte@example.com");
+  }
+
+  @Test
+  void testSuccess_unsuspend_nonAdminFte() {
+    User nonAdminFte =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("nonadmin-fte@example.com")
+                .setUserRoles(
+                    new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(false).build())
+                .build());
+    persistResource(domain.asBuilder().addStatusValues(serverSuspensionStatuses).build());
+
+    ConsoleBulkDomainAction action =
+        createAction(
+            "UNSUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "cured")),
+            nonAdminFte);
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspensionStatuses);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_UNSUSPEND);
+    assertThat(history.getDescription()).hasValue("TheRegistrar|example.tld");
+    assertThat(history.getActingUser().getEmailAddress()).isEqualTo("nonadmin-fte@example.com");
+  }
+
+  @Test
+  void testSuccess_suspend_nonAdminSupportLead() {
+    User supportLead =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("support-lead@example.com")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setGlobalRole(GlobalRole.SUPPORT_LEAD)
+                        .setIsAdmin(false)
+                        .build())
+                .build());
+    assertThat(supportLead.getUserRoles().isAdmin()).isFalse();
+
+    ConsoleBulkDomainAction action =
+        createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "policy")),
+            supportLead);
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues())
+        .containsAtLeastElementsIn(serverSuspensionStatuses);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_SUSPEND);
+    assertThat(history.getDescription()).hasValue("TheRegistrar|example.tld");
+    assertThat(history.getActingUser().getEmailAddress()).isEqualTo("support-lead@example.com");
+  }
+
+  @Test
+  void testSuccess_unsuspend_nonAdminSupportLead() {
+    User supportLead =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("support-lead@example.com")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setGlobalRole(GlobalRole.SUPPORT_LEAD)
+                        .setIsAdmin(false)
+                        .build())
+                .build());
+    persistResource(domain.asBuilder().addStatusValues(serverSuspensionStatuses).build());
+
+    ConsoleBulkDomainAction action =
+        createAction(
+            "UNSUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "cured")),
+            supportLead);
+    action.run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspensionStatuses);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_UNSUSPEND);
+    assertThat(history.getDescription()).hasValue("TheRegistrar|example.tld");
+    assertThat(history.getActingUser().getEmailAddress()).isEqualTo("support-lead@example.com");
+  }
+
+  @Test
+  void testSuccess_historyQueryableByRegistrarId() {
+    User supportLead =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("support-lead@example.com")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setGlobalRole(GlobalRole.SUPPORT_LEAD)
+                        .setIsAdmin(false)
+                        .build())
+                .build());
+    createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "policy")),
+            supportLead)
+        .run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+
+    ConsoleApiParams historyParams =
+        ConsoleApiParamsUtils.createFake(AuthResult.createUser(supportLead));
+    when(historyParams.request().getMethod()).thenReturn("GET");
+    FakeResponse historyResponse = (FakeResponse) historyParams.response();
+    new ConsoleHistoryDataAction(
+            historyParams, "support@example.com", 500, "TheRegistrar", Optional.empty())
+        .run();
+
+    assertThat(historyResponse.getStatus()).isEqualTo(SC_OK);
+    assertThat(historyResponse.getPayload()).contains("TheRegistrar|example.tld");
+    assertThat(historyResponse.getPayload()).contains("DOMAIN_SUSPEND");
+  }
+
+  @Test
+  void testFailure_suspend_supportAgentForbidden() {
+    User supportAgent =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("support-agent@example.com")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setGlobalRole(GlobalRole.SUPPORT_AGENT)
+                        .setIsAdmin(false)
+                        .build())
+                .build());
+    JsonElement payload =
+        GSON.toJsonTree(
+            ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "policy"));
+
+    createAction("SUSPEND", payload, supportAgent).run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+
+    createAction("UNSUSPEND", payload, supportAgent).run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  @Test
+  void testFailure_suspend_registrarTechContactForbidden() {
+    User techContact =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("tech@theregistrar.com")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("TheRegistrar", RegistrarRole.TECH_CONTACT))
+                        .build())
+                .build());
+    JsonElement payload =
+        GSON.toJsonTree(
+            ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "policy"));
+
+    createAction("SUSPEND", payload, techContact).run();
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  @Test
+  void testFailure_delete_nonAdminDoesNotRunAsSuperuser() {
+    User supportLead =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("support-lead@example.com")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setGlobalRole(GlobalRole.SUPPORT_LEAD)
+                        .setIsAdmin(false)
+                        .build())
+                .build());
+    assertDeleteDoesNotBypassServerDeleteProhibited(supportLead);
+  }
+
+  @Test
+  void testFailure_delete_adminDoesNotRunAsSuperuser() {
+    // Superuser deletes (which bypass server statuses and can delete immediately) are only
+    // available through the nomulus CLI, not through the bulk domain action, even for admins.
+    assertThat(fteUser.getUserRoles().isAdmin()).isTrue();
+    assertDeleteDoesNotBypassServerDeleteProhibited(fteUser);
+  }
+
+  private void assertDeleteDoesNotBypassServerDeleteProhibited(User user) {
+    Domain lockedDomain =
+        persistResource(
+            domain.asBuilder().addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED).build());
+
+    createAction(
+            "DELETE",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test")),
+            user)
+        .run();
+
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).contains("\"responseCode\":2304");
+    assertThat(loadByEntity(lockedDomain)).isEqualTo(lockedDomain);
+    assertThat(loadSingleton(ConsoleUpdateHistory.class)).isEmpty();
+  }
 
   private ConsoleBulkDomainAction createAction(String action, JsonElement payload) {
     return createAction("TheRegistrar", action, payload, fteUser, 500);

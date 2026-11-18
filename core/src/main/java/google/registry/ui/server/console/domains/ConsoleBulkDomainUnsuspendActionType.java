@@ -22,7 +22,7 @@ import google.registry.model.console.ConsoleUpdateHistory;
 public class ConsoleBulkDomainUnsuspendActionType extends ConsoleDomainActionType {
 
   private static final String DOMAIN_SUSPEND_XML =
-      """
+"""
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <epp
   xmlns="urn:ietf:params:xml:ns:epp-1.0">
@@ -50,7 +50,8 @@ public class ConsoleBulkDomainUnsuspendActionType extends ConsoleDomainActionTyp
     </extension>
     <clTRID>RegistryConsole</clTRID>
   </command>
-</epp>""";
+</epp>\
+""";
 
   public ConsoleBulkDomainUnsuspendActionType(JsonElement jsonElement) {
     super(jsonElement);
@@ -64,6 +65,11 @@ public class ConsoleBulkDomainUnsuspendActionType extends ConsoleDomainActionTyp
   @Override
   public ConsolePermission getNecessaryPermission() {
     return ConsolePermission.SUSPEND_DOMAIN;
+  }
+
+  @Override
+  public boolean runAsSuperuser() {
+    return true;
   }
 
   @Override

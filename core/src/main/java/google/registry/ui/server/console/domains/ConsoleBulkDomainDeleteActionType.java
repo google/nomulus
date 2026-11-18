@@ -22,7 +22,7 @@ import google.registry.model.console.ConsoleUpdateHistory;
 public class ConsoleBulkDomainDeleteActionType extends ConsoleDomainActionType {
 
   private static final String DOMAIN_DELETE_XML =
-      """
+"""
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
@@ -40,7 +40,8 @@ public class ConsoleBulkDomainDeleteActionType extends ConsoleDomainActionType {
     </extension>
     <clTRID>RegistryConsole</clTRID>
   </command>
-</epp>""";
+</epp>\
+""";
 
   public ConsoleBulkDomainDeleteActionType(JsonElement jsonElement) {
     super(jsonElement);
@@ -54,6 +55,11 @@ public class ConsoleBulkDomainDeleteActionType extends ConsoleDomainActionType {
   @Override
   public ConsolePermission getNecessaryPermission() {
     return ConsolePermission.EXECUTE_EPP_COMMANDS;
+  }
+
+  @Override
+  public boolean runAsSuperuser() {
+    return false;
   }
 
   @Override
