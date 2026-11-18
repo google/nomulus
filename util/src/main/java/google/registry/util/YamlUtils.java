@@ -17,7 +17,10 @@ package google.registry.util;
 import com.google.common.flogger.FluentLogger;
 import java.util.Map;
 import java.util.Optional;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * Utility methods for dealing with YAML.
@@ -43,7 +46,8 @@ public final class YamlUtils {
   public static <T> T getConfigSettings(String defaultYaml, String customYaml, Class<T> clazz) {
     try {
       String mergedYaml = mergeYaml(defaultYaml, customYaml);
-      return new Yaml().loadAs(mergedYaml, clazz);
+      // SafeConstructor only builds maps, lists and scalars, so it can't populate clazz.
+      return new Yaml(new Constructor(clazz, new LoaderOptions())).loadAs(mergedYaml, clazz);
     } catch (Exception e) {
       throw new IllegalStateException(
           "Fatal error: Environment configuration YAML file is invalid", e);
@@ -64,7 +68,7 @@ public final class YamlUtils {
    * merged.
    */
   static String mergeYaml(String defaultYaml, String customYaml) {
-    Yaml yaml = new Yaml();
+    Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
     Map<String, Object> yamlMap = loadAsMap(yaml, defaultYaml).get();
     Optional<Map<String, Object>> customMap = loadAsMap(yaml, customYaml);
     if (customMap.isPresent()) {

@@ -49,7 +49,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /** Command to create or update a {@link Tld} using a YAML file. */
 @Parameters(separators = " =", commandDescription = "Create or update TLD using YAML")
@@ -115,7 +117,8 @@ public class ConfigureTldCommand extends MutatingCommand {
               + " running the configure_tld command on Production");
     }
     String name = convertFilePathToName(inputFile);
-    Map<String, Object> tldData = new Yaml().load(Files.newBufferedReader(inputFile));
+    Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
+    Map<String, Object> tldData = yaml.load(Files.newBufferedReader(inputFile));
     checkName(name, tldData);
     Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
 
