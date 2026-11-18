@@ -16,9 +16,11 @@ package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.YamlUtils.mergeYaml;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Joiner;
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.error.YAMLException;
 
 /** Unit tests for {@link YamlUtils}. */
 class YamlUtilsTest {
@@ -58,6 +60,13 @@ class YamlUtilsTest {
     String defaultYaml = join("one: ay", "two: bee", "threeMap:", "  foo: bar", "  baz: gak");
     assertThat(mergeYaml(defaultYaml, "threeMap: {time: money}"))
         .isEqualTo(join("one: ay", "two: bee", "threeMap: {time: money}"));
+  }
+
+  @Test
+  void testFailure_globalTagsAreRejected() {
+    // Global tags would let a YAML document instantiate arbitrary Java classes.
+    String defaultYaml = join("one: !!java.net.URL [\"https://example.com\"]");
+    assertThrows(YAMLException.class, () -> mergeYaml(defaultYaml, ""));
   }
 
   private static String join(CharSequence... strings) {
