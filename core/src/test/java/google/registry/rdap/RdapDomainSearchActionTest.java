@@ -15,6 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.rdap.RdapSearchActionBase.MAX_CURSOR_TOKEN_LENGTH;
 import static google.registry.rdap.RdapTestHelper.parseJsonObject;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -29,12 +30,15 @@ import static google.registry.testing.GsonSubject.assertAboutJson;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.minusYears;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
+import com.google.common.io.BaseEncoding;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -556,6 +560,45 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                 "You must specify either name=XXXX, nsLdhName=YYYY or nsIp=ZZZZ", 400));
     assertThat(response.getStatus()).isEqualTo(400);
     verifyErrorMetrics(SearchType.NONE, Optional.empty(), 400);
+  }
+
+  @Test
+  void testMalformedCursor_rejected() {
+    assertAboutJson()
+        .that(generateActualJson(RequestType.NAME, "cat*", "not-valid-base64!!!"))
+        .isEqualTo(generateExpectedJsonError("Not a valid domain search", SC_BAD_REQUEST));
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    verifyErrorMetrics(SearchType.NONE, Optional.empty(), SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testMalformedCursorQuantum_rejected() {
+    assertAboutJson()
+        .that(generateActualJson(RequestType.NAME, "cat*", "abcde"))
+        .isEqualTo(generateExpectedJsonError("Not a valid domain search", SC_BAD_REQUEST));
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    verifyErrorMetrics(SearchType.NONE, Optional.empty(), SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testOversizedCursor_rejected() {
+    assertAboutJson()
+        .that(generateActualJson(RequestType.NAME, "cat*", "A".repeat(516)))
+        .isEqualTo(generateExpectedJsonError("Not a valid domain search", SC_BAD_REQUEST));
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    verifyErrorMetrics(SearchType.NONE, Optional.empty(), SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testMaxLengthCursor_accepted() {
+    rememberWildcardType("cat*");
+    String maxLengthCursor = BaseEncoding.base64().encode("z".repeat(384).getBytes(UTF_8));
+    assertThat(maxLengthCursor.length()).isEqualTo(MAX_CURSOR_TOKEN_LENGTH);
+    assertAboutJson()
+        .that(generateActualJson(RequestType.NAME, "cat*", maxLengthCursor))
+        .isEqualTo(generateExpectedJsonError("No domains found", SC_NOT_FOUND));
+    assertThat(response.getStatus()).isEqualTo(SC_NOT_FOUND);
+    verifyErrorMetrics(SearchType.BY_DOMAIN_NAME);
   }
 
   @Test

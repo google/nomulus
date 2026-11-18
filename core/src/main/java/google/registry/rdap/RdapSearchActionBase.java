@@ -14,12 +14,14 @@
 
 package google.registry.rdap;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.io.BaseEncoding;
 import google.registry.model.EppResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
@@ -36,7 +38,6 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,6 +50,10 @@ import java.util.Optional;
  *     (RDAP) Query Format</a>
  */
 public abstract class RdapSearchActionBase extends RdapActionBase {
+
+  // Legitimate RDAP cursors encode domain names (<= 253 chars), nameservers, IP addresses, or
+  // handles (~344 Base64 chars max); bound untrusted input above that ceiling before decoding.
+  static final int MAX_CURSOR_TOKEN_LENGTH = 512;
 
   private static final int RESULT_SET_SIZE_SCALING_FACTOR = 30;
 
@@ -86,12 +91,18 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
   protected void decodeCursorToken() {
     cursorString =
         cursorTokenParam.map(
-            cursor -> new String(Base64.getDecoder().decode(cursor.getBytes(UTF_8)), UTF_8));
+            cursor -> {
+              checkArgument(
+                  cursor.length() <= MAX_CURSOR_TOKEN_LENGTH,
+                  "Cursor token exceeds maximum length of %s",
+                  MAX_CURSOR_TOKEN_LENGTH);
+              return new String(BaseEncoding.base64().decode(cursor), UTF_8);
+            });
   }
 
   /** Returns an encoded cursor token to pass back in the RDAP JSON link strings. */
   protected String encodeCursorToken(String nextCursorString) {
-    return new String(Base64.getEncoder().encode(nextCursorString.getBytes(UTF_8)), UTF_8);
+    return BaseEncoding.base64().encode(nextCursorString.getBytes(UTF_8));
   }
 
   /** Returns the original request URL, but with the specified parameter added or overridden. */
