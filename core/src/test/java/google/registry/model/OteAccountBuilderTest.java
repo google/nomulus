@@ -15,6 +15,8 @@
 package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.console.ConsolePermission.CHECK_ONBOARDING_STATUS;
+import static google.registry.model.console.ConsolePermission.EDIT_REGISTRAR_DETAILS;
 import static google.registry.model.console.User.IAP_SECURED_WEB_APP_USER_ROLE;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
@@ -109,8 +111,11 @@ public final class OteAccountBuilderTest {
   public static void verifyUser(String registrarId, String email) {
     Optional<User> maybeUser = loadByKeyIfPresent(VKey.create(User.class, email));
     assertThat(maybeUser).isPresent();
-    assertThat(maybeUser.get().getUserRoles().getRegistrarRoles().get(registrarId))
-        .isEqualTo(RegistrarRole.ACCOUNT_MANAGER);
+    User user = maybeUser.get();
+    assertThat(user.getUserRoles().getRegistrarRoles().get(registrarId))
+        .isEqualTo(RegistrarRole.TECH_CONTACT);
+    assertThat(user.getUserRoles().hasPermission(registrarId, EDIT_REGISTRAR_DETAILS)).isTrue();
+    assertThat(user.getUserRoles().hasPermission(registrarId, CHECK_ONBOARDING_STATUS)).isTrue();
   }
 
   public static void verifyIapPermission(
