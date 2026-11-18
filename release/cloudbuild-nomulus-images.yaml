@@ -18,7 +18,7 @@ steps:
     bash ./release/prepare_release_tree.sh clone-internal \
       "${_INTERNAL_REPO_URL}" "${TAG_NAME}"
     bash ./release/prepare_release_tree.sh merge-internal
-# Pin the Dockerfiles by digest to this release's copies of the base images, as
+# Pin the Dockerfiles by digest to this release's copy of the base image, as
 # cloudbuild-release.yaml does.
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: /bin/bash
@@ -26,12 +26,10 @@ steps:
   - -c
   - |
     set -e
-    jetty_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/jetty" \
-      --format='get(digest)' --filter="tags = ${TAG_NAME}")
-    temurin_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/temurin" \
+    ubuntu_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/ubuntu2404" \
       --format='get(digest)' --filter="tags = ${TAG_NAME}")
     bash ./release/prepare_release_tree.sh pin-base-images "${PROJECT_ID}" \
-      --temurin="@$temurin_digest" --jetty="@$jetty_digest" proxy jetty
+      --ubuntu="@$ubuntu_digest" proxy jetty
 # Download saved Gradle distribution from GCS and install it.
 - name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
   entrypoint: ./release/install_gradle.sh

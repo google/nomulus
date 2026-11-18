@@ -41,8 +41,30 @@ tasks.withType(tasks.shadowJar.class).configureEach {
     dependsOn(tasks.named('copyJettyBase'))
 }
 
+configurations {
+    // The Jetty distribution installed as JETTY_HOME in the nomulus image.
+    jettyHome {
+        transitive = false
+    }
+}
+
 dependencies {
     implementation project(':core')
+    jettyHome "${rootProject.dependencyMap['org.eclipse.jetty:jetty-home']}@tar.gz"
+}
+
+// Unpacks the Jetty distribution into build/jetty-home, dropping the top-level
+// jetty-home-<version>/ directory. Sync removes files left over from a
+// previously staged Jetty version.
+tasks.register('unpackJettyHome', Sync) {
+    from({ tarTree(configurations.jettyHome.singleFile) }) {
+        eachFile { fcd ->
+            fcd.relativePath = new RelativePath(
+                !fcd.directory, fcd.relativePath.segments.drop(1))
+        }
+        includeEmptyDirs = false
+    }
+    into layout.buildDirectory.dir('jetty-home')
 }
 
 tasks.register('copyConsole', Copy) {
@@ -56,6 +78,7 @@ tasks.register('copyConsole', Copy) {
 tasks.register('stage') {
     dependsOn(tasks.named('war'))
     dependsOn(tasks.named('copyConsole'))
+    dependsOn(tasks.named('unpackJettyHome'))
 }
 
 tasks.register('buildNomulusImage', Exec) {
@@ -75,15 +98,10 @@ tasks.register('pushNomulusImage', Exec) {
 }
 
 tasks.register('run', JavaExec) {
-    // We do the check when the task actually runs, not when we define it.
-    // This way if one doesn't set the value, one can still run other tasks.
-    doFirst {
-        def jetty_home = System.getenv('JETTY_HOME')
-        if (jetty_home == null) {
-            throw new GradleException('JETTY_HOME is not set.')
-        }
-    }
-    def jetty_home = System.getenv('JETTY_HOME')
+    // Use the Jetty distribution staged by unpackJettyHome unless JETTY_HOME
+    // is set.
+    def jetty_home = System.getenv('JETTY_HOME') ?:
+        layout.buildDirectory.dir('jetty-home').get().asFile.absolutePath
     def environment = rootProject.environment
     jvmArgs "--sun-misc-unsafe-memory-access=allow", "--enable-native-access=ALL-UNNAMED"
     workingDir(layout.buildDirectory.dir('jetty-base'))

@@ -595,6 +595,11 @@ task fragileTest(type: FilteringTest) {
   // Run every test class in a freshly started process.
   forkEvery = 1
 
+  // Disable Selenium's OpenTelemetry tracing. Otherwise RemoteWebDriver
+  // autoconfigures the OpenTelemetry SDK, and Beam's GCP auth extension on the
+  // test classpath then fails without a configured Google Cloud project ID.
+  systemProperty 'webdriver.remote.enableTracing', 'false'
+
   doFirst {
     new File(screenshotsDir).deleteDir()
   }
