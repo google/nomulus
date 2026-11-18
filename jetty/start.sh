@@ -32,6 +32,10 @@ JVM_OPTS=(
     # application, as it's running in a (single-purposed) container.
     -XX:InitialRAMPercentage=50.0
     -XX:MaxRAMPercentage=50.0
+    # Disable HotSpot's C2 Base64 SIMD intrinsics indefinitely as
+    # defense-in-depth for CVE-2026-114938 (JDK-8393212); Base64 throughput
+    # impact in Nomulus is negligible.
+    -XX:-UseBASE64Intrinsics
     -Dgoogle.registry.environment="${env}"
     -Djava.util.logging.config.file=/logging.properties
     -jar /usr/local/jetty/start.jar
