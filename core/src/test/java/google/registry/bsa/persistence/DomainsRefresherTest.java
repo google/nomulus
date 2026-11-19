@@ -54,6 +54,7 @@ public class DomainsRefresherTest {
   @BeforeEach
   void setup() {
     createTld("tld");
+    tm().transact(() -> tm().put(new BsaTld("tld", fakeClock.now())));
     persistResource(
         Tld.get("tld")
             .asBuilder()

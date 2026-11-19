@@ -55,8 +55,14 @@ public final class Queries {
   }
 
   /** Returns the names of all TLDs ready for BSA processing. */
-  public static ImmutableSet<String> getActivatedBsaTlds() {
-    return tm().loadAllOfStream(BsaTld.class).map(BsaTld::getTld).collect(toImmutableSet());
+  public static ImmutableSet<String> getActivatedBsaTldNames() {
+    return tm().reTransact(
+            () -> tm().loadAllOfStream(BsaTld.class).map(BsaTld::getTld).collect(toImmutableSet()));
+  }
+
+  /** Returns all TLDs ready for BSA processing. */
+  public static ImmutableSet<Tld> getActivatedBsaTlds() {
+    return Tld.get(getActivatedBsaTldNames());
   }
 
   public static ImmutableList<String> batchReadBsaLabelText(

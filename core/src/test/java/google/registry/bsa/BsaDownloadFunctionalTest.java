@@ -32,6 +32,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import google.registry.bsa.BlockListFetcher.LazyBlockList;
 import google.registry.bsa.api.BsaReportSender;
+import google.registry.bsa.persistence.BsaTld;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.Tlds;
@@ -78,6 +79,11 @@ class BsaDownloadFunctionalTest {
   @BeforeEach
   void setup() throws Exception {
     createTlds("app", "dev");
+    tm().transact(
+            () -> {
+              tm().put(new BsaTld("app", fakeClock.now()));
+              tm().put(new BsaTld("dev", fakeClock.now()));
+            });
     Tlds.getTldEntitiesOfType(TldType.REAL)
         .forEach(
             tld ->
@@ -93,7 +99,7 @@ class BsaDownloadFunctionalTest {
             new BsaDiffCreator(gcsClient),
             bsaReportSender,
             gcsClient,
-            () -> new IdnChecker(fakeClock),
+            IdnChecker::new,
             bsaEmailSender,
             new BsaLock(new FakeLockHandler(/* lockSucceeds= */ true), Duration.ofSeconds(30)),
             fakeClock,

@@ -57,7 +57,8 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     assertInStdout("Add 3 enrolled TLD(s) to BsaTld: [app, dev, page]?");
     assertInStdout("Added 3 TLD(s) to BsaTld: [app, dev, page]");
 
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("app", "dev", "page");
+    assertThat(tm().transact(Queries::getActivatedBsaTldNames))
+        .containsExactly("app", "dev", "page");
 
     ImmutableList<BsaTld> persisted = loadAllOf(BsaTld.class);
     assertThat(persisted).hasSize(3);
@@ -77,7 +78,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     assertInStdout("Add 1 enrolled TLD(s) to BsaTld: [dev]?");
     assertInStdout("Added 1 TLD(s) to BsaTld: [dev]");
 
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("app", "dev");
+    assertThat(tm().transact(Queries::getActivatedBsaTldNames)).containsExactly("app", "dev");
 
     ImmutableList<BsaTld> persisted = loadAllOf(BsaTld.class);
     BsaTld appTld = persisted.stream().filter(b -> b.getTld().equals("app")).findFirst().get();
@@ -98,7 +99,8 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     assertInStdout("Add 1 enrolled TLD(s) to BsaTld: [app]?");
     assertInStdout("Added 1 TLD(s) to BsaTld: [app]");
 
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("unEnrolled", "app");
+    assertThat(tm().transact(Queries::getActivatedBsaTldNames))
+        .containsExactly("unEnrolled", "app");
   }
 
   @Test
@@ -109,7 +111,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
 
     assertThat(getStdoutAsString())
         .isEqualTo("Activated TLD(s) that are not enrolled in BSA: [unEnrolled]\n");
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("unEnrolled");
+    assertThat(tm().transact(Queries::getActivatedBsaTldNames)).containsExactly("unEnrolled");
   }
 
   @Test
@@ -120,7 +122,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     runCommand();
 
     assertThat(getStdoutAsString()).isEmpty();
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("app");
+    assertThat(tm().transact(Queries::getActivatedBsaTldNames)).containsExactly("app");
   }
 
   @Test
@@ -136,7 +138,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     runCommand();
 
     assertThat(getStdoutAsString()).isEmpty();
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).isEmpty();
+    assertThat(tm().transact(Queries::getActivatedBsaTldNames)).isEmpty();
   }
 
   @Test
@@ -151,7 +153,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     runCommand();
 
     assertThat(getStdoutAsString()).isEmpty();
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).isEmpty();
+    assertThat(tm().transact(Queries::getActivatedBsaTldNames)).isEmpty();
   }
 
   private static void createEnrolledTld(String tldStr) {

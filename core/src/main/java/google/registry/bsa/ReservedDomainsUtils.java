@@ -17,7 +17,7 @@ package google.registry.bsa;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_JOINER;
-import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
+import static google.registry.bsa.persistence.Queries.getActivatedBsaTlds;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.label.ReservedList.loadReservedLists;
@@ -45,7 +45,7 @@ public final class ReservedDomainsUtils {
   private ReservedDomainsUtils() {}
 
   public static Stream<String> getAllReservedNames(Instant now) {
-    return getEnrolledBsaTlds(now)
+    return getActivatedBsaTlds().stream()
         .map(tld -> getAllReservedDomainsInTld(tld, now))
         .flatMap(ImmutableSet::stream);
   }
