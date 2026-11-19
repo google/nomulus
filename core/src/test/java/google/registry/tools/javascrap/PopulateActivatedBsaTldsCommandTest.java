@@ -24,7 +24,6 @@ import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.bsa.persistence.BsaTld;
-import google.registry.bsa.persistence.Queries;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.tools.CommandTestCase;
@@ -57,7 +56,8 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     assertInStdout("Add 3 enrolled TLD(s) to BsaTld: [app, dev, page]?");
     assertInStdout("Added 3 TLD(s) to BsaTld: [app, dev, page]");
 
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("app", "dev", "page");
+    assertThat(tm().transact(BsaTld::getActivatedBsaTldNames))
+        .containsExactly("app", "dev", "page");
 
     ImmutableList<BsaTld> persisted = loadAllOf(BsaTld.class);
     assertThat(persisted).hasSize(3);
@@ -77,7 +77,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     assertInStdout("Add 1 enrolled TLD(s) to BsaTld: [dev]?");
     assertInStdout("Added 1 TLD(s) to BsaTld: [dev]");
 
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("app", "dev");
+    assertThat(tm().transact(BsaTld::getActivatedBsaTldNames)).containsExactly("app", "dev");
 
     ImmutableList<BsaTld> persisted = loadAllOf(BsaTld.class);
     BsaTld appTld = persisted.stream().filter(b -> b.getTld().equals("app")).findFirst().get();
@@ -98,7 +98,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     assertInStdout("Add 1 enrolled TLD(s) to BsaTld: [app]?");
     assertInStdout("Added 1 TLD(s) to BsaTld: [app]");
 
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("unEnrolled", "app");
+    assertThat(tm().transact(BsaTld::getActivatedBsaTldNames)).containsExactly("unEnrolled", "app");
   }
 
   @Test
@@ -109,7 +109,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
 
     assertThat(getStdoutAsString())
         .isEqualTo("Activated TLD(s) that are not enrolled in BSA: [unEnrolled]\n");
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("unEnrolled");
+    assertThat(tm().transact(BsaTld::getActivatedBsaTldNames)).containsExactly("unEnrolled");
   }
 
   @Test
@@ -120,7 +120,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     runCommand();
 
     assertThat(getStdoutAsString()).isEmpty();
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("app");
+    assertThat(tm().transact(BsaTld::getActivatedBsaTldNames)).containsExactly("app");
   }
 
   @Test
@@ -136,7 +136,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     runCommand();
 
     assertThat(getStdoutAsString()).isEmpty();
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).isEmpty();
+    assertThat(tm().transact(BsaTld::getActivatedBsaTldNames)).isEmpty();
   }
 
   @Test
@@ -151,7 +151,7 @@ class PopulateActivatedBsaTldsCommandTest extends CommandTestCase<PopulateActiva
     runCommand();
 
     assertThat(getStdoutAsString()).isEmpty();
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).isEmpty();
+    assertThat(tm().transact(BsaTld::getActivatedBsaTldNames)).isEmpty();
   }
 
   private static void createEnrolledTld(String tldStr) {

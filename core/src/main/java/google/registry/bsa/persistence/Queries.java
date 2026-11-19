@@ -16,9 +16,9 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_SPLITTER;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
+import static google.registry.bsa.persistence.BsaTld.getActivatedBsaTldNames;
 import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -54,9 +54,9 @@ public final class Queries {
         .filter(tld -> isEnrolledWithBsa(tld, cutoffTime));
   }
 
-  /** Returns the names of all TLDs ready for BSA processing. */
-  public static ImmutableSet<String> getActivatedBsaTlds() {
-    return tm().loadAllOfStream(BsaTld.class).map(BsaTld::getTld).collect(toImmutableSet());
+  /** Returns all TLDs ready for BSA processing. */
+  public static ImmutableSet<Tld> getActivatedBsaTlds() {
+    return Tld.get(getActivatedBsaTldNames());
   }
 
   public static ImmutableList<String> batchReadBsaLabelText(

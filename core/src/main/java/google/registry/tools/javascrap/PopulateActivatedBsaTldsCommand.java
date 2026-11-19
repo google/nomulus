@@ -17,7 +17,7 @@ package google.registry.tools.javascrap;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
-import static google.registry.bsa.persistence.Queries.getActivatedBsaTlds;
+import static google.registry.bsa.persistence.BsaTld.getActivatedBsaTldNames;
 import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.util.Comparator.naturalOrder;
@@ -58,7 +58,7 @@ public class PopulateActivatedBsaTldsCommand extends ConfirmingCommand {
             () -> {
               ImmutableSet<String> enrolledTlds =
                   getEnrolledBsaTlds(clock.now()).map(Tld::getTldStr).collect(toImmutableSet());
-              ImmutableSet<String> activatedTlds = getActivatedBsaTlds();
+              ImmutableSet<String> activatedTlds = getActivatedBsaTldNames();
               activatedNotEnrolled =
                   ImmutableSortedSet.copyOf(
                       naturalOrder(), Sets.difference(activatedTlds, enrolledTlds));
@@ -91,7 +91,7 @@ public class PopulateActivatedBsaTldsCommand extends ConfirmingCommand {
   protected String execute() throws Exception {
     return tm().transact(
             () -> {
-              ImmutableSet<String> currentlyActivated = getActivatedBsaTlds();
+              ImmutableSet<String> currentlyActivated = getActivatedBsaTldNames();
               ImmutableSortedSet<String> toAdd =
                   tldsToAdd.stream()
                       .filter(tld -> !currentlyActivated.contains(tld))

@@ -21,8 +21,8 @@ import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.bsa.BsaTransactions.bsaTransact;
 import static google.registry.bsa.ReservedDomainsUtils.getAllReservedNames;
 import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
+import static google.registry.bsa.persistence.BsaTld.getActivatedBsaTldNames;
 import static google.registry.bsa.persistence.Queries.batchReadUnblockables;
-import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
 import static google.registry.bsa.persistence.Queries.queryBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryNewlyCreatedDomains;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -41,7 +41,6 @@ import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
-import google.registry.model.tld.Tld;
 import google.registry.util.BatchedStreams;
 import java.time.Duration;
 import java.time.Instant;
@@ -248,8 +247,7 @@ public final class DomainsRefresher {
 
   static ImmutableSet<String> getNewlyCreatedUnblockables(
       Instant prevRefreshStartTime, Instant now) {
-    ImmutableSet<String> bsaEnabledTlds =
-        getEnrolledBsaTlds(now).map(Tld::getTldStr).collect(toImmutableSet());
+    ImmutableSet<String> bsaEnabledTlds = getActivatedBsaTldNames();
     ImmutableSet<String> liveDomains =
         queryNewlyCreatedDomains(bsaEnabledTlds, prevRefreshStartTime, now);
     return getBlockedDomainNames(liveDomains);

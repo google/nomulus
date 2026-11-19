@@ -15,6 +15,7 @@
 package google.registry.testing;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.bsa.persistence.BsaTld;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.token.AllocationToken;
@@ -78,6 +79,11 @@ public class TestCacheExtension implements BeforeEachCallback, AfterEachCallback
 
     public Builder withClaimsListCache(Duration expiry) {
       cacheHandlers.add(new TestCacheHandler(ClaimsListDao::setCacheForTest, expiry));
+      return this;
+    }
+
+    public Builder withBsaTldCache(Duration expiry) {
+      cacheHandlers.add(new TestCacheHandler(BsaTld::setCacheForTest, expiry));
       return this;
     }
 

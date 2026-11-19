@@ -15,6 +15,7 @@
 package google.registry.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.tldconfig.idn.IdnTableEnum.AUGMENTED_LATIN;
@@ -23,6 +24,7 @@ import static google.registry.tldconfig.idn.IdnTableEnum.JA;
 import static google.registry.tldconfig.idn.IdnTableEnum.UNCONFUSABLE_LATIN;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.bsa.persistence.BsaTld;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
@@ -53,6 +55,13 @@ public class IdnCheckerTest {
     jandelatin = createTld("jandelatin");
     strictlatin = createTld("strictlatin");
     auglatin = createTld("auglatin");
+    tm().transact(
+            () -> {
+              tm().put(new BsaTld("jaonly", fakeClock.now()));
+              tm().put(new BsaTld("jandelatin", fakeClock.now()));
+              tm().put(new BsaTld("strictlatin", fakeClock.now()));
+              tm().put(new BsaTld("auglatin", fakeClock.now()));
+            });
 
     jaonly =
         persistResource(
@@ -83,7 +92,7 @@ public class IdnCheckerTest {
                 .setIdnTables(ImmutableSet.of(AUGMENTED_LATIN))
                 .build());
     fakeClock.advanceOneMilli();
-    idnChecker = new IdnChecker(fakeClock);
+    idnChecker = new IdnChecker();
   }
 
   @Test
