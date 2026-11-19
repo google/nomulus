@@ -16,14 +16,22 @@ package google.registry.ui.server.console.settings;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
+import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
+import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
@@ -35,10 +43,10 @@ import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.console.ConsoleActionBaseTestCase;
-import google.registry.ui.server.console.ConsoleModule;
+import google.registry.util.EmailMessage;
+import jakarta.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -163,14 +171,450 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getPayload()).isEqualTo(expectedError);
   }
 
+  @Test
+  void testSuccess_setAllowedEppClientCertificateHostnames() throws Exception {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(
+                ImmutableMap.of(
+                    "allowedEppClientCertificateHostnames",
+                    ImmutableList.of("EPP.Example.COM", "epp2.example.com", "epp.example.com"))),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    Registrar r = loadRegistrar(testRegistrar.getRegistrarId());
+    assertThat(r.getAllowedEppClientCertificateHostnames())
+        .containsExactly("epp.example.com", "epp2.example.com");
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getDescription()).hasValue("registrarId|EPP_CERT_HOSTNAMES_CHANGE");
+    verify(consoleApiParams.sendEmailUtils().gmailClient, times(1))
+        .sendEmail(
+            EmailMessage.newBuilder()
+                .setSubject(
+                    "Registrar New Registrar (registrarId) updated in registry unittest"
+                        + " environment")
+                .setBody(
+                    """
+                    The following changes were made in registry unittest environment to the\
+                     registrar registrarId by admin fte@email.tld:
+
+                    allowedEppClientCertificateHostnames:
+                        ADDED: [epp.example.com, epp2.example.com]
+                        FINAL CONTENTS: [epp.example.com, epp2.example.com]
+                    """)
+                .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
+                .build());
+  }
+
+  @Test
+  void testSuccess_unchangedAllowedEppClientCertificateHostnames() throws IOException {
+    persistResource(
+        testRegistrar
+            .asBuilder()
+            .setAllowedEppClientCertificateHostnames(ImmutableList.of("epp.example.com"))
+            .build());
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(
+                ImmutableMap.of(
+                    "allowedEppClientCertificateHostnames", ImmutableList.of("EPP.Example.COM."))),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getDescription()).hasValue("registrarId|");
+    verifyNoInteractions(consoleApiParams.sendEmailUtils().gmailClient);
+  }
+
+  @Test
+  void testSuccess_omittedHostnamesAndRevokedHashes_preservesExisting() throws IOException {
+    persistResource(
+        testRegistrar
+            .asBuilder()
+            .setAllowedEppClientCertificateHostnames(ImmutableList.of("epp.example.com"))
+            .setRevokedClientCertificateHashes(ImmutableList.of(SAMPLE_CERT_HASH))
+            .build());
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(ImmutableMap.of("ipAddressAllowList", ImmutableList.of("192.168.1.1/32"))),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    Registrar r = loadRegistrar(testRegistrar.getRegistrarId());
+    assertThat(r.getAllowedEppClientCertificateHostnames()).containsExactly("epp.example.com");
+    assertThat(r.getRevokedClientCertificateHashes()).containsExactly(SAMPLE_CERT_HASH);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getDescription()).hasValue("registrarId|IP_CHANGE");
+  }
+
+  @Test
+  void testSuccess_nullHostnamesAndRevokedHashes_preservesExisting() throws IOException {
+    persistResource(
+        testRegistrar
+            .asBuilder()
+            .setAllowedEppClientCertificateHostnames(ImmutableList.of("epp.example.com"))
+            .setRevokedClientCertificateHashes(ImmutableList.of(SAMPLE_CERT_HASH))
+            .build());
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            "{\"registrarId\": \"registrarId\","
+                + " \"allowedEppClientCertificateHostnames\": null,"
+                + " \"revokedClientCertificateHashes\": null,"
+                + " \"ipAddressAllowList\": [\"192.168.1.1/32\"]}",
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    Registrar r = loadRegistrar(testRegistrar.getRegistrarId());
+    assertThat(r.getAllowedEppClientCertificateHostnames()).containsExactly("epp.example.com");
+    assertThat(r.getRevokedClientCertificateHashes()).containsExactly(SAMPLE_CERT_HASH);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getDescription()).hasValue("registrarId|IP_CHANGE");
+  }
+
+  @Test
+  void testSuccess_emptyHostnamesAndRevokedHashes_whenAlreadyEmpty() throws IOException {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(
+                ImmutableMap.of(
+                    "allowedEppClientCertificateHostnames",
+                    ImmutableList.of(),
+                    "revokedClientCertificateHashes",
+                    ImmutableList.of(),
+                    "ipAddressAllowList",
+                    ImmutableList.of("192.168.1.1/32"))),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getDescription()).hasValue("registrarId|IP_CHANGE");
+  }
+
+  @Test
+  void testFailure_clearAllowedEppClientCertificateHostnames_whenConfigured() throws IOException {
+    persistResource(
+        testRegistrar
+            .asBuilder()
+            .setAllowedEppClientCertificateHostnames(ImmutableList.of("epp.example.com"))
+            .build());
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(
+                ImmutableMap.of("allowedEppClientCertificateHostnames", ImmutableList.of())),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("Cannot clear allowed EPP client certificate hostnames once configured");
+    assertThat(
+            loadRegistrar(testRegistrar.getRegistrarId()).getAllowedEppClientCertificateHostnames())
+        .containsExactly("epp.example.com");
+  }
+
+  @Test
+  void testFailure_invalidAllowedEppClientCertificateHostname() throws IOException {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(
+                ImmutableMap.of(
+                    "allowedEppClientCertificateHostnames",
+                    ImmutableList.of("epp.example.com", "*.example.com"))),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).contains("*.example.com");
+    assertThat(
+            loadRegistrar(testRegistrar.getRegistrarId()).getAllowedEppClientCertificateHostnames())
+        .isEmpty();
+  }
+
+  @Test
+  void testFailure_tooManyAllowedEppClientCertificateHostnames() throws IOException {
+    ImmutableList.Builder<String> hostnames = new ImmutableList.Builder<>();
+    for (int i = 0; i <= Registrar.MAX_EPP_CLIENT_CERTIFICATE_HOSTNAMES; i++) {
+      hostnames.add(String.format("epp%d.registrar.example", i));
+    }
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(
+                ImmutableMap.of("allowedEppClientCertificateHostnames", hostnames.build())),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("At most 20 EPP client certificate hostnames may be configured, got 21");
+    assertThat(
+            loadRegistrar(testRegistrar.getRegistrarId()).getAllowedEppClientCertificateHostnames())
+        .isEmpty();
+  }
+
+  @Test
+  void testFailure_nullElementInHostnamesJson() throws IOException {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            "{\"registrarId\": \"registrarId\","
+                + " \"allowedEppClientCertificateHostnames\": [\"epp.example.com\", null]}",
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).contains("EPP client certificate hostname cannot be null");
+  }
+
+  @Test
+  void testFailure_nullElementInRevokedHashesJson() throws IOException {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            "{\"registrarId\": \"registrarId\", \"revokedClientCertificateHashes\": [null]}",
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).contains("Revoked client certificate hash cannot be null");
+  }
+
+  @Test
+  void testSuccess_setRevokedClientCertificateHashes() throws Exception {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(
+                ImmutableMap.of(
+                    "revokedClientCertificateHashes",
+                    ImmutableList.of(SAMPLE_CERT3_HASH, SAMPLE_CERT_HASH))),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    Registrar r = loadRegistrar(testRegistrar.getRegistrarId());
+    assertThat(r.getRevokedClientCertificateHashes())
+        .containsExactly(SAMPLE_CERT3_HASH, SAMPLE_CERT_HASH);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getDescription()).hasValue("registrarId|REVOKED_CERTS_CHANGE");
+    verify(consoleApiParams.sendEmailUtils().gmailClient, times(1))
+        .sendEmail(
+            EmailMessage.newBuilder()
+                .setSubject(
+                    "Registrar New Registrar (registrarId) updated in registry unittest"
+                        + " environment")
+                .setBody(
+                    String.format(
+                        """
+                        The following changes were made in registry unittest environment to the\
+                         registrar registrarId by admin fte@email.tld:
+
+                        revokedClientCertificateHashes:
+                            ADDED: [%s, %s]
+                            FINAL CONTENTS: [%s, %s]
+                        """,
+                        SAMPLE_CERT3_HASH, SAMPLE_CERT_HASH, SAMPLE_CERT3_HASH, SAMPLE_CERT_HASH))
+                .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
+                .build());
+  }
+
+  @Test
+  void testSuccess_clearRevokedClientCertificateHashes() throws Exception {
+    persistResource(
+        testRegistrar
+            .asBuilder()
+            .setRevokedClientCertificateHashes(ImmutableList.of(SAMPLE_CERT_HASH))
+            .build());
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(ImmutableMap.of("revokedClientCertificateHashes", ImmutableList.of())),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    Registrar r = loadRegistrar(testRegistrar.getRegistrarId());
+    assertThat(r.getRevokedClientCertificateHashes()).isEmpty();
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getDescription()).hasValue("registrarId|REVOKED_CERTS_CHANGE");
+    verify(consoleApiParams.sendEmailUtils().gmailClient, times(1))
+        .sendEmail(
+            EmailMessage.newBuilder()
+                .setSubject(
+                    "Registrar New Registrar (registrarId) updated in registry unittest"
+                        + " environment")
+                .setBody(
+                    String.format(
+                        """
+                        The following changes were made in registry unittest environment to the\
+                         registrar registrarId by admin fte@email.tld:
+
+                        revokedClientCertificateHashes:
+                            REMOVED: [%s]
+                            FINAL CONTENTS: []
+                        """,
+                        SAMPLE_CERT_HASH))
+                .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
+                .build());
+  }
+
+  @Test
+  void testFailure_invalidRevokedClientCertificateHash() throws IOException {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(
+                ImmutableMap.of(
+                    "revokedClientCertificateHashes", ImmutableList.of("invalid-hash"))),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).contains("Invalid base64 SHA-256 certificate hash");
+    assertThat(loadRegistrar(testRegistrar.getRegistrarId()).getRevokedClientCertificateHashes())
+        .isEmpty();
+  }
+
+  @Test
+  void testSuccess_unchangedRevokedClientCertificateHashes() throws IOException {
+    persistResource(
+        testRegistrar
+            .asBuilder()
+            .setRevokedClientCertificateHashes(ImmutableList.of(SAMPLE_CERT_HASH))
+            .build());
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(
+                ImmutableMap.of(
+                    "revokedClientCertificateHashes",
+                    ImmutableList.of(SAMPLE_CERT_HASH),
+                    "ipAddressAllowList",
+                    ImmutableList.of("192.168.1.1/32"))),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getDescription()).hasValue("registrarId|IP_CHANGE");
+  }
+
+  @Test
+  void testFailure_tooManyRevokedClientCertificateHashes() throws IOException {
+    ImmutableList.Builder<String> hashes = new ImmutableList.Builder<>();
+    for (int i = 0; i <= Registrar.MAX_REVOKED_CLIENT_CERTIFICATE_HASHES; i++) {
+      hashes.add((char) ('A' + i) + SAMPLE_CERT_HASH.substring(1));
+    }
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            securityJson(ImmutableMap.of("revokedClientCertificateHashes", hashes.build())),
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("At most 20 revoked client certificates may be configured, got 21");
+    assertThat(loadRegistrar(testRegistrar.getRegistrarId()).getRevokedClientCertificateHashes())
+        .isEmpty();
+  }
+
+  @Test
+  void testFailure_emptyPayload() throws IOException {
+    SecurityAction action = createAction(testRegistrar.getRegistrarId(), "", lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).contains("'registrar' parameter is not present");
+  }
+
+  @Test
+  void testFailure_nonObjectJsonPayload() throws IOException {
+    SecurityAction action = createAction(testRegistrar.getRegistrarId(), "[]", lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).contains("'registrar' parameter must be a JSON object");
+  }
+
+  @Test
+  void testFailure_nonArrayFieldJson() throws IOException {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            "{\"registrarId\": \"registrarId\","
+                + " \"revokedClientCertificateHashes\": \"not-an-array\"}",
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("'revokedClientCertificateHashes' must be a JSON array");
+  }
+
+  @Test
+  void testFailure_nonStringNumberElementInHostnamesJson() throws IOException {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            "{\"registrarId\": \"registrarId\", \"allowedEppClientCertificateHostnames\": [1.2e3]}",
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("'allowedEppClientCertificateHostnames' elements must be strings");
+  }
+
+  @Test
+  void testFailure_nonStringObjectElementInRevokedHashesJson() throws IOException {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            "{\"registrarId\": \"registrarId\", \"revokedClientCertificateHashes\": [{}]}",
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
+        .contains("'revokedClientCertificateHashes' elements must be strings");
+  }
+
+  @Test
+  void testFailure_malformedFieldType_returnsBadRequest() throws IOException {
+    SecurityAction action =
+        createAction(
+            testRegistrar.getRegistrarId(),
+            "{\"registrarId\": \"registrarId\", \"ipAddressAllowList\": \"not-an-array\"}",
+            lenientChecker());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+  }
+
+  /** Builds the JSON body the console sends: the registrar ID plus the given security fields. */
+  private static String securityJson(ImmutableMap<String, Object> fields) {
+    return GSON.toJson(
+        ImmutableMap.builder().put("registrarId", "registrarId").putAll(fields).build());
+  }
+
+  private CertificateChecker lenientChecker() {
+    clock.setTo(Instant.parse("2020-11-01T00:00:00Z"));
+    return new CertificateChecker(
+        ImmutableSortedMap.of(START_INSTANT, 20825, Instant.parse("2020-09-01T00:00:00Z"), 398),
+        30,
+        15,
+        2048,
+        ImmutableSet.of("secp256r1", "secp384r1"),
+        clock);
+  }
+
   private SecurityAction createAction(
       String registrarId, String jsonBody, CertificateChecker certificateChecker)
       throws IOException {
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    Optional<Registrar> maybeRegistrar =
-        ConsoleModule.provideRegistrar(GSON, RequestModule.provideJsonBody(jsonBody, GSON));
+    when(consoleApiParams.request().getInputStream())
+        .thenReturn(createServletInputStream(jsonBody));
+    byte[] payloadBytes = RequestModule.providePayloadAsBytes(consoleApiParams.request());
+    String payloadString =
+        RequestModule.providePayloadAsString(payloadBytes, consoleApiParams.request());
     return new SecurityAction(
-        consoleApiParams, certificateChecker, registrarAccessor, registrarId, maybeRegistrar);
+        consoleApiParams,
+        certificateChecker,
+        registrarAccessor,
+        registrarId,
+        RequestModule.provideJsonBody(payloadString, GSON));
   }
 
   private SecurityAction createAction(String registrarId, CertificateChecker certificateChecker)

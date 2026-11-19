@@ -46,9 +46,11 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.Tlds;
 import google.registry.testing.DatabaseHelper;
 import google.registry.util.CidrAddressBlock;
+import google.registry.util.DiffUtils;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Arrays;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -801,5 +803,307 @@ class RegistrarTest extends EntityTestCase {
     assertThat(registrar.toJsonMap()).containsEntry("expiryAccessPeriodEnabled", false);
     Registrar modified = registrar.asBuilder().setExpiryAccessPeriodEnabled(true).build();
     assertThat(modified.toJsonMap()).containsEntry("expiryAccessPeriodEnabled", true);
+  }
+
+  @Test
+  void testSuccess_eppClientCertificateHostnames_defaultEmpty() {
+    assertThat(registrar.getAllowedEppClientCertificateHostnames()).isEmpty();
+    assertThat(registrar.toJsonMap())
+        .containsEntry("allowedEppClientCertificateHostnames", ImmutableList.of());
+  }
+
+  @Test
+  void testSuccess_eppClientCertificateHostnames_persistence() {
+    persistResource(
+        registrar
+            .asBuilder()
+            .setAllowedEppClientCertificateHostnames(
+                ImmutableList.of("epp.registrar.example", "epp2.registrar.example"))
+            .build());
+    Registrar loaded = Registrar.loadByRegistrarId("registrar").get();
+    assertThat(loaded.getAllowedEppClientCertificateHostnames())
+        .containsExactly("epp.registrar.example", "epp2.registrar.example");
+    assertThat((Iterable<?>) loaded.toJsonMap().get("allowedEppClientCertificateHostnames"))
+        .containsExactly("epp.registrar.example", "epp2.registrar.example");
+  }
+
+  @Test
+  void testSuccess_eppClientCertificateHostnames_canonicalizedAndDeduplicated() {
+    Registrar modified =
+        registrar
+            .asBuilder()
+            .setAllowedEppClientCertificateHostnames(
+                ImmutableList.of(
+                    "EPP.Example.COM",
+                    "epp.example.com",
+                    "Epp.Example.Com",
+                    "COM.Google.Registrar.",
+                    "b.example",
+                    "epp.みんな"))
+            .build();
+    assertThat(modified.getAllowedEppClientCertificateHostnames())
+        .containsExactly("b.example", "com.google.registrar", "epp.example.com", "epp.xn--q9jyb4c")
+        .inOrder();
+  }
+
+  @Test
+  void testSuccess_eppClientCertificateHostnames_clearing() {
+    registrar =
+        registrar
+            .asBuilder()
+            .setAllowedEppClientCertificateHostnames(ImmutableList.of("epp.registrar.example"))
+            .build();
+    registrar =
+        registrar.asBuilder().setAllowedEppClientCertificateHostnames(ImmutableList.of()).build();
+    assertThat(registrar.getAllowedEppClientCertificateHostnames()).isEmpty();
+    assertThat(registrar.allowedEppClientCertificateHostnames).isNull();
+  }
+
+  @Test
+  void testSuccess_eppClientCertificateHostnames_acceptsIdnALabelAndLongNames() {
+    String longLabel = "a".repeat(63);
+    Registrar modified =
+        registrar
+            .asBuilder()
+            .setAllowedEppClientCertificateHostnames(
+                ImmutableList.of(
+                    "xn--q9jyb4c.registrar.example",
+                    "epp.xn--q9jyb4c",
+                    longLabel + ".example",
+                    "a-b.c-d.example"))
+            .build();
+    assertThat(modified.getAllowedEppClientCertificateHostnames()).hasSize(4);
+  }
+
+  @Test
+  void testFailure_eppClientCertificateHostnames_invalidNames() {
+    ImmutableList<String> invalid =
+        ImmutableList.of(
+            "",
+            "epp",
+            "epp.",
+            "*.registrar.example",
+            "https://epp.registrar.example",
+            "epp.registrar.example:700",
+            "epp.registrar.example/path",
+            "192.0.2.1",
+            "2001:db8::1",
+            "epp_1.registrar.example",
+            "-epp.registrar.example",
+            "epp-.registrar.example",
+            "epp.registrar.ex ample",
+            "a".repeat(64) + ".example",
+            ("a".repeat(63) + ".").repeat(4) + "example");
+    for (String hostname : invalid) {
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              registrar
+                  .asBuilder()
+                  .setAllowedEppClientCertificateHostnames(ImmutableList.of(hostname)));
+    }
+  }
+
+  @Test
+  void testSuccess_eppClientCertificateHostnames_maxBoundary() {
+    ImmutableList.Builder<String> hostnames = new ImmutableList.Builder<>();
+    for (int i = 0; i < Registrar.MAX_EPP_CLIENT_CERTIFICATE_HOSTNAMES; i++) {
+      hostnames.add(String.format("epp%d.registrar.example", i));
+    }
+    Registrar modified =
+        registrar.asBuilder().setAllowedEppClientCertificateHostnames(hostnames.build()).build();
+    assertThat(modified.getAllowedEppClientCertificateHostnames())
+        .hasSize(Registrar.MAX_EPP_CLIENT_CERTIFICATE_HOSTNAMES);
+  }
+
+  @Test
+  void testFailure_eppClientCertificateHostnames_tooMany() {
+    ImmutableList.Builder<String> hostnames = new ImmutableList.Builder<>();
+    for (int i = 0; i <= Registrar.MAX_EPP_CLIENT_CERTIFICATE_HOSTNAMES; i++) {
+      hostnames.add(String.format("epp%d.registrar.example", i));
+    }
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> registrar.asBuilder().setAllowedEppClientCertificateHostnames(hostnames.build()));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("At most 20 EPP client certificate hostnames may be configured, got 21");
+  }
+
+  @Test
+  void testFailure_eppClientCertificateHostnames_null() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> registrar.asBuilder().setAllowedEppClientCertificateHostnames(null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            registrar
+                .asBuilder()
+                .setAllowedEppClientCertificateHostnames(
+                    Arrays.asList("epp.registrar.example", null)));
+  }
+
+  @Test
+  void testSuccess_revokedClientCertificateHashes_defaultEmpty() {
+    assertThat(registrar.getRevokedClientCertificateHashes()).isEmpty();
+    assertThat(registrar.toJsonMap())
+        .containsEntry("revokedClientCertificateHashes", ImmutableList.of());
+  }
+
+  @Test
+  void testSuccess_revokedClientCertificateHashes_persistence() {
+    persistResource(
+        registrar
+            .asBuilder()
+            .setRevokedClientCertificateHashes(
+                ImmutableList.of(SAMPLE_CERT_HASH, SAMPLE_CERT2_HASH))
+            .build());
+    Registrar loaded = Registrar.loadByRegistrarId("registrar").get();
+    assertThat(loaded.getRevokedClientCertificateHashes())
+        .containsExactly(SAMPLE_CERT_HASH, SAMPLE_CERT2_HASH);
+    assertThat((Iterable<?>) loaded.toJsonMap().get("revokedClientCertificateHashes"))
+        .containsExactly(SAMPLE_CERT_HASH, SAMPLE_CERT2_HASH);
+  }
+
+  @Test
+  void testSuccess_revokedClientCertificateHashes_deduplicated() {
+    Registrar modified =
+        registrar
+            .asBuilder()
+            .setRevokedClientCertificateHashes(ImmutableList.of(SAMPLE_CERT_HASH, SAMPLE_CERT_HASH))
+            .build();
+    assertThat(modified.getRevokedClientCertificateHashes()).containsExactly(SAMPLE_CERT_HASH);
+  }
+
+  @Test
+  void testSuccess_revokedClientCertificateHashes_clearing() {
+    registrar =
+        registrar
+            .asBuilder()
+            .setRevokedClientCertificateHashes(ImmutableList.of(SAMPLE_CERT_HASH))
+            .build();
+    registrar = registrar.asBuilder().setRevokedClientCertificateHashes(ImmutableList.of()).build();
+    assertThat(registrar.getRevokedClientCertificateHashes()).isEmpty();
+    assertThat(registrar.revokedClientCertificateHashes).isNull();
+  }
+
+  @Test
+  void testSuccess_revokedClientCertificateHashes_maxBoundary() {
+    ImmutableList.Builder<String> hashes = new ImmutableList.Builder<>();
+    for (int i = 0; i < Registrar.MAX_REVOKED_CLIENT_CERTIFICATE_HASHES; i++) {
+      hashes.add((char) ('A' + i) + SAMPLE_CERT_HASH.substring(1));
+    }
+    Registrar modified =
+        registrar.asBuilder().setRevokedClientCertificateHashes(hashes.build()).build();
+    assertThat(modified.getRevokedClientCertificateHashes())
+        .hasSize(Registrar.MAX_REVOKED_CLIENT_CERTIFICATE_HASHES);
+  }
+
+  @Test
+  void testFailure_revokedClientCertificateHashes_tooMany() {
+    ImmutableList.Builder<String> hashes = new ImmutableList.Builder<>();
+    for (int i = 0; i <= Registrar.MAX_REVOKED_CLIENT_CERTIFICATE_HASHES; i++) {
+      // Vary the first character to produce distinct, well-formed hashes.
+      hashes.add((char) ('A' + i) + SAMPLE_CERT_HASH.substring(1));
+    }
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> registrar.asBuilder().setRevokedClientCertificateHashes(hashes.build()));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("At most 20 revoked client certificates may be configured, got 21");
+  }
+
+  @Test
+  void testFailure_revokedClientCertificateHashes_null() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> registrar.asBuilder().setRevokedClientCertificateHashes(null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            registrar
+                .asBuilder()
+                .setRevokedClientCertificateHashes(Arrays.asList(SAMPLE_CERT_HASH, null)));
+  }
+
+  @Test
+  void testFailure_revokedClientCertificateHashes_invalidFormat() {
+    ImmutableList<String> invalidHashes =
+        ImmutableList.of(
+            "",
+            "not-base64!",
+            "AAAA",
+            SAMPLE_CERT_HASH + "=",
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB",
+            "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99",
+            SAMPLE_CERT);
+    for (String invalidHash : invalidHashes) {
+      IllegalArgumentException thrown =
+          assertThrows(
+              IllegalArgumentException.class,
+              () ->
+                  registrar
+                      .asBuilder()
+                      .setRevokedClientCertificateHashes(ImmutableList.of(invalidHash)));
+      assertThat(thrown).hasMessageThat().contains("Invalid base64 SHA-256 certificate hash");
+    }
+  }
+
+  @Test
+  void testSuccess_eppClientCertificateHostnamesAndRevokedHashes_diffableFieldMap() {
+    assertThat(registrar.toDiffableFieldMap())
+        .containsEntry("allowedEppClientCertificateHostnames", ImmutableSortedSet.of());
+    assertThat(registrar.toDiffableFieldMap())
+        .containsEntry("revokedClientCertificateHashes", ImmutableSortedSet.of());
+    Registrar modified =
+        registrar
+            .asBuilder()
+            .setAllowedEppClientCertificateHostnames(ImmutableList.of("epp.registrar.example"))
+            .setRevokedClientCertificateHashes(ImmutableList.of(SAMPLE_CERT_HASH))
+            .build();
+    String diff =
+        DiffUtils.prettyPrintDiffedMap(
+            DiffUtils.deepDiff(registrar.toDiffableFieldMap(), modified.toDiffableFieldMap(), true),
+            null);
+    assertThat(diff)
+        .contains(
+            """
+            allowedEppClientCertificateHostnames:
+                ADDED: [epp.registrar.example]
+                FINAL CONTENTS: [epp.registrar.example]
+            """);
+    assertThat(diff)
+        .contains(
+            String.format(
+                """
+                revokedClientCertificateHashes:
+                    ADDED: [%s]
+                    FINAL CONTENTS: [%s]
+                """,
+                SAMPLE_CERT_HASH, SAMPLE_CERT_HASH));
+    String reverseDiff =
+        DiffUtils.prettyPrintDiffedMap(
+            DiffUtils.deepDiff(modified.toDiffableFieldMap(), registrar.toDiffableFieldMap(), true),
+            null);
+    assertThat(reverseDiff)
+        .contains(
+            """
+            allowedEppClientCertificateHostnames:
+                REMOVED: [epp.registrar.example]
+                FINAL CONTENTS: []
+            """);
+    assertThat(reverseDiff)
+        .contains(
+            String.format(
+                """
+                revokedClientCertificateHashes:
+                    REMOVED: [%s]
+                    FINAL CONTENTS: []
+                """,
+                SAMPLE_CERT_HASH));
   }
 }

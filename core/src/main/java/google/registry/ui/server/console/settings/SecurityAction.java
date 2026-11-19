@@ -22,6 +22,9 @@ import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.console.ConsolePermission;
@@ -30,6 +33,7 @@ import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
+import google.registry.request.OptionalJsonPayload;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
@@ -50,7 +54,7 @@ public class SecurityAction extends ConsoleApiAction {
   static final String PATH = "/console-api/settings/security";
   private final String registrarId;
   private final AuthenticatedRegistrarAccessor registrarAccessor;
-  private final Optional<Registrar> registrar;
+  private final Optional<JsonElement> payload;
   private final CertificateChecker certificateChecker;
 
   @Inject
@@ -59,18 +63,19 @@ public class SecurityAction extends ConsoleApiAction {
       CertificateChecker certificateChecker,
       AuthenticatedRegistrarAccessor registrarAccessor,
       @Parameter("registrarId") String registrarId,
-      @Parameter("registrar") Optional<Registrar> registrar) {
+      @OptionalJsonPayload Optional<JsonElement> payload) {
     super(consoleApiParams);
     this.registrarId = registrarId;
     this.registrarAccessor = registrarAccessor;
-    this.registrar = registrar;
+    this.payload = payload;
     this.certificateChecker = certificateChecker;
   }
 
   @Override
   protected void postHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS);
-    checkArgument(registrar.isPresent(), "'registrar' parameter is not present");
+    checkArgument(payload.isPresent(), "'registrar' parameter is not present");
+    checkArgument(payload.get().isJsonObject(), "'registrar' parameter must be a JSON object");
 
     Registrar savedRegistrar;
     try {
@@ -84,18 +89,45 @@ public class SecurityAction extends ConsoleApiAction {
   }
 
   private void setResponse(Registrar savedRegistrar) {
-    Registrar registrarParameter = registrar.get();
+    JsonObject jsonObject = payload.get().getAsJsonObject();
     Registrar.Builder updatedRegistrarBuilder = savedRegistrar.asBuilder();
     StringJoiner updates = new StringJoiner(",");
 
-    if (!savedRegistrar
-        .getIpAddressAllowList()
-        .equals(registrarParameter.getIpAddressAllowList())) {
-      updatedRegistrarBuilder.setIpAddressAllowList(registrarParameter.getIpAddressAllowList());
-      updates.add("IP_CHANGE");
-    }
-
+    boolean hasHostnames = isFieldPresent(jsonObject, "allowedEppClientCertificateHostnames");
+    boolean hasRevokedHashes = isFieldPresent(jsonObject, "revokedClientCertificateHashes");
     try {
+      if (hasHostnames) {
+        checkStringArrayElements(
+            jsonObject,
+            "allowedEppClientCertificateHostnames",
+            "EPP client certificate hostname cannot be null");
+      }
+      if (hasRevokedHashes) {
+        checkStringArrayElements(
+            jsonObject,
+            "revokedClientCertificateHashes",
+            "Revoked client certificate hash cannot be null");
+      }
+      Registrar registrarParameter = consoleApiParams.gson().fromJson(jsonObject, Registrar.class);
+
+      if (!savedRegistrar
+          .getIpAddressAllowList()
+          .equals(registrarParameter.getIpAddressAllowList())) {
+        updatedRegistrarBuilder.setIpAddressAllowList(registrarParameter.getIpAddressAllowList());
+        updates.add("IP_CHANGE");
+      }
+      if (hasHostnames) {
+        checkArgument(
+            !registrarParameter.getAllowedEppClientCertificateHostnames().isEmpty()
+                || savedRegistrar.getAllowedEppClientCertificateHostnames().isEmpty(),
+            "Cannot clear allowed EPP client certificate hostnames once configured");
+        updatedRegistrarBuilder.setAllowedEppClientCertificateHostnames(
+            registrarParameter.getAllowedEppClientCertificateHostnames());
+      }
+      if (hasRevokedHashes) {
+        updatedRegistrarBuilder.setRevokedClientCertificateHashes(
+            registrarParameter.getRevokedClientCertificateHashes());
+      }
       if (!savedRegistrar
           .getClientCertificate()
           .equals(registrarParameter.getClientCertificate())) {
@@ -116,12 +148,22 @@ public class SecurityAction extends ConsoleApiAction {
           updates.add("FAILOVER_SSL_CERT_CHANGE");
         }
       }
-    } catch (InsecureCertificateException e) {
+    } catch (InsecureCertificateException | IllegalArgumentException | JsonSyntaxException e) {
       setFailedResponse(e.getMessage(), SC_BAD_REQUEST);
       return;
     }
 
     Registrar updatedRegistrar = updatedRegistrarBuilder.build();
+    if (!savedRegistrar
+        .getAllowedEppClientCertificateHostnames()
+        .equals(updatedRegistrar.getAllowedEppClientCertificateHostnames())) {
+      updates.add("EPP_CERT_HOSTNAMES_CHANGE");
+    }
+    if (!savedRegistrar
+        .getRevokedClientCertificateHashes()
+        .equals(updatedRegistrar.getRevokedClientCertificateHashes())) {
+      updates.add("REVOKED_CERTS_CHANGE");
+    }
     tm().put(updatedRegistrar);
     finishAndPersistConsoleUpdateHistory(
         new ConsoleUpdateHistory.Builder()
@@ -133,5 +175,22 @@ public class SecurityAction extends ConsoleApiAction {
     sendExternalUpdatesIfNecessary(
         EmailInfo.create(savedRegistrar, updatedRegistrar, ImmutableSet.of(), ImmutableSet.of()));
     consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  private static boolean isFieldPresent(JsonObject jsonObject, String fieldName) {
+    return jsonObject.has(fieldName) && !jsonObject.get(fieldName).isJsonNull();
+  }
+
+  private static void checkStringArrayElements(
+      JsonObject jsonObject, String fieldName, String nullElementErrorMessage) {
+    JsonElement field = jsonObject.get(fieldName);
+    checkArgument(field.isJsonArray(), "'%s' must be a JSON array", fieldName);
+    for (JsonElement element : field.getAsJsonArray()) {
+      checkArgument(!element.isJsonNull(), nullElementErrorMessage);
+      checkArgument(
+          element.isJsonPrimitive() && element.getAsJsonPrimitive().isString(),
+          "'%s' elements must be strings",
+          fieldName);
+    }
   }
 }
