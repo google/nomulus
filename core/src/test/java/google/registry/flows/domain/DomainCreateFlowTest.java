@@ -2138,6 +2138,44 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
+  void testFailure_blockedByBsa_registerBsaTokenAlreadyRedeemedInDatabaseWithStaleCache()
+      throws Exception {
+    AllocationToken.setCacheForTest(Optional.of(Duration.ofMinutes(10)));
+    try {
+      enrollTldInBsa();
+      AllocationToken token =
+          persistResource(
+              new AllocationToken.Builder()
+                  .setToken("abc123")
+                  .setTokenType(REGISTER_BSA)
+                  .setDomainName("example.tld")
+                  .build());
+      persistBsaLabel("example");
+      persistHosts();
+      setEppInput(
+          "domain_create_allocationtoken.xml",
+          ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+      runFlow();
+      assertSuccessfulCreate("tld", ImmutableSet.of(), token);
+      assertAllocationTokenWasRedeemed("abc123");
+      // Cache still holds the unredeemed REGISTER_BSA token within its 10-minute TTL.
+      assertThat(AllocationToken.get(token.createVKey()).get().isRedeemed()).isFalse();
+
+      // Delete the created domain so a second registration of example.tld can be attempted.
+      Instant deletionTime = Instant.parse("1999-04-03T22:01:00.000Z");
+      persistResource(
+          reloadResourceByForeignKey().asBuilder().setDeletionTime(deletionTime).build());
+      clock.setTo(deletionTime.plusSeconds(1));
+
+      EppException thrown =
+          assertThrows(AlreadyRedeemedAllocationTokenException.class, this::runFlow);
+      assertAboutEppExceptions().that(thrown).marshalsToXml();
+    } finally {
+      AllocationToken.setCacheForTest(Optional.empty());
+    }
+  }
+
+  @Test
   void testSuccess_blockedByBsa_reservedDomain_viaAllocationTokenExtension() throws Exception {
     enrollTldInBsa();
     allocationToken =

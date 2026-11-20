@@ -280,7 +280,7 @@ public class AllocationTokenFlowUtils {
     VKey<AllocationToken> tokenKey = VKey.create(AllocationToken.class, token);
     AllocationToken tokenEntity =
         AllocationToken.get(tokenKey).orElseThrow(NonexistentAllocationTokenException::new);
-    if (tokenEntity.getTokenType().equals(AllocationToken.TokenType.SINGLE_USE)) {
+    if (tokenEntity.getTokenType().isOneTimeUse()) {
       // Reload the token to avoid possible cache race conditions where the token may have already
       // been redeemed
       tokenEntity = tm().loadByKey(tokenKey);

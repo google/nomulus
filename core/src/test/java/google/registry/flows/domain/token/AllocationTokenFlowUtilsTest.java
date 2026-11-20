@@ -20,6 +20,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.END
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -303,6 +304,29 @@ class AllocationTokenFlowUtilsTest {
                             .setRedemptionHistoryId(new HistoryEntryId("repoId", 1L))
                             .build()));
     // cache still returns the old un-redeemed token
+    assertThat(AllocationToken.get(token.createVKey()).get().isRedeemed()).isFalse();
+    assertLoadTokenFromExtensionThrowsException(AlreadyRedeemedAllocationTokenException.class);
+  }
+
+  @Test
+  void testFailure_loadFromExtension_registerBsaTokenStaleCacheReloadsFromDatabase() {
+    when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("tokeN")
+                .setTokenType(REGISTER_BSA)
+                .setDomainName("example.tld")
+                .build());
+    assertThat(AllocationToken.get(token.createVKey())).hasValue(token);
+    tm().transact(
+            () ->
+                tm().put(
+                        token
+                            .asBuilder()
+                            .setRedemptionHistoryId(new HistoryEntryId("repoId", 1L))
+                            .build()));
+    // Cache still returns the old unredeemed REGISTER_BSA token.
     assertThat(AllocationToken.get(token.createVKey()).get().isRedeemed()).isFalse();
     assertLoadTokenFromExtensionThrowsException(AlreadyRedeemedAllocationTokenException.class);
   }
