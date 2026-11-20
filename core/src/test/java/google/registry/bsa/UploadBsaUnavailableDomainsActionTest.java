@@ -15,6 +15,7 @@
 package google.registry.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
@@ -39,6 +40,7 @@ import com.google.common.net.HostAndPort;
 import com.google.common.testing.TestLogHandler;
 import com.google.gson.Gson;
 import google.registry.bsa.api.BsaCredential;
+import google.registry.bsa.persistence.BsaTld;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
@@ -108,6 +110,7 @@ public class UploadBsaUnavailableDomainsActionTest {
             "flagrant,NAME_COLLISION",
             "jimmy,RESERVED_FOR_SPECIFIC_USE");
     createTld("tld");
+    tm().transact(() -> tm().put(new BsaTld("tld", clock.now())));
     persistResource(
         Tld.get("tld")
             .asBuilder()

@@ -22,6 +22,8 @@ import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.bsa.persistence.Queries.batchReadBsaLabelText;
 import static google.registry.bsa.persistence.Queries.batchReadUnblockableDomains;
 import static google.registry.bsa.persistence.Queries.deleteBsaLabelByLabels;
+import static google.registry.bsa.persistence.Queries.getActivatedBsaTldNames;
+import static google.registry.bsa.persistence.Queries.getActivatedBsaTlds;
 import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
 import static google.registry.bsa.persistence.Queries.queryBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaUnblockableDomainByLabels;
@@ -85,18 +87,34 @@ class QueriesTest {
   }
 
   @Test
-  void getActivatedBsaTlds_noActivatedBsa() {
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).isEmpty();
+  void getActivatedBsaTldNames_noActivatedBsa() {
+    assertThat(getActivatedBsaTldNames()).isEmpty();
   }
 
   @Test
-  void getActivatedBsaTlds_hasActivatedBsa() {
+  void getActivatedBsaTldNames_hasActivatedBsa() {
     tm().transact(
             () -> {
               tm().put(new BsaTld("tld1", fakeClock.now()));
               tm().put(new BsaTld("tld2", fakeClock.now()));
             });
-    assertThat(tm().transact(Queries::getActivatedBsaTlds)).containsExactly("tld1", "tld2");
+    assertThat(getActivatedBsaTldNames()).containsExactly("tld1", "tld2");
+  }
+
+  @Test
+  void getActivatedBsaTlds_noActivatedBsa() {
+    assertThat(getActivatedBsaTlds()).isEmpty();
+  }
+
+  @Test
+  void getActivatedBsaTlds_hasActivatedBsa() {
+    createTlds("tld1", "tld2");
+    tm().transact(
+            () -> {
+              tm().put(new BsaTld("tld1", fakeClock.now()));
+              tm().put(new BsaTld("tld2", fakeClock.now()));
+            });
+    assertThat(getActivatedBsaTlds()).containsExactly(Tld.get("tld1"), Tld.get("tld2"));
   }
 
   @Test

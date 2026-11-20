@@ -22,6 +22,7 @@ import static google.registry.bsa.ReservedDomainsTestingUtils.createReservedList
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistDownloadSchedule;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistUnblockableDomain;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -45,6 +46,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.bsa.persistence.BsaTestingUtils;
+import google.registry.bsa.persistence.BsaTld;
 import google.registry.gcs.GcsUtils;
 import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
@@ -111,6 +113,7 @@ public class BsaValidateActionTest {
             fakeClock,
             response);
     createTld("app");
+    tm().transact(() -> tm().put(new BsaTld("app", fakeClock.now())));
   }
 
   static void createBlockList(GcsClient gcsClient, BlockListType blockListType, String content)
@@ -279,6 +282,7 @@ public class BsaValidateActionTest {
         createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistResource(
         createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
+    tm().transact(() -> tm().put(new BsaTld("dev", fakeClock.now())));
     persistBsaLabel("registered-reserved");
     persistBsaLabel("reserved-only");
     persistBsaLabel("reserved-missing");
@@ -305,6 +309,7 @@ public class BsaValidateActionTest {
         createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
     persistResource(
         createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build());
+    tm().transact(() -> tm().put(new BsaTld("dev", fakeClock.now())));
     persistBsaLabel("reserved-missing-in-app");
     persistUnblockableDomain(
         UnblockableDomain.of("reserved-missing-in-app", "dev", Reason.REGISTERED));
