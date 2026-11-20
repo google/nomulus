@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.batch.DomainWatcherAction;
 import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.export.ExportDropListAction;
@@ -913,6 +914,13 @@ public final class RegistryConfig {
     public static InternetAddress provideNewAlertRecipientEmailAddress(
         RegistryConfigSettings config) {
       return parseEmailAddress(config.misc.newAlertRecipientEmailAddress);
+    }
+
+    /** Returns the set of TLDs watched by {@link DomainWatcherAction}. */
+    @Provides
+    @Config("domainWatcherTlds")
+    public static ImmutableSet<String> provideDomainWatcherTlds(RegistryConfigSettings config) {
+      return ImmutableSet.copyOf(config.misc.domainWatcherTlds);
     }
 
     /**
