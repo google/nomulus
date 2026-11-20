@@ -252,6 +252,83 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
+  void testFailure_adminDeleteDomainOwnedByDifferentRegistrar() {
+    ConsoleBulkDomainAction action =
+        createAction(
+            "NewRegistrar",
+            "DELETE",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Domain example.tld is not owned by registrar NewRegistrar",\
+            "responseCode":2201}}\
+            """);
+    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(domain.getDeletionTime());
+    assertThat(loadSingleton(ConsoleUpdateHistory.class)).isEmpty();
+  }
+
+  @Test
+  void testFailure_adminSuspendDomainOwnedByDifferentRegistrar() {
+    ConsoleBulkDomainAction action =
+        createAction(
+            "NewRegistrar",
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Domain example.tld is not owned by registrar NewRegistrar",\
+            "responseCode":2201}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspensionStatuses);
+    assertThat(loadSingleton(ConsoleUpdateHistory.class)).isEmpty();
+  }
+
+  @Test
+  void testHalfSuccess_halfWrongRegistrar() {
+    Domain otherDomain =
+        persistResource(
+            persistDomainWithDependentResources(
+                    "other",
+                    "tld",
+                    clock.now(),
+                    minusMonths(clock.now(), 1),
+                    plusMonths(clock.now(), 11))
+                .asBuilder()
+                .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
+                .build());
+    ConsoleBulkDomainAction action =
+        createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of(
+                    "domainList", ImmutableList.of("example.tld", "other.tld"), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000},\
+            "other.tld":{"message":"Domain other.tld is not owned by registrar TheRegistrar",\
+            "responseCode":2201}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues())
+        .containsAtLeastElementsIn(serverSuspensionStatuses);
+    assertThat(loadByEntity(otherDomain).getStatusValues())
+        .containsNoneIn(serverSuspensionStatuses);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_SUSPEND);
+    assertThat(history.getDescription()).hasValue("example.tld");
+  }
+
+  @Test
   void testFailure_nonexistentRegistrar() {
     JsonElement payload =
         GSON.toJsonTree(
