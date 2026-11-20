@@ -16,8 +16,10 @@ package google.registry.config;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.config.RegistryConfig.CONFIG_SETTINGS;
+import static google.registry.config.RegistryConfig.ConfigModule.provideDomainWatcherTlds;
 import static google.registry.config.RegistryConfig.ConfigModule.provideReservedTermsExportDisclaimer;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RegistryConfig}. */
@@ -27,5 +29,27 @@ class RegistryConfigTest {
   void test_reservedTermsExportDisclaimer_isPrependedWithOctothorpes() {
     assertThat(provideReservedTermsExportDisclaimer(CONFIG_SETTINGS.get()))
         .isEqualTo("# Disclaimer line 1.\n" + "# Line 2 is this 1.");
+  }
+
+  @Test
+  void test_domainWatcherTlds_defaultEmpty() {
+    assertThat(provideDomainWatcherTlds(CONFIG_SETTINGS.get())).isEmpty();
+  }
+
+  @Test
+  void test_domainWatcherTlds_nullSafe() {
+    RegistryConfigSettings settings = new RegistryConfigSettings();
+    settings.misc = new RegistryConfigSettings.Misc();
+    settings.misc.domainWatcherTlds = null;
+    assertThat(provideDomainWatcherTlds(settings)).isEmpty();
+  }
+
+  @Test
+  void test_domainWatcherTlds_normalizesCaseLeadingDotAndPunycode() {
+    RegistryConfigSettings settings = new RegistryConfigSettings();
+    settings.misc = new RegistryConfigSettings.Misc();
+    settings.misc.domainWatcherTlds = ImmutableList.of("Google", ".YouTube", "みんな");
+    assertThat(provideDomainWatcherTlds(settings))
+        .containsExactly("google", "youtube", "xn--q9jyb4c");
   }
 }
