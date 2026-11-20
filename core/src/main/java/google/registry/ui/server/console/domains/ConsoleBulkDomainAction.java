@@ -28,8 +28,10 @@ import google.registry.flows.EppController;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.flows.StatelessRequestSessionMetadata;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.eppoutput.Result;
@@ -42,6 +44,7 @@ import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Console endpoint to perform the same action to a list of domains.
@@ -102,14 +105,34 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
 
     checkPermission(user, registrarId, actionType.getNecessaryPermission());
 
+    // Admin requests execute EPP with isSuperuser=true, which bypasses EPP's own
+    // verifyResourceOwnership check. Load active domains up front so we always enforce that
+    // each target domain is sponsored by the request's registrarId.
+    ImmutableMap<String, Domain> activeDomains =
+        tm().transact(
+                () ->
+                    ForeignKeyUtils.loadResources(
+                        Domain.class, domainList.domainList, tm().getTxTime()));
+
     ImmutableMap<String, ConsoleEppOutput> result =
         domainList.domainList.stream()
             .collect(
-                toImmutableMap(d -> d, d -> executeEpp(actionType.getXmlContentsToRun(d), user)));
+                toImmutableMap(
+                    d -> d, d -> executeIfOwned(d, activeDomains.get(d), actionType, user)));
     handleHistoryAdditions(result, actionType);
     // Front end should parse situations where only some commands worked
     consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(result));
     consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  private ConsoleEppOutput executeIfOwned(
+      String domainName, @Nullable Domain domain, ConsoleDomainActionType actionType, User user) {
+    if (domain != null && !domain.getCurrentSponsorRegistrarId().equals(registrarId)) {
+      return new ConsoleEppOutput(
+          String.format("Domain %s is not owned by registrar %s", domainName, registrarId),
+          Result.Code.AUTHORIZATION_ERROR.code);
+    }
+    return executeEpp(actionType.getXmlContentsToRun(domainName), user);
   }
 
   private void handleHistoryAdditions(
