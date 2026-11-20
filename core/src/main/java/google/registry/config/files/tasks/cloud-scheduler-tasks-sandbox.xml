@@ -91,6 +91,15 @@
   </task>
 
   <task>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/domainWatcher&runInEmpty]]></url>
+    <name>domainWatcher</name>
+    <description>
+      Sends daily email notifications for domains created or deleted on configured watched TLDs.
+    </description>
+    <schedule>0 12 * * *</schedule>
+  </task>
+
+  <task>
     <url><![CDATA[/_dr/task/expandBillingRecurrences?advanceCursor]]></url>
     <name>expandBillingRecurrences</name>
     <description>

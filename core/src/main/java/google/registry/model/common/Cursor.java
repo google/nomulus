@@ -106,7 +106,10 @@ public class Cursor extends UpdateAutoTimestampEntity {
     REMOTE_CACHE_DOMAIN_SYNC(false),
 
     /** Cursor for tracking the reflection of host changes in the remote cache. */
-    REMOTE_CACHE_HOST_SYNC(false);
+    REMOTE_CACHE_HOST_SYNC(false),
+
+    /** Cursor for tracking the last run time of the domain watcher notification job. */
+    DOMAIN_WATCHER(false);
 
     private final boolean scoped;
 
