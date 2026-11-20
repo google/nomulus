@@ -125,13 +125,8 @@ public class ConsoleOteAction extends ConsoleApiAction {
   @Override
   protected void getHandler(User user) {
     checkArgument(!Strings.isNullOrEmpty(registrarId), "Missing registrarId parameter");
+    checkPermission(user, registrarId, ConsolePermission.CHECK_ONBOARDING_STATUS);
 
-    if (!user.getUserRoles().hasGlobalPermission(ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
-      setFailedResponse("User doesn't have a permission to check OT&E status", SC_BAD_REQUEST);
-      return;
-    }
-
-    String baseRegistrarId = OteAccountBuilder.getBaseRegistrarId(registrarId);
     tm().transact(
             () -> {
               Optional<Registrar> registrar = Registrar.loadByRegistrarId(registrarId);
@@ -147,6 +142,7 @@ public class ConsoleOteAction extends ConsoleApiAction {
                     SC_BAD_REQUEST);
                 return;
               }
+              String baseRegistrarId = OteAccountBuilder.getBaseRegistrarId(registrarId);
               OteStats oteStats = OteStats.getFromRegistrar(baseRegistrarId);
               var stats =
                   StatType.REQUIRED_STAT_TYPES.stream()
