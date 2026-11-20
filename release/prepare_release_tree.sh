@@ -27,11 +27,10 @@
 #     Clones the internal repository at <tag> into nomulus-internal/.
 #   prepare_release_tree.sh merge-internal
 #     Copies nomulus-internal/ over the tree, then deletes it and .git/.
-#   prepare_release_tree.sh pin-base-images <project_id> [--temurin=@<digest>]
-#       [--jetty=@<digest>] <component>...
+#   prepare_release_tree.sh pin-base-images <project_id> --ubuntu=@<digest>
+#       <component>...
 #     Pins <component>/Dockerfile (core, jetty or proxy) to the release's copy
-#     of its base image: gcr.io/<project_id>/temurin@<digest> for core and
-#     proxy, gcr.io/<project_id>/jetty@<digest> for jetty. A <digest> is
+#     of its base image: gcr.io/<project_id>/ubuntu2404@<digest>. A <digest> is
 #     sha256: and 64 lowercase hex digits. Checks every component before it
 #     edits any Dockerfile, and logs each pin.
 #   prepare_release_tree.sh set-proxy-project <project_id>
@@ -39,17 +38,16 @@
 
 set -e
 
-# The base images that the Dockerfiles name. Keep them in sync with the
+# The base image that the Dockerfiles name. Keep it in sync with the
 # Dockerfiles.
-readonly TEMURIN_BASE_IMAGE='eclipse-temurin:25'
-readonly JETTY_BASE_IMAGE='jetty:12-jdk25'
+readonly UBUNTU_BASE_IMAGE='launcher.gcr.io/google/ubuntu2404'
 
 usage() {
   cat >&2 <<EOF
 Usage:
   $0 clone-internal <repo_url> <tag>
   $0 merge-internal
-  $0 pin-base-images <project_id> [--temurin=@<digest>] [--jetty=@<digest>] <component>...
+  $0 pin-base-images <project_id> --ubuntu=@<digest> <component>...
   $0 set-proxy-project <project_id>
 EOF
   exit 1
@@ -78,13 +76,12 @@ merge_internal() {
 
 pin_base_images() {
   (( $# >= 2 )) || usage
-  local project_id="$1" temurin_ref='' jetty_ref='' arg
+  local project_id="$1" ubuntu_ref='' arg
   local -a components=()
   shift
   for arg in "$@"; do
     case "${arg}" in
-      --temurin=*) temurin_ref="${arg#--temurin=}" ;;
-      --jetty=*) jetty_ref="${arg#--jetty=}" ;;
+      --ubuntu=*) ubuntu_ref="${arg#--ubuntu=}" ;;
       -*) usage ;;
       *) components+=("${arg}") ;;
     esac
@@ -95,13 +92,17 @@ pin_base_images() {
   local -a dockerfiles=() base_images=() pinned_images=()
   for component in "${components[@]}"; do
     case "${component}" in
-      core|proxy) base_image="${TEMURIN_BASE_IMAGE}"; copy=temurin; ref="${temurin_ref}" ;;
-      jetty) base_image="${JETTY_BASE_IMAGE}"; copy=jetty; ref="${jetty_ref}" ;;
+      core|jetty|proxy)
+        base_image="${UBUNTU_BASE_IMAGE}"
+        copy=ubuntu2404
+        ref="${ubuntu_ref}"
+        ;;
       *) echo "Unknown component: ${component}" >&2; exit 1 ;;
     esac
     # A lookup that finds no image with the release's tag leaves just the @.
     if [[ ! "${ref}" =~ ^@sha256:[0-9a-f]{64}$ ]]; then
-      echo "${component} needs --${copy}=@sha256:<64 hex digits>, not '${ref}'." >&2
+      echo "${component} needs --ubuntu=@sha256:<64 hex digits>," \
+        "not '${ref}'." >&2
       exit 1
     fi
     # Fail rather than leave the Dockerfile on the public base image.
