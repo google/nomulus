@@ -19,10 +19,13 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
+import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.minusMonths;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static google.registry.util.DateTimeUtils.plusMonths;
+import static google.registry.util.DateTimeUtils.plusYears;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -47,6 +50,7 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.console.ConsoleActionBaseTestCase;
 import google.registry.ui.server.console.ConsoleApiParams;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -249,6 +253,187 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     ConsoleBulkDomainAction action = createAction("DELETE", payload);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  @Test
+  void testFailure_adminDeleteDomainOwnedByDifferentRegistrar() {
+    ConsoleBulkDomainAction action =
+        createAction(
+            "NewRegistrar",
+            "DELETE",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Domain example.tld is not owned by registrar NewRegistrar",\
+            "responseCode":2201}}\
+            """);
+    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(domain.getDeletionTime());
+    assertThat(loadSingleton(ConsoleUpdateHistory.class)).isEmpty();
+  }
+
+  @Test
+  void testFailure_adminSuspendDomainOwnedByDifferentRegistrar() {
+    ConsoleBulkDomainAction action =
+        createAction(
+            "NewRegistrar",
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Domain example.tld is not owned by registrar NewRegistrar",\
+            "responseCode":2201}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspensionStatuses);
+    assertThat(loadSingleton(ConsoleUpdateHistory.class)).isEmpty();
+  }
+
+  @Test
+  void testHalfSuccess_halfWrongRegistrar() {
+    Domain otherDomain =
+        persistResource(
+            persistDomainWithDependentResources(
+                    "other",
+                    "tld",
+                    clock.now(),
+                    minusMonths(clock.now(), 1),
+                    plusMonths(clock.now(), 11))
+                .asBuilder()
+                .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
+                .build());
+    ConsoleBulkDomainAction action =
+        createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of(
+                    "domainList", ImmutableList.of("example.tld", "other.tld"), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000},\
+            "other.tld":{"message":"Domain other.tld is not owned by registrar TheRegistrar",\
+            "responseCode":2201}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues())
+        .containsAtLeastElementsIn(serverSuspensionStatuses);
+    assertThat(loadByEntity(otherDomain).getStatusValues())
+        .containsNoneIn(serverSuspensionStatuses);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_SUSPEND);
+    assertThat(history.getDescription()).hasValue("example.tld");
+  }
+
+  @Test
+  void testSuccess_duplicateDomainsDeduplicated() {
+    ConsoleBulkDomainAction action =
+        createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of(
+                    "domainList",
+                    ImmutableList.of("example.tld", "example.tld"),
+                    "reason",
+                    "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues())
+        .containsAtLeastElementsIn(serverSuspensionStatuses);
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_SUSPEND);
+    assertThat(history.getDescription()).hasValue("example.tld");
+  }
+
+  @Test
+  void testFailure_nullDomainInList() {
+    ConsoleBulkDomainAction action =
+        createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of(
+                    "domainList", Arrays.asList("example.tld", null), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).isEqualTo("Domain list cannot contain null entries");
+    assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspensionStatuses);
+    assertThat(loadSingleton(ConsoleUpdateHistory.class)).isEmpty();
+  }
+
+  @Test
+  void testFailure_suspendNonexistentDomain() {
+    ConsoleBulkDomainAction action =
+        createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of(
+                    "domainList", ImmutableList.of("nonexistent.tld"), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"nonexistent.tld":{"message":\
+            "The domain with given ID (nonexistent.tld) doesn\\u0027t exist.",\
+            "responseCode":2303}}\
+            """);
+    assertThat(loadSingleton(ConsoleUpdateHistory.class)).isEmpty();
+  }
+
+  @Test
+  void testFailure_deletedDomain() {
+    persistResource(domain.asBuilder().setDeletionTime(minusDays(clock.now(), 1)).build());
+    ConsoleBulkDomainAction action =
+        createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":\
+            "The domain with given ID (example.tld) doesn\\u0027t exist.",\
+            "responseCode":2303}}\
+            """);
+    assertThat(loadSingleton(ConsoleUpdateHistory.class)).isEmpty();
+  }
+
+  @Test
+  void testFailure_adminSuspendDomainWithExpiredPendingTransferToDifferentRegistrar() {
+    persistDomainWithPendingTransfer(
+        domain,
+        minusDays(clock.now(), 6),
+        minusDays(clock.now(), 1),
+        plusYears(domain.getRegistrationExpirationTime(), 1));
+    ConsoleBulkDomainAction action =
+        createAction(
+            "SUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Domain example.tld is not owned by registrar TheRegistrar",\
+            "responseCode":2201}}\
+            """);
+    assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspensionStatuses);
+    assertThat(loadSingleton(ConsoleUpdateHistory.class)).isEmpty();
   }
 
   @Test
