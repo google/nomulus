@@ -14,6 +14,7 @@
 
 import {
   Component,
+  OnDestroy,
   effect,
   signal,
   untracked,
@@ -54,7 +55,7 @@ import {
   providers: [HistoryService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HistoryComponent implements GlobalLoader {
+export class HistoryComponent implements GlobalLoader, OnDestroy {
   public static PATH = 'history';
 
   consoleUserEmail: string = '';
@@ -83,6 +84,10 @@ export class HistoryComponent implements GlobalLoader {
 
   loadingTimeout() {
     this._snackBar.open('Timeout loading records history');
+  }
+
+  ngOnDestroy() {
+    this.globalLoader.stopGlobalLoader(this);
   }
 
   loadHistory() {

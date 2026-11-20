@@ -15,6 +15,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  OnDestroy,
   effect,
   untracked,
   ViewEncapsulation,
@@ -40,7 +41,7 @@ import { ContactDetailsComponent } from './contactDetails.component';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContactComponent implements GlobalLoader {
+export class ContactComponent implements GlobalLoader, OnDestroy {
   public static PATH = 'contact';
 
   dataSource: MatTableDataSource<ViewReadyContact> =
@@ -104,6 +105,10 @@ export class ContactComponent implements GlobalLoader {
 
   loadingTimeout() {
     this._snackBar.open('Timeout loading contacts');
+  }
+
+  ngOnDestroy() {
+    this.globalLoader.stopGlobalLoader(this);
   }
 
   openDetails(contact: ViewReadyContact) {

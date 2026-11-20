@@ -18,10 +18,11 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
+import { GlobalLoaderService } from 'src/app/shared/services/globalLoader.service';
 import { SecurityComponent } from './security.component';
 import { SecurityService } from './security.service';
 import { SecurityEditComponent } from './securityEdit.component';
@@ -252,5 +253,63 @@ describe('SecurityComponent & EppPasswordEditComponent', () => {
       newPasswordRepeat: 'newPass123',
     });
     expect(snackBarSpy).toHaveBeenCalledWith('Wrong old password');
+  });
+
+  it('should stop global loader on SecurityEditComponent destroy while save is pending', () => {
+    vi.useFakeTimers();
+    try {
+      const editFixture = TestBed.createComponent(SecurityEditComponent);
+      const snackBarSpy = vi
+        .spyOn(editFixture.debugElement.injector.get(MatSnackBar), 'open')
+        .mockReturnValue({} as any);
+      const editComponent = editFixture.componentInstance;
+      editFixture.detectChanges();
+
+      const globalLoader = TestBed.inject(GlobalLoaderService);
+      const pending$ = new Subject<Registrar[]>();
+      saveSpy.mockReturnValue(pending$.asObservable());
+
+      editComponent.save();
+      expect(globalLoader.isLoading()).toBe(true);
+
+      editFixture.destroy();
+      expect(globalLoader.isLoading()).toBe(false);
+
+      vi.advanceTimersByTime(10000);
+      expect(snackBarSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('should stop global loader on EppPasswordEditComponent destroy while save is pending', () => {
+    vi.useFakeTimers();
+    try {
+      const eppFixture = TestBed.createComponent(EppPasswordEditComponent);
+      const snackBarSpy = vi
+        .spyOn(eppFixture.debugElement.injector.get(MatSnackBar), 'open')
+        .mockReturnValue({} as any);
+      const eppComponent = eppFixture.componentInstance;
+      eppFixture.detectChanges();
+
+      const globalLoader = TestBed.inject(GlobalLoaderService);
+      const pending$ = new Subject<unknown>();
+      saveEppPasswordSpy.mockReturnValue(pending$.asObservable());
+
+      eppComponent.save({
+        oldPassword: 'oldPass123',
+        newPassword: 'newPass123',
+        newPasswordRepeat: 'newPass123',
+      });
+      expect(globalLoader.isLoading()).toBe(true);
+
+      eppFixture.destroy();
+      expect(globalLoader.isLoading()).toBe(false);
+
+      vi.advanceTimersByTime(10000);
+      expect(snackBarSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

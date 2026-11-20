@@ -119,6 +119,32 @@ describe('ContactComponent & ContactService & ContactDetailsComponent', () => {
     expect(globalLoader.isLoading()).toBe(false);
   });
 
+  it('should stop global loader on ContactComponent destroy while fetchContacts is pending', () => {
+    vi.useFakeTimers();
+    try {
+      const snackBarSpy = vi
+        .spyOn(fixture.debugElement.injector.get(MatSnackBar), 'open')
+        .mockReturnValue({} as any);
+      const globalLoader = TestBed.inject(GlobalLoaderService);
+      const pending$ = new Subject<Contact[]>();
+      vi.spyOn(backendService, 'getContacts').mockReturnValueOnce(
+        pending$.asObservable()
+      );
+
+      registrarIdSignal.set('reg-3');
+      TestBed.flushEffects();
+      expect(globalLoader.isLoading()).toBe(true);
+
+      fixture.destroy();
+      expect(globalLoader.isLoading()).toBe(false);
+
+      vi.advanceTimersByTime(10000);
+      expect(snackBarSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('should format contact columns cleanly', () => {
     const viewReady = contactTypeToViewReadyContact(sampleContact);
     const byDef = Object.fromEntries(
@@ -271,6 +297,29 @@ describe('ContactComponent & ContactService & ContactDetailsComponent', () => {
         'Cannot delete primary contact'
       );
       confirmSpy.mockRestore();
+    });
+
+    it('should stop global loader on ContactDetailsComponent destroy while save is pending', () => {
+      vi.useFakeTimers();
+      try {
+        const globalLoader = TestBed.inject(GlobalLoaderService);
+        const pending$ = new Subject<Contact[]>();
+        vi.spyOn(contactService, 'updateContact').mockReturnValue(
+          pending$.asObservable()
+        );
+        const event = { preventDefault: vi.fn() } as unknown as SubmitEvent;
+
+        detailsComponent.save(event);
+        expect(globalLoader.isLoading()).toBe(true);
+
+        detailsFixture.destroy();
+        expect(globalLoader.isLoading()).toBe(false);
+
+        vi.advanceTimersByTime(10000);
+        expect(mockSnackBar.open).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

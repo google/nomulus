@@ -18,7 +18,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import { GlobalLoaderService } from '../shared/services/globalLoader.service';
@@ -152,5 +152,30 @@ describe('HistoryComponent, HistoryListComponent & HistoryService', () => {
       main: 'Simple event',
       detail: 'Simple event',
     });
+  });
+
+  it('should stop global loader on component destroy while request is pending', () => {
+    vi.useFakeTimers();
+    try {
+      const pending$ = new Subject<HistoryRecord[]>();
+      vi.spyOn(backendService, 'getHistoryLog').mockReturnValue(
+        pending$.asObservable()
+      );
+      const fixture = TestBed.createComponent(HistoryComponent);
+      const snackBarSpy = vi
+        .spyOn(fixture.debugElement.injector.get(MatSnackBar), 'open')
+        .mockReturnValue({} as any);
+      fixture.detectChanges();
+
+      expect(globalLoader.isLoading()).toBe(true);
+
+      fixture.destroy();
+      expect(globalLoader.isLoading()).toBe(false);
+
+      vi.advanceTimersByTime(10000);
+      expect(snackBarSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
