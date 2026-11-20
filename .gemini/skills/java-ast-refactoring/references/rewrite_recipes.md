@@ -60,11 +60,15 @@ Updates the class name and automatically updates all imports across the codebase
 ```
 
 ### 7. Change Method Arguments
-Reorders or removes arguments based on a target signature. `newArgumentTemplate` uses 0-based indexing.
+Removes or reorders arguments at every call site matching `methodPattern`. `argumentIndex` is 0-based. `oldParameterNames` lists the current parameter names in declaration order and `newParameterNames` lists them in the desired order. These recipes rewrite invocations only; update the method declaration itself separately.
 ```yaml
-  - org.openrewrite.java.ChangeMethodAccessLevel:
-      methodPattern: com.google.common.collect.ImmutableList of(..)
-      newAccessLevel: protected
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: google.registry.util.Foo bar(java.lang.String, int)
+      argumentIndex: 1
+  - org.openrewrite.java.ReorderMethodArguments:
+      methodPattern: google.registry.util.Foo baz(java.lang.String, int)
+      oldParameterNames: [name, count]
+      newParameterNames: [count, name]
 ```
 
 ### 8. Add Import

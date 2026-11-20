@@ -66,8 +66,14 @@ allprojects {
 }
 EOF
 
-# Copy the recipe file to the workspace root temporarily so OpenRewrite finds it
-cp "$RECIPE_FILE" ./rewrite.yml
+# OpenRewrite reads ./rewrite.yml from the workspace root. Copy the recipe there
+# temporarily unless it already is that file (copying a file onto itself fails,
+# and deleting it afterwards would destroy the user's recipe).
+COPIED_RECIPE=false
+if [[ "$RECIPE_FILE" != "$(realpath -m ./rewrite.yml)" ]]; then
+  cp "$RECIPE_FILE" ./rewrite.yml
+  COPIED_RECIPE=true
+fi
 
 echo "Executing OpenRewrite recipe: $RECIPE_NAME"
 ./gradlew --init-script "$INIT_SCRIPT" rewriteRun --no-parallel --no-configuration-cache
@@ -77,4 +83,6 @@ echo "Running code formatters to fix Checkstyle line-length and import ordering.
 
 # Clean up temporary files
 rm "$INIT_SCRIPT"
-rm ./rewrite.yml
+if [[ "$COPIED_RECIPE" == true ]]; then
+  rm ./rewrite.yml
+fi

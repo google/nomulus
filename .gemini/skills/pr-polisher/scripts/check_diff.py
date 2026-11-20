@@ -18,6 +18,7 @@ import re
 import sys
 import datetime
 import os
+import time
 
 # Color codes
 RED = "\033[91m"
@@ -27,6 +28,27 @@ RESET = "\033[0m"
 
 errors_found = 0
 warnings_found = 0
+
+SCRIPT_PATH = ".gemini/skills/pr-polisher/scripts/check_diff.py"
+
+# Modules whose src/main Java changes should be accompanied by test changes.
+TESTED_MODULES = (
+    "common", "core", "db", "networking", "prober", "proxy", "release", "util")
+
+FLYWAY_SCRIPT_PATTERN = re.compile(r'^db/src/main/resources/sql/flyway/V[^/]*\.sql$')
+JPA_ENTITY_PATTERN = re.compile(r'^\s*@(Entity|Embeddable|MappedSuperclass)\b', re.MULTILINE)
+
+# Internal-only references that must never land in this public repository.
+# Buganizer references (b/123, http://b/123) are allowed and do not match.
+INTERNAL_LEAK_PATTERNS = (
+    (re.compile(r'corp\.google\.com'), "internal corp hostname"),
+    (re.compile(r'/google/src/'), "internal source path"),
+    (re.compile(r'//depot/google3'), "internal depot path"),
+    (re.compile(r'(?:\bhttps?://|(?<![\w./-]))go/[A-Za-z0-9_-]'), "internal go/ shortlink"),
+)
+
+# Warn when the local upstream/master tip is older than this many hours.
+UPSTREAM_MAX_AGE_HOURS = 24
 
 def log_error(msg):
     global errors_found
@@ -43,6 +65,17 @@ def log_success(msg):
 
 def run_cmd(cmd):
     return subprocess.check_output(cmd, shell=True, text=True).strip()
+
+def get_diff_files():
+    return [f for f in run_cmd("git diff HEAD^ --name-only").split('\n') if f]
+
+def ref_exists(ref):
+    return subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", ref],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    ).returncode == 0
 
 def check_single_commit():
     print("--- Checking Commit Count ---")
@@ -154,6 +187,21 @@ def check_license_headers():
 
     if files_checked == 0:
          log_success("No new files requiring license headers added.")
+
+def check_upstream_freshness():
+    print("\n--- Checking upstream/master Freshness ---")
+    upstream_ref = "refs/remotes/upstream/master"
+    if not ref_exists(upstream_ref):
+        log_success("No upstream remote configured; skipping freshness check.")
+        return
+    commit_time = int(run_cmd(f"git log -1 --format=%ct {upstream_ref}"))
+    age_hours = (time.time() - commit_time) / 3600
+    if age_hours > UPSTREAM_MAX_AGE_HOURS:
+        log_warning(
+            f"Local upstream/master tip is {age_hours:.0f}h old. Run 'git fetch upstream master'"
+            " and rebase so the diff is not computed against a stale base.")
+    else:
+        log_success("Local upstream/master is fresh.")
 
 def check_formatting():
     print("\n--- Checking Project Formatting ---")
@@ -309,19 +357,71 @@ def check_diff_anti_patterns():
             if 'src/test/' in current_file and clock_now_pattern.search(code_line):
                 log_warning(f"[{current_file}] Prefer using a fixed, static constant Instant over capturing clock.now() in tests to prevent flakiness.")
 
+def check_internal_link_leaks():
+    print("\n--- Checking for Internal Link and Path Leaks ---")
+    diff = run_cmd("git diff HEAD^ -U0")
+    current_file = ""
+    leaks_found = False
+
+    for line in diff.split('\n'):
+        if line.startswith('+++ '):
+            current_file = line[6:] if line.startswith('+++ b/') else ""
+            continue
+        if not line.startswith('+') or not current_file:
+            continue
+        code_line = line[1:]
+        # Skip this script's own pattern definitions.
+        if current_file == SCRIPT_PATH and 're.compile(' in code_line:
+            continue
+        for pattern, description in INTERNAL_LEAK_PATTERNS:
+            if pattern.search(code_line):
+                leaks_found = True
+                log_error(
+                    f"[{current_file}] Found {description} in an added line. This repository"
+                    f" is public; remove internal references: {code_line.strip()}")
+
+    if not leaks_found:
+        log_success("No internal links or paths found in added lines.")
+
+def is_jpa_entity(path):
+    if not path.endswith('.java') or '/src/main/' not in path:
+        return False
+    try:
+        with open(path, 'r') as file:
+            return bool(JPA_ENTITY_PATTERN.search(file.read()))
+    except FileNotFoundError:
+        # Deleted files cannot be inspected.
+        return False
+
+def check_db_schema_split():
+    print("\n--- Checking Database Schema Changes ---")
+    diff_files = get_diff_files()
+    flyway_files = [f for f in diff_files if FLYWAY_SCRIPT_PATTERN.match(f)]
+    orm_files = [
+        f for f in diff_files if f.endswith('.java') or f.endswith('db-schema.sql.generated')]
+    entity_files = [f for f in diff_files if is_jpa_entity(f)]
+
+    if flyway_files and orm_files:
+        log_error(
+            "Flyway scripts and Java/db-schema.sql.generated changes must be split into two"
+            " PRs (schema first, then ORM after deployment). See db/README.md."
+            f" Flyway: {flyway_files}; Java/generated: {orm_files}")
+    if flyway_files or entity_files:
+        log_warning(
+            "Flyway scripts or JPA entities changed. Run './gradlew :db:test' and"
+            " './gradlew :core:sqlIntegrationTest' in addition to the standard tests.")
+    else:
+        log_success("No database schema or JPA entity changes found.")
+
 def check_missing_tests():
     print("\n--- Checking for Missing Tests ---")
-    diff_files = run_cmd("git diff HEAD^ --name-only").split('\n')
-    main_files_modified = False
-    test_files_modified = False
-
-    for f in diff_files:
-        if f.startswith('core/src/main/') or f.startswith('util/src/main/'):
-            if f.endswith('.java'):
-                main_files_modified = True
-        if f.startswith('core/src/test/') or f.startswith('util/src/test/'):
-            if f.endswith('Test.java'):
-                test_files_modified = True
+    diff_files = get_diff_files()
+    main_prefixes = tuple(f"{m}/src/main/" for m in TESTED_MODULES)
+    test_prefixes = tuple(f"{m}/src/test/" for m in TESTED_MODULES)
+    main_files_modified = any(
+        f.startswith(main_prefixes) and f.endswith('.java') for f in diff_files)
+    test_files_modified = any(
+        f.startswith(test_prefixes) and f.endswith('Test.java') for f in diff_files)
 
     if main_files_modified and not test_files_modified:
         log_warning("Production code (.java files in src/main/) was modified, but no corresponding tests (.java files in src/test/) were added or updated. You MUST proactively write tests for any new logic or bug fixes.")
@@ -337,10 +437,13 @@ def main():
     check_commit_message()
     check_license_headers()
     check_missing_tests()
+    check_db_schema_split()
+    check_upstream_freshness()
     check_formatting()
     check_package_lock()
     check_workspace_clean()
     check_diff_anti_patterns()
+    check_internal_link_leaks()
 
     print("\n========================================")
     if errors_found == 0 and warnings_found == 0:
