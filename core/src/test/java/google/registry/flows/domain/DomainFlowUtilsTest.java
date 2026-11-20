@@ -16,11 +16,15 @@ package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
+import static google.registry.flows.domain.DomainFlowUtils.isDomainEligibleForXap;
+import static google.registry.flows.domain.DomainFlowUtils.wasDeletedDuringAddGracePeriod;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DateTimeUtils.minusDays;
 import static org.joda.money.CurrencyUnit.CHF;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -38,8 +42,11 @@ import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapExce
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
+import java.time.Duration;
+import java.time.Instant;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,8 +54,11 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link DomainFlowUtils}. */
 class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
 
+  private static final Instant START_TIME = Instant.parse("2025-01-01T00:00:00Z");
+
   @BeforeEach
   void setup() {
+    clock.setTo(START_TIME);
     setEppInput("domain_info.xml");
     createTld("tld");
     persistResource(JpaTransactionManagerExtension.makeRegistrar1().asBuilder().build());
@@ -195,5 +205,110 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             .setServerStatusChangeBillingCost(Money.ofMajor(CHF, 800))
             .setRestoreBillingCost(Money.ofMajor(CHF, 800))
             .build());
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_activeDomain_returnsFalse() {
+    Domain domain = newDomain("active.tld");
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isFalse();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedOutsideAgp_returnsTrue() {
+    Domain domain =
+        newDomain("deleted.tld")
+            .asBuilder()
+            .setCreationTimeForTest(minusDays(START_TIME, 30))
+            .setDeletionTime(minusDays(START_TIME, 1))
+            .build();
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isTrue();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedDuringAgp_returnsFalse() {
+    Domain domain =
+        newDomain("agp.tld")
+            .asBuilder()
+            .setCreationTimeForTest(minusDays(START_TIME, 2))
+            .setDeletionTime(minusDays(START_TIME, 1))
+            .build();
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isFalse();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedAtNow_returnsTrue() {
+    Domain domain =
+        newDomain("deleted-now.tld")
+            .asBuilder()
+            .setCreationTimeForTest(minusDays(START_TIME, 30))
+            .setDeletionTime(START_TIME)
+            .build();
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isTrue();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedInFuture_returnsFalse() {
+    Domain domain =
+        newDomain("future.tld")
+            .asBuilder()
+            .setCreationTimeForTest(minusDays(START_TIME, 30))
+            .setDeletionTime(START_TIME.plus(Duration.ofDays(1)))
+            .build();
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isFalse();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedOneMilliInFuture_returnsFalse() {
+    Domain domain =
+        newDomain("future-milli.tld")
+            .asBuilder()
+            .setCreationTimeForTest(minusDays(START_TIME, 30))
+            .setDeletionTime(START_TIME.plusMillis(1))
+            .build();
+    assertThat(isDomainEligibleForXap(domain, Tld.get("tld"), START_TIME)).isFalse();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_agpBoundaryExact_returnsFalse() {
+    Tld tld = Tld.get("tld");
+    Domain domain =
+        newDomain("agp-exact.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()))
+            .setDeletionTime(START_TIME)
+            .build();
+    assertThat(isDomainEligibleForXap(domain, tld, START_TIME)).isFalse();
+  }
+
+  @Test
+  void testIsDomainEligibleForXap_deletedJustAfterAgp_returnsTrue() {
+    Tld tld = Tld.get("tld");
+    Domain domain =
+        newDomain("agp-after.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()).minusMillis(1))
+            .setDeletionTime(START_TIME)
+            .build();
+    assertThat(isDomainEligibleForXap(domain, tld, START_TIME)).isTrue();
+  }
+
+  @Test
+  void testWasDeletedDuringAddGracePeriod_boundaries() {
+    Tld tld = Tld.get("tld");
+    Domain domainExact =
+        newDomain("agp-exact-fn.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()))
+            .setDeletionTime(START_TIME)
+            .build();
+    assertThat(wasDeletedDuringAddGracePeriod(domainExact, tld)).isTrue();
+
+    Domain domainAfter =
+        newDomain("agp-after-fn.tld")
+            .asBuilder()
+            .setCreationTimeForTest(START_TIME.minus(tld.getAddGracePeriodLength()).minusMillis(1))
+            .setDeletionTime(START_TIME)
+            .build();
+    assertThat(wasDeletedDuringAddGracePeriod(domainAfter, tld)).isFalse();
   }
 }

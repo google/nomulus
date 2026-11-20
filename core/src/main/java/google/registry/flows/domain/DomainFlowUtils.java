@@ -1207,11 +1207,11 @@ public class DomainFlowUtils {
   }
 
   /**
-   * Returns true if the domain was deleted before {@code now} and is eligible for Expiry Access
-   * Period (XAP) evaluation.
+   * Returns true if the domain was deleted at or before {@code now} and is eligible for Expiry
+   * Access Period (XAP) evaluation.
    */
   public static boolean isDomainEligibleForXap(Domain domain, Tld tld, Instant now) {
-    if (domain.getDeletionTime() == null || !domain.getDeletionTime().isBefore(now)) {
+    if (domain.getDeletionTime() == null || domain.getDeletionTime().isAfter(now)) {
       return false;
     }
     return !wasDeletedDuringAddGracePeriod(domain, tld);

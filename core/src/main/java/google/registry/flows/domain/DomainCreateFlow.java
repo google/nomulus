@@ -58,13 +58,16 @@ import static google.registry.util.DateTimeUtils.plusYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
+import google.registry.cache.SimplifiedJedisClient;
 import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.ExtensionManager;
+import google.registry.flows.FlowModule.DryRun;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
@@ -209,6 +212,8 @@ import org.joda.money.Money;
 @ReportingSpec(ActivityReportField.DOMAIN_CREATE)
 public final class DomainCreateFlow implements MutatingFlow {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   /** Anchor tenant creates should always be for 2 years, since they get 2 years free. */
   private static final int ANCHOR_TENANT_CREATE_VALID_YEARS = 2;
 
@@ -224,6 +229,8 @@ public final class DomainCreateFlow implements MutatingFlow {
   @Inject DomainFlowTmchUtils tmchUtils;
   @Inject DomainPricingLogic pricingLogic;
   @Inject DomainDeletionTimeCache domainDeletionTimeCache;
+  @Inject Optional<SimplifiedJedisClient> jedisClient;
+  @Inject @DryRun boolean isDryRun;
 
   @Inject
   @Config("domainExpiryAccessPeriodTotalLength")
@@ -255,13 +262,13 @@ public final class DomainCreateFlow implements MutatingFlow {
     InternetDomainName domainName = validateDomainName(command.getDomainName());
     String domainLabel = domainName.parts().getFirst();
     Tld tld = Tld.get(domainName.parent().toString());
-    Duration lookback =
-        tld.getExpiryAccessPeriodModeAt(now) == Tld.ExpiryAccessPeriodMode.ENABLED
-            ? domainExpiryAccessPeriodTotalLength
-            : Duration.ZERO;
     Optional<Domain> recentlyDeletedDomain =
-        verifyResourceDoesNotExist(Domain.class, targetId, now, lookback, registrarId)
-            .filter(domain -> isDomainEligibleForXap(domain, tld, now));
+        verifyResourceDoesNotExist(
+            Domain.class, targetId, now, domainExpiryAccessPeriodTotalLength, registrarId);
+    Optional<Domain> xapDomain =
+        tld.getExpiryAccessPeriodModeAt(now) == Tld.ExpiryAccessPeriodMode.ENABLED
+            ? recentlyDeletedDomain.filter(domain -> isDomainEligibleForXap(domain, tld, now))
+            : Optional.empty();
     validateCreateCommandContactsAndNameservers(command, tld, domainName);
     TldState tldState = tld.getTldState(now);
     Optional<LaunchCreateExtension> launchCreate =
@@ -297,7 +304,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     if (!isSuperuser) {
       checkAllowedAccessToTld(registrarId, tld.getTldStr());
       checkHasBillingAccount(registrarId, tld.getTldStr());
-      if (recentlyDeletedDomain.isPresent()
+      if (xapDomain.isPresent()
           && !Registrar.loadByRegistrarIdCached(registrarId).get().getExpiryAccessPeriodEnabled()) {
         throw new DomainReservedException(domainName.toString());
       }
@@ -348,14 +355,7 @@ public final class DomainCreateFlow implements MutatingFlow {
         eppInput.getSingleExtension(FeeCreateCommandExtension.class);
     FeesAndCredits feesAndCredits =
         pricingLogic.getCreatePrice(
-            tld,
-            targetId,
-            now,
-            recentlyDeletedDomain,
-            years,
-            isAnchorTenant,
-            isSunriseCreate,
-            allocationToken);
+            tld, targetId, now, xapDomain, years, isAnchorTenant, isSunriseCreate, allocationToken);
     validateFeeChallenge(feeCreate, feesAndCredits, defaultTokenUsed);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
@@ -473,7 +473,7 @@ public final class DomainCreateFlow implements MutatingFlow {
                 tld,
                 targetId,
                 now,
-                recentlyDeletedDomain,
+                xapDomain,
                 years,
                 isAnchorTenant,
                 isSunriseCreate,
@@ -486,6 +486,17 @@ public final class DomainCreateFlow implements MutatingFlow {
                 .setResData(DomainCreateData.create(targetId, now, registrationExpirationTime))
                 .setResponseExtensions(createResponseExtensions(feeCreate, responseFeesAndCredits))
                 .build());
+    if (!isDryRun && recentlyDeletedDomain.isPresent() && tld.getTldType().equals(TldType.REAL)) {
+      jedisClient.ifPresent(
+          client -> {
+            try {
+              client.delete(Domain.class, targetId);
+            } catch (RuntimeException e) {
+              logger.atWarning().withCause(e).log(
+                  "Failed to invalidate Valkey cache for newly created domain %s.", targetId);
+            }
+          });
+    }
     return responseBuilder
         .setResData(responseData.resData())
         .setExtensions(responseData.responseExtensions())
