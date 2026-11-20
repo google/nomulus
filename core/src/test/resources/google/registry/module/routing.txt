@@ -24,6 +24,7 @@ BACKEND  /_dr/task/deleteExpiredDomains                     DeleteExpiredDomains
 BACKEND  /_dr/task/deleteLoadTestData                       DeleteLoadTestDataAction                       POST                n  APP  ADMIN
 BACKEND  /_dr/task/deleteProberData                         DeleteProberDataAction                         POST                n  APP  ADMIN
 BACKEND  /_dr/task/dnsRefresh                               RefreshDnsAction                               GET                 y  APP  ADMIN
+BACKEND  /_dr/task/domainWatcher                            DomainWatcherAction                            POST                n  APP  ADMIN
 BACKEND  /_dr/task/executeCannedScript                      CannedScriptExecutionAction                    POST,GET            y  APP  ADMIN
 BACKEND  /_dr/task/expandBillingRecurrences                 ExpandBillingRecurrencesAction                 GET                 n  APP  ADMIN
 BACKEND  /_dr/task/exportDomainLists                        ExportDomainListsAction                        POST                n  APP  ADMIN

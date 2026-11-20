@@ -255,6 +255,7 @@ public class RegistryConfigSettings {
     public String spec11OutgoingEmailAddress;
     public List<String> spec11BccEmailAddresses;
     public int transientFailureRetries;
+    public List<String> domainWatcherTlds;
   }
 
   /** Configuration options for the registry tool. */

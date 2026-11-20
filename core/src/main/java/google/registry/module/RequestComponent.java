@@ -22,6 +22,7 @@ import google.registry.batch.CannedScriptExecutionAction;
 import google.registry.batch.DeleteExpiredDomainsAction;
 import google.registry.batch.DeleteLoadTestDataAction;
 import google.registry.batch.DeleteProberDataAction;
+import google.registry.batch.DomainWatcherAction;
 import google.registry.batch.ExpandBillingRecurrencesAction;
 import google.registry.batch.RelockDomainAction;
 import google.registry.batch.ResaveAllEppResourcesPipelineAction;
@@ -217,6 +218,8 @@ public interface RequestComponent {
   DeleteLoadTestDataAction deleteLoadTestDataAction();
 
   DeleteProberDataAction deleteProberDataAction();
+
+  DomainWatcherAction domainWatcherAction();
 
   EppTlsAction eppTlsAction();
 
