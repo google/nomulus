@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable, signal } from '@angular/core';
+import { Injectable, OnDestroy, signal } from '@angular/core';
 import { Observable, Subscription, timeout } from 'rxjs';
 
 export interface GlobalLoader {
@@ -29,7 +29,7 @@ export interface GlobalLoader {
 @Injectable({
   providedIn: 'root',
 })
-export class GlobalLoaderService {
+export class GlobalLoaderService implements OnDestroy {
   private static readonly TIMEOUT_MS = 10000;
   private loaders = new Map<GlobalLoader, Subscription>();
   public isLoading = signal(false);
@@ -39,6 +39,7 @@ export class GlobalLoaderService {
   }
 
   startGlobalLoader(c: GlobalLoader) {
+    this.loaders.get(c)?.unsubscribe();
     const subscription = new Observable(() => {})
       .pipe(timeout(GlobalLoaderService.TIMEOUT_MS))
       .subscribe({
@@ -55,6 +56,14 @@ export class GlobalLoaderService {
   stopGlobalLoader(c: GlobalLoader) {
     this.loaders.get(c)?.unsubscribe();
     this.loaders.delete(c);
+    this.syncLoading();
+  }
+
+  ngOnDestroy() {
+    for (const subscription of this.loaders.values()) {
+      subscription.unsubscribe();
+    }
+    this.loaders.clear();
     this.syncLoading();
   }
 }
