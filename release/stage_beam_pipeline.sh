@@ -67,6 +67,8 @@ while (( "$#" > 0 )); do
   image_name="gcr.io/${dev_project}/beam/${pipeline_name}"
   metadata_basename=$(basename "${metadata_pathname}")
 
+  # Disable HotSpot's C2 Base64 SIMD intrinsics on Dataflow workers as
+  # defense-in-depth for CVE-2026-114938 (JDK-8393212).
   gcloud dataflow flex-template build \
     "gs://${dev_project}-deploy/${release_tag}/beam/${metadata_basename}" \
     --image-gcr-path "${image_name}:${release_tag}" \
@@ -75,6 +77,6 @@ while (( "$#" > 0 )); do
     --metadata-file "./core/src/main/resources/${metadata_pathname}" \
     --jar "./core/build/libs/${uberjar_name}.jar" \
     --env FLEX_TEMPLATE_JAVA_MAIN_CLASS="${main_class}" \
-    --additional-experiments=disable_runner_v2 \
+    --additional-experiments="disable_runner_v2,environment_variables=JDK_JAVA_OPTIONS=-XX:-UseBASE64Intrinsics" \
     --project "${dev_project}"
 done
