@@ -29,6 +29,10 @@ buildscript {
   dependencies {
     classpath 'net.ltgt.gradle:gradle-errorprone-plugin:5.1.0'
     classpath 'com.gradleup.shadow:com.gradleup.shadow.gradle.plugin:9.4.0'
+    constraints {
+      classpath 'com.fasterxml.jackson.core:jackson-core:[2.18.11,)'
+      classpath 'com.fasterxml.jackson:jackson-bom:[2.18.11,)'
+    }
   }
 }
 
@@ -152,6 +156,31 @@ rootProject.ext.verifyDeploymentConfig = {
 def allowInsecure = allowInsecureProtocol
 
 allprojects {
+  if (project.name != 'integration') {
+    // Enforce minimum patched versions for transitive and non-runtime dependencies
+    // to remediate known CVEs without adding unused direct dependencies to
+    // dependencies.gradle.
+    configurations.matching {
+      it.name in [
+        'implementation',
+        'testImplementation',
+        'checkstyle',
+        'annotationProcessor',
+        'testAnnotationProcessor',
+        'nonprodImplementation',
+        'nonprodAnnotationProcessor',
+      ]
+    }.all { conf ->
+      project.dependencies.constraints.add(conf.name, 'io.netty:netty-codec-http2:[4.1.136.Final, 5.0.0)!!')
+      project.dependencies.constraints.add(conf.name, 'io.netty:netty-codec-socks:[4.1.136.Final, 5.0.0)!!')
+      project.dependencies.constraints.add(conf.name, 'io.netty:netty-handler-proxy:[4.1.136.Final, 5.0.0)!!')
+      project.dependencies.constraints.add(conf.name, 'com.fasterxml.jackson.core:jackson-core:[2.18.11,)')
+      project.dependencies.constraints.add(conf.name, 'com.fasterxml.jackson:jackson-bom:[2.18.11,)')
+      project.dependencies.constraints.add(conf.name, 'io.grpc:grpc-netty-shaded:[1.75.0,)')
+      project.dependencies.constraints.add(conf.name, 'com.google.guava:guava:[33.7.2-jre,)')
+    }
+  }
+
   repositories {
     if (!mavenUrl.isEmpty()) {
       maven {
