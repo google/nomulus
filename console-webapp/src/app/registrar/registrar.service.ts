@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable, computed, signal } from '@angular/core';
-import { Observable, switchMap, tap } from 'rxjs';
+import { Injectable, OnDestroy, computed, signal } from '@angular/core';
+import { Observable, Subscription, finalize, switchMap, tap } from 'rxjs';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -77,7 +77,7 @@ export interface Registrar
 @Injectable({
   providedIn: 'root',
 })
-export class RegistrarService implements GlobalLoader {
+export class RegistrarService implements GlobalLoader, OnDestroy {
   registrarId = signal<string>(
     new URLSearchParams(document.location.hash.split('?')[1]).get(
       'registrarId'
@@ -91,6 +91,7 @@ export class RegistrarService implements GlobalLoader {
   inNewRegistrarMode = signal(false);
 
   registrarsLoaded: Promise<void>;
+  private registrarsSubscription!: Subscription;
 
   constructor(
     private backend: BackendService,
@@ -98,13 +99,17 @@ export class RegistrarService implements GlobalLoader {
     private _snackBar: MatSnackBar,
     private router: Router
   ) {
-    this.registrarsLoaded = new Promise((resolve) => {
-      this.loadRegistrars().subscribe((r) => {
-        this.globalLoader.stopGlobalLoader(this);
-        resolve();
-      });
-    });
     this.globalLoader.startGlobalLoader(this);
+    this.registrarsLoaded = new Promise((resolve) => {
+      this.registrarsSubscription = this.loadRegistrars()
+        .pipe(
+          finalize(() => {
+            this.globalLoader.stopGlobalLoader(this);
+            resolve();
+          })
+        )
+        .subscribe({ error: () => {} });
+    });
   }
 
   public updateSelectedRegistrar(registrarId: string) {
@@ -151,6 +156,10 @@ export class RegistrarService implements GlobalLoader {
 
   loadingTimeout() {
     this._snackBar.open('Timeout loading registrars');
+  }
+
+  ngOnDestroy() {
+    this.registrarsSubscription.unsubscribe();
   }
 
   generateOte(

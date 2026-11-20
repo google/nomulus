@@ -15,6 +15,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  OnDestroy,
   linkedSignal,
   signal,
   ChangeDetectionStrategy,
@@ -37,7 +38,7 @@ import { RdapService } from './rdap.service';
   styleUrls: ['./rdapEdit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RdapEditComponent implements GlobalLoader {
+export class RdapEditComponent implements GlobalLoader, OnDestroy {
   registrarInEdit = linkedSignal(() =>
     structuredClone(this.registrarService.registrar())
   );
@@ -53,6 +54,10 @@ export class RdapEditComponent implements GlobalLoader {
 
   loadingTimeout() {
     this._snackBar.open('Timeout updating RDAP settings');
+  }
+
+  ngOnDestroy() {
+    this.globalLoader.stopGlobalLoader(this);
   }
 
   save(e: SubmitEvent) {

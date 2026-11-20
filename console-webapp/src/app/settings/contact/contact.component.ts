@@ -125,6 +125,7 @@ export class ContactComponent implements GlobalLoader, OnDestroy {
 
   ngOnDestroy() {
     this.contactsSubscription?.unsubscribe();
+    this.globalLoader.stopGlobalLoader(this);
   }
 
   loadingTimeout() {

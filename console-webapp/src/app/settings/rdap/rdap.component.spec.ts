@@ -176,4 +176,34 @@ describe('RdapComponent & RdapEditComponent & RdapService', () => {
     expect(globalLoader.isLoading()).toBe(false);
     expect(snackBarSpy).toHaveBeenCalledWith('Invalid RDAP URL');
   });
+
+  it('should stop global loader on RdapEditComponent destroy while save is pending', () => {
+    vi.useFakeTimers();
+    try {
+      const editFixture = TestBed.createComponent(RdapEditComponent);
+      const snackBarSpy = vi
+        .spyOn(editFixture.debugElement.injector.get(MatSnackBar), 'open')
+        .mockReturnValue({} as any);
+      const editComponent = editFixture.componentInstance;
+      editFixture.detectChanges();
+
+      const globalLoader = TestBed.inject(GlobalLoaderService);
+      const pending$ = new Subject<Registrar[]>();
+      vi.spyOn(rdapService, 'saveChanges').mockReturnValue(
+        pending$.asObservable()
+      );
+
+      const submitEvent = { preventDefault: vi.fn() } as unknown as SubmitEvent;
+      editComponent.save(submitEvent);
+      expect(globalLoader.isLoading()).toBe(true);
+
+      editFixture.destroy();
+      expect(globalLoader.isLoading()).toBe(false);
+
+      vi.advanceTimersByTime(10000);
+      expect(snackBarSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -16,6 +16,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  OnDestroy,
   linkedSignal,
   signal,
   ChangeDetectionStrategy,
@@ -43,7 +44,7 @@ import {
   styleUrls: ['./contactDetails.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContactDetailsComponent implements GlobalLoader {
+export class ContactDetailsComponent implements GlobalLoader, OnDestroy {
   protected contactTypeToTextMap = contactTypeToTextMap;
   contactInEdit = linkedSignal(() =>
     structuredClone(this.contactService.contactInEdit())
@@ -59,6 +60,10 @@ export class ContactDetailsComponent implements GlobalLoader {
 
   loadingTimeout() {
     this._snackBar.open('Timeout updating contact');
+  }
+
+  ngOnDestroy() {
+    this.globalLoader.stopGlobalLoader(this);
   }
 
   deleteContact() {

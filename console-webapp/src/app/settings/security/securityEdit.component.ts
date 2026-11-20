@@ -15,6 +15,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  OnDestroy,
   linkedSignal,
   signal,
   ChangeDetectionStrategy,
@@ -39,7 +40,7 @@ import { SecurityService, apiToUiConverter } from './security.service';
   styleUrls: ['./securityEdit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SecurityEditComponent implements GlobalLoader {
+export class SecurityEditComponent implements GlobalLoader, OnDestroy {
   dataSource = linkedSignal(() =>
     apiToUiConverter(this.registrarService.registrar())
   );
@@ -54,6 +55,10 @@ export class SecurityEditComponent implements GlobalLoader {
 
   loadingTimeout() {
     this._snackBar.open('Timeout updating security settings');
+  }
+
+  ngOnDestroy() {
+    this.globalLoader.stopGlobalLoader(this);
   }
 
   createIpEntry() {
