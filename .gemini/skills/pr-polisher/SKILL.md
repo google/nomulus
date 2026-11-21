@@ -1,6 +1,6 @@
 ---
 name: pr-polisher
-description: Automated pre-flight checklist to polish PRs. Use this before declaring a task or PR complete to automatically verify license headers, commit hygiene, formatting, and codebase mandates.
+description: Automated pre-flight checklist to polish PRs. Use this before declaring a task or PR complete to automatically verify license headers, commit hygiene, formatting, and codebase mandates. Don't use for: non-Git or Piper changelists.
 ---
 
 # PR Polisher
@@ -22,10 +22,10 @@ This skill is designed to evolve. If a human code reviewer (or presubmit hook) p
 ## Workflow Execution Steps
 
 1. **Run the Automated Analysis Script**
-   Execute the packaged Python diff-checker script. This script automatically checks commit messages, working tree status, `package-lock.json` modifications, copyright years on new files, and a litany of anti-patterns using regex (e.g., fully-qualified names, incorrect clock injections, generic exception catching).
+   Execute the packaged Python diff-checker script from the repository root. This script automatically checks commit messages, working tree status, `package-lock.json` modifications, copyright years on new files, missing tests across all tested modules, the 2-PR database schema split (Flyway scripts must not ship with Java or `db-schema.sql.generated` changes), internal-only links or paths leaking into this public repository, local `upstream/master` freshness, and a litany of anti-patterns using regex (e.g., fully-qualified names, incorrect clock injections, generic exception catching).
 
    ```bash
-   python3 ./pr-polisher/scripts/check_diff.py
+   python3 .gemini/skills/pr-polisher/scripts/check_diff.py
    ```
 
 2. **Run Formatting Validation**
@@ -61,11 +61,27 @@ This skill is designed to evolve. If a human code reviewer (or presubmit hook) p
    Re-read your commit message (`git log -1 --pretty=format:%B`). Compare it directly against the actual diff (`git diff HEAD^`) to verify that it completely and accurately describes ONLY the changes present in the commit.
    * If the scope of the PR changed during prompting, you MUST update the commit message to reflect the final state of the code.
    * Ensure that the primary purpose of the PR is mentioned first, and that no irrelevant or outdated changes from previous attempts are listed.
+   * **Commit-message / PR-body parity:** The commit body and the GitHub PR description must BOTH contain the operational justification (why the change is needed) and, for new or changed commands, concrete CLI usage examples. Never leave this context in only one of the two.
 
-7. **Address Errors, Amend, and Re-Run (Iterative Checking)**
+7. **Verify `@Action` Reachability**
+   If the diff adds or modifies a class annotated with `@Action`, confirm it is actually reachable in production:
+   * It is wired into `core/src/main/java/google/registry/module/RequestComponent.java`.
+   * Its path appears in `core/src/test/resources/google/registry/module/routing.txt` (update this golden file using the instructions printed by a failing `RequestComponentTest`).
+   * Scheduled actions have a matching entry in the relevant `core/src/main/java/google/registry/config/files/tasks/cloud-scheduler-tasks-*.xml` files.
+
+8. **Read ALL Existing PR Review Comments (Paginated)**
+   When an open PR exists, never rely on a single unpaginated `gh api` or `gh pr view` call, which silently truncates and hides inline comments. Fetch all three endpoints with pagination:
+   ```bash
+   gh api --paginate repos/google/nomulus/pulls/<n>/comments --jq '.[] | {path, line, user: .user.login, body}'
+   gh api --paginate repos/google/nomulus/issues/<n>/comments --jq '.[] | {user: .user.login, body}'
+   gh api --paginate repos/google/nomulus/pulls/<n>/reviews --jq '.[] | {user: .user.login, state, body}'
+   ```
+   Confirm every comment is addressed (or explicitly replied to) before declaring the PR polished.
+
+9. **Address Errors, Amend, and Re-Run (Iterative Checking)**
    If any script throws an error, if scope was reduced, if the commit message was inaccurate, or if formatting changes were applied, you must stage those fixes and amend your commit:
    ```bash
    git add -u
    git commit --amend # Or git commit --amend --no-edit if only files changed
    ```
-   **CRITICAL:** You must loop back to Step 1 and run `python3 ./pr-polisher/scripts/check_diff.py` again. Continue this loop of checking and amending until the script definitively returns `0 ERRORS`, the build/presubmits pass, and the working directory is perfectly clean. Do not assume your fixes worked without re-running the check.
+   **CRITICAL:** You must loop back to Step 1 and run `python3 .gemini/skills/pr-polisher/scripts/check_diff.py` again. Continue this loop of checking and amending until the script definitively returns `0 ERRORS`, the build/presubmits pass, and the working directory is perfectly clean. Do not assume your fixes worked without re-running the check.
