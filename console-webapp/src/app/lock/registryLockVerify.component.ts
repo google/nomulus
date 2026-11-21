@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RegistrarService } from '../registrar/registrar.service';
 import { ActivatedRoute, ParamMap, RouterModule } from '@angular/router';
 import { RegistryLockVerifyService } from './registryLockVerify.service';
@@ -29,7 +34,7 @@ import { MaterialModule } from '../material.module';
   providers: [RegistryLockVerifyService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RegistryLockVerifyComponent {
+export class RegistryLockVerifyComponent implements OnInit {
   public static PATH = 'registry-lock-verify';
 
   readonly DOMAIN_LIST_COMPONENT_PATH = `/${PATHS.DomainListComponent}`;

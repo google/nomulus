@@ -15,12 +15,12 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSelectChange } from '@angular/material/select';
+import { MatSort } from '@angular/material/sort';
 import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import { RegistrarService } from '../registrar/registrar.service';
@@ -51,7 +51,6 @@ describe('Users Feature (UsersService, UsersComponent, UserDetailsComponent, Use
         UsersListComponent,
         UserEditFormComponent,
         MaterialModule,
-        NoopAnimationsModule,
       ],
       providers: [
         BackendService,
@@ -162,6 +161,7 @@ describe('Users Feature (UsersService, UsersComponent, UserDetailsComponent, Use
     fixture.detectChanges();
 
     expect(component.dataSource.data).toEqual([sampleUser]);
+    expect(component.dataSource.sort).toBeTruthy();
     expect(columns[0].cell(sampleUser)).toBe('alice@example.com');
     expect(columns[1].cell(sampleUser)).toBe('Viewer');
 
@@ -171,6 +171,62 @@ describe('Users Feature (UsersService, UsersComponent, UserDetailsComponent, Use
 
     expect(selected).toEqual(sampleUser);
     expect(component.isRowSelected(sampleUser)).toBe(true);
+
+    const editorUser: User = {
+      emailAddress: 'bob@example.com',
+      role: 'TECH_CONTACT',
+    };
+    const sortedByRole = component.dataSource.sortData(
+      [sampleUser, editorUser],
+      { active: 'role', direction: 'asc' } as MatSort
+    );
+    expect(sortedByRole.map((u) => u.emailAddress)).toEqual([
+      'bob@example.com',
+      'alice@example.com',
+    ]);
+  });
+
+  it('should reset cached users and open sub-views when switching registrars', () => {
+    const fixture = TestBed.createComponent(UsersComponent);
+    const component = fixture.componentInstance;
+    const usersService = fixture.debugElement.injector.get(UsersService);
+    fixture.detectChanges();
+
+    usersService.currentlyOpenUserEmail.set(sampleUser.emailAddress);
+    usersService.isNewUser = true;
+    component.isNew = true;
+    component.addExistingUser();
+    component.selectedRegistrarId = 'reg-2';
+    component.usersSelection.set([sampleUser]);
+    component.existingUserSelected(sampleUser);
+
+    const pending$ = new Subject<User[]>();
+    vi.spyOn(backendService, 'getUsers').mockReturnValueOnce(
+      pending$.asObservable()
+    );
+
+    registrarIdSignal.set('reg-2');
+    TestBed.flushEffects();
+
+    expect(component.isLoading()).toBe(true);
+    expect(usersService.users()).toEqual([]);
+    expect(usersService.currentlyOpenUserEmail()).toBe('');
+    expect(usersService.isNewUser).toBe(false);
+    expect(component.isNew).toBe(false);
+    expect(component.selectingExistingUser()).toBe(false);
+    expect(component.selectedRegistrarId).toBe('');
+    expect(component.usersSelection()).toEqual([]);
+    expect(component.selectedExistingUser).toBeUndefined();
+
+    const reg2User: User = {
+      emailAddress: 'bob@example.com',
+      role: 'TECH_CONTACT',
+    };
+    pending$.next([reg2User]);
+    pending$.complete();
+
+    expect(component.isLoading()).toBe(false);
+    expect(usersService.users()).toEqual([reg2User]);
   });
 
   it('should validate form and trigger registry lock password reset in UserEditFormComponent', () => {
@@ -188,12 +244,10 @@ describe('Users Feature (UsersService, UsersComponent, UserDetailsComponent, Use
     let emittedUser: User | undefined;
     component.onEditComplete.subscribe((u) => (emittedUser = u));
 
-    component.form = {
-      nativeElement: {
-        checkValidity: vi.fn().mockReturnValue(true),
-        reportValidity: vi.fn(),
-      },
-    };
+    vi.spyOn(component.form().nativeElement, 'checkValidity').mockReturnValue(
+      true
+    );
+    vi.spyOn(component.form().nativeElement, 'reportValidity');
     component.saveEdit({ preventDefault: vi.fn() } as unknown as SubmitEvent);
     expect(emittedUser).toEqual(sampleUser);
 

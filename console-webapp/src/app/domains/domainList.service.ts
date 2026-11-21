@@ -54,6 +54,14 @@ export class DomainListService {
     private backendService: BackendService,
     private registrarService: RegistrarService
   ) {}
+
+  resetState() {
+    this.checkpointTime = undefined;
+    this.selectedDomain.set(undefined);
+    this.activeActionComponent.set(null);
+    this.domainsList.set([]);
+  }
+
   retrieveDomains(
     pageNumber?: number,
     resultsPerPage?: number,

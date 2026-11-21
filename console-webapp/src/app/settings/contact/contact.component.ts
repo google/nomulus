@@ -16,13 +16,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   effect,
+  signal,
   untracked,
   ViewEncapsulation,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
-import { take } from 'rxjs';
+import { finalize, take } from 'rxjs';
 import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import {
@@ -43,6 +44,7 @@ import { ContactDetailsComponent } from './contactDetails.component';
 export class ContactComponent implements GlobalLoader {
   public static PATH = 'contact';
 
+  isLoading = signal(false);
   dataSource: MatTableDataSource<ViewReadyContact> =
     new MatTableDataSource<ViewReadyContact>([]);
   columns = [
@@ -86,15 +88,21 @@ export class ContactComponent implements GlobalLoader {
         untracked(() => {
           this.contactService.isContactDetailsView.set(false);
           this.contactService.isContactNewView.set(false);
+          this.contactService.contacts.set([]);
+          this.isLoading.set(true);
           this.globalLoader.startGlobalLoader(this);
           this.contactService
             .fetchContacts()
-            .pipe(take(1))
+            .pipe(
+              take(1),
+              finalize(() => {
+                this.isLoading.set(false);
+                this.globalLoader.stopGlobalLoader(this);
+              })
+            )
             .subscribe({
-              complete: () => this.globalLoader.stopGlobalLoader(this),
               error: (err: HttpErrorResponse) => {
                 this._snackBar.open(err.error || err.message);
-                this.globalLoader.stopGlobalLoader(this);
               },
             });
         });

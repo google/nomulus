@@ -14,9 +14,8 @@
 
 import {
   Component,
-  EventEmitter,
   input,
-  Output,
+  output,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import {
@@ -74,7 +73,7 @@ export class PasswordInputForm {
 
   displayOldPasswordField = input<boolean>(false);
   formGroup = input<FormGroup>();
-  @Output() submitResults = new EventEmitter<PasswordResults>();
+  submitResults = output<PasswordResults>();
 
   hasError(controlName: string) {
     const maybeErrors = this.formGroup()!.get(controlName)?.errors;

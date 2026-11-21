@@ -15,7 +15,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
 import { routes } from './app.routes';
 import { PocReminderComponent } from './shared/components/pocReminder/pocReminder.component';
@@ -66,7 +65,6 @@ describe('AppComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MatSidenavModule,
-        NoopAnimationsModule,
         MatSnackBarModule,
         AppComponent,
         RouterModule.forRoot(routes),
@@ -166,17 +164,17 @@ describe('AppComponent', () => {
   describe('Sidenav behavior', () => {
     it('should toggle sidenav open and closed', () => {
       fixture.detectChanges();
-      const closeSpy = vi.spyOn(component.sidenav, 'close');
-      const openSpy = vi.spyOn(component.sidenav, 'open');
+      const closeSpy = vi.spyOn(component.sidenav(), 'close');
+      const openSpy = vi.spyOn(component.sidenav(), 'open');
 
-      Object.defineProperty(component.sidenav, 'opened', {
+      Object.defineProperty(component.sidenav(), 'opened', {
         value: true,
         configurable: true,
       });
       component.toggleSidenav();
       expect(closeSpy).toHaveBeenCalled();
 
-      Object.defineProperty(component.sidenav, 'opened', {
+      Object.defineProperty(component.sidenav(), 'opened', {
         value: false,
         configurable: true,
       });
@@ -189,7 +187,7 @@ describe('AppComponent', () => {
       const eventsSubject = router.events as unknown as Subject<any>;
       fixture.detectChanges();
 
-      const closeSpy = vi.spyOn(component.sidenav, 'close');
+      const closeSpy = vi.spyOn(component.sidenav(), 'close');
       mockBreakPointService.isMobileView.set(true);
       eventsSubject.next(new NavigationEnd(1, '/home', '/home'));
 
@@ -201,7 +199,7 @@ describe('AppComponent', () => {
       const eventsSubject = router.events as unknown as Subject<any>;
       fixture.detectChanges();
 
-      const closeSpy = vi.spyOn(component.sidenav, 'close');
+      const closeSpy = vi.spyOn(component.sidenav(), 'close');
       mockBreakPointService.isMobileView.set(false);
       eventsSubject.next(new NavigationEnd(1, '/home', '/home'));
 

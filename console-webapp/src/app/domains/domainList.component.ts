@@ -19,13 +19,14 @@ import {
   Component,
   effect,
   Inject,
+  OnDestroy,
+  OnInit,
   signal,
   untracked,
-  ViewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { PageEvent } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { debounceTime, filter, Subject, take } from 'rxjs';
@@ -147,7 +148,7 @@ export class ReasonDialogComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CdkColumnDef],
 })
-export class DomainListComponent {
+export class DomainListComponent implements OnInit, OnDestroy {
   public static PATH = 'domain-list';
   private static SUSPENDED_STATUSES = [
     'SERVER_RENEW_PROHIBITED',
@@ -184,8 +185,6 @@ export class DomainListComponent {
 
   operationResult = signal<DomainData | undefined>(undefined);
 
-  @ViewChild(MatPaginator, { static: true }) paginator!: MatPaginator;
-
   constructor(
     protected domainListService: DomainListService,
     protected registrarService: RegistrarService,
@@ -196,8 +195,7 @@ export class DomainListComponent {
     effect(() => {
       const registrarId = this.registrarService.registrarId();
       untracked(() => {
-        this.pageNumber = 0;
-        this.totalResults.set(0);
+        this.resetStateForRegistrarChange();
         if (registrarId) {
           this.loadLocks();
           this.reloadData();
@@ -206,8 +204,22 @@ export class DomainListComponent {
     });
   }
 
+  /**
+   * Clears registrar-scoped table, selection, and service state so stale data
+   * cannot bleed across registrars when switching context.
+   */
+  private resetStateForRegistrarChange() {
+    this.pageNumber = 0;
+    this.totalResults.set(0);
+    this.selection.clear();
+    this.isAllSelected = false;
+    this.operationResult.set(undefined);
+    this.dataSource.data = [];
+    this.domainListService.resetState();
+    this.registryLockService.domainsLocks.set([]);
+  }
+
   ngOnInit() {
-    this.dataSource.paginator = this.paginator;
     // Don't spam the server unnecessarily while the user is typing
     this.searchTermSubject
       .pipe(debounceTime(this.DEBOUNCE_MS))
