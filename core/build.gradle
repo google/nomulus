@@ -433,6 +433,8 @@ if (environment == 'alpha') {
           def metaDataBaseName = metaData.substring(metaData.lastIndexOf('/') + 1)
           def uberJarName = tasks.beamPipelineCommon.outputs.files.asPath
 
+          // Disable HotSpot's C2 Base64 SIMD intrinsics on Dataflow workers as
+          // defense-in-depth for CVE-2026-114938 (JDK-8393212).
           def command = "\
             gcloud dataflow flex-template build \
             gs://${gcpProject}-deploy/live/beam/${metaDataBaseName} \
@@ -442,6 +444,7 @@ if (environment == 'alpha') {
             --metadata-file ${projectDir}/src/main/resources/${metaData} \
             --jar ${uberJarName} \
             --env FLEX_TEMPLATE_JAVA_MAIN_CLASS=${mainClass} \
+            --additional-experiments=environment_variables=JDK_JAVA_OPTIONS=-XX:-UseBASE64Intrinsics \
             --project ${gcpProject}".toString()
           rootProject.ext.execInBash(command, '/tmp')
         }
