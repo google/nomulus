@@ -27,8 +27,6 @@ dependencies {
   implementation deps['io.github.java-diff-utils:java-diff-utils']
   implementation deps['jakarta.inject:jakarta.inject-api']
   implementation deps['jakarta.servlet:jakarta.servlet-api']
-  implementation deps['org.apache.ftpserver:ftplet-api']
-  implementation deps['org.apache.ftpserver:ftpserver-core']
   implementation deps['org.apache.sshd:sshd-core']
   implementation deps['org.apache.sshd:sshd-scp']
   implementation deps['org.apache.sshd:sshd-sftp']

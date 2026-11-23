@@ -25,8 +25,6 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.util.Arrays;
 import javax.annotation.Nullable;
-import org.apache.ftpserver.FtpServer;
-import org.apache.ftpserver.ftplet.FtpException;
 import org.apache.sshd.common.file.virtualfs.VirtualFileSystemFactory;
 import org.apache.sshd.common.keyprovider.KeyPairProvider;
 import org.apache.sshd.common.random.SingletonRandomFactory;
@@ -41,7 +39,7 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 
 /** In-process SFTP server using Apache SSHD. */
-public class TestSftpServer implements FtpServer {
+public class TestSftpServer {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -99,7 +97,7 @@ public class TestSftpServer implements FtpServer {
     }
   }
 
-  public static FtpServer createSftpServer(
+  public static TestSftpServer createSftpServer(
       final String authorizedUser,
       @Nullable final String authorizedPassword,
       @Nullable final PublicKey authorizedPublicKey,
@@ -166,12 +164,6 @@ public class TestSftpServer implements FtpServer {
     this.server = server;
   }
 
-  @Override
-  public void suspend() {
-    // NOP
-  }
-
-  @Override
   public synchronized void stop() {
     try {
       logger.atInfo().log("Stopping server");
@@ -182,28 +174,12 @@ public class TestSftpServer implements FtpServer {
     }
   }
 
-  @Override
-  public synchronized void start() throws FtpException {
-    try {
-      logger.atInfo().log("Starting server");
-      server.start();
-      stopped = false;
-    } catch (IOException e) {
-      throw new FtpException("Couldn't start server", e);
-    }
+  public synchronized void start() throws IOException {
+    logger.atInfo().log("Starting server");
+    server.start();
+    stopped = false;
   }
 
-  @Override
-  public void resume() {
-    // NOP
-  }
-
-  @Override
-  public boolean isSuspended() {
-    return false;
-  }
-
-  @Override
   public boolean isStopped() {
     return stopped;
   }

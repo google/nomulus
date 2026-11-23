@@ -18,9 +18,8 @@ import static com.google.common.base.Preconditions.checkState;
 
 import google.registry.util.NetworkUtils;
 import java.io.File;
+import java.io.IOException;
 import javax.annotation.Nullable;
-import org.apache.ftpserver.FtpServer;
-import org.apache.ftpserver.ftplet.FtpException;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -31,15 +30,14 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  */
 public final class SftpServerExtension implements AfterEachCallback {
 
-  @Nullable
-  private FtpServer server;
+  @Nullable private TestSftpServer server;
 
   /**
    * Starts an SFTP server on a randomly selected port.
    *
    * @return the port on which the server is listening
    */
-  public int serve(String user, String pass, File home) throws FtpException {
+  public int serve(String user, String pass, File home) throws IOException {
     checkState(server == null, "You already have an SFTP server!");
     int port = NetworkUtils.pickUnusedPort();
     server = createSftpServer(user, pass, home, port);
@@ -54,9 +52,9 @@ public final class SftpServerExtension implements AfterEachCallback {
     }
   }
 
-  private static FtpServer createSftpServer(String user, String pass, File home, int port)
-      throws FtpException {
-    FtpServer server = TestSftpServer.createSftpServer(user, pass, null, port, home);
+  private static TestSftpServer createSftpServer(String user, String pass, File home, int port)
+      throws IOException {
+    TestSftpServer server = TestSftpServer.createSftpServer(user, pass, null, port, home);
     server.start();
     return server;
   }
