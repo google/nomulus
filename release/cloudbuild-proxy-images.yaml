@@ -36,6 +36,7 @@ steps:
   entrypoint: ./release/install_gradle.sh
 # Build the proxy docker image.
 - name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
+  env: [ 'DOCKER_API_VERSION=1.41' ]
   args:
   - ./gradlew
   - :proxy:test
@@ -45,6 +46,7 @@ steps:
 # Tag the image for staging repository.
 - name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
   entrypoint: /bin/bash
+  env: [ 'DOCKER_API_VERSION=1.41' ]
   args:
   - -c
   - |
