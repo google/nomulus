@@ -20,7 +20,6 @@ import {
   provideHttpClient,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import {
@@ -32,14 +31,15 @@ import { FormsModule } from '@angular/forms';
 import {
   BULK_ACTION_NAME,
   Domain,
+  DomainListResult,
   DomainListService,
 } from './domainList.service';
-import { RegistryLockService } from './registryLock.service';
+import { DomainLocksResult, RegistryLockService } from './registryLock.service';
 import { RegistrarService } from '../registrar/registrar.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, tap, throwError } from 'rxjs';
 import { PageEvent } from '@angular/material/paginator';
 import { RegistryLockComponent } from './registryLock.component';
 import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
@@ -79,12 +79,7 @@ describe('DomainListComponent', () => {
     registrarIdSignal = signal('reg-1');
 
     await TestBed.configureTestingModule({
-      imports: [
-        DomainListComponent,
-        MaterialModule,
-        BrowserAnimationsModule,
-        FormsModule,
-      ],
+      imports: [DomainListComponent, MaterialModule, FormsModule],
       providers: [
         BackendService,
         DomainListService,
@@ -320,5 +315,101 @@ describe('DomainListComponent', () => {
       BULK_ACTION_NAME.UNSUSPEND
     );
     expect(snackBarOpenSpy).toHaveBeenCalledWith('Cannot unsuspend');
+  });
+
+  it('should reset stale domain, selection, and lock state when switching registrars', () => {
+    component.pageNumber = 2;
+    component.toggleAllRows();
+    component.operationResult.set({
+      'example.tld': { message: 'Deleted', responseCode: '1000' },
+    });
+    domainListService.checkpointTime = '2024-06-01T00:00:00Z';
+    component.openRegistryLock('example.tld');
+
+    const pendingDomainsReg2$ = new Subject<DomainListResult>();
+    const pendingLocksReg2$ = new Subject<DomainLocksResult[]>();
+    const pendingDomainsReg3$ = new Subject<DomainListResult>();
+    const pendingLocksReg3$ = new Subject<DomainLocksResult[]>();
+    const retrieveDomainsSpy = vi
+      .spyOn(domainListService, 'retrieveDomains')
+      .mockReturnValueOnce(
+        pendingDomainsReg2$.pipe(
+          tap((res) => {
+            domainListService.checkpointTime = res.checkpointTime;
+            domainListService.domainsList.set(res.domains);
+          })
+        )
+      )
+      .mockReturnValueOnce(pendingDomainsReg3$.asObservable());
+    const retrieveLocksSpy = vi
+      .spyOn(registryLockService, 'retrieveLocks')
+      .mockReturnValueOnce(
+        pendingLocksReg2$.pipe(
+          tap((locks) => registryLockService.domainsLocks.set(locks))
+        )
+      )
+      .mockReturnValueOnce(pendingLocksReg3$.asObservable());
+
+    registrarIdSignal.set('reg-2');
+    TestBed.flushEffects();
+
+    expect(component.pageNumber).toBe(0);
+    expect(component.totalResults()).toBe(0);
+    expect(component.selection.selected).toEqual([]);
+    expect(component.isAllSelected).toBe(false);
+    expect(component.operationResult()).toBeUndefined();
+    expect(component.dataSource.data).toEqual([]);
+    expect(domainListService.checkpointTime).toBeUndefined();
+    expect(domainListService.selectedDomain()).toBeUndefined();
+    expect(domainListService.activeActionComponent()).toBeNull();
+    expect(domainListService.domainsList()).toEqual([]);
+    expect(registryLockService.domainsLocks()).toEqual([]);
+    expect(retrieveDomainsSpy).toHaveBeenCalledTimes(2);
+    expect(retrieveLocksSpy).toHaveBeenCalledTimes(2);
+    expect(pendingDomainsReg2$.observed).toBe(true);
+    expect(pendingLocksReg2$.observed).toBe(true);
+
+    // Switch to reg-3 before reg-2 requests resolve; reg-2 subscriptions must be cancelled
+    registrarIdSignal.set('reg-3');
+    TestBed.flushEffects();
+
+    expect(retrieveDomainsSpy).toHaveBeenCalledTimes(3);
+    expect(retrieveLocksSpy).toHaveBeenCalledTimes(3);
+    expect(pendingDomainsReg2$.observed).toBe(false);
+    expect(pendingLocksReg2$.observed).toBe(false);
+
+    // Late emissions from stale reg-2 subjects must not overwrite reg-3 state or clear isLoading
+    pendingDomainsReg2$.next({
+      checkpointTime: '2024-07-01T00:00:00Z',
+      domains: [
+        {
+          creationTime: { creationTime: '2024-01-01T00:00:00Z' },
+          currentSponsorRegistrarId: 'reg-2',
+          domainName: 'stale.tld',
+          registrationExpirationTime: '2025-01-01T00:00:00Z',
+          statuses: [],
+        },
+      ],
+      totalResults: 99,
+    });
+    pendingDomainsReg2$.complete();
+    pendingLocksReg2$.next([{ domainName: 'stale.tld' }]);
+    pendingLocksReg2$.complete();
+
+    expect(component.isLoading()).toBe(true);
+    expect(component.dataSource.data).toEqual([]);
+    expect(component.totalResults()).toBe(0);
+
+    pendingDomainsReg3$.complete();
+    pendingLocksReg3$.complete();
+
+    retrieveDomainsSpy.mockClear();
+    retrieveLocksSpy.mockClear();
+    registrarIdSignal.set('');
+    TestBed.flushEffects();
+
+    expect(component.isLoading()).toBe(false);
+    expect(retrieveDomainsSpy).not.toHaveBeenCalled();
+    expect(retrieveLocksSpy).not.toHaveBeenCalled();
   });
 });

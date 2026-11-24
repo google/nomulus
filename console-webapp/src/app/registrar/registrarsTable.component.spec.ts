@@ -16,8 +16,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatSort } from '@angular/material/sort';
 import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import { RegistrarComponent, columns } from './registrarsTable.component';
@@ -51,7 +51,7 @@ describe('RegistrarComponent', () => {
     inNewRegistrarModeSignal = signal(false);
 
     await TestBed.configureTestingModule({
-      imports: [RegistrarComponent, MaterialModule, BrowserAnimationsModule],
+      imports: [RegistrarComponent, MaterialModule],
       providers: [
         BackendService,
         {
@@ -123,9 +123,91 @@ describe('RegistrarComponent', () => {
     expect(navigateSpy).toHaveBeenCalledWith(['new-ote']);
   });
 
-  it('should enable new registrar mode and return OTE restricted element ID', () => {
+  it('should enable new registrar mode, rebind paginator and sort on return, and return OTE restricted element ID', () => {
     expect(component.getElementIdForOteBlock()).toBe(RESTRICTED_ELEMENTS.OTE);
+    expect(component.dataSource.paginator).toBeTruthy();
+    expect(component.dataSource.sort).toBeTruthy();
+
     component.openNewRegistrar();
     expect(inNewRegistrarModeSignal()).toBe(true);
+    fixture.detectChanges();
+    expect(component.dataSource.paginator).toBeNull();
+    expect(component.dataSource.sort).toBeNull();
+
+    inNewRegistrarModeSignal.set(false);
+    fixture.detectChanges();
+    expect(component.dataSource.paginator).toBeTruthy();
+    expect(component.dataSource.sort).toBeTruthy();
+  });
+
+  it('should sort displayed columns using formatted values and numeric IANA IDs', () => {
+    const first: Registrar = {
+      ...sampleRegistrar,
+      registrarId: 'reg-1',
+      registrarName: 'Zeta Corp',
+      ianaIdentifier: 10,
+      allowedTlds: ['dev', 'app'],
+      billingAccountMap: { USD: '200' },
+      driveFolderId: 'folder-b',
+    };
+    const second: Registrar = {
+      ...sampleRegistrar,
+      registrarId: 'reg-2',
+      registrarName: 'alpha Corp',
+      ianaIdentifier: 2,
+      allowedTlds: ['app'],
+      billingAccountMap: { EUR: '100' },
+      driveFolderId: 'folder-a',
+    };
+    const withoutIana: Registrar = {
+      ...sampleRegistrar,
+      registrarId: 'reg-3',
+      ianaIdentifier: undefined,
+      driveFolderId: undefined,
+      billingAccountMap: undefined,
+      allowedTlds: undefined,
+    };
+
+    const byDrive = component.dataSource.sortData(
+      [first, second, withoutIana],
+      { active: 'driveId', direction: 'asc' } as MatSort
+    );
+    expect(byDrive.map((r) => r.registrarId)).toEqual([
+      'reg-3',
+      'reg-2',
+      'reg-1',
+    ]);
+
+    const byIana = component.dataSource.sortData([first, second, withoutIana], {
+      active: 'ianaIdentifier',
+      direction: 'asc',
+    } as MatSort);
+    expect(byIana.map((r) => r.registrarId)).toEqual([
+      'reg-3',
+      'reg-2',
+      'reg-1',
+    ]);
+
+    const byBilling = component.dataSource.sortData(
+      [first, second, withoutIana],
+      { active: 'billingAccountMap', direction: 'asc' } as MatSort
+    );
+    expect(byBilling.map((r) => r.registrarId)).toEqual([
+      'reg-3',
+      'reg-2',
+      'reg-1',
+    ]);
+
+    const byTlds = component.dataSource.sortData([first, second], {
+      active: 'allowedTlds',
+      direction: 'asc',
+    } as MatSort);
+    expect(byTlds.map((r) => r.registrarId)).toEqual(['reg-2', 'reg-1']);
+
+    const byName = component.dataSource.sortData([first, second], {
+      active: 'registrarName',
+      direction: 'asc',
+    } as MatSort);
+    expect(byName.map((r) => r.registrarId)).toEqual(['reg-2', 'reg-1']);
   });
 });

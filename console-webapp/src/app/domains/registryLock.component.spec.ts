@@ -15,7 +15,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
@@ -37,7 +36,7 @@ describe('RegistryLockComponent, DomainListService & RegistryLockService', () =>
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RegistryLockComponent, MaterialModule, NoopAnimationsModule],
+      imports: [RegistryLockComponent, MaterialModule],
       providers: [
         BackendService,
         DomainListService,

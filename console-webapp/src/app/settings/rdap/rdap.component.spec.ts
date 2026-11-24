@@ -16,7 +16,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from 'src/app/material.module';
 import {
   Registrar,
@@ -40,6 +39,7 @@ describe('RdapComponent & RdapEditComponent & RdapService', () => {
   let registrarSignal: ReturnType<
     typeof signal<Partial<Registrar> | undefined>
   >;
+  let registrarIdSignal: ReturnType<typeof signal<string>>;
   let loadRegistrarsSpy: ReturnType<typeof vi.fn>;
 
   const sampleRegistrar: Registrar = {
@@ -58,15 +58,11 @@ describe('RdapComponent & RdapEditComponent & RdapService', () => {
 
   beforeEach(async () => {
     registrarSignal = signal<Partial<Registrar> | undefined>(sampleRegistrar);
+    registrarIdSignal = signal('reg-1');
     loadRegistrarsSpy = vi.fn().mockReturnValue(of([sampleRegistrar]));
 
     await TestBed.configureTestingModule({
-      imports: [
-        RdapComponent,
-        RdapEditComponent,
-        MaterialModule,
-        BrowserAnimationsModule,
-      ],
+      imports: [RdapComponent, RdapEditComponent, MaterialModule],
       providers: [
         BackendService,
         RdapService,
@@ -74,7 +70,7 @@ describe('RdapComponent & RdapEditComponent & RdapService', () => {
           provide: RegistrarService,
           useValue: {
             registrar: registrarSignal,
-            registrarId: signal('reg-1'),
+            registrarId: registrarIdSignal,
             registrars: signal([sampleRegistrar]),
             loadRegistrars: loadRegistrarsSpy,
           },
@@ -110,6 +106,25 @@ describe('RdapComponent & RdapEditComponent & RdapService', () => {
 
     registrarSignal.set(undefined);
     expect(component.formattedAddress()).toBe('');
+  });
+
+  it('should reset editing only when registrarId changes, including to empty', () => {
+    rdapService.editing.set(true);
+
+    // Refreshing registrar object with the same registrarId should not exit edit mode
+    registrarSignal.set({ ...sampleRegistrar });
+    TestBed.flushEffects();
+    expect(rdapService.editing()).toBe(true);
+
+    registrarIdSignal.set('reg-2');
+    TestBed.flushEffects();
+    expect(rdapService.editing()).toBe(false);
+
+    rdapService.editing.set(true);
+    registrarSignal.set(undefined);
+    registrarIdSignal.set('');
+    TestBed.flushEffects();
+    expect(rdapService.editing()).toBe(false);
   });
 
   it('should post RDAP registrar fields and reload registrars via RdapService', () => {

@@ -19,15 +19,12 @@ import {
 } from '@angular/common/http';
 import {
   ApplicationConfig,
-  importProvidersFrom,
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MAT_SNACK_BAR_DEFAULT_OPTIONS } from '@angular/material/snack-bar';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { routes } from './app.routes';
-import { MaterialModule } from './material.module';
 import { BackendService } from './shared/services/backend.service';
 import { BreakPointObserverService } from './shared/services/breakPoint.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
@@ -37,8 +34,6 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     provideRouter(routes, withHashLocation()),
-    provideAnimations(),
-    importProvidersFrom(MaterialModule),
     provideHttpClient(
       withInterceptorsFromDi(),
       withXsrfConfiguration({

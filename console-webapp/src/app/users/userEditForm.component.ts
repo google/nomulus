@@ -15,11 +15,10 @@
 import {
   Component,
   ElementRef,
-  EventEmitter,
   Inject,
   input,
-  Output,
-  ViewChild,
+  output,
+  viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { MaterialModule } from '../material.module';
@@ -78,7 +77,7 @@ export class ResetRegistryLockPasswordComponent {
   providers: [],
 })
 export class UserEditFormComponent {
-  @ViewChild('form') form!: ElementRef;
+  form = viewChild.required<ElementRef<HTMLFormElement>>('form');
   isNew = input<boolean>(false);
   user = input<User, User>(
     {
@@ -89,7 +88,7 @@ export class UserEditFormComponent {
     { transform: (user: User) => structuredClone(user) }
   );
 
-  @Output() onEditComplete = new EventEmitter<User>();
+  onEditComplete = output<User>();
 
   constructor(
     protected userDataService: UserDataService,
@@ -102,10 +101,10 @@ export class UserEditFormComponent {
 
   saveEdit(e: SubmitEvent) {
     e.preventDefault();
-    if (this.form.nativeElement.checkValidity()) {
+    if (this.form().nativeElement.checkValidity()) {
       this.onEditComplete.emit(this.user());
     } else {
-      this.form.nativeElement.reportValidity();
+      this.form().nativeElement.reportValidity();
     }
   }
 
