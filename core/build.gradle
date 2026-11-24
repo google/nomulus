@@ -594,6 +594,17 @@ task fragileTest(type: FilteringTest) {
     exclude dockerIncompatibleTestPatterns
   }
 
+  // Disable Selenium's client-side OpenTelemetry tracing, which the tests
+  // don't need. With tracing on, RemoteWebDriver runs OpenTelemetry SDK
+  // autoconfiguration, which loads the GCP auth customizer from
+  // org.apache.beam:beam-sdks-java-extensions-opentelemetry-gcp-auth-extension
+  // (a dependency of beam-runners-google-cloud-dataflow-java as of Beam
+  // 2.78.0). That customizer needs a GCP project ID from GOOGLE_CLOUD_PROJECT
+  // or from the Application Default Credentials. gcloud user credentials on
+  // desktops have none, so the tests fail with "Google Cloud Project ID not
+  // configured". On GCE (e.g., Kokoro) the metadata server supplies one.
+  systemProperty 'webdriver.remote.enableTracing', 'false'
+
   // Run every test class in a freshly started process.
   forkEvery = 1
 
