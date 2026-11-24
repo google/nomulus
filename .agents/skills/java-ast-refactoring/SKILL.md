@@ -11,17 +11,17 @@ This skill uses OpenRewrite to perform Abstract Syntax Tree (AST) based refactor
 
 Because OpenRewrite's YAML recipes do not natively support simple variable or field renaming, a custom script is provided:
 ```bash
-python3 .gemini/skills/java-ast-refactoring/scripts/safe_rename.py <filepath> <old_name> <new_name>
+python3 .agents/skills/java-ast-refactoring/scripts/safe_rename.py <filepath> <old_name> <new_name>
 ```
 **CRITICAL:** Running this python script is a LAST RESORT. It is a regex-based token replacement that ignores strings and comments, but it lacks true AST understanding. ALWAYS prefer using OpenRewrite recipes (`rewrite.yml`) for structural changes like renaming classes, methods, or moving targets, as OpenRewrite correctly handles imports, types, and cross-file references safely.
 
 ## Usage
 
 1. Start from a clean working tree (`git status`) so the refactoring diff is isolated and easy to revert.
-2. Create a `rewrite.yml` recipe file in the workspace root. Refer to `.gemini/skills/java-ast-refactoring/references/rewrite_recipes.md` for syntax. The recipe's first `name:` line is the recipe that gets activated.
+2. Create a `rewrite.yml` recipe file in the workspace root. Refer to `.agents/skills/java-ast-refactoring/references/rewrite_recipes.md` for syntax. The recipe's first `name:` line is the recipe that gets activated.
 3. Execute the script from the repository root:
 ```bash
-./.gemini/skills/java-ast-refactoring/scripts/run_rewrite.sh rewrite.yml
+./.agents/skills/java-ast-refactoring/scripts/run_rewrite.sh rewrite.yml
 ```
    A recipe stored elsewhere is copied to `./rewrite.yml` for the run and removed afterwards; a recipe already at `./rewrite.yml` is used in place and left untouched. Delete your own `./rewrite.yml` before committing.
 4. The script will safely apply the AST transformations and then automatically run `./gradlew spotlessApply` and `./gradlew javaIncrementalFormatApply` on the modified files to automatically fix any Checkstyle line-length and import ordering issues caused by longer/shorter identifiers.
@@ -35,7 +35,7 @@ python3 .gemini/skills/java-ast-refactoring/scripts/safe_rename.py <filepath> <o
 ```
 3. Run the tests covering the touched code, e.g. `./gradlew :core:standardTest -x :console-webapp:buildConsoleWebapp`.
 4. Confirm `git status` shows no stray files (`rewrite.yml`, `rewrite-init.gradle`, or a modified `console-webapp/package-lock.json`).
-5. Commit, then run the `pr-polisher` skill (`python3 .gemini/skills/pr-polisher/scripts/check_diff.py`) to catch leftover fully qualified names, unused imports, and other anti-patterns.
+5. Commit, then run the `pr-polisher` skill (`python3 .agents/skills/pr-polisher/scripts/check_diff.py`) to catch leftover fully qualified names, unused imports, and other anti-patterns.
 
 ## Error Recovery
 
@@ -48,4 +48,3 @@ python3 .gemini/skills/java-ast-refactoring/scripts/safe_rename.py <filepath> <o
 
 ## Known Limitations & Troubleshooting
 *   **Static Imports Dropped on Class Rename:** When using `ChangeType` to rename a class, OpenRewrite may sometimes drop static imports for fields/constants belonging to the old class instead of updating them to the new class. If compilation fails due to "cannot find symbol" for a constant after a class rename, manually restore the static import (e.g., `import static com.new.ClassName.CONSTANT;`).
-*   **Continuous Improvement:** If any new issues or edge cases are found while running the refactoring (e.g., build failures, formatting issues, or missed transformations), you **MUST** proactively ask the user if you should permanently update this skill file (`SKILL.md`) and its accompanying scripts (`scripts/run_rewrite.sh`, `scripts/safe_rename.py`) to fix the issue for future use. Do not wait for the user to prompt you to fix the infrastructure.
