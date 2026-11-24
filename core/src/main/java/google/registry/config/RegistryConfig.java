@@ -17,9 +17,11 @@ package google.registry.config;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static google.registry.config.ConfigUtils.makeUrl;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.Comparator.naturalOrder;
@@ -34,6 +36,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.batch.DomainWatcherAction;
 import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.export.ExportDropListAction;
@@ -913,6 +916,19 @@ public final class RegistryConfig {
     public static InternetAddress provideNewAlertRecipientEmailAddress(
         RegistryConfigSettings config) {
       return parseEmailAddress(config.misc.newAlertRecipientEmailAddress);
+    }
+
+    /** Returns the set of TLDs watched by {@link DomainWatcherAction}. */
+    @Provides
+    @Config("domainWatcherTlds")
+    public static ImmutableSet<String> provideDomainWatcherTlds(RegistryConfigSettings config) {
+      if (config.misc.domainWatcherTlds == null) {
+        return ImmutableSet.of();
+      }
+      return config.misc.domainWatcherTlds.stream()
+          .map(tld -> tld.startsWith(".") ? tld.substring(1) : tld)
+          .map(tld -> canonicalizeHostname(tld))
+          .collect(toImmutableSet());
     }
 
     /**
