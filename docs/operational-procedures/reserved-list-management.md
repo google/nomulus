@@ -17,7 +17,7 @@ types are:
     allocation token at time of registration. This token is configured on an
     `AllocationToken` entity with a matching `domainName`, and is sent by the
     registrar using the
-    [allocation token EPP extension](https://tools.ietf.org/id/draft-ietf-regext-allocation-token-07.html).
+    [allocation token EPP extension](https://datatracker.ietf.org/doc/html/rfc8495).
 *   **`RESERVED_FOR_ANCHOR_TENANT`** - Like `RESERVED_FOR_SPECIFIC_USE`, except
     for an anchor tenant (i.e. a registrant participating in a
     [Qualified Launch Program](https://newgtlds.icann.org/en/announcements-and-media/announcement-10apr14-en)),

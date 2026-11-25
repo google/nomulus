@@ -43,14 +43,14 @@ metrics monitored are as follows:
     described by TLD, reserved list name, and the reservation type found.
 
 Follow the guide to
-[set up a Stackdriver account](https://cloud.google.com/monitoring/accounts/guide)
+[set up a Cloud Monitoring workspace](https://cloud.google.com/monitoring/docs)
 and associate it with the GCP project containing the Nomulus app. Once the two
 have been linked, monitoring will start automatically. For now, because the
 visualization of custom metrics in Stackdriver is embryronic, you can retrieve
 and visualize the collected metrics with a script, as described in the guide on
 [Reading Time Series](https://cloud.google.com/monitoring/custom-metrics/reading-metrics)
 and the
-[custom metric code sample](https://github.com/GoogleCloudPlatform/python-docs-samples/blob/master/monitoring/api/v3/custom_metric.py).
+[custom metric documentation](https://cloud.google.com/monitoring/custom-metrics).
 
 In addition to the included white-box monitoring, black-box monitoring should be
 set up to exercise the functionality of the registry platform as a user would
