@@ -50,20 +50,31 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
 
   protected abstract Optional<V> loadFromDatabase(String key);
 
-  protected boolean shouldPersistToRemoteCache(V value) {
-    return true;
+  protected boolean shouldPersistToRemoteCache(V value, Instant now) {
+    return getExpirationTime(value).isAfter(now);
+  }
+
+  protected Instant getExpirationTime(V resource) {
+    return resource.getDeletionTime();
+  }
+
+  protected Optional<V> loadFromCaches(Class<V> clazz, String key) {
+    Instant now = clock.now();
+    return loadFromCachesIncludingDeleted(clazz, key, now)
+        .filter(v -> now.isBefore(v.getDeletionTime()));
+  }
+
+  protected Optional<V> loadFromCachesIncludingDeleted(Class<V> clazz, String key) {
+    return loadFromCachesIncludingDeleted(clazz, key, clock.now());
   }
 
   @SuppressWarnings("unchecked")
-  protected Optional<V> loadFromCaches(Class<V> clazz, String key) {
-    Instant now = clock.now();
+  private Optional<V> loadFromCachesIncludingDeleted(Class<V> clazz, String key, Instant now) {
     return (Optional<V>)
-        loadFromCachesInternal(clazz, key)
-            .filter(v -> now.isBefore(v.getDeletionTime()))
-            .map(v -> v.cloneProjectedAtTime(now));
+        loadFromCachesInternal(clazz, key, now).map(v -> v.cloneProjectedAtTime(now));
   }
 
-  private Optional<V> loadFromCachesInternal(Class<V> clazz, String key) {
+  private Optional<V> loadFromCachesInternal(Class<V> clazz, String key, Instant now) {
     // hopefully the resource is in the local cache
     Optional<V> possibleValue = Optional.ofNullable(localCache.getIfPresent(key));
     if (possibleValue.isPresent()) {
@@ -86,8 +97,9 @@ public abstract class MultilayerEppResourceCache<V extends EppResource> {
       return possibleValue;
     }
     V value = possibleValue.get();
-    if (shouldPersistToRemoteCache(value)) {
-      jedisClient.set(new SimplifiedJedisClient.JedisResource<>(key, value));
+    if (shouldPersistToRemoteCache(value, now)) {
+      jedisClient.set(
+          new SimplifiedJedisClient.JedisResource<>(key, value, getExpirationTime(value)));
     }
     localCache.put(key, value);
     cacheMetrics.recordLookup(clazz.getSimpleName(), CacheMetrics.CacheHitType.MISS);

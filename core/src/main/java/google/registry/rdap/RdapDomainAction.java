@@ -14,15 +14,15 @@
 
 package google.registry.rdap;
 
+import static google.registry.flows.domain.DomainFlowUtils.isDomainEligibleForXap;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
-import static google.registry.util.DateTimeUtils.START_INSTANT;
 
 import com.google.common.net.InternetDomainName;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
-import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
@@ -33,6 +33,8 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 /** RDAP action for domain requests. */
@@ -44,8 +46,13 @@ import java.util.Optional;
     auth = Auth.AUTH_PUBLIC)
 public class RdapDomainAction extends RdapActionBase {
 
-  @Inject public RdapDomainAction() {
+  private final Duration domainExpiryAccessPeriodTotalLength;
+
+  @Inject
+  public RdapDomainAction(
+      @Config("domainExpiryAccessPeriodTotalLength") Duration domainExpiryAccessPeriodTotalLength) {
     super("domain name", EndpointType.DOMAIN);
+    this.domainExpiryAccessPeriodTotalLength = domainExpiryAccessPeriodTotalLength;
   }
 
   @Override
@@ -66,11 +73,9 @@ public class RdapDomainAction extends RdapActionBase {
               pathSearchString, getHumanReadableObjectTypeName(), e.getMessage()));
     }
     // The query string is not used; the RDAP syntax is /rdap/domain/mydomain.com.
-    Optional<Domain> domain =
-        shouldIncludeDeleted() // the remote domain cache cannot handle times in the past
-            ? ForeignKeyUtils.loadResourceByCache(Domain.class, pathSearchString, START_INSTANT)
-            : domainCache.loadByDomainName(pathSearchString);
+    Optional<Domain> domain = domainCache.loadByDomainNameIncludingDeleted(pathSearchString);
     if (domain.isEmpty() || !isAuthorized(domain.get())) {
+      domain.ifPresent(d -> handlePossibleExpiryAccessPeriod(domainName, d));
       handlePossibleBsaBlock(domainName);
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
       // query, it MUST reply with 404 response code.
@@ -82,10 +87,28 @@ public class RdapDomainAction extends RdapActionBase {
     return rdapJsonFormatter.createRdapDomain(domain.get(), OutputDataType.FULL);
   }
 
+  private void handlePossibleExpiryAccessPeriod(InternetDomainName domainName, Domain domain) {
+    Instant requestTime = getRequestTime();
+    Tld tld = Tld.get(domainName.parent().toString());
+    if (tld.getExpiryAccessPeriodModeAt(requestTime) == Tld.ExpiryAccessPeriodMode.ENABLED
+        && isDomainEligibleForXap(domain, tld, requestTime)
+        && domain
+            .getDeletionTime()
+            .isAfter(requestTime.minus(domainExpiryAccessPeriodTotalLength))) {
+      throw new DomainInExpiryAccessPeriodException(domainName + " in Expiry Access Period");
+    }
+  }
+
   private void handlePossibleBsaBlock(InternetDomainName domainName) {
     Tld tld = Tld.get(domainName.parent().toString());
     if (DomainFlowUtils.isBlockedByBsa(domainName.parts().getFirst(), tld, clock.now())) {
       throw new DomainBlockedByBsaException(domainName + " blocked by BSA");
+    }
+  }
+
+  static class DomainInExpiryAccessPeriodException extends RuntimeException {
+    DomainInExpiryAccessPeriodException(String message) {
+      super(message);
     }
   }
 
