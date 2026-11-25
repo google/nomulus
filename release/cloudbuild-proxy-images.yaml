@@ -1,10 +1,11 @@
 # Builds the proxy image of a proxy release from this repo at the release tag,
-# so that its build provenance records the source repository and this file. It
-# runs as a manual Cloud Build trigger at the release tag.
+# so that its build provenance records the source repository and this file.
+# cloudbuild-release.yaml starts it at the release commit through the manual
+# Cloud Build trigger proxy-images.
 #
 # To run it by hand at a release tag that exists in both repositories (the
 # trigger sets _INTERNAL_REPO_URL):
-# gcloud builds triggers run proxy-images --region=[REGION] \
+# gcloud builds triggers run proxy-images --region=global \
 #   --sha=[COMMIT_OF_TAG] --substitutions=TAG_NAME=[TAG]
 steps:
 # Add the internal overlay at the same tag, and set the project in the proxy
