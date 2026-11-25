@@ -52,7 +52,12 @@ class RequestMetrics {
   public RequestMetrics() {}
 
   public void record(
-      Duration duration, String path, Action.Method method, AuthLevel authLevel, boolean success) {
+      Duration duration,
+      String path,
+      Action.Method method,
+      AuthLevel authLevel,
+      boolean success,
+      int status) {
     requestDurationMetric.record(
         duration.toMillis(),
         truncatePath(path),
@@ -60,8 +65,8 @@ class RequestMetrics {
         String.valueOf(authLevel),
         String.valueOf(success));
     logger.atInfo().log(
-        "Action called for path=%s, method=%s, authLevel=%s, success=%s. Took: %.3fs.",
-        path, method, authLevel, success, duration.toMillis() / 1000d);
+        "Action called for path=%s, method=%s, authLevel=%s, success=%s, status=%d. Took: %.3fs.",
+        path, method, authLevel, success, status, duration.toMillis() / 1000d);
   }
 
   private static String truncatePath(String path) {

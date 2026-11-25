@@ -25,6 +25,7 @@ import com.google.common.flogger.FluentLogger;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /** Top-level authentication/authorization class; calls authentication mechanisms as needed. */
 public class RequestAuthenticator {
@@ -49,7 +50,7 @@ public class RequestAuthenticator {
    *     auth settings are set to NONE -- in this case, NOT_AUTHENTICATED is returned
    */
   public Optional<AuthResult> authorize(AuthSettings auth, HttpServletRequest req) {
-    logger.atInfo().log("Action requires auth: %s", auth);
+    logger.atFine().log("Action requires auth: %s", auth);
     AuthResult authResult = authenticate(auth, req);
     if (auth.minimumLevel() == APP && !authResult.isAuthenticated()) {
       logger.atWarning().log("Not authorized; no authentication found.");
@@ -82,12 +83,12 @@ public class RequestAuthenticator {
     for (AuthenticationMechanism authMechanism : apiAuthenticationMechanisms) {
       authResult = authMechanism.authenticate(req);
       if (authResult.isAuthenticated()) {
-        logger.atInfo().log(
+        logger.at(authResult.authLevel() == USER ? Level.INFO : Level.FINE).log(
             "Authenticated via %s: %s", authMechanism.getClass().getSimpleName(), authResult);
         return authResult;
       }
     }
-    logger.atInfo().log("No authentication found.");
+    logger.atFine().log("No authentication found.");
     return AuthResult.NOT_AUTHENTICATED;
   }
 

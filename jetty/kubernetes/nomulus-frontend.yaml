@@ -17,6 +17,14 @@ spec:
       serviceAccountName: nomulus
       nodeSelector:
         cloud.google.com/machine-family: c4
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        nodeTaintsPolicy: Honor
+        labelSelector:
+          matchLabels:
+            traffic: frontend-all
       containers:
       - name: frontend
         image: gcr.io/GCP_PROJECT/nomulus

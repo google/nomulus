@@ -27,6 +27,7 @@ import static google.registry.testing.DatabaseHelper.existsInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TestDataHelper.fileClassPath;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +40,7 @@ import static org.mockito.Mockito.verify;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.testing.TestLogHandler;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
@@ -46,6 +48,7 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import google.registry.util.JdkLoggerConfig;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityManager;
@@ -60,8 +63,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.function.Executable;
@@ -88,6 +94,7 @@ class JpaTransactionManagerImplTest {
           new TestEntity("entity1", "foo"),
           new TestEntity("entity2", "bar"),
           new TestEntity("entity3", "qux"));
+  private final TestLogHandler logHandler = new TestLogHandler();
 
   @RegisterExtension
   final JpaUnitTestExtension jpaExtension =
@@ -100,6 +107,41 @@ class JpaTransactionManagerImplTest {
               TestNamedCompoundIdEntity.class,
               TestCollectionEntity.class)
           .buildUnitTestExtension();
+
+  @BeforeEach
+  void beforeEach() {
+    JdkLoggerConfig.getConfig(JpaTransactionManagerImpl.class).addHandler(logHandler);
+    JdkLoggerConfig.getConfig(JpaTransactionManagerImpl.class).setLevel(Level.FINE);
+  }
+
+  @AfterEach
+  void afterEach() {
+    JdkLoggerConfig.getConfig(JpaTransactionManagerImpl.class).removeHandler(logHandler);
+    JdkLoggerConfig.getConfig(JpaTransactionManagerImpl.class).setLevel(null);
+  }
+
+  @Test
+  void transact_replica_logsAtFine() {
+    replicaTm().transact(() -> {});
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "Using read-only SQL replica");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
+  }
+
+  @Test
+  void transact_overrideIsolationLevel_logsAtFine() {
+    TransactionIsolationLevel defaultLevel = tm().getDefaultTransactionIsolationLevel();
+    tm().transact(TRANSACTION_READ_UNCOMMITTED, () -> {});
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.FINE,
+            String.format(
+                "Overriding transaction isolation level from %s to %s",
+                defaultLevel, TRANSACTION_READ_UNCOMMITTED));
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
+  }
 
   @Test
   void transact_success() {
@@ -266,6 +308,10 @@ class JpaTransactionManagerImplTest {
                       insertCompany("Foo");
                       throw new RuntimeException();
                     }));
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING, "Error during transaction; transaction rolled back.");
     assertPersonEmpty();
     assertCompanyEmpty();
   }

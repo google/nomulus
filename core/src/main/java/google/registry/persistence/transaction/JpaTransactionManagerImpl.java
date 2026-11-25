@@ -278,14 +278,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       txnInfo.start(clock, readOnly ? ReplicaDbIdService::allocateId : this::fetchIdFromSequence);
       if (readOnly) {
         getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
-        logger.atInfo().log("Using read-only SQL replica");
+        logger.atFine().log("Using read-only SQL replica");
       }
       if (isolationLevel != null && isolationLevel != getDefaultTransactionIsolationLevel()) {
         getEntityManager()
             .createNativeQuery(
                 String.format("SET TRANSACTION ISOLATION LEVEL %s", isolationLevel.getMode()))
             .executeUpdate();
-        logger.atInfo().log(
+        logger.atFine().log(
             "Overriding transaction isolation level from %s to %s",
             getDefaultTransactionIsolationLevel(), isolationLevel);
       }
