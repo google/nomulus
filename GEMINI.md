@@ -65,6 +65,7 @@ This document captures the mandates, architectural patterns, and project convent
 - **Empirical Reproduction:** Before fixing a bug, write a test that reproduces it.
 - **FakeClock and Sleeper:** Use them for any timeout, delay, or expiration logic; never `Thread.sleep()`.
 - **Base Classes:** Leverage `CommandTestCase`, `EppToolCommandTestCase`, etc., for consistent setup.
+- **Sub-`INFO` Log Assertions (`Level.FINE`):** JUL defaults to `Level.INFO` in tests, silently dropping `FINE` logs before reaching `TestLogHandler`. Lower the logger in `@BeforeEach` (`JdkLoggerConfig.getConfig(MyClass.class).setLevel(Level.FINE)`) and always reset `.setLevel(null)` alongside `removeHandler(...)` in `@AfterEach` so logger state never leaks across tests.
 - **Truth:** Prefer `.hasValue(...)` over `.isEqualTo(Optional.of(...))`.
 - **JVM Reuse:** `:core:standardTest` reuses JVMs across test classes, so static state and `System.setProperty` values leak between tests. Give static singletons a `resetForTesting()` hook, publish shared state through a single `volatile` field, and validate inputs before mutating global properties.
 - **Gradle Test Tasks:** In `core`, run `./gradlew :core:standardTest -x :console-webapp:buildConsoleWebapp` first (faster than `test`, which adds `fragileTest`); run the full `test` task only after it passes.
