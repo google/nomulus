@@ -22,13 +22,20 @@ import static google.registry.request.Action.Method.DELETE;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.Action.Method.PUT;
+import static google.registry.util.DomainNameUtils.ALLOWED_CHARS;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
+import static google.registry.util.Idn.toUnicode;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.InternetDomainName;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
@@ -42,10 +49,13 @@ import google.registry.request.auth.Auth;
 import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.inject.Inject;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
+import javax.annotation.Nullable;
 
 @Action(
     service = Service.CONSOLE,
@@ -81,12 +91,13 @@ public class ContactAction extends ConsoleApiAction {
   protected void deleteHandler(User user) {
     updateContacts(
         user,
-        "Deleted " + contact.get().getEmailAddress(),
-        (registrar, oldContacts) ->
+        "Deleted ",
+        /* validateTargetEmail= */ false,
+        (registrar, oldContacts, targetContact) ->
             oldContacts.stream()
                 .filter(
                     oldContact ->
-                        !oldContact.getEmailAddress().equals(contact.get().getEmailAddress()))
+                        !oldContact.getEmailAddress().equals(targetContact.getEmailAddress()))
                 .collect(toImmutableSet()));
   }
 
@@ -94,63 +105,68 @@ public class ContactAction extends ConsoleApiAction {
   protected void postHandler(User user) {
     updateContacts(
         user,
-        "Created " + contact.get().getEmailAddress(),
-        (registrar, oldContacts) -> {
-          RegistrarPoc newContact = contact.get();
-          return ImmutableSet.<RegistrarPoc>builder()
-              .addAll(oldContacts)
-              .add(
-                  new RegistrarPoc()
-                      .asBuilder()
-                      .setTypes(newContact.getTypes())
-                      .setVisibleInRdapAsTech(newContact.getVisibleInRdapAsTech())
-                      .setVisibleInRdapAsAdmin(newContact.getVisibleInRdapAsAdmin())
-                      .setVisibleInDomainRdapAsAbuse(newContact.getVisibleInDomainRdapAsAbuse())
-                      .setFaxNumber(newContact.getFaxNumber())
-                      .setName(newContact.getName())
-                      .setEmailAddress(newContact.getEmailAddress())
-                      .setPhoneNumber(newContact.getPhoneNumber())
-                      .setRegistrar(registrar)
-                      .build())
-              .build();
-        });
+        "Created ",
+        /* validateTargetEmail= */ true,
+        (registrar, oldContacts, newContact) ->
+            ImmutableSet.<RegistrarPoc>builder()
+                .addAll(oldContacts)
+                .add(
+                    new RegistrarPoc()
+                        .asBuilder()
+                        .setTypes(newContact.getTypes())
+                        .setVisibleInRdapAsTech(newContact.getVisibleInRdapAsTech())
+                        .setVisibleInRdapAsAdmin(newContact.getVisibleInRdapAsAdmin())
+                        .setVisibleInDomainRdapAsAbuse(newContact.getVisibleInDomainRdapAsAbuse())
+                        .setFaxNumber(newContact.getFaxNumber())
+                        .setName(newContact.getName())
+                        .setEmailAddress(newContact.getEmailAddress())
+                        .setPhoneNumber(newContact.getPhoneNumber())
+                        .setRegistrar(registrar)
+                        .build())
+                .build());
   }
 
   @Override
   protected void putHandler(User user) {
     updateContacts(
         user,
-        "Updated " + contact.get().getEmailAddress(),
-        (registrar, oldContacts) -> {
-          RegistrarPoc updatedContact = contact.get();
-          return oldContacts.stream()
-              .map(
-                  oldContact ->
-                      oldContact.getId().equals(updatedContact.getId())
-                          ? oldContact
-                              .asBuilder()
-                              .setTypes(updatedContact.getTypes())
-                              .setVisibleInRdapAsTech(updatedContact.getVisibleInRdapAsTech())
-                              .setVisibleInRdapAsAdmin(updatedContact.getVisibleInRdapAsAdmin())
-                              .setVisibleInDomainRdapAsAbuse(
-                                  updatedContact.getVisibleInDomainRdapAsAbuse())
-                              .setFaxNumber(updatedContact.getFaxNumber())
-                              .setName(updatedContact.getName())
-                              .setEmailAddress(updatedContact.getEmailAddress())
-                              .setPhoneNumber(updatedContact.getPhoneNumber())
-                              .build()
-                          : oldContact)
-              .collect(toImmutableSet());
-        });
+        "Updated ",
+        /* validateTargetEmail= */ true,
+        (registrar, oldContacts, updatedContact) ->
+            oldContacts.stream()
+                .map(
+                    oldContact ->
+                        oldContact.getId().equals(updatedContact.getId())
+                            ? oldContact
+                                .asBuilder()
+                                .setTypes(updatedContact.getTypes())
+                                .setVisibleInRdapAsTech(updatedContact.getVisibleInRdapAsTech())
+                                .setVisibleInRdapAsAdmin(updatedContact.getVisibleInRdapAsAdmin())
+                                .setVisibleInDomainRdapAsAbuse(
+                                    updatedContact.getVisibleInDomainRdapAsAbuse())
+                                .setFaxNumber(updatedContact.getFaxNumber())
+                                .setName(updatedContact.getName())
+                                .setEmailAddress(updatedContact.getEmailAddress())
+                                .setPhoneNumber(updatedContact.getPhoneNumber())
+                                .build()
+                            : oldContact)
+                .collect(toImmutableSet()));
+  }
+
+  @FunctionalInterface
+  private interface ContactsUpdater {
+    ImmutableSet<RegistrarPoc> apply(
+        Registrar registrar, ImmutableSet<RegistrarPoc> oldContacts, RegistrarPoc targetContact);
   }
 
   private void updateContacts(
       User user,
-      String historyDescription,
-      BiFunction<Registrar, ImmutableSet<RegistrarPoc>, ImmutableSet<RegistrarPoc>>
-          contactsUpdater) {
+      String actionPrefix,
+      boolean validateTargetEmail,
+      ContactsUpdater contactsUpdater) {
     checkPermission(user, registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS);
     checkArgument(contact.isPresent(), "Contact parameter is not present");
+    RegistrarPoc targetContact = contact.get();
     Registrar registrar =
         Registrar.loadByRegistrarId(registrarId)
             .orElseThrow(
@@ -159,16 +175,22 @@ public class ContactAction extends ConsoleApiAction {
                         String.format("Unknown registrar %s", registrarId)));
 
     ImmutableSet<RegistrarPoc> oldContacts = registrar.getContacts();
-    ImmutableSet<RegistrarPoc> newContacts = contactsUpdater.apply(registrar, oldContacts);
-
+    ImmutableSet<RegistrarPoc> newContacts;
     try {
+      if (validateTargetEmail) {
+        validateContactEmail(targetContact.getEmailAddress());
+      } else if (Strings.isNullOrEmpty(targetContact.getEmailAddress())) {
+        throw new ContactRequirementException("Contact email address is required");
+      }
+      newContacts = contactsUpdater.apply(registrar, oldContacts, targetContact);
       checkContactRequirements(oldContacts, newContacts);
     } catch (ContactRequirementException e) {
       logger.atWarning().withCause(e).log(
-          "Error processing contacts post request for registrar: %s", registrarId);
+          "Error processing contacts update request for registrar: %s", registrarId);
       throw new IllegalArgumentException(e);
     }
 
+    String historyDescription = actionPrefix + targetContact.getEmailAddress();
     tm().transact(
             () -> {
               RegistrarPoc.updateContacts(registrar, newContacts);
@@ -195,11 +217,20 @@ public class ContactAction extends ConsoleApiAction {
    *
    * @throws ContactRequirementException if the checks fail.
    */
-  private static void checkContactRequirements(
+  @VisibleForTesting
+  static void checkContactRequirements(
       ImmutableSet<RegistrarPoc> existingContacts, ImmutableSet<RegistrarPoc> updatedContacts) {
-    // Check that no two contacts use the same email address.
+    ImmutableSet<String> existingEmails =
+        existingContacts.stream()
+            .map(RegistrarPoc::getEmailAddress)
+            .filter(Objects::nonNull)
+            .collect(toImmutableSet());
+    // Validate new or modified contact email addresses and ensure no two contacts share an email.
     Set<String> emails = new HashSet<>();
     for (RegistrarPoc contact : updatedContacts) {
+      if (!existingEmails.contains(contact.getEmailAddress())) {
+        validateContactEmail(contact.getEmailAddress());
+      }
       if (!emails.add(contact.getEmailAddress())) {
         throw new ContactRequirementException(
             String.format(
@@ -289,8 +320,60 @@ public class ContactAction extends ConsoleApiAction {
     }
   }
 
+  private static void validateContactEmail(@Nullable String email) {
+    if (Strings.isNullOrEmpty(email) || CharMatcher.whitespace().matchesAnyOf(email)) {
+      throw new ContactRequirementException(
+          String.format("Provided email %s is not a valid email address", email));
+    }
+    int atIndex = email.indexOf('@');
+    if (atIndex <= 0 || atIndex != email.lastIndexOf('@') || atIndex == email.length() - 1) {
+      throw new ContactRequirementException(
+          String.format("Provided email %s is not a valid email address", email));
+    }
+    String localPart = email.substring(0, atIndex);
+    String domainPart = email.substring(atIndex + 1);
+    if (localPart.startsWith(".")
+        || localPart.endsWith(".")
+        || localPart.contains("..")
+        || domainPart.startsWith(".")
+        || domainPart.endsWith(".")
+        || domainPart.contains("..")) {
+      throw new ContactRequirementException(
+          String.format("Provided email %s is not a valid email address", email));
+    }
+    try {
+      InternetAddress internetAddress = new InternetAddress(email, true);
+      internetAddress.validate();
+      if (!email.equals(internetAddress.getAddress())) {
+        throw new ContactRequirementException(
+            String.format("Provided email %s is not a valid email address", email));
+      }
+    } catch (AddressException e) {
+      throw new ContactRequirementException(
+          String.format("Provided email %s is not a valid email address", email));
+    }
+    InternetDomainName parsedUnicodeDomain;
+    try {
+      String asciiDomain = canonicalizeHostname(domainPart);
+      if (!ALLOWED_CHARS.matchesAllOf(asciiDomain)) {
+        throw new ContactRequirementException(
+            String.format("Provided email %s is not a valid email address", email));
+      }
+      InternetDomainName parsedAsciiDomain = InternetDomainName.from(asciiDomain);
+      parsedUnicodeDomain = InternetDomainName.from(toUnicode(parsedAsciiDomain.toString()));
+    } catch (IllegalArgumentException e) {
+      throw new ContactRequirementException(
+          String.format("Provided email %s is not a valid email address", email));
+    }
+    if (!parsedUnicodeDomain.hasPublicSuffix() || parsedUnicodeDomain.isPublicSuffix()) {
+      throw new ContactRequirementException(
+          String.format("Provided email %s must use a domain with a valid public suffix", email));
+    }
+  }
+
   /** Thrown when a set of contacts doesn't meet certain constraints. */
-  private static class ContactRequirementException extends RuntimeException {
+  @VisibleForTesting
+  static class ContactRequirementException extends RuntimeException {
     ContactRequirementException(String msg) {
       super(msg);
     }

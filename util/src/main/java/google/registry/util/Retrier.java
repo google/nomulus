@@ -90,6 +90,15 @@ public class Retrier implements Serializable {
   }
 
   /**
+   * Retries a unit of work in the face of transient errors, without returning a value.
+   *
+   * @see #callWithRetry(Callable, Predicate)
+   */
+  public void callWithRetry(VoidCallable callable, Predicate<Throwable> isRetryable) {
+    callWithRetry(callable.asCallable(), isRetryable);
+  }
+
+  /**
    * Retries a unit of work in the face of transient errors and returns the result.
    *
    * <p>Retrying is done a fixed number of times, with exponential backoff, if the exception that is

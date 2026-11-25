@@ -24,9 +24,11 @@ import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.SqlHelper.saveRegistrar;
+import static google.registry.ui.server.console.settings.ContactAction.checkContactRequirements;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -42,18 +44,23 @@ import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
+import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.console.ConsoleActionBaseTestCase;
+import google.registry.ui.server.console.ConsoleModule;
+import google.registry.ui.server.console.settings.ContactAction.ContactRequirementException;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Optional;
+import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Tests for {@link google.registry.ui.server.console.settings.ContactAction}. */
 class ContactActionTest extends ConsoleActionBaseTestCase {
@@ -362,15 +369,260 @@ visibleInRdapAsTech=true, visibleInDomainRdapAsAbuse=false}
     assertThat(response.getPayload()).isEqualTo("Cannot alter the set of primary contacts");
   }
 
-  private ContactAction createAction(
-      Action.Method method, User user, String registrarId, RegistrarPoc contact)
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "contact@example.invalidtld",
+        "USER@EXAMPLE.INVALIDTLD",
+        "user@example.invalid",
+        "user@example.test",
+        "user@example.local",
+        "user@localhost",
+        "user@com",
+        "user@co.uk",
+        "",
+        "   ",
+        "notanemail",
+        "@example.com",
+        "user@",
+        "a@b@example.com",
+        "\"a@b\"@example.com",
+        "user@.example.com",
+        "user@example.com.",
+        ".user@example.com",
+        "user.@example.com",
+        "user@example..com",
+        "user@sub_domain.com",
+        "Display Name <user@example.com>",
+        "user@münchen.invalidtld",
+        "user@xn---.com"
+      })
+  void testFailure_postInvalidEmailAddress_returnsBadRequest(String invalidEmail)
+      throws IOException {
+    String payload =
+        GSON.toJson(
+            ImmutableMap.of(
+                "name",
+                "Invalid Contact",
+                "emailAddress",
+                invalidEmail,
+                "registrarId",
+                testRegistrar.getRegistrarId(),
+                "phoneNumber",
+                "+1.1234567890",
+                "types",
+                ImmutableList.of("MARKETING")));
+    ContactAction action =
+        createActionWithJsonBody(
+            Action.Method.POST, fteUser, testRegistrar.getRegistrarId(), payload);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(
+            loadAllOf(RegistrarPoc.class).stream()
+                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId())))
+        .containsExactly(adminPoc);
+  }
+
+  @Test
+  void testFailure_putInvalidPublicSuffixEmail_returnsBadRequest() throws IOException {
+    RegistrarPoc savedMarketing = persistResource(marketingPoc);
+    String payload =
+        GSON.toJson(
+            ImmutableMap.of(
+                "id",
+                savedMarketing.getId(),
+                "name",
+                "Marketing Contact",
+                "emailAddress",
+                "contact@example.invalidtld",
+                "registrarId",
+                testRegistrar.getRegistrarId(),
+                "phoneNumber",
+                "+1.1238675309",
+                "types",
+                ImmutableList.of("MARKETING")));
+    ContactAction action =
+        createActionWithJsonBody(
+            Action.Method.PUT, fteUser, testRegistrar.getRegistrarId(), payload);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(
+            loadAllOf(RegistrarPoc.class).stream()
+                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
+                .map(RegistrarPoc::getEmailAddress))
+        .containsExactly("test.registrar1@example.com", "test.registrar3@example.com");
+  }
+
+  @Test
+  void testFailure_nullEmailAddressInJson_returnsBadRequest() throws IOException {
+    String payload =
+        "{\"name\":\"Null Email\",\"registrarId\":\"registrarId\",\"types\":[\"MARKETING\"]}";
+    ContactAction action =
+        createActionWithJsonBody(
+            Action.Method.POST, fteUser, testRegistrar.getRegistrarId(), payload);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testFailure_emptyPayload_returnsBadRequest() throws IOException {
+    ContactAction action =
+        createActionWithJsonBody(Action.Method.POST, fteUser, testRegistrar.getRegistrarId(), "");
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).isEqualTo("Contact parameter is not present");
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "USER@EXAMPLE.COM",
+        "contact@company.co.uk",
+        "user@xn--mnchen-3ya.de",
+        "user@domain.xn--q9jyb4c",
+        "user@münchen.de",
+        "user@domain.みんな"
+      })
+  void testSuccess_postValidPublicSuffixAndIdnEmails(String validEmail) throws IOException {
+    String payload =
+        GSON.toJson(
+            ImmutableMap.of(
+                "name",
+                "Valid Contact",
+                "emailAddress",
+                validEmail,
+                "registrarId",
+                testRegistrar.getRegistrarId(),
+                "phoneNumber",
+                "+1.1238675309",
+                "types",
+                ImmutableList.of("MARKETING")));
+    ContactAction action =
+        createActionWithJsonBody(
+            Action.Method.POST, fteUser, testRegistrar.getRegistrarId(), payload);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(
+            loadAllOf(RegistrarPoc.class).stream()
+                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
+                .map(RegistrarPoc::getEmailAddress))
+        .contains(validEmail);
+  }
+
+  @Test
+  void testCheckContactRequirements_handlesNullAndMalformedEmailsDirectly() {
+    RegistrarPoc nullEmailPoc = new RegistrarPoc();
+    nullEmailPoc.setRegistrarId(testRegistrar.getRegistrarId());
+    nullEmailPoc.setEmailAddress(null);
+    assertThrows(
+        ContactRequirementException.class,
+        () ->
+            checkContactRequirements(
+                ImmutableSet.of(adminPoc), ImmutableSet.of(adminPoc, nullEmailPoc)));
+
+    RegistrarPoc malformedEmailPoc = new RegistrarPoc();
+    malformedEmailPoc.setRegistrarId(testRegistrar.getRegistrarId());
+    malformedEmailPoc.setEmailAddress("user@.bad..domain");
+    assertThrows(
+        ContactRequirementException.class,
+        () ->
+            checkContactRequirements(
+                ImmutableSet.of(adminPoc), ImmutableSet.of(adminPoc, malformedEmailPoc)));
+  }
+
+  @Test
+  void testSuccess_postNewValidContactWhileLegacyInvalidContactExists() throws IOException {
+    persistResource(marketingPoc.asBuilder().setEmailAddress("contact@example.invalidtld").build());
+    ContactAction action =
+        createAction(Action.Method.POST, fteUser, testRegistrar.getRegistrarId(), techPoc);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(
+            loadAllOf(RegistrarPoc.class).stream()
+                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
+                .map(RegistrarPoc::getEmailAddress))
+        .containsExactly(
+            "test.registrar1@example.com",
+            "contact@example.invalidtld",
+            "test.registrar2@example.com");
+  }
+
+  @Test
+  void testFailure_putLegacyInvalidContactWithoutFixingEmail() throws IOException {
+    RegistrarPoc legacyInvalidPoc =
+        persistResource(
+            marketingPoc.asBuilder().setEmailAddress("contact@example.invalidtld").build());
+    ContactAction action =
+        createAction(
+            Action.Method.PUT,
+            fteUser,
+            testRegistrar.getRegistrarId(),
+            legacyInvalidPoc.asBuilder().setPhoneNumber("+1.5555555555").build());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+  }
+
+  @Test
+  void testSuccess_deleteLegacyInvalidPublicSuffixContact() throws IOException {
+    RegistrarPoc legacyInvalidPoc =
+        persistResource(
+            marketingPoc.asBuilder().setEmailAddress("contact@example.invalidtld").build());
+    ContactAction action =
+        createAction(
+            Action.Method.DELETE, fteUser, testRegistrar.getRegistrarId(), legacyInvalidPoc);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(
+            loadAllOf(RegistrarPoc.class).stream()
+                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
+                .map(RegistrarPoc::getEmailAddress))
+        .containsExactly("test.registrar1@example.com");
+  }
+
+  @Test
+  void testSuccess_putFixLegacyInvalidPublicSuffixContact() throws IOException {
+    RegistrarPoc legacyInvalidPoc =
+        persistResource(
+            marketingPoc.asBuilder().setEmailAddress("contact@example.invalidtld").build());
+    ContactAction action =
+        createAction(
+            Action.Method.PUT,
+            fteUser,
+            testRegistrar.getRegistrarId(),
+            legacyInvalidPoc.asBuilder().setEmailAddress("marketing@example.com").build());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(
+            loadAllOf(RegistrarPoc.class).stream()
+                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
+                .map(RegistrarPoc::getEmailAddress))
+        .containsExactly("test.registrar1@example.com", "marketing@example.com");
+  }
+
+  private ContactAction createActionWithJsonBody(
+      Action.Method method, User user, String registrarId, @Nullable String jsonBody)
       throws IOException {
     consoleApiParams = ConsoleApiParamsUtils.createFake(AuthResult.createUser(user));
     when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     response = (FakeResponse) consoleApiParams.response();
-    if (method.equals(Action.Method.GET)) {
-      return new ContactAction(consoleApiParams, registrarId, Optional.empty());
-    }
-    return new ContactAction(consoleApiParams, registrarId, Optional.of(contact));
+    when(consoleApiParams.request().getInputStream())
+        .thenReturn(createServletInputStream(jsonBody == null ? "" : jsonBody));
+    byte[] payloadBytes = RequestModule.providePayloadAsBytes(consoleApiParams.request());
+    String payloadString =
+        RequestModule.providePayloadAsString(payloadBytes, consoleApiParams.request());
+    return new ContactAction(
+        consoleApiParams,
+        registrarId,
+        ConsoleModule.provideContacts(GSON, RequestModule.provideJsonBody(payloadString, GSON)));
+  }
+
+  private ContactAction createAction(
+      Action.Method method, User user, String registrarId, @Nullable RegistrarPoc contact)
+      throws IOException {
+    return createActionWithJsonBody(
+        method,
+        user,
+        registrarId,
+        method.equals(Action.Method.GET) || contact == null ? "" : GSON.toJson(contact));
   }
 }

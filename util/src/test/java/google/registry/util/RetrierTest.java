@@ -21,6 +21,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.Retrier.FailureReporter;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Retrier}. */
@@ -138,5 +139,31 @@ class RetrierTest {
             CountingException.class,
             () -> retrier.callWithRetry(new CountingThrower(2), e -> e.getMessage().equals("1")));
     assertThat(ex).hasMessageThat().isEqualTo("2");
+  }
+
+  @Test
+  void testVoidRetryPredicate_retriesRetryableAndStopsOnNonRetryable() {
+    AtomicInteger attempts = new AtomicInteger(0);
+    retrier.callWithRetry(
+        () -> {
+          if (attempts.incrementAndGet() == 1) {
+            throw new CountingException(1);
+          }
+        },
+        e -> e.getMessage().equals("1"));
+    assertThat(attempts.get()).isEqualTo(2);
+
+    AtomicInteger nonRetryableAttempts = new AtomicInteger(0);
+    CountingException thrown =
+        assertThrows(
+            CountingException.class,
+            () ->
+                retrier.callWithRetry(
+                    () -> {
+                      throw new CountingException(nonRetryableAttempts.incrementAndGet());
+                    },
+                    e -> false));
+    assertThat(thrown).hasMessageThat().isEqualTo("1");
+    assertThat(nonRetryableAttempts.get()).isEqualTo(1);
   }
 }

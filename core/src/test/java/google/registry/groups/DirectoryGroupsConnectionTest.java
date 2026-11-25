@@ -15,10 +15,17 @@
 package google.registry.groups;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.groups.DirectoryGroupsConnection.SC_TOO_MANY_REQUESTS;
 import static google.registry.groups.DirectoryGroupsConnection.getDefaultGroupPermissions;
+import static google.registry.groups.DirectoryGroupsConnection.isInvalidMemberException;
+import static google.registry.groups.DirectoryGroupsConnection.isRetryableException;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_CONFLICT;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static jakarta.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -48,6 +55,8 @@ import com.google.api.services.groupssettings.model.Groups;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.groups.GroupsConnection.Role;
+import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,6 +118,22 @@ class DirectoryGroupsConnectionTest {
     when(membersInsert.execute()).thenThrow(
         makeResponseException(SC_INTERNAL_SERVER_ERROR, "Could not contact Directory server."));
     assertThrows(GoogleJsonResponseException.class, this::runAddMemberTest);
+  }
+
+  @Test
+  void test_addMemberToGroup_rethrowsBadRequestInvalidMemberKey() throws Exception {
+    when(membersInsert.execute())
+        .thenThrow(makeResponseException(SC_BAD_REQUEST, "Invalid Input: memberKey", "invalid"));
+    GoogleJsonResponseException thrown =
+        assertThrows(
+            GoogleJsonResponseException.class,
+            () ->
+                connection.addMemberToGroup(
+                    "newregistrar-marketing-contacts@domain-registry.example",
+                    "contact@example.invalidtld",
+                    Role.MEMBER));
+    assertThat(thrown.getStatusCode()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(thrown.getDetails().getMessage()).isEqualTo("Invalid Input: memberKey");
   }
 
   @Test
@@ -251,6 +276,106 @@ class DirectoryGroupsConnectionTest {
     assertThat(e).hasCauseThat().isInstanceOf(GoogleJsonResponseException.class);
   }
 
+  @Test
+  void test_isRetryableException_classifiesTransientVsDeterministicErrors() throws Exception {
+    // Deterministic 4xx client errors (including wrapped in RuntimeException) are NOT retryable.
+    assertThat(
+            isRetryableException(
+                makeResponseException(SC_BAD_REQUEST, "Invalid Input: memberKey", "invalid")))
+        .isFalse();
+    assertThat(
+            isRetryableException(
+                makeResponseException(SC_UNAUTHORIZED, "Invalid Credentials", "authError")))
+        .isFalse();
+    assertThat(
+            isRetryableException(
+                makeResponseException(SC_FORBIDDEN, "Insufficient Permission", "forbidden")))
+        .isFalse();
+    assertThat(
+            isRetryableException(
+                new RuntimeException(
+                    "Adding member failed",
+                    makeResponseException(SC_NOT_FOUND, "Resource Not Found: memberKey"))))
+        .isFalse();
+    assertThat(
+            isRetryableException(
+                makeResponseException(SC_CONFLICT, "Member already exists.", "duplicate")))
+        .isFalse();
+    assertThat(isRetryableException(new IllegalArgumentException("bad arg"))).isFalse();
+
+    // Transient 5xx, 429, 403 rate-limit reasons, and network IOExceptions ARE retryable.
+    assertThat(
+            isRetryableException(
+                makeResponseException(SC_INTERNAL_SERVER_ERROR, "Backend Error", "backendError")))
+        .isTrue();
+    assertThat(
+            isRetryableException(
+                makeResponseException(
+                    SC_SERVICE_UNAVAILABLE, "Service Unavailable", "backendError")))
+        .isTrue();
+    assertThat(
+            isRetryableException(
+                makeResponseException(
+                    SC_TOO_MANY_REQUESTS, "Too Many Requests", "rateLimitExceeded")))
+        .isTrue();
+    assertThat(
+            isRetryableException(
+                makeResponseException(SC_FORBIDDEN, "Rate Limit Exceeded", "rateLimitExceeded")))
+        .isTrue();
+    assertThat(
+            isRetryableException(
+                makeResponseException(
+                    SC_FORBIDDEN, "User Rate Limit Exceeded", "userRateLimitExceeded")))
+        .isTrue();
+    assertThat(
+            isRetryableException(
+                makeResponseException(SC_FORBIDDEN, "Quota Exceeded", "quotaExceeded")))
+        .isTrue();
+    assertThat(isRetryableException(makeNonJsonResponseException(SC_SERVICE_UNAVAILABLE))).isTrue();
+    assertThat(isRetryableException(makeNonJsonResponseException(SC_BAD_REQUEST))).isFalse();
+    assertThat(isRetryableException(new SocketTimeoutException("Read timed out"))).isTrue();
+    assertThat(isRetryableException(new RuntimeException(new IOException("Connection reset"))))
+        .isTrue();
+  }
+
+  @Test
+  void test_isInvalidMemberException_matchesOnlyMemberKey400And404Errors() throws Exception {
+    assertThat(
+            isInvalidMemberException(
+                makeResponseException(SC_BAD_REQUEST, "Invalid Input: memberKey", "invalid")))
+        .isTrue();
+    assertThat(
+            isInvalidMemberException(
+                makeResponseException(
+                    SC_BAD_REQUEST, "Missing required field: memberKey", "required")))
+        .isTrue();
+    assertThat(
+            isInvalidMemberException(
+                new RuntimeException(
+                    "Adding member failed",
+                    makeResponseException(
+                        SC_NOT_FOUND, "Resource Not Found: memberKey", "notFound"))))
+        .isTrue();
+
+    // Group-level or permission or server errors must NOT be classified as invalid member errors.
+    assertThat(
+            isInvalidMemberException(
+                makeResponseException(SC_BAD_REQUEST, "Invalid Input: groupKey", "invalid")))
+        .isFalse();
+    assertThat(
+            isInvalidMemberException(
+                makeResponseException(SC_NOT_FOUND, "Resource Not Found: groupKey", "notFound")))
+        .isFalse();
+    assertThat(
+            isInvalidMemberException(
+                makeResponseException(SC_FORBIDDEN, "Insufficient Permission", "forbidden")))
+        .isFalse();
+    assertThat(
+            isInvalidMemberException(
+                makeResponseException(SC_INTERNAL_SERVER_ERROR, "Backend Error", "backendError")))
+        .isFalse();
+  }
+
   /** Runs a full test to add a member to the group and returns the expected Member. */
   private Member runAddMemberTest() throws Exception {
     connection.addMemberToGroup("spam@example.com", "jim@example.com", Role.MEMBER);
@@ -276,30 +401,68 @@ class DirectoryGroupsConnectionTest {
     return expected;
   }
 
-  /** Returns a valid GoogleJsonResponseException for the given status code and error message.  */
+  /** Returns a valid GoogleJsonResponseException for the given status code and error message. */
+  private GoogleJsonResponseException makeResponseException(int statusCode, String message)
+      throws Exception {
+    return makeResponseException(statusCode, message, "duplicate");
+  }
+
+  /** Returns a valid GoogleJsonResponseException for the given status code, message, and reason. */
   private GoogleJsonResponseException makeResponseException(
-      final int statusCode,
-      final String message) throws Exception {
-    HttpTransport transport = new MockHttpTransport() {
-      @Override
-      public LowLevelHttpRequest buildRequest(String method, String url) {
-        return new MockLowLevelHttpRequest() {
+      final int statusCode, final String message, final String reason) throws Exception {
+    HttpTransport transport =
+        new MockHttpTransport() {
           @Override
-          public LowLevelHttpResponse execute() {
-            MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
-            response.setStatusCode(statusCode);
-            response.setContentType(Json.MEDIA_TYPE);
-            response.setContent(String.format(
-                "{\"error\":{\"code\":%d,\"message\":\"%s\",\"domain\":\"global\","
-                + "\"reason\":\"duplicate\"}}",
-                statusCode,
-                message));
-            return response;
-          }};
-      }};
-    HttpRequest request = transport.createRequestFactory()
-        .buildGetRequest(HttpTesting.SIMPLE_GENERIC_URL)
-        .setThrowExceptionOnExecuteError(false);
+          public LowLevelHttpRequest buildRequest(String method, String url) {
+            return new MockLowLevelHttpRequest() {
+              @Override
+              public LowLevelHttpResponse execute() {
+                MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
+                response.setStatusCode(statusCode);
+                response.setContentType(Json.MEDIA_TYPE);
+                response.setContent(
+                    String.format(
+                        "{\"error\":{\"code\":%d,\"message\":\"%s\","
+                            + "\"errors\":[{\"domain\":\"global\",\"reason\":\"%s\","
+                            + "\"message\":\"%s\"}]}}",
+                        statusCode, message, reason, message));
+                return response;
+              }
+            };
+          }
+        };
+    HttpRequest request =
+        transport
+            .createRequestFactory()
+            .buildGetRequest(HttpTesting.SIMPLE_GENERIC_URL)
+            .setThrowExceptionOnExecuteError(false);
+    return GoogleJsonResponseException.from(new GsonFactory(), request.execute());
+  }
+
+  /** Returns a GoogleJsonResponseException with null JSON details (e.g. HTML proxy error). */
+  private GoogleJsonResponseException makeNonJsonResponseException(int statusCode)
+      throws Exception {
+    HttpTransport transport =
+        new MockHttpTransport() {
+          @Override
+          public LowLevelHttpRequest buildRequest(String method, String url) {
+            return new MockLowLevelHttpRequest() {
+              @Override
+              public LowLevelHttpResponse execute() {
+                MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
+                response.setStatusCode(statusCode);
+                response.setContentType("text/html");
+                response.setContent("<html>error</html>");
+                return response;
+              }
+            };
+          }
+        };
+    HttpRequest request =
+        transport
+            .createRequestFactory()
+            .buildGetRequest(HttpTesting.SIMPLE_GENERIC_URL)
+            .setThrowExceptionOnExecuteError(false);
     return GoogleJsonResponseException.from(new GsonFactory(), request.execute());
   }
 }

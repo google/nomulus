@@ -15,11 +15,16 @@
 package google.registry.groups;
 
 import static google.registry.util.CollectionUtils.nullToEmpty;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_CONFLICT;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.api.client.googleapis.json.GoogleJsonError;
+import com.google.api.client.googleapis.json.GoogleJsonError.ErrorInfo;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.HttpResponseException;
 import com.google.api.services.directory.Directory;
 import com.google.api.services.directory.model.Group;
 import com.google.api.services.directory.model.Member;
@@ -28,6 +33,7 @@ import com.google.api.services.groupssettings.Groupssettings;
 import com.google.api.services.groupssettings.model.Groups;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
@@ -44,7 +50,18 @@ public class DirectoryGroupsConnection implements GroupsConnection {
   // no mention of what happens in error conditions. Here be dragons.
   private static final String GROUP_NOT_FOUND_MSG = "Resource Not Found: groupKey";
   private static final String MEMBER_NOT_FOUND_MSG = "Resource Not Found: memberKey";
+  private static final String MISSING_MEMBER_KEY_MSG = "Missing required field: memberKey";
+  private static final String INVALID_MEMBER_KEY_MSG = "Invalid Input: memberKey";
   private static final String MEMBER_ALREADY_EXISTS_MSG = "Member already exists.";
+
+  // HTTP 429 Too Many Requests (not defined as a constant on HttpServletResponse).
+  public static final int SC_TOO_MANY_REQUESTS = 429;
+
+  // HTTP 600 upper bound (exclusive) for 5xx server error status codes.
+  private static final int SC_SERVER_ERROR_UPPER_BOUND = 600;
+
+  private static final ImmutableSet<String> RETRYABLE_FORBIDDEN_REASONS =
+      ImmutableSet.of("rateLimitExceeded", "userRateLimitExceeded", "quotaExceeded");
 
   /**
    * All possible errors from {@link Directory.Members#get} when an email doesn't belong to a group.
@@ -58,9 +75,9 @@ public class DirectoryGroupsConnection implements GroupsConnection {
   private static final ImmutableSet<String> ERROR_MESSAGES_MEMBER_NOT_FOUND =
       ImmutableSet.of(
           // The given email corresponds to an actual account, but isn't part of this group
-          "Resource Not Found: memberKey",
+          MEMBER_NOT_FOUND_MSG,
           // There's no account corresponding to this email
-          "Missing required field: memberKey");
+          MISSING_MEMBER_KEY_MSG);
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Groups defaultGroupPermissions = getDefaultGroupPermissions();
@@ -223,5 +240,74 @@ public class DirectoryGroupsConnection implements GroupsConnection {
       throw new RuntimeException(
           String.format("Error checking whether %s is in group %s", memberEmail, groupKey), e);
     }
+  }
+
+  /**
+   * Returns true if {@code throwable} represents a transient Directory API or network failure that
+   * is safe to retry (HTTP 5xx, 429, 403 rate-limit overages, or non-HTTP {@link IOException}s),
+   * and false for deterministic HTTP 4xx client errors or non-I/O runtime exceptions.
+   */
+  public static boolean isRetryableException(Throwable throwable) {
+    for (Throwable cause : Throwables.getCausalChain(throwable)) {
+      if (cause instanceof HttpResponseException httpException) {
+        int statusCode = getHttpStatusCode(httpException);
+        if (statusCode >= SC_INTERNAL_SERVER_ERROR && statusCode < SC_SERVER_ERROR_UPPER_BOUND) {
+          return true;
+        }
+        if (statusCode == SC_TOO_MANY_REQUESTS) {
+          return true;
+        }
+        if (statusCode == SC_FORBIDDEN) {
+          return isRateLimitForbidden(httpException);
+        }
+        return false;
+      }
+    }
+    return Throwables.getCausalChain(throwable).stream().anyMatch(IOException.class::isInstance);
+  }
+
+  /**
+   * Returns true if {@code throwable} indicates that the target member email address itself was
+   * deterministically rejected by the Directory API (HTTP 400 {@code Invalid Input: memberKey} /
+   * {@code Missing required field: memberKey} or HTTP 404 {@code Resource Not Found: memberKey}).
+   */
+  public static boolean isInvalidMemberException(Throwable throwable) {
+    for (Throwable cause : Throwables.getCausalChain(throwable)) {
+      if (cause instanceof GoogleJsonResponseException jsonException
+          && jsonException.getDetails() != null) {
+        GoogleJsonError err = jsonException.getDetails();
+        int code = getHttpStatusCode(jsonException);
+        String message = Strings.nullToEmpty(err.getMessage());
+        return (code == SC_BAD_REQUEST
+                && (message.equals(INVALID_MEMBER_KEY_MSG)
+                    || message.equals(MISSING_MEMBER_KEY_MSG)))
+            || (code == SC_NOT_FOUND && message.equals(MEMBER_NOT_FOUND_MSG));
+      }
+    }
+    return false;
+  }
+
+  private static int getHttpStatusCode(HttpResponseException httpException) {
+    if (httpException.getStatusCode() != 0) {
+      return httpException.getStatusCode();
+    }
+    if (httpException instanceof GoogleJsonResponseException jsonException
+        && jsonException.getDetails() != null) {
+      return jsonException.getDetails().getCode();
+    }
+    return 0;
+  }
+
+  private static boolean isRateLimitForbidden(HttpResponseException httpException) {
+    if (RETRYABLE_FORBIDDEN_REASONS.contains(httpException.getStatusMessage())) {
+      return true;
+    }
+    if (httpException instanceof GoogleJsonResponseException jsonException
+        && jsonException.getDetails() != null) {
+      return nullToEmpty(jsonException.getDetails().getErrors()).stream()
+          .map(ErrorInfo::getReason)
+          .anyMatch(RETRYABLE_FORBIDDEN_REASONS::contains);
+    }
+    return false;
   }
 }
