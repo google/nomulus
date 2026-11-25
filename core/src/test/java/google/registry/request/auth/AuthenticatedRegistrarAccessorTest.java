@@ -111,6 +111,7 @@ class AuthenticatedRegistrarAccessorTest {
   void beforeEach() {
     when(lazyGroupsConnection.get()).thenReturn(groupsConnection);
     JdkLoggerConfig.getConfig(AuthenticatedRegistrarAccessor.class).addHandler(testLogHandler);
+    JdkLoggerConfig.getConfig(AuthenticatedRegistrarAccessor.class).setLevel(Level.FINE);
     persistResource(
         loadRegistrar(REAL_REGISTRAR_ID_WITHOUT_ACCESS)
             .asBuilder()
@@ -131,6 +132,7 @@ class AuthenticatedRegistrarAccessorTest {
   @AfterEach
   void afterEach() {
     JdkLoggerConfig.getConfig(AuthenticatedRegistrarAccessor.class).removeHandler(testLogHandler);
+    JdkLoggerConfig.getConfig(AuthenticatedRegistrarAccessor.class).setLevel(null);
   }
 
   /** Users are owners for registrars if and only if they are in the contacts for that registrar. */
@@ -142,6 +144,12 @@ class AuthenticatedRegistrarAccessorTest {
 
     assertThat(registrarAccessor.getAllRegistrarIdsWithRoles())
         .containsExactly(REGISTRAR_ID_WITH_ACCESS, OWNER);
+    assertAboutLogs()
+        .that(testLogHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "user johndoe@theregistrar.com has the following roles: {TheRegistrar=[OWNER]}");
+    assertAboutLogs().that(testLogHandler).hasNoLogsAtLevel(Level.FINE);
     verify(lazyGroupsConnection).get();
   }
 
@@ -153,6 +161,10 @@ class AuthenticatedRegistrarAccessorTest {
             NO_USER, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);
 
     assertThat(registrarAccessor.getAllRegistrarIdsWithRoles()).isEmpty();
+    assertAboutLogs()
+        .that(testLogHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "<logged-out user> has the following roles: {}");
+    assertAboutLogs().that(testLogHandler).hasNoLogsAtLevel(Level.INFO);
     verifyNoInteractions(lazyGroupsConnection);
   }
 
@@ -420,6 +432,10 @@ class AuthenticatedRegistrarAccessorTest {
 
     // Explicit access to registrars is required for non-admins
     assertThat(registrarAccessor.getAllRegistrarIdsWithRoles()).isEmpty();
+    assertAboutLogs()
+        .that(testLogHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "user email@email.com has the following roles: {}");
+    assertAboutLogs().that(testLogHandler).hasNoLogsAtLevel(Level.INFO);
   }
 
   @Test

@@ -22,9 +22,9 @@ import static google.registry.request.auth.Auth.AUTH_PUBLIC;
 import static google.registry.request.auth.AuthResult.NOT_AUTHENTICATED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -224,8 +224,10 @@ public final class RequestHandlerTest {
   }
 
   private void assertMetric(
-      String path, Action.Method method, AuthLevel authLevel, boolean success) {
-    verify(requestMetrics).record(any(), eq(path), eq(method), eq(authLevel), eq(success));
+      String path, Action.Method method, AuthLevel authLevel, boolean success, int status) {
+    verify(rsp).getStatus();
+    verify(requestMetrics)
+        .record(any(), eq(path), eq(method), eq(authLevel), eq(success), eq(status));
   }
 
   @Test
@@ -237,9 +239,8 @@ public final class RequestHandlerTest {
 
     handler.handleRequest(req, rsp);
 
-    verifyNoInteractions(rsp);
     verify(bumblebeeTask).run();
-    assertMetric("/bumblebee", GET, AuthLevel.NONE, true);
+    assertMetric("/bumblebee", GET, AuthLevel.NONE, true, 200);
   }
 
   @Test
@@ -252,7 +253,7 @@ public final class RequestHandlerTest {
     handler.handleRequest(req, rsp);
 
     verify(bumblebeeTask).run();
-    assertMetric("/bumblebee", POST, AuthLevel.NONE, true);
+    assertMetric("/bumblebee", POST, AuthLevel.NONE, true, 200);
   }
 
   @Test
@@ -265,7 +266,7 @@ public final class RequestHandlerTest {
     handler.handleRequest(req, rsp);
 
     verify(bumblebeeTask).run();
-    assertMetric("/bumblebee/hive", GET, AuthLevel.NONE, true);
+    assertMetric("/bumblebee/hive", GET, AuthLevel.NONE, true, 200);
   }
 
   @Test
@@ -281,7 +282,7 @@ public final class RequestHandlerTest {
     verify(rsp).setContentType("text/plain; charset=utf-8");
     verify(rsp).getWriter();
     assertThat(httpOutput.toString()).isEqualTo("OK\n");
-    assertMetric("/sloth", POST, AuthLevel.NONE, true);
+    assertMetric("/sloth", POST, AuthLevel.NONE, true, 200);
   }
 
   @Test
@@ -306,7 +307,7 @@ public final class RequestHandlerTest {
     handler.handleRequest(req, rsp);
 
     verify(rsp).sendError(503, "Set sail for fail");
-    assertMetric("/fail", GET, AuthLevel.NONE, false);
+    assertMetric("/fail", GET, AuthLevel.NONE, false, 503);
   }
 
   /** Test for a regression of the issue in b/21377705. */
@@ -321,7 +322,7 @@ public final class RequestHandlerTest {
     handler.handleRequest(req, rsp);
 
     verify(rsp).sendError(503, "Fail at construction");
-    assertMetric("/failAtConstruction", GET, AuthLevel.NONE, false);
+    assertMetric("/failAtConstruction", GET, AuthLevel.NONE, false, 503);
   }
 
   @Test
@@ -396,7 +397,7 @@ public final class RequestHandlerTest {
     handler.handleRequest(req, rsp);
 
     verify(safeSlothTask).run();
-    assertMetric("/safe-sloth", POST, AuthLevel.NONE, true);
+    assertMetric("/safe-sloth", POST, AuthLevel.NONE, true, 200);
   }
 
   @Test
@@ -409,7 +410,7 @@ public final class RequestHandlerTest {
     handler.handleRequest(req, rsp);
 
     verify(safeSlothTask).run();
-    assertMetric("/safe-sloth", GET, AuthLevel.NONE, true);
+    assertMetric("/safe-sloth", GET, AuthLevel.NONE, true, 200);
   }
 
   @Test
@@ -424,7 +425,7 @@ public final class RequestHandlerTest {
     assertThat(providedAuthResult).isNotNull();
     assertThat(providedAuthResult.authLevel()).isEqualTo(AuthLevel.NONE);
     assertThat(providedAuthResult.user()).isEmpty();
-    assertMetric("/auth/none", GET, AuthLevel.NONE, true);
+    assertMetric("/auth/none", GET, AuthLevel.NONE, true, 200);
   }
 
   @Test
@@ -453,6 +454,37 @@ public final class RequestHandlerTest {
     assertThat(providedAuthResult.authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(providedAuthResult.user()).isPresent();
     assertThat(providedAuthResult.user()).hasValue(testUser);
-    assertMetric("/auth/adminUser", GET, AuthLevel.USER, true);
+    assertMetric("/auth/adminUser", GET, AuthLevel.USER, true, 200);
+  }
+
+  @Test
+  void testHandleRequest_actionSetsCustomStatus_recordsResponseStatus() throws Exception {
+    when(req.getMethod()).thenReturn("GET");
+    when(req.getRequestURI()).thenReturn("/bumblebee");
+    when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
+    when(rsp.getStatus()).thenReturn(404);
+
+    handler.handleRequest(req, rsp);
+
+    verify(bumblebeeTask).run();
+    assertMetric("/bumblebee", GET, AuthLevel.NONE, true, 404);
+  }
+
+  @Test
+  void testHandleRequest_taskThrowsRuntimeException_records500Status() throws Exception {
+    when(req.getMethod()).thenReturn("GET");
+    when(req.getRequestURI()).thenReturn("/bumblebee");
+    when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
+    doThrow(new RuntimeException("boom")).when(bumblebeeTask).run();
+
+    handler.handleRequest(req, rsp);
+
+    verify(bumblebeeTask).run();
+    verify(rsp).setStatus(500);
+    verify(rsp).getWriter();
+    assertThat(httpOutput.toString()).isEqualTo("Internal server error, please try again later");
+    assertMetric("/bumblebee", GET, AuthLevel.NONE, true, 500);
   }
 }

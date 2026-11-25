@@ -30,6 +30,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import jakarta.inject.Inject;
 import java.util.Optional;
+import java.util.logging.Level;
 import javax.annotation.concurrent.Immutable;
 
 /**
@@ -92,7 +93,8 @@ public class AuthenticatedRegistrarAccessor {
     this.userIdForLogging = authResult.userIdForLogging();
     this.roleMap = createRoleMap(authResult, this.isAdmin, registryAdminRegistrarId);
 
-    logger.atInfo().log("%s has the following roles: %s", userIdForLogging(), roleMap);
+    logger.at(this.roleMap.isEmpty() ? Level.FINE : Level.INFO).log(
+        "%s has the following roles: %s", userIdForLogging(), this.roleMap);
   }
 
   private AuthenticatedRegistrarAccessor(

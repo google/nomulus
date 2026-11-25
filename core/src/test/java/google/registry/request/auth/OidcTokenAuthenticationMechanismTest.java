@@ -20,6 +20,7 @@ import static google.registry.request.auth.AuthModule.BEARER_PREFIX;
 import static google.registry.request.auth.AuthModule.IAP_HEADER_NAME;
 import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +30,7 @@ import com.google.api.client.json.webtoken.JsonWebSignature.Header;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.TokenVerifier.VerificationException;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.testing.TestLogHandler;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
@@ -42,8 +44,10 @@ import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidcAuthenticationMechanism;
 import google.registry.util.GoogleCredentialsBundle;
+import google.registry.util.JdkLoggerConfig;
 import jakarta.inject.Singleton;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.logging.Level;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,6 +69,7 @@ public class OidcTokenAuthenticationMechanismTest {
   private final JsonWebSignature jwt =
       new JsonWebSignature(new Header(), payload, new byte[0], new byte[0]);
   private final HttpServletRequest request = mock(HttpServletRequest.class);
+  private final TestLogHandler logHandler = new TestLogHandler();
 
   private User user;
   private AuthResult authResult;
@@ -78,6 +83,8 @@ public class OidcTokenAuthenticationMechanismTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
+    JdkLoggerConfig.getConfig(OidcTokenAuthenticationMechanism.class).addHandler(logHandler);
+    JdkLoggerConfig.getConfig(OidcTokenAuthenticationMechanism.class).setLevel(Level.FINE);
     payload.setEmail(email);
     payload.setSubject(gaiaId);
     user = createAdminUser(email);
@@ -87,12 +94,19 @@ public class OidcTokenAuthenticationMechanismTest {
   @AfterEach
   void afterEach() {
     OidcTokenAuthenticationMechanism.unsetAuthResultForTesting();
+    JdkLoggerConfig.getConfig(OidcTokenAuthenticationMechanism.class).removeHandler(logHandler);
+    JdkLoggerConfig.getConfig(OidcTokenAuthenticationMechanism.class).setLevel(null);
   }
 
   @Test
   void testAuthResultBypass() {
     OidcTokenAuthenticationMechanism.setAuthResultForTesting(AuthResult.NOT_AUTHENTICATED);
     assertThat(authenticationMechanism.authenticate(null)).isEqualTo(AuthResult.NOT_AUTHENTICATED);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            String.format("Using AuthResult %s for testing.", AuthResult.NOT_AUTHENTICATED));
   }
 
   @Test
@@ -102,6 +116,7 @@ public class OidcTokenAuthenticationMechanismTest {
             serviceAccounts, e -> null, (service, token) -> jwt) {};
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
   }
 
   @Test
@@ -109,12 +124,16 @@ public class OidcTokenAuthenticationMechanismTest {
     authenticationMechanism =
         new OidcTokenAuthenticationMechanism(
             serviceAccounts,
-            e -> null,
+            e -> rawToken,
             (service, token) -> {
               throw new VerificationException("Bad token");
             }) {};
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "Failed OIDC verification attempt:");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
   }
 
   @Test
@@ -122,6 +141,10 @@ public class OidcTokenAuthenticationMechanismTest {
     payload.setEmail(null);
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "No email address from the OIDC token:");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
   }
 
   @Test
@@ -130,6 +153,12 @@ public class OidcTokenAuthenticationMechanismTest {
     assertThat(authResult.isAuthenticated()).isTrue();
     assertThat(authResult.authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(authResult.user().get()).isEqualTo(user);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.FINE,
+            "No service account found for email address user@email.test, loading the User");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
   }
 
   @Test
@@ -138,6 +167,7 @@ public class OidcTokenAuthenticationMechanismTest {
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isTrue();
     assertThat(authResult.authLevel()).isEqualTo(AuthLevel.APP);
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
   }
 
   @Test
@@ -153,6 +183,7 @@ public class OidcTokenAuthenticationMechanismTest {
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isTrue();
     assertThat(authResult.authLevel()).isEqualTo(AuthLevel.APP);
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
   }
 
   @Test
@@ -160,6 +191,22 @@ public class OidcTokenAuthenticationMechanismTest {
     payload.setEmail(unknownEmail);
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.FINE,
+            "No service account found for email address bad-guy@evil.real, loading the User");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.FINE, "No end user found for email address bad-guy@evil.real");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            "The email address bad-guy@evil.real is not tied to a principal with access to"
+                + " Nomulus");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
   }
 
   @Test

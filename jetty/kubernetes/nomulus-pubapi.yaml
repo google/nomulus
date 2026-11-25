@@ -15,6 +15,14 @@ spec:
         traffic: pubapi-all
     spec:
       serviceAccountName: nomulus
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        nodeTaintsPolicy: Honor
+        labelSelector:
+          matchLabels:
+            traffic: pubapi-all
       containers:
       - name: pubapi
         image: gcr.io/GCP_PROJECT/nomulus

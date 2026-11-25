@@ -44,12 +44,12 @@ public class ServletBase extends HttpServlet {
 
   @Override
   public void service(HttpServletRequest req, HttpServletResponse rsp) throws IOException {
-    logger.atInfo().log("Received %s request.", getClass().getSimpleName());
+    logger.atFine().log("Received %s request.", getClass().getSimpleName());
     Instant startTime = clock.now();
     try {
       requestHandler.handleRequest(req, rsp);
     } finally {
-      logger.atInfo().log(
+      logger.atFine().log(
           "Finished %s request. Latency: %.3fs.",
           getClass().getSimpleName(), Duration.between(startTime, clock.now()).toMillis() / 1000d);
     }

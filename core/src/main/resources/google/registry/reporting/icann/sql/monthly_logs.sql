@@ -25,4 +25,5 @@ FROM (
   FROM
     `%PROJECT_ID%.gke_logs.stderr_*`
   WHERE
-    _TABLE_SUFFIX BETWEEN '%FIRST_DAY_OF_MONTH%' AND '%LAST_DAY_OF_MONTH%')
+    _TABLE_SUFFIX BETWEEN '%FIRST_DAY_OF_MONTH%' AND '%LAST_DAY_OF_MONTH%'
+    AND STARTS_WITH(jsonPayload.message, "Action called for path="))
