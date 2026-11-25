@@ -16,7 +16,7 @@ package google.registry.bsa;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.transformValues;
-import static google.registry.bsa.persistence.Queries.getEnrolledBsaTlds;
+import static google.registry.bsa.persistence.Queries.getActivatedBsaTlds;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -25,9 +25,7 @@ import com.google.common.collect.Sets;
 import google.registry.model.tld.Tld;
 import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.tldconfig.idn.IdnTableEnum;
-import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import java.time.Instant;
 
 /**
  * Checks labels' validity wrt Idns in TLDs enrolled with BSA.
@@ -42,8 +40,8 @@ public class IdnChecker {
   private final ImmutableSet<Tld> allTlds;
 
   @Inject
-  IdnChecker(Clock clock) {
-    this.idnToTlds = getIdnToTldMap(clock.now());
+  IdnChecker() {
+    this.idnToTlds = getIdnToTldMap();
     allTlds = idnToTlds.values().stream().flatMap(ImmutableSet::stream).collect(toImmutableSet());
   }
 
@@ -77,9 +75,9 @@ public class IdnChecker {
     return Sets.difference(allTlds, getSupportingTlds(idnTables)).immutableCopy();
   }
 
-  private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap(Instant now) {
+  private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap() {
     var idnToTldMap = new ImmutableMultimap.Builder<IdnTableEnum, Tld>();
-    getEnrolledBsaTlds(now)
+    getActivatedBsaTlds()
         .forEach(
             tld -> {
               for (IdnTableEnum idn : IDN_LABEL_VALIDATOR.getIdnTablesForTld(tld)) {

@@ -24,6 +24,7 @@ import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.bsa.persistence.BsaTestingUtils.queryUnblockableDomains;
 import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.model.tld.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.deleteTestDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -45,6 +46,7 @@ import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.bsa.persistence.BsaTestingUtils;
+import google.registry.bsa.persistence.BsaTld;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld.TldType;
@@ -118,6 +120,11 @@ class BsaRefreshFunctionalTest {
 
   private void initDb() {
     createTlds("app", "dev");
+    tm().transact(
+            () -> {
+              tm().put(new BsaTld("app", fakeClock.now()));
+              tm().put(new BsaTld("dev", fakeClock.now()));
+            });
     getTldEntitiesOfType(TldType.REAL)
         .forEach(
             tld ->
