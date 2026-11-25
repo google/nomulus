@@ -197,6 +197,37 @@ describe('Shared Services, Directives & Components', () => {
       expect(mockLoader.loadingTimeout).toHaveBeenCalled();
       expect(loaderService.isLoading()).toBe(false);
     });
+
+    it('should cancel pending timeouts on ngOnDestroy', () => {
+      vi.useFakeTimers();
+      const loaderService = TestBed.inject(GlobalLoaderService);
+      const mockLoader: GlobalLoader = { loadingTimeout: vi.fn() };
+
+      loaderService.startGlobalLoader(mockLoader);
+      expect(loaderService.isLoading()).toBe(true);
+
+      loaderService.ngOnDestroy();
+      expect(loaderService.isLoading()).toBe(false);
+
+      vi.advanceTimersByTime(10000);
+      expect(mockLoader.loadingTimeout).not.toHaveBeenCalled();
+    });
+
+    it('should replace existing timer when startGlobalLoader is called twice', () => {
+      vi.useFakeTimers();
+      const loaderService = TestBed.inject(GlobalLoaderService);
+      const mockLoader: GlobalLoader = { loadingTimeout: vi.fn() };
+
+      loaderService.startGlobalLoader(mockLoader);
+      vi.advanceTimersByTime(5000);
+      loaderService.startGlobalLoader(mockLoader);
+
+      vi.advanceTimersByTime(5000);
+      expect(mockLoader.loadingTimeout).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(5000);
+      expect(mockLoader.loadingTimeout).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('Directives (UserLevelVisibility, LocationBackDirective, ForceFocusDirective)', () => {

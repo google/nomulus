@@ -14,11 +14,11 @@
 
 import { TestBed } from '@angular/core/testing';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { BackendService } from '../shared/services/backend.service';
 import { GlobalLoaderService } from '../shared/services/globalLoader.service';
 import { Registrar, RegistrarService } from './registrar.service';
@@ -173,5 +173,101 @@ describe('RegistrarService', () => {
   it('should show snackbar on loadingTimeout()', () => {
     service.loadingTimeout();
     expect(snackBarOpenSpy).toHaveBeenCalledWith('Timeout loading registrars');
+  });
+
+  describe('initialization and teardown', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should stop global loader when getRegistrars completes synchronously', async () => {
+      vi.useFakeTimers();
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          BackendService,
+          GlobalLoaderService,
+          MatSnackBar,
+          provideHttpClient(),
+          provideHttpClientTesting(),
+        ],
+      });
+      const backend = TestBed.inject(BackendService);
+      vi.spyOn(backend, 'getRegistrars').mockReturnValue(of(mockRegistrars));
+      const loader = TestBed.inject(GlobalLoaderService);
+      const snackSpy = vi
+        .spyOn(TestBed.inject(MatSnackBar), 'open')
+        .mockReturnValue({} as never);
+
+      const regService = TestBed.inject(RegistrarService);
+      await regService.registrarsLoaded;
+
+      expect(regService.registrars()).toEqual(mockRegistrars);
+      expect(loader.isLoading()).toBe(false);
+      vi.advanceTimersByTime(10000);
+      expect(snackSpy).not.toHaveBeenCalled();
+    });
+
+    it('should stop global loader, resolve registrarsLoaded, and not throw on error', async () => {
+      vi.useFakeTimers();
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          BackendService,
+          GlobalLoaderService,
+          MatSnackBar,
+          provideHttpClient(),
+          provideHttpClientTesting(),
+        ],
+      });
+      const backend = TestBed.inject(BackendService);
+      vi.spyOn(backend, 'getRegistrars').mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 500 }))
+      );
+      const loader = TestBed.inject(GlobalLoaderService);
+      const snackSpy = vi
+        .spyOn(TestBed.inject(MatSnackBar), 'open')
+        .mockReturnValue({} as never);
+
+      const regService = TestBed.inject(RegistrarService);
+      await regService.registrarsLoaded;
+
+      expect(loader.isLoading()).toBe(false);
+      expect(() => vi.advanceTimersByTime(10000)).not.toThrow();
+      expect(snackSpy).not.toHaveBeenCalled();
+    });
+
+    it('should stop global loader and resolve registrarsLoaded on ngOnDestroy while pending', async () => {
+      vi.useFakeTimers();
+      const pending$ = new Subject<Registrar[]>();
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          BackendService,
+          GlobalLoaderService,
+          MatSnackBar,
+          provideHttpClient(),
+          provideHttpClientTesting(),
+        ],
+      });
+      const backend = TestBed.inject(BackendService);
+      vi.spyOn(backend, 'getRegistrars').mockReturnValue(
+        pending$.asObservable()
+      );
+      const loader = TestBed.inject(GlobalLoaderService);
+      const snackSpy = vi
+        .spyOn(TestBed.inject(MatSnackBar), 'open')
+        .mockReturnValue({} as never);
+
+      const regService = TestBed.inject(RegistrarService);
+      expect(loader.isLoading()).toBe(true);
+
+      regService.ngOnDestroy();
+      await regService.registrarsLoaded;
+
+      expect(loader.isLoading()).toBe(false);
+      vi.advanceTimersByTime(10000);
+      expect(snackSpy).not.toHaveBeenCalled();
+    });
   });
 });

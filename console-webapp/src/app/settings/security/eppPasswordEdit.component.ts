@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
@@ -67,7 +67,7 @@ export class ResetEppPasswordComponent {
   styleUrls: ['./eppPasswordEdit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EppPasswordEditComponent implements GlobalLoader {
+export class EppPasswordEditComponent implements GlobalLoader, OnDestroy {
   static EPP_VALIDATORS = [
     Validators.required,
     Validators.minLength(6),
@@ -96,6 +96,10 @@ export class EppPasswordEditComponent implements GlobalLoader {
 
   loadingTimeout() {
     this._snackBar.open('Timeout updating EPP password');
+  }
+
+  ngOnDestroy() {
+    this.globalLoader.stopGlobalLoader(this);
   }
 
   save(passwordResults: PasswordResults) {

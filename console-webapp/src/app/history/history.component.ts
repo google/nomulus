@@ -91,6 +91,7 @@ export class HistoryComponent implements GlobalLoader, OnDestroy {
 
   ngOnDestroy() {
     this.historySubscription?.unsubscribe();
+    this.globalLoader.stopGlobalLoader(this);
   }
 
   getElementIdForUserLog() {

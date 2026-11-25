@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable, signal } from '@angular/core';
+import { Injectable, OnDestroy, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Observable, tap } from 'rxjs';
+import { finalize, Observable, Subscription, tap } from 'rxjs';
 import { BackendService } from './backend.service';
 import { GlobalLoader, GlobalLoaderService } from './globalLoader.service';
 
@@ -33,17 +33,19 @@ export interface UserData {
 @Injectable({
   providedIn: 'root',
 })
-export class UserDataService implements GlobalLoader {
+export class UserDataService implements GlobalLoader, OnDestroy {
   userData = signal<UserData | undefined>(undefined);
+  private userDataSubscription: Subscription;
+
   constructor(
     private backend: BackendService,
     protected globalLoader: GlobalLoaderService,
     private _snackBar: MatSnackBar
   ) {
-    this.getUserData().subscribe(() => {
-      this.globalLoader.stopGlobalLoader(this);
-    });
     this.globalLoader.startGlobalLoader(this);
+    this.userDataSubscription = this.getUserData()
+      .pipe(finalize(() => this.globalLoader.stopGlobalLoader(this)))
+      .subscribe({ error: () => {} });
   }
 
   getUserData(): Observable<UserData> {
@@ -56,5 +58,9 @@ export class UserDataService implements GlobalLoader {
 
   loadingTimeout() {
     this._snackBar.open('Timeout loading user data');
+  }
+
+  ngOnDestroy() {
+    this.userDataSubscription.unsubscribe();
   }
 }
