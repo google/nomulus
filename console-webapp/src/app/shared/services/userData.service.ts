@@ -19,6 +19,7 @@ import { BackendService } from './backend.service';
 import { GlobalLoader, GlobalLoaderService } from './globalLoader.service';
 
 export interface UserData {
+  allowEppClientCertHostnameAuth?: boolean;
   globalRole: string;
   isAdmin: boolean;
   // TODO: provide passcode from back-end

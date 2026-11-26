@@ -14,16 +14,19 @@
 
 package google.registry.ui.server.console;
 
+import static google.registry.model.common.FeatureFlag.FeatureName.ALLOW_EPP_CLIENT_CERT_HOSTNAME_AUTH;
 import static google.registry.request.Action.Method.GET;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.console.User;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.auth.Auth;
 import google.registry.security.XsrfTokenManager;
+import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.Cookie;
 import org.json.JSONObject;
@@ -37,6 +40,7 @@ public class ConsoleUserDataAction extends ConsoleApiAction {
 
   public static final String PATH = "/console-api/userdata";
 
+  private final Clock clock;
   private final String productName;
   private final String supportPhoneNumber;
   private final String supportEmail;
@@ -45,11 +49,13 @@ public class ConsoleUserDataAction extends ConsoleApiAction {
   @Inject
   public ConsoleUserDataAction(
       ConsoleApiParams consoleApiParams,
+      Clock clock,
       @Config("productName") String productName,
       @Config("supportEmail") String supportEmail,
       @Config("supportPhoneNumber") String supportPhoneNumber,
       @Config("technicalDocsUrl") String technicalDocsUrl) {
     super(consoleApiParams);
+    this.clock = clock;
     this.productName = productName;
     this.supportEmail = supportEmail;
     this.supportPhoneNumber = supportPhoneNumber;
@@ -68,6 +74,8 @@ public class ConsoleUserDataAction extends ConsoleApiAction {
     xsrfCookie.setPath("/");
     consoleApiParams.response().addCookie(xsrfCookie);
 
+    boolean allowEppClientCertHostnameAuth =
+        FeatureFlag.isActiveAt(ALLOW_EPP_CLIENT_CERT_HOSTNAME_AUTH, clock.now());
     JSONObject json =
         new JSONObject(
             ImmutableMap.of(
@@ -88,7 +96,11 @@ public class ConsoleUserDataAction extends ConsoleApiAction {
                 "supportEmail", supportEmail,
                 "supportPhoneNumber", supportPhoneNumber,
                 // Is used by UI to construct a link to registry resources
-                "technicalDocsUrl", technicalDocsUrl));
+                "technicalDocsUrl", technicalDocsUrl,
+                // Gates Console UI visibility for EPP client certificate hostname management
+                // (SecurityAction writes remain open; EPP login authentication checks this flag
+                // independently).
+                "allowEppClientCertHostnameAuth", allowEppClientCertHostnameAuth));
 
     consoleApiParams.response().setPayload(json.toString());
     consoleApiParams.response().setStatus(SC_OK);

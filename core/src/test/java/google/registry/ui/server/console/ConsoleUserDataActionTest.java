@@ -16,16 +16,25 @@ package google.registry.ui.server.console;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.FeatureFlag.FeatureName.ALLOW_EPP_CLIENT_CERT_HOSTNAME_AUTH;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
+import google.registry.model.common.FeatureFlag;
+import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import jakarta.servlet.http.Cookie;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,7 +57,7 @@ class ConsoleUserDataActionTest extends ConsoleActionBaseTestCase {
     ConsoleUserDataAction action = createAction(Optional.of(consoleApiParams));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    Map jsonObject = GSON.fromJson(response.getPayload(), Map.class);
+    Map<?, ?> jsonObject = GSON.fromJson(response.getPayload(), Map.class);
     assertThat(jsonObject)
         .containsExactly(
             "userRoles",
@@ -64,7 +73,37 @@ class ConsoleUserDataActionTest extends ConsoleActionBaseTestCase {
             "supportPhoneNumber",
             "+1 (212) 867 5309",
             "supportEmail",
-            "support@example.com");
+            "support@example.com",
+            "allowEppClientCertHostnameAuth",
+            false);
+  }
+
+  @Test
+  void testSuccess_allowEppClientCertHostnameAuthTransition() throws IOException {
+    Instant activationTime = Instant.parse("2024-04-16T00:00:00Z");
+    persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(ALLOW_EPP_CLIENT_CERT_HOSTNAME_AUTH)
+            .setStatusMap(
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
+                    .put(activationTime, ACTIVE)
+                    .build())
+            .build());
+
+    ConsoleUserDataAction actionBefore = createAction(Optional.of(consoleApiParams));
+    actionBefore.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    Map<?, ?> jsonBefore = GSON.fromJson(response.getPayload(), Map.class);
+    assertThat(jsonBefore).containsEntry("allowEppClientCertHostnameAuth", false);
+
+    clock.setTo(activationTime);
+    ConsoleUserDataAction actionAfter =
+        createAction(Optional.of(ConsoleApiParamsUtils.createFake(AuthResult.createUser(fteUser))));
+    actionAfter.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    Map<?, ?> jsonAfter = GSON.fromJson(response.getPayload(), Map.class);
+    assertThat(jsonAfter).containsEntry("allowEppClientCertHostnameAuth", true);
   }
 
   @Test
@@ -82,6 +121,6 @@ class ConsoleUserDataActionTest extends ConsoleActionBaseTestCase {
     when(consoleApiParams.request().getMethod()).thenReturn("GET");
     response = (FakeResponse) consoleApiParams.response();
     return new ConsoleUserDataAction(
-        consoleApiParams, "Nomulus", "support@example.com", "+1 (212) 867 5309", "test");
+        consoleApiParams, clock, "Nomulus", "support@example.com", "+1 (212) 867 5309", "test");
   }
 }

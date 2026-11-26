@@ -26,12 +26,18 @@ import { MaterialModule } from 'src/app/material.module';
 import {
   IpAllowListItem,
   RegistrarService,
+  SecuritySettings,
+  StringListItem,
 } from 'src/app/registrar/registrar.service';
 import {
   GlobalLoader,
   GlobalLoaderService,
 } from 'src/app/shared/services/globalLoader.service';
 import { SecurityService, apiToUiConverter } from './security.service';
+
+type CertListField =
+  | 'allowedEppClientCertificateHostnames'
+  | 'revokedClientCertificateHashes';
 
 @Component({
   selector: 'app-security-edit',
@@ -68,10 +74,23 @@ export class SecurityEditComponent implements GlobalLoader, OnDestroy {
     }));
   }
 
+  createHostnameEntry() {
+    this.addCertListEntry('allowedEppClientCertificateHostnames');
+  }
+
+  createRevokedHashEntry() {
+    this.addCertListEntry('revokedClientCertificateHashes');
+  }
+
   save() {
     this.isUpdating.set(true);
     this.globalLoader.startGlobalLoader(this);
-    this.securityService.saveChanges(this.dataSource()).subscribe({
+    const payload: SecuritySettings = { ...this.dataSource() };
+    if (!this.securityService.allowEppClientCertHostnameAuth()) {
+      delete payload.allowedEppClientCertificateHostnames;
+      delete payload.revokedClientCertificateHashes;
+    }
+    this.securityService.saveChanges(payload).subscribe({
       complete: () => {
         this.isUpdating.set(false);
         this.globalLoader.stopGlobalLoader(this);
@@ -93,6 +112,28 @@ export class SecurityEditComponent implements GlobalLoader, OnDestroy {
     this.dataSource.update((ds) => ({
       ...ds,
       ipAddressAllowList: ds.ipAddressAllowList?.filter((item) => item !== ip),
+    }));
+  }
+
+  removeHostnameEntry(hostname: StringListItem) {
+    this.removeCertListEntry('allowedEppClientCertificateHostnames', hostname);
+  }
+
+  removeRevokedHashEntry(hash: StringListItem) {
+    this.removeCertListEntry('revokedClientCertificateHashes', hash);
+  }
+
+  private addCertListEntry(field: CertListField) {
+    this.dataSource.update((ds) => ({
+      ...ds,
+      [field]: [...(ds[field] || []), { value: '' }],
+    }));
+  }
+
+  private removeCertListEntry(field: CertListField, entry: StringListItem) {
+    this.dataSource.update((ds) => ({
+      ...ds,
+      [field]: (ds[field] || []).filter((item) => item !== entry),
     }));
   }
 }

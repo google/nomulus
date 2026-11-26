@@ -116,6 +116,63 @@
           }}</span>
         </mat-list-item>
         <!-- Failover SSL Certificate End -->
+
+        @if (securityService.allowEppClientCertHostnameAuth()) {
+        <mat-list-item role="listitem"></mat-list-item>
+        <!-- Allowed EPP Client Certificate Hostnames Start -->
+        <mat-list-item role="listitem">
+          <h2>Allowed EPP Client Certificate Hostnames</h2>
+        </mat-list-item>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value"
+            >Allow EPP logins with a certificate issued by a publicly trusted CA
+            whose Subject Alternative Name (SAN) dNSName matches one of these
+            exact hostnames (no wildcards; Subject CN is ignored).</span
+          >
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        @for ( item of dataSource().allowedEppClientCertificateHostnames; track
+        $index ) {
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value">{{ item.value }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        } @empty {
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value"
+            >No allowed certificate hostnames on file.</span
+          >
+        </mat-list-item>
+        }
+        <mat-list-item role="listitem"></mat-list-item>
+        <!-- Allowed EPP Client Certificate Hostnames End -->
+
+        <!-- Revoked Client Certificate Hashes Start -->
+        <mat-list-item role="listitem">
+          <h2>Revoked Client Certificate Hashes</h2>
+        </mat-list-item>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value"
+            >Standard Base64-encoded SHA-256 hashes (without "=" padding) of
+            DER-encoded X.509 client certificates rejected at EPP login.</span
+          >
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        @for ( item of dataSource().revokedClientCertificateHashes; track $index
+        ) {
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value">{{ item.value }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        } @empty {
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value"
+            >No revoked client certificate hashes on file.</span
+          >
+        </mat-list-item>
+        }
+        <!-- Revoked Client Certificate Hashes End -->
+        }
       </mat-list>
     </mat-card-content>
   </mat-card>

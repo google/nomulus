@@ -28,8 +28,13 @@ import {
   RegistrarService,
   SecuritySettings,
   SecuritySettingsBackendModel,
+  StringListItem,
 } from 'src/app/registrar/registrar.service';
-import { signal } from '@angular/core';
+import {
+  UserData,
+  UserDataService,
+} from 'src/app/shared/services/userData.service';
+import { signal, WritableSignal } from '@angular/core';
 import { of } from 'rxjs';
 
 describe('SecurityService', () => {
@@ -37,19 +42,25 @@ describe('SecurityService', () => {
     clientCertificate: 'clientCertificateTest',
     failoverClientCertificate: 'failoverClientCertificateTest',
     ipAddressAllowList: [{ value: '123.123.123.123' }],
+    allowedEppClientCertificateHostnames: [{ value: 'epp.registrar.example' }],
+    revokedClientCertificateHashes: [{ value: 'abc123revokedhash' }],
   };
   const apiMockData: SecuritySettingsBackendModel = {
     clientCertificate: 'clientCertificateTest',
     failoverClientCertificate: 'failoverClientCertificateTest',
     ipAddressAllowList: ['123.123.123.123'],
+    allowedEppClientCertificateHostnames: ['epp.registrar.example'],
+    revokedClientCertificateHashes: ['abc123revokedhash'],
   };
 
   let service: SecurityService;
   let backendService: BackendService;
   let loadRegistrarsSpy: ReturnType<typeof vi.fn>;
+  let userDataSignal: WritableSignal<UserData | undefined>;
 
   beforeEach(() => {
     loadRegistrarsSpy = vi.fn().mockReturnValue(of([]));
+    userDataSignal = signal<UserData | undefined>(undefined);
     TestBed.configureTestingModule({
       providers: [
         MatSnackBar,
@@ -62,6 +73,10 @@ describe('SecurityService', () => {
             loadRegistrars: loadRegistrarsSpy,
           },
         },
+        {
+          provide: UserDataService,
+          useValue: { userData: userDataSignal },
+        },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -72,16 +87,115 @@ describe('SecurityService', () => {
 
   it('should convert from api to ui including empty defaults', () => {
     expect(apiToUiConverter(apiMockData)).toEqual(uiMockData);
-    expect(apiToUiConverter()).toEqual({ ipAddressAllowList: [] });
+    expect(apiToUiConverter()).toEqual({
+      ipAddressAllowList: [],
+      allowedEppClientCertificateHostnames: [],
+      revokedClientCertificateHashes: [],
+    });
   });
 
-  it('should convert from ui to api and filter out empty IP entries', () => {
+  it('should convert from ui to api and trim/filter out empty entries', () => {
     expect(
       uiToApiConverter({
         ...uiMockData,
         ipAddressAllowList: [{ value: '123.123.123.123' }, { value: '' }],
+        allowedEppClientCertificateHostnames: [
+          { value: ' epp.registrar.example ' },
+          { value: '   ' },
+          { value: '' },
+        ],
+        revokedClientCertificateHashes: [
+          { value: ' abc123revokedhash ' },
+          { value: '  ' },
+        ],
       })
     ).toEqual(apiMockData);
+  });
+
+  it('should omit hostname and revoked hash fields from api payload when undefined', () => {
+    const converted = uiToApiConverter({
+      clientCertificate: 'clientCertificateTest',
+      ipAddressAllowList: [{ value: '123.123.123.123' }],
+    });
+    expect(converted).toEqual({
+      clientCertificate: 'clientCertificateTest',
+      ipAddressAllowList: ['123.123.123.123'],
+    });
+    expect('allowedEppClientCertificateHostnames' in converted).toBe(false);
+    expect('revokedClientCertificateHashes' in converted).toBe(false);
+  });
+
+  it('should preserve explicit empty arrays and default missing ipAddressAllowList', () => {
+    const emptyDefault = uiToApiConverter({});
+    expect(emptyDefault).toEqual({ ipAddressAllowList: [] });
+    expect('allowedEppClientCertificateHostnames' in emptyDefault).toBe(false);
+    expect('revokedClientCertificateHashes' in emptyDefault).toBe(false);
+
+    const cleared = uiToApiConverter({
+      allowedEppClientCertificateHostnames: [],
+      revokedClientCertificateHashes: [{ value: '   ' }],
+    });
+    expect(cleared).toEqual({
+      ipAddressAllowList: [],
+      allowedEppClientCertificateHostnames: [],
+      revokedClientCertificateHashes: [],
+    });
+    expect('allowedEppClientCertificateHostnames' in cleared).toBe(true);
+    expect('revokedClientCertificateHashes' in cleared).toBe(true);
+  });
+
+  it('should handle null or undefined item values and null list fields safely', () => {
+    const withNullItems = uiToApiConverter({
+      ipAddressAllowList: [{ value: '123.123.123.123' }],
+      allowedEppClientCertificateHostnames: [
+        { value: ' epp.registrar.example ' },
+        { value: null as unknown as string },
+        { value: undefined as unknown as string },
+        null as unknown as StringListItem,
+      ],
+      revokedClientCertificateHashes: null as unknown as Array<StringListItem>,
+    });
+    expect(withNullItems).toEqual({
+      ipAddressAllowList: ['123.123.123.123'],
+      allowedEppClientCertificateHostnames: ['epp.registrar.example'],
+    });
+    expect('revokedClientCertificateHashes' in withNullItems).toBe(false);
+
+    const withNullHostnames = uiToApiConverter({
+      ipAddressAllowList: [{ value: '123.123.123.123' }],
+      allowedEppClientCertificateHostnames:
+        null as unknown as Array<StringListItem>,
+      revokedClientCertificateHashes: [
+        { value: ' abc123revokedhash ' },
+        { value: null as unknown as string },
+      ],
+    });
+    expect(withNullHostnames).toEqual({
+      ipAddressAllowList: ['123.123.123.123'],
+      revokedClientCertificateHashes: ['abc123revokedhash'],
+    });
+    expect('allowedEppClientCertificateHostnames' in withNullHostnames).toBe(
+      false
+    );
+  });
+
+  it('should reflect allowEppClientCertHostnameAuth from UserDataService', () => {
+    expect(service.allowEppClientCertHostnameAuth()).toBe(false);
+    userDataSignal.set({
+      allowEppClientCertHostnameAuth: false,
+      globalRole: 'FTE',
+      isAdmin: true,
+      productName: 'Nomulus',
+      supportEmail: 'support@example.com',
+      supportPhoneNumber: '+1',
+      technicalDocsUrl: 'test',
+    });
+    expect(service.allowEppClientCertHostnameAuth()).toBe(false);
+    userDataSignal.update((u) => ({
+      ...u!,
+      allowEppClientCertHostnameAuth: true,
+    }));
+    expect(service.allowEppClientCertHostnameAuth()).toBe(true);
   });
 
   it('should save security settings via backend and reload registrars', () => {

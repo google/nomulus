@@ -13,13 +13,17 @@
 // limitations under the License.
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
 import { of, Subject, throwError } from 'rxjs';
 import { MaterialModule } from 'src/app/material.module';
-import { RegistrarService } from 'src/app/registrar/registrar.service';
+import {
+  Registrar,
+  RegistrarService,
+} from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 import { GlobalLoaderService } from 'src/app/shared/services/globalLoader.service';
 import { SecurityComponent } from './security.component';
@@ -30,8 +34,20 @@ import { MOCK_REGISTRAR_SERVICE } from 'src/testdata/registrar/registrar.service
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { signal, WritableSignal } from '@angular/core';
-import { UserDataService } from 'src/app/shared/services/userData.service';
-import { Registrar } from 'src/app/registrar/registrar.service';
+import {
+  UserData,
+  UserDataService,
+} from 'src/app/shared/services/userData.service';
+
+const DEFAULT_USER_DATA: UserData = {
+  allowEppClientCertHostnameAuth: false,
+  globalRole: 'FTE',
+  isAdmin: true,
+  productName: 'Nomulus',
+  supportEmail: 'support@example.com',
+  supportPhoneNumber: '+1 (212) 867 5309',
+  technicalDocsUrl: 'test',
+};
 
 describe('SecurityComponent & EppPasswordEditComponent', () => {
   let component: SecurityComponent;
@@ -39,8 +55,10 @@ describe('SecurityComponent & EppPasswordEditComponent', () => {
   let saveSpy: ReturnType<typeof vi.fn>;
   let saveEppPasswordSpy: ReturnType<typeof vi.fn>;
   let securityServiceStub: SecurityService;
+  let userDataSignal: WritableSignal<UserData | undefined>;
 
   beforeEach(async () => {
+    userDataSignal = signal<UserData | undefined>({ ...DEFAULT_USER_DATA });
     await TestBed.configureTestingModule({
       imports: [
         SecurityEditComponent,
@@ -61,7 +79,7 @@ describe('SecurityComponent & EppPasswordEditComponent', () => {
         },
         {
           provide: UserDataService,
-          useValue: { userData: signal({ isAdmin: true }) },
+          useValue: { userData: userDataSignal },
         },
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -251,6 +269,366 @@ describe('SecurityComponent & EppPasswordEditComponent', () => {
       newPasswordRepeat: 'newPass123',
     });
     expect(snackBarSpy).toHaveBeenCalledWith('Wrong old password');
+  });
+
+  it('should omit hidden hostname and revoked hash fields when flag is inactive', async () => {
+    const registrarService = TestBed.inject(RegistrarService);
+    const registrarSignal = registrarService.registrar as WritableSignal<
+      Registrar | undefined
+    >;
+    const originalRegistrar = registrarSignal();
+    try {
+      registrarSignal.set({
+        ...originalRegistrar!,
+        allowedEppClientCertificateHostnames: ['epp.stored.example'],
+        revokedClientCertificateHashes: ['storedHash123'],
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.nativeElement.textContent).not.toContain(
+        'Allowed EPP Client Certificate Hostnames'
+      );
+      expect(fixture.nativeElement.textContent).not.toContain(
+        'Revoked Client Certificate Hashes'
+      );
+
+      fixture.nativeElement
+        .querySelector('button[aria-label="Edit security settings"]')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(
+        fixture.nativeElement.querySelector(
+          '.console-app__allowedHostnameValue'
+        )
+      ).toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('.console-app__revokedHashValue')
+      ).toBeNull();
+
+      fixture.nativeElement
+        .querySelector('.settings-security__edit-save')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(saveSpy).toHaveBeenCalledWith({
+        ipAddressAllowList: [{ value: '123.123.123.123' }],
+      });
+      const savedPayload = saveSpy.mock.calls[0][0];
+      expect('allowedEppClientCertificateHostnames' in savedPayload).toBe(
+        false
+      );
+      expect('revokedClientCertificateHashes' in savedPayload).toBe(false);
+    } finally {
+      registrarSignal.set(originalRegistrar);
+    }
+  });
+
+  it('should render hostnames and revoked certificate hashes when flag is active', async () => {
+    const registrarService = TestBed.inject(RegistrarService);
+    const registrarSignal = registrarService.registrar as WritableSignal<
+      Registrar | undefined
+    >;
+    const originalRegistrar = registrarSignal();
+    try {
+      userDataSignal.set({
+        ...DEFAULT_USER_DATA,
+        allowEppClientCertHostnameAuth: true,
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.nativeElement.textContent).toContain(
+        'Allowed EPP Client Certificate Hostnames'
+      );
+      expect(fixture.nativeElement.textContent).toContain(
+        'No allowed certificate hostnames on file.'
+      );
+      expect(fixture.nativeElement.textContent).toContain(
+        'Revoked Client Certificate Hashes'
+      );
+      expect(fixture.nativeElement.textContent).toContain(
+        'No revoked client certificate hashes on file.'
+      );
+
+      registrarSignal.set({
+        ...originalRegistrar!,
+        allowedEppClientCertificateHostnames: [
+          'epp1.registrar.example',
+          'epp2.registrar.example',
+        ],
+        revokedClientCertificateHashes: ['revokedHash1'],
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const listValues: Array<string | null> = Array.from(
+        fixture.nativeElement.querySelectorAll('span.console-app__list-value'),
+        (e: HTMLElement) => e.textContent
+      );
+      expect(listValues).toContain('epp1.registrar.example');
+      expect(listValues).toContain('epp2.registrar.example');
+      expect(listValues).toContain('revokedHash1');
+      expect(fixture.nativeElement.textContent).not.toContain(
+        'No allowed certificate hostnames on file.'
+      );
+      expect(fixture.nativeElement.textContent).not.toContain(
+        'No revoked client certificate hashes on file.'
+      );
+    } finally {
+      registrarSignal.set(originalRegistrar);
+    }
+  });
+
+  it('should add, remove, and save hostnames and revoked certificate hashes when flag is active', async () => {
+    const registrarService = TestBed.inject(RegistrarService);
+    const registrarSignal = registrarService.registrar as WritableSignal<
+      Registrar | undefined
+    >;
+    const originalRegistrar = registrarSignal();
+    try {
+      userDataSignal.set({
+        ...DEFAULT_USER_DATA,
+        allowEppClientCertHostnameAuth: true,
+      });
+      registrarSignal.set({
+        ...originalRegistrar!,
+        allowedEppClientCertificateHostnames: [
+          'dup.registrar.example',
+          'dup.registrar.example',
+        ],
+        revokedClientCertificateHashes: ['dupHash', 'dupHash'],
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      fixture.nativeElement
+        .querySelector('button[aria-label="Edit security settings"]')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      // Remove only the first duplicate hostname row and add a new one.
+      fixture.nativeElement
+        .querySelector('.console-app__removeHostname')
+        .click();
+      fixture.nativeElement
+        .querySelector(
+          'button[aria-label="Add new allowed certificate hostname"]'
+        )
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const hostnameInputs = fixture.nativeElement.querySelectorAll(
+        '.console-app__allowedHostnameValue'
+      );
+      expect(hostnameInputs).toHaveLength(2);
+      hostnameInputs[1].value = 'epp.new.example';
+      hostnameInputs[1].dispatchEvent(new Event('input'));
+
+      // Remove only the first duplicate revoked hash row and add a new one.
+      fixture.nativeElement
+        .querySelector('.console-app__removeRevokedHash')
+        .click();
+      fixture.nativeElement
+        .querySelector('button[aria-label="Add new revoked certificate hash"]')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const hashInputs = fixture.nativeElement.querySelectorAll(
+        '.console-app__revokedHashValue'
+      );
+      expect(hashInputs).toHaveLength(2);
+      hashInputs[1].value = 'newRevokedHash';
+      hashInputs[1].dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      fixture.nativeElement
+        .querySelector('.settings-security__edit-save')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(saveSpy).toHaveBeenCalledWith({
+        ipAddressAllowList: [{ value: '123.123.123.123' }],
+        allowedEppClientCertificateHostnames: [
+          { value: 'dup.registrar.example' },
+          { value: 'epp.new.example' },
+        ],
+        revokedClientCertificateHashes: [
+          { value: 'dupHash' },
+          { value: 'newRevokedHash' },
+        ],
+      });
+    } finally {
+      registrarSignal.set(originalRegistrar);
+    }
+  });
+
+  it('should fail closed and omit hidden fields when userData is not loaded yet', async () => {
+    const registrarService = TestBed.inject(RegistrarService);
+    const registrarSignal = registrarService.registrar as WritableSignal<
+      Registrar | undefined
+    >;
+    const originalRegistrar = registrarSignal();
+    try {
+      userDataSignal.set(undefined);
+      registrarSignal.set({
+        ...originalRegistrar!,
+        allowedEppClientCertificateHostnames: ['epp.stored.example'],
+        revokedClientCertificateHashes: ['storedHash123'],
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.nativeElement.textContent).not.toContain(
+        'Allowed EPP Client Certificate Hostnames'
+      );
+      expect(fixture.nativeElement.textContent).not.toContain(
+        'Revoked Client Certificate Hashes'
+      );
+
+      fixture.nativeElement
+        .querySelector('button[aria-label="Edit security settings"]')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      fixture.nativeElement
+        .querySelector('.settings-security__edit-save')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(saveSpy).toHaveBeenCalledWith({
+        ipAddressAllowList: [{ value: '123.123.123.123' }],
+      });
+      const savedPayload = saveSpy.mock.calls[0][0];
+      expect('allowedEppClientCertificateHostnames' in savedPayload).toBe(
+        false
+      );
+      expect('revokedClientCertificateHashes' in savedPayload).toBe(false);
+    } finally {
+      registrarSignal.set(originalRegistrar);
+    }
+  });
+
+  it('should add entries to initially empty lists and submit empty array when clearing revoked hashes', async () => {
+    const registrarService = TestBed.inject(RegistrarService);
+    const registrarSignal = registrarService.registrar as WritableSignal<
+      Registrar | undefined
+    >;
+    const originalRegistrar = registrarSignal();
+    try {
+      userDataSignal.set({
+        ...DEFAULT_USER_DATA,
+        allowEppClientCertHostnameAuth: true,
+      });
+      registrarSignal.set({
+        ...originalRegistrar!,
+        allowedEppClientCertificateHostnames: undefined,
+        revokedClientCertificateHashes: ['revokedHashToClear'],
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      fixture.nativeElement
+        .querySelector('button[aria-label="Edit security settings"]')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      // Add first hostname to an initially empty list.
+      fixture.nativeElement
+        .querySelector(
+          'button[aria-label="Add new allowed certificate hostname"]'
+        )
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const hostnameInput = fixture.nativeElement.querySelector(
+        '.console-app__allowedHostnameValue'
+      );
+      hostnameInput.value = 'epp.first.example';
+      hostnameInput.dispatchEvent(new Event('input'));
+
+      // Remove the only revoked hash so [] is explicitly submitted to clear it.
+      fixture.nativeElement
+        .querySelector('.console-app__removeRevokedHash')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      fixture.nativeElement
+        .querySelector('.settings-security__edit-save')
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(saveSpy).toHaveBeenCalledWith({
+        ipAddressAllowList: [{ value: '123.123.123.123' }],
+        allowedEppClientCertificateHostnames: [{ value: 'epp.first.example' }],
+        revokedClientCertificateHashes: [],
+      });
+    } finally {
+      registrarSignal.set(originalRegistrar);
+    }
+  });
+
+  it('should display backend validation error when saving security settings fails', async () => {
+    userDataSignal.set({
+      ...DEFAULT_USER_DATA,
+      allowEppClientCertHostnameAuth: true,
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    fixture.nativeElement
+      .querySelector('button[aria-label="Edit security settings"]')
+      .click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const editDebugEl = fixture.debugElement.query(
+      By.directive(SecurityEditComponent)
+    );
+    const snackBarSpy = vi
+      .spyOn(editDebugEl.injector.get(MatSnackBar), 'open')
+      .mockReturnValue({} as any);
+    saveSpy.mockReturnValueOnce(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 400,
+            error:
+              'Cannot clear allowed EPP client certificate hostnames once configured',
+          })
+      )
+    );
+
+    fixture.nativeElement
+      .querySelector('.settings-security__edit-save')
+      .click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(snackBarSpy).toHaveBeenCalledWith(
+      'Cannot clear allowed EPP client certificate hostnames once configured'
+    );
+    expect(securityServiceStub.isEditingSecurity()).toBe(true);
+    expect(editDebugEl.componentInstance.isUpdating()).toBe(false);
+    expect(TestBed.inject(GlobalLoaderService).isLoading()).toBe(false);
+    expect(
+      fixture.nativeElement.querySelector('.settings-security__edit-save')
+        .disabled
+    ).toBe(false);
   });
 
   it('should stop global loader on SecurityEditComponent destroy while save is pending', () => {
