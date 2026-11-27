@@ -69,6 +69,14 @@ public abstract class ConsoleDomainActionType {
   /** Returns the permission necessary to successfully perform this action. */
   public abstract ConsolePermission getNecessaryPermission();
 
+  /**
+   * Returns whether the EPP command for this action runs with superuser privileges.
+   *
+   * <p>This is evaluated only after {@link #getNecessaryPermission()} has been verified, and it
+   * applies to all users regardless of whether they are admins.
+   */
+  public abstract boolean runAsSuperuser();
+
   /** Returns the type of history / audit logging object to save. */
   public abstract ConsoleUpdateHistory.Type getConsoleUpdateHistoryType();
 
