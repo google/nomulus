@@ -21,6 +21,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig.Config;
@@ -28,8 +29,10 @@ import google.registry.flows.EppController;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.flows.StatelessRequestSessionMetadata;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
+import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.eppoutput.Result;
@@ -41,6 +44,7 @@ import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -91,25 +95,51 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
             () -> new IllegalArgumentException("Bulk action payload must be present"));
     BulkDomainList domainList = consoleApiParams.gson().fromJson(jsonPayload, BulkDomainList.class);
     checkArgument(
-        domainList.domainList != null && !domainList.domainList.isEmpty(),
+        domainList != null && domainList.domainList != null && !domainList.domainList.isEmpty(),
         "Domain list cannot be empty");
     checkArgument(
         domainList.domainList.size() <= bulkDomainActionLimit,
         "Cannot process more than %s domains in a single bulk action",
         bulkDomainActionLimit);
+    checkArgument(
+        domainList.domainList.stream().noneMatch(Objects::isNull),
+        "Domain list cannot contain null entries");
+    ImmutableSet<String> domainNames = ImmutableSet.copyOf(domainList.domainList);
     ConsoleDomainActionType actionType =
         ConsoleDomainActionType.parseActionType(bulkDomainAction, jsonPayload);
 
     checkPermission(user, registrarId, actionType.getNecessaryPermission());
 
     ImmutableMap<String, ConsoleEppOutput> result =
-        domainList.domainList.stream()
-            .collect(
-                toImmutableMap(d -> d, d -> executeEpp(actionType.getXmlContentsToRun(d), user)));
+        domainNames.stream()
+            .collect(toImmutableMap(d -> d, d -> executeIfOwned(d, actionType, user)));
     handleHistoryAdditions(result, actionType);
     // Front end should parse situations where only some commands worked
     consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(result));
     consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  private ConsoleEppOutput executeIfOwned(
+      String domainName, ConsoleDomainActionType actionType, User user) {
+    // Admin requests execute EPP with isSuperuser=true, which bypasses EPP's own
+    // verifyResourceOwnership check. Load the domain inside the same transaction that the EPP
+    // flow enlists in so ownership is verified atomically at the flow's transaction timestamp.
+    return tm().transact(
+            () -> {
+              Optional<Domain> domain =
+                  ForeignKeyUtils.loadResource(Domain.class, domainName, tm().getTxTime());
+              if (domain.isEmpty()) {
+                return executeEpp(actionType.getXmlContentsToRun(domainName), false);
+              }
+              if (!domain.get().getCurrentSponsorRegistrarId().equals(registrarId)) {
+                return new ConsoleEppOutput(
+                    String.format(
+                        "Domain %s is not owned by registrar %s", domainName, registrarId),
+                    Result.Code.AUTHORIZATION_ERROR.code);
+              }
+              return executeEpp(
+                  actionType.getXmlContentsToRun(domainName), user.getUserRoles().isAdmin());
+            });
   }
 
   private void handleHistoryAdditions(
@@ -129,7 +159,7 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
                                     .setType(actionType.getConsoleUpdateHistoryType()))));
   }
 
-  private ConsoleEppOutput executeEpp(String xml, User user) {
+  private ConsoleEppOutput executeEpp(String xml, boolean isSuperuser) {
     return ConsoleEppOutput.fromEppOutput(
         eppController.handleEppCommand(
             new StatelessRequestSessionMetadata(
@@ -137,7 +167,7 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
             new PasswordOnlyTransportCredentials(),
             EppRequestSource.CONSOLE,
             false,
-            user.getUserRoles().isAdmin(),
+            isSuperuser,
             xml.getBytes(UTF_8)));
   }
 
