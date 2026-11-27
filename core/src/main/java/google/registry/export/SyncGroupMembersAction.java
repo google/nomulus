@@ -16,6 +16,7 @@ package google.registry.export;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.groups.DirectoryGroupsConnection.isInvalidMemberException;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -25,10 +26,12 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.groups.DirectoryGroupsConnection;
 import google.registry.groups.GroupsConnection;
 import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
@@ -39,10 +42,8 @@ import google.registry.request.auth.Auth;
 import google.registry.util.Retrier;
 import jakarta.inject.Inject;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 
@@ -113,7 +114,7 @@ public final class SyncGroupMembersAction implements Runnable {
    */
   @Override
   public void run() {
-    List<Registrar> dirtyRegistrars =
+    ImmutableList<Registrar> dirtyRegistrars =
         Streams.stream(Registrar.loadAllCached())
             .filter(
                 registrar ->
@@ -126,19 +127,13 @@ public final class SyncGroupMembersAction implements Runnable {
       return;
     }
 
-    ImmutableMap.Builder<Registrar, Optional<Throwable>> resultsBuilder =
+    ImmutableMap.Builder<Registrar, ImmutableList<Throwable>> resultsBuilder =
         new ImmutableMap.Builder<>();
     for (final Registrar registrar : dirtyRegistrars) {
-      try {
-        retrier.callWithRetry(() -> syncRegistrarContacts(registrar), RuntimeException.class);
-        resultsBuilder.put(registrar, Optional.empty());
-      } catch (Throwable e) {
-        logger.atSevere().withCause(e).log(e.getMessage());
-        resultsBuilder.put(registrar, Optional.of(e));
-      }
+      resultsBuilder.put(registrar, syncRegistrarContacts(registrar));
     }
 
-    List<Throwable> errors = getErrorsAndUpdateFlagsForSuccesses(resultsBuilder.build());
+    ImmutableList<Throwable> errors = getErrorsAndUpdateFlagsForSuccesses(resultsBuilder.build());
     // If there were no errors, return success; otherwise return a failed status and log the errors.
     if (errors.isEmpty()) {
       sendResponse(Result.OK, null);
@@ -152,56 +147,106 @@ public final class SyncGroupMembersAction implements Runnable {
    * the database for the calls that succeeded and accumulating the errors for the calls that
    * failed.
    */
-  private static List<Throwable> getErrorsAndUpdateFlagsForSuccesses(
-      ImmutableMap<Registrar, Optional<Throwable>> results) {
-    final ImmutableList.Builder<Registrar> registrarsToSave = new ImmutableList.Builder<>();
-    List<Throwable> errors = new ArrayList<>();
-    for (Map.Entry<Registrar, Optional<Throwable>> result : results.entrySet()) {
-      if (result.getValue().isPresent()) {
-        errors.add(result.getValue().get());
-      } else {
+  private static ImmutableList<Throwable> getErrorsAndUpdateFlagsForSuccesses(
+      ImmutableMap<Registrar, ImmutableList<Throwable>> results) {
+    ImmutableList.Builder<Registrar> registrarsToSave = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Throwable> errors = new ImmutableList.Builder<>();
+    for (Map.Entry<Registrar, ImmutableList<Throwable>> result : results.entrySet()) {
+      if (result.getValue().isEmpty()) {
         registrarsToSave.add(result.getKey().asBuilder().setContactsRequireSyncing(false).build());
+      } else {
+        errors.addAll(result.getValue());
       }
     }
-    tm().transact(() -> tm().updateAll(registrarsToSave.build()));
-    return errors;
+    ImmutableList<Registrar> cleanRegistrars = registrarsToSave.build();
+    if (!cleanRegistrars.isEmpty()) {
+      tm().transact(() -> tm().updateAll(cleanRegistrars));
+    }
+    return errors.build();
   }
 
-  /** Syncs the contacts for an individual registrar to Google Groups. */
-  private void syncRegistrarContacts(Registrar registrar) {
-    String groupKey = "";
-    try {
-      Set<RegistrarPoc> registrarPocs = registrar.getContacts();
-      long totalAdded = 0;
-      long totalRemoved = 0;
-      for (final RegistrarPoc.Type type : RegistrarPoc.Type.values()) {
-        groupKey =
-            getGroupEmailAddressForContactType(registrar.getRegistrarId(), type, gSuiteDomainName);
-        Set<String> currentMembers = groupsConnection.getMembersOfGroup(groupKey);
-        Set<String> desiredMembers =
-            registrarPocs.stream()
-                .filter(contact -> contact.getTypes().contains(type))
-                .map(RegistrarPoc::getEmailAddress)
-                .collect(toImmutableSet());
-        for (String email : Sets.difference(desiredMembers, currentMembers)) {
-          groupsConnection.addMemberToGroup(groupKey, email, Role.MEMBER);
+  /**
+   * Syncs the contacts for an individual registrar to Google Groups, isolating per-member and
+   * per-group failures so a single bad email or group does not block syncing remaining contacts.
+   */
+  private ImmutableList<Throwable> syncRegistrarContacts(Registrar registrar) {
+    ImmutableList.Builder<Throwable> errors = new ImmutableList.Builder<>();
+    ImmutableSet<RegistrarPoc> registrarPocs = registrar.getContacts();
+    long totalAdded = 0;
+    long totalRemoved = 0;
+    for (final RegistrarPoc.Type type : RegistrarPoc.Type.values()) {
+      String groupKey =
+          getGroupEmailAddressForContactType(registrar.getRegistrarId(), type, gSuiteDomainName);
+      Set<String> currentMembers;
+      try {
+        currentMembers =
+            retrier.callWithRetry(
+                () -> groupsConnection.getMembersOfGroup(groupKey),
+                DirectoryGroupsConnection::isRetryableException);
+      } catch (RuntimeException e) {
+        errors.add(wrapSyncException(registrar, groupKey, e));
+        continue;
+      }
+      ImmutableSet<String> desiredMembers =
+          registrarPocs.stream()
+              .filter(contact -> contact.getTypes().contains(type))
+              .map(RegistrarPoc::getEmailAddress)
+              .collect(toImmutableSet());
+      for (String email : Sets.difference(desiredMembers, currentMembers)) {
+        try {
+          retrier.callWithRetry(
+              () -> groupsConnection.addMemberToGroup(groupKey, email, Role.MEMBER),
+              DirectoryGroupsConnection::isRetryableException);
           totalAdded++;
-        }
-        for (String email : Sets.difference(currentMembers, desiredMembers)) {
-          groupsConnection.removeMemberFromGroup(groupKey, email);
-          totalRemoved++;
+        } catch (RuntimeException e) {
+          if (isInvalidMemberException(e)) {
+            logger.atWarning().withCause(unwrapRetrierCause(e)).log(
+                "Skipping invalid contact email %s for registrar %s in group %s.",
+                email, registrar.getRegistrarId(), groupKey);
+          } else {
+            errors.add(wrapSyncException(registrar, groupKey, e));
+          }
         }
       }
+      for (String email : Sets.difference(currentMembers, desiredMembers)) {
+        try {
+          retrier.callWithRetry(
+              () -> groupsConnection.removeMemberFromGroup(groupKey, email),
+              DirectoryGroupsConnection::isRetryableException);
+          totalRemoved++;
+        } catch (RuntimeException e) {
+          if (isInvalidMemberException(e)) {
+            logger.atWarning().withCause(unwrapRetrierCause(e)).log(
+                "Skipping removal of invalid or missing contact email %s for registrar %s in"
+                    + " group %s.",
+                email, registrar.getRegistrarId(), groupKey);
+          } else {
+            errors.add(wrapSyncException(registrar, groupKey, e));
+          }
+        }
+      }
+    }
+    ImmutableList<Throwable> builtErrors = errors.build();
+    if (builtErrors.isEmpty()) {
       logger.atInfo().log(
           "Successfully synced contacts for registrar %s: added %d and removed %d.",
           registrar.getRegistrarId(), totalAdded, totalRemoved);
-    } catch (IOException e) {
-      // Package up exception and re-throw with attached additional relevant info.
-      String msg =
-          String.format(
-              "Couldn't sync contacts for registrar %s to group %s",
-              registrar.getRegistrarId(), groupKey);
-      throw new RuntimeException(msg, e);
     }
+    return builtErrors;
+  }
+
+  private static RuntimeException wrapSyncException(
+      Registrar registrar, String groupKey, RuntimeException e) {
+    String msg =
+        String.format(
+            "Couldn't sync contacts for registrar %s to group %s",
+            registrar.getRegistrarId(), groupKey);
+    return new RuntimeException(msg, unwrapRetrierCause(e));
+  }
+
+  private static Throwable unwrapRetrierCause(RuntimeException e) {
+    return e.getClass() == RuntimeException.class && e.getCause() instanceof IOException
+        ? e.getCause()
+        : e;
   }
 }
