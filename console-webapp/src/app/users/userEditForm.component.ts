@@ -14,13 +14,16 @@
 
 import {
   Component,
+  DestroyRef,
   ElementRef,
+  inject,
   Inject,
   input,
   output,
   viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MaterialModule } from '../material.module';
 import { FormsModule } from '@angular/forms';
 import { User, UsersService } from './users.service';
@@ -77,8 +80,10 @@ export class ResetRegistryLockPasswordComponent {
   providers: [],
 })
 export class UserEditFormComponent {
+  private readonly destroyRef = inject(DestroyRef);
   form = viewChild.required<ElementRef<HTMLFormElement>>('form');
   isNew = input<boolean>(false);
+  disabled = input<boolean>(false);
   user = input<User, User>(
     {
       emailAddress: '',
@@ -101,6 +106,9 @@ export class UserEditFormComponent {
 
   saveEdit(e: SubmitEvent) {
     e.preventDefault();
+    if (this.disabled()) {
+      return;
+    }
     if (this.form().nativeElement.checkValidity()) {
       this.onEditComplete.emit(this.user());
     } else {
@@ -116,11 +124,15 @@ export class UserEditFormComponent {
   }
 
   requestRegistryLockPasswordReset() {
+    const registryLockEmailAddress = this.user().registryLockEmailAddress;
+    if (this.isNew() || this.disabled() || !registryLockEmailAddress) {
+      return;
+    }
     const dialogRef = this.resetRegistryLockPasswordDialog.open(
       ResetRegistryLockPasswordComponent,
       {
         data: {
-          registryLockEmailAddress: this.user().registryLockEmailAddress,
+          registryLockEmailAddress,
         },
       }
     );
@@ -128,11 +140,12 @@ export class UserEditFormComponent {
       .afterClosed()
       .pipe(
         take(1),
-        filter((result) => !!result)
+        filter((result) => !!result),
+        switchMap(() => this.sendRegistryLockPasswordResetRequest()),
+        takeUntilDestroyed(this.destroyRef)
       )
-      .pipe(switchMap((_) => this.sendRegistryLockPasswordResetRequest()))
       .subscribe({
-        next: (_) => this.usersService.currentlyOpenUserEmail.set(''),
+        next: () => this.usersService.returnToList(),
         error: (err: HttpErrorResponse) =>
           this._snackBar.open(err.error || err.message),
       });

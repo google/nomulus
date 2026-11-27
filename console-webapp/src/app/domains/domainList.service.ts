@@ -46,6 +46,7 @@ export enum BULK_ACTION_NAME {
 })
 export class DomainListService {
   checkpointTime?: string;
+  private lastSearchTerm = '';
   selectedDomain = signal<string | undefined>(undefined);
   public activeActionComponent = signal<Type<any> | null>(null);
   public domainsList = signal<Domain[]>([]);
@@ -55,8 +56,13 @@ export class DomainListService {
     private registrarService: RegistrarService
   ) {}
 
-  resetState() {
+  clearPaginationCursor() {
     this.checkpointTime = undefined;
+    this.lastSearchTerm = '';
+  }
+
+  resetState() {
+    this.clearPaginationCursor();
     this.selectedDomain.set(undefined);
     this.activeActionComponent.set(null);
     this.domainsList.set([]);
@@ -68,6 +74,15 @@ export class DomainListService {
     totalResults?: number,
     searchTerm?: string
   ) {
+    const normalizedSearch = searchTerm ?? '';
+    if (
+      this.checkpointTime !== undefined &&
+      normalizedSearch !== this.lastSearchTerm
+    ) {
+      this.checkpointTime = undefined;
+    }
+    this.lastSearchTerm = normalizedSearch;
+
     return this.backendService
       .getDomains(
         this.registrarService.registrarId(),
@@ -80,7 +95,7 @@ export class DomainListService {
       .pipe(
         tap((domainListResult: DomainListResult) => {
           this.checkpointTime = domainListResult?.checkpointTime;
-          this.domainsList.set(domainListResult?.domains);
+          this.domainsList.set(domainListResult?.domains ?? []);
         })
       );
   }

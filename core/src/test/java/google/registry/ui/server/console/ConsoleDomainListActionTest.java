@@ -142,6 +142,7 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     action.run();
     DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
     assertThat(Iterables.getOnlyElement(result.domains).getDomainName()).isEqualTo("0exists.tld");
+    assertThat(result.totalResults).isEqualTo(1);
   }
 
   @Test
@@ -150,6 +151,49 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     action.run();
     DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
     assertThat(result.domains).isEmpty();
+    assertThat(result.totalResults).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_searchTerm_ignoresStaleClientTotalResults() {
+    ConsoleDomainListAction initial = createAction("TheRegistrar", null, 0, 5, null, null);
+    initial.run();
+    DomainListResult initialResult = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    assertThat(initialResult.totalResults).isEqualTo(10);
+
+    // Passing stale checkpointTime and unfiltered totalResults with a filter must recompute count.
+    ConsoleDomainListAction filteredOne =
+        createAction(
+            "TheRegistrar", initialResult.checkpointTime, 0, 5, initialResult.totalResults, "0");
+    filteredOne.run();
+    DomainListResult filteredOneResult =
+        GSON.fromJson(response.getPayload(), DomainListResult.class);
+    assertThat(Iterables.getOnlyElement(filteredOneResult.domains).getDomainName())
+        .isEqualTo("0exists.tld");
+    assertThat(filteredOneResult.totalResults).isEqualTo(1);
+
+    ConsoleDomainListAction filteredNone =
+        createAction(
+            "TheRegistrar",
+            initialResult.checkpointTime,
+            0,
+            5,
+            initialResult.totalResults,
+            "no-such-domain");
+    filteredNone.run();
+    DomainListResult filteredNoneResult =
+        GSON.fromJson(response.getPayload(), DomainListResult.class);
+    assertThat(filteredNoneResult.domains).isEmpty();
+    assertThat(filteredNoneResult.totalResults).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_missingCheckpointTime_ignoresStaleClientTotalResults() {
+    ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 5, 999L, null);
+    action.run();
+    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    assertThat(result.domains).hasSize(5);
+    assertThat(result.totalResults).isEqualTo(10);
   }
 
   @Test
@@ -199,6 +243,14 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload()).isEqualTo("Page number must be non-negative");
+  }
+
+  @Test
+  void testFailure_negativeTotalResults() {
+    ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 10, -1L, null);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).isEqualTo("Total results must be non-negative");
   }
 
   private ConsoleDomainListAction createAction(String registrarId) {

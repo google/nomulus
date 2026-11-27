@@ -17,6 +17,7 @@ import {
   effect,
   input,
   output,
+  signal,
   viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
@@ -50,7 +51,7 @@ export class UsersListComponent {
   columns = columns;
   displayedColumns = this.columns.map((c) => c.columnDef);
   dataSource: MatTableDataSource<User>;
-  selectedRow!: User;
+  readonly selectedRow = signal<User | undefined>(undefined);
   users = input<User[]>([]);
   onSelect = output<User>();
   sort = viewChild(MatSort);
@@ -64,17 +65,22 @@ export class UsersListComponent {
     ): string | number =>
       (columnByDef.get(property)?.cell(item) ?? '').toLowerCase();
     effect(() => {
-      this.dataSource.data = this.users();
+      const currentUsers = this.users();
+      this.dataSource.data = currentUsers;
       this.dataSource.sort = this.sort() ?? null;
+      const selected = this.selectedRow();
+      if (selected && !currentUsers.includes(selected)) {
+        this.selectedRow.set(undefined);
+      }
     });
   }
 
   onClick(row: User) {
-    this.selectedRow = row;
+    this.selectedRow.set(row);
     this.onSelect.emit(row);
   }
 
   isRowSelected(row: User) {
-    return row === this.selectedRow;
+    return row === this.selectedRow();
   }
 }

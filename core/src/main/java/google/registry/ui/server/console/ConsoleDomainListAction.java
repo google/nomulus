@@ -84,6 +84,8 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
         resultsPerPage > 0 && resultsPerPage <= 500,
         "Results per page must be between 1 and 500 inclusive");
     checkArgument(pageNumber >= 0, "Page number must be non-negative");
+    checkArgument(
+        totalResults.isEmpty() || totalResults.get() >= 0, "Total results must be non-negative");
     tm().transact(this::runInTransaction);
   }
 
@@ -94,15 +96,19 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
     // can be constantly created or deleted
     Instant checkpoint = checkpointTime.orElseGet(tm()::getTxTime);
     CreateAutoTimestamp checkpointTimestamp = CreateAutoTimestamp.create(checkpoint);
-    // Don't compute the number of total results over and over if we don't need to
+    // Reuse client-supplied totalResults only for unfiltered pagination within an existing
+    // checkpoint; filtered queries and fresh checkpoints must always recompute the count so a
+    // stale total from a prior filter or snapshot is never returned.
+    boolean canReuseTotalResults =
+        totalResults.isPresent() && checkpointTime.isPresent() && !hasSearchTerm();
     long actualTotalResults =
-        totalResults.orElseGet(
-            () ->
-                createCountQuery()
-                    .setParameter("registrarId", registrarId)
-                    .setParameter("createdBeforeTime", checkpointTimestamp)
-                    .setParameter("deletedAfterTime", checkpoint)
-                    .getSingleResult());
+        canReuseTotalResults
+            ? totalResults.get()
+            : createCountQuery()
+                .setParameter("registrarId", registrarId)
+                .setParameter("createdBeforeTime", checkpointTimestamp)
+                .setParameter("deletedAfterTime", checkpoint)
+                .getSingleResult();
     List<Domain> domains =
         createDomainQuery()
             .setParameter("registrarId", registrarId)
@@ -121,10 +127,14 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
     consoleApiParams.response().setStatus(SC_OK);
   }
 
+  private boolean hasSearchTerm() {
+    return searchTerm.isPresent() && !searchTerm.get().isEmpty();
+  }
+
   /** Creates the query to get the total number of matching domains, interpolating as necessary. */
   private TypedQuery<Long> createCountQuery() {
     String queryString = "SELECT COUNT(*) " + DOMAIN_QUERY_TEMPLATE;
-    if (searchTerm.isPresent() && !searchTerm.get().isEmpty()) {
+    if (hasSearchTerm()) {
       return tm().query(queryString + SEARCH_TERM_QUERY, Long.class)
           .setParameter("searchTerm", String.format("%%%s%%", Ascii.toLowerCase(searchTerm.get())));
     }
@@ -133,7 +143,7 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
 
   /** Creates the query to retrieve the matching domains themselves, interpolating as necessary. */
   private TypedQuery<Domain> createDomainQuery() {
-    if (searchTerm.isPresent() && !searchTerm.get().isEmpty()) {
+    if (hasSearchTerm()) {
       return tm().query(
               DOMAIN_QUERY_TEMPLATE + SEARCH_TERM_QUERY + ORDER_BY_STATEMENT, Domain.class)
           .setParameter("searchTerm", String.format("%%%s%%", Ascii.toLowerCase(searchTerm.get())));
