@@ -23,8 +23,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
+import com.google.api.services.dataflow.model.Job;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableSet;
 import google.registry.beam.BeamActionTestBase;
@@ -34,6 +37,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.FakeClock;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -254,6 +258,38 @@ public class RdeStagingActionTest extends BeamActionTestBase {
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("Launched RDE pipeline: jobid, jobid1");
+    verify(templates, times(2))
+        .launch(eq("projectId"), eq("jobRegion"), any(LaunchFlexTemplateRequest.class));
+  }
+
+  @Test
+  void testRun_pipelineLaunchFails_returns500() throws Exception {
+    createTldWithEscrowEnabled("lol");
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
+    when(launch.execute()).thenThrow(new IOException("dataflow unavailable"));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.getPayload()).contains("Pipeline launch failed: dataflow unavailable");
+  }
+
+  @Test
+  void testManualRun_partialPipelineLaunchFailure_returns500() throws Exception {
+    createTldWithEscrowEnabled("lol");
+    clock.setTo(Instant.parse("2000-01-01T00:00:00Z"));
+    action.manual = true;
+    action.directory = Optional.of("test/");
+    action.modeStrings = ImmutableSet.of("full");
+    action.tlds = ImmutableSet.of("lol");
+    action.watermarks =
+        ImmutableSet.of(
+            Instant.parse("1999-12-31T00:00:00Z"), Instant.parse("2001-01-01T00:00:00Z"));
+    when(launch.execute())
+        .thenThrow(new IOException("quota exceeded"))
+        .thenReturn(new LaunchFlexTemplateResponse().setJob(new Job().setId("jobid-second")));
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.getPayload()).contains("Pipeline launch failed: quota exceeded");
+    assertThat(response.getPayload()).contains("launched: jobid-second");
     verify(templates, times(2))
         .launch(eq("projectId"), eq("jobRegion"), any(LaunchFlexTemplateRequest.class));
   }

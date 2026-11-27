@@ -26,12 +26,15 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import google.registry.proxy.Protocol;
 import google.registry.proxy.handler.QuotaHandler.EppQuotaHandler;
+import google.registry.proxy.handler.QuotaHandler.LeaseState;
 import google.registry.proxy.handler.QuotaHandler.OverQuotaException;
 import google.registry.proxy.metric.FrontendMetrics;
 import google.registry.proxy.quota.QuotaManager;
 import google.registry.proxy.quota.QuotaManager.QuotaRebate;
 import google.registry.proxy.quota.QuotaManager.QuotaRequest;
 import google.registry.proxy.quota.QuotaManager.QuotaResponse;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -166,5 +169,57 @@ class EppQuotaHandlerTest {
     assertThat(e).hasMessageThat().contains(clientCertHash);
     verify(metrics).registerQuotaRejection("epp", clientCertHash);
     verifyNoMoreInteractions(metrics);
+  }
+
+  @Test
+  void testFailure_pipelinedFramesAfterQuotaRejection_droppedAndReleased() {
+    when(quotaManager.acquireQuota(new QuotaRequest(clientCertHash)))
+        .thenReturn(new QuotaResponse(false, clientCertHash, now));
+
+    ByteBuf firstFrame = Unpooled.buffer(8).writeBytes(new byte[] {1, 2, 3, 4});
+    OverQuotaException e =
+        assertThrows(OverQuotaException.class, () -> channel.writeInbound(firstFrame));
+    assertThat(e).hasMessageThat().contains(clientCertHash);
+    assertThat(handler.leaseState).isEqualTo(LeaseState.REJECTED);
+    assertThat(firstFrame.refCnt()).isEqualTo(0);
+    assertThat((Object) channel.readInbound()).isNull();
+
+    // Pipelined frame arrives before async ctx.close() completes: must be dropped, not forwarded.
+    ByteBuf pipelinedFrame = Unpooled.buffer(8).writeBytes(new byte[] {5, 6, 7, 8});
+    assertThat(channel.writeInbound(pipelinedFrame)).isFalse();
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(pipelinedFrame.refCnt()).isEqualTo(0);
+
+    assertThat(channel.close().isSuccess()).isTrue();
+    assertThat(handler.leaseState).isEqualTo(LeaseState.RELEASED);
+    verify(quotaManager).acquireQuota(new QuotaRequest(clientCertHash));
+    verifyNoMoreInteractions(quotaManager);
+    verify(metrics).registerQuotaRejection("epp", clientCertHash);
+    verifyNoMoreInteractions(metrics);
+  }
+
+  @Test
+  void testChannelInactive_idempotentReleaseAndDropsSubsequentFrames() {
+    when(quotaManager.acquireQuota(new QuotaRequest(clientCertHash)))
+        .thenReturn(new QuotaResponse(true, clientCertHash, now));
+
+    assertThat(channel.writeInbound(message)).isTrue();
+    assertThat((Object) channel.readInbound()).isEqualTo(message);
+    assertThat(handler.leaseState).isEqualTo(LeaseState.LEASED);
+
+    channel.pipeline().fireChannelInactive();
+    assertThat(handler.leaseState).isEqualTo(LeaseState.RELEASED);
+    // Firing channelInactive again must not double-release quota.
+    channel.pipeline().fireChannelInactive();
+
+    ByteBuf strayFrame = Unpooled.buffer(4).writeInt(42);
+    assertThat(channel.writeInbound(strayFrame)).isFalse();
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(strayFrame.refCnt()).isEqualTo(0);
+
+    verify(quotaManager).acquireQuota(new QuotaRequest(clientCertHash));
+    verify(quotaManager)
+        .releaseQuota(QuotaRebate.create(new QuotaResponse(true, clientCertHash, now)));
+    verifyNoMoreInteractions(quotaManager);
   }
 }

@@ -14,11 +14,12 @@
 
 package google.registry.networking.module;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -100,11 +101,22 @@ public final class CertificateSupplierModule {
     SELF_SIGNED
   }
 
-  @Qualifier
-  @interface PemFile {}
+  /**
+   * Atomic bundle of a server TLS private key and its ordered X.509 certificate chain.
+   *
+   * <p>Bundling both artifacts under a single cached supplier prevents certificate rotation from
+   * pairing a newly fetched key with a stale certificate chain (or vice versa).
+   */
+  public record TlsCredentials(PrivateKey privateKey, ImmutableList<X509Certificate> certificates) {
+    public TlsCredentials {
+      checkNotNull(privateKey, "Private key cannot be null");
+      checkNotNull(certificates, "Certificates cannot be null");
+      checkArgument(!certificates.isEmpty(), "Certificates cannot be empty");
+    }
+  }
 
   @Qualifier
-  private @interface P12File {}
+  @interface PemFile {}
 
   @Qualifier
   private @interface SelfSigned {}
@@ -127,31 +139,15 @@ public final class CertificateSupplierModule {
 
   @Singleton
   @Provides
-  static Supplier<PrivateKey> providePrivateKeySupplier(
+  static Supplier<TlsCredentials> provideTlsCredentialsSupplier(
       Mode mode,
-      @PemFile Lazy<Supplier<PrivateKey>> pemPrivateKeySupplier,
-      @P12File Lazy<Supplier<PrivateKey>> p12PrivateKeySupplier,
-      @SelfSigned Lazy<Supplier<PrivateKey>> selfSignedPrivateKeySupplier) {
+      @PemFile Lazy<Supplier<TlsCredentials>> pemTlsCredentialsSupplier,
+      @SelfSigned Lazy<Supplier<TlsCredentials>> selfSignedTlsCredentialsSupplier) {
     return switch (mode) {
-      case PEM_FILE -> pemPrivateKeySupplier.get();
-      case P12_FILE -> p12PrivateKeySupplier.get();
-      case SELF_SIGNED -> selfSignedPrivateKeySupplier.get();
-      default -> throw new RuntimeException("Certificate provider mode exhausted.");
-    };
-  }
-
-  @Singleton
-  @Provides
-  static Supplier<ImmutableList<X509Certificate>> provideCertificatesSupplier(
-      Mode mode,
-      @PemFile Lazy<Supplier<ImmutableList<X509Certificate>>> pemCertificatesSupplier,
-      @P12File Lazy<Supplier<ImmutableList<X509Certificate>>> p12CertificatesSupplier,
-      @SelfSigned Lazy<Supplier<ImmutableList<X509Certificate>>> selfSignedCertificatesSupplier) {
-    return switch (mode) {
-      case PEM_FILE -> pemCertificatesSupplier.get();
-      case P12_FILE -> p12CertificatesSupplier.get();
-      case SELF_SIGNED -> selfSignedCertificatesSupplier.get();
-      default -> throw new RuntimeException("Certificate provider mode exhausted.");
+      case PEM_FILE -> pemTlsCredentialsSupplier.get();
+      case SELF_SIGNED -> selfSignedTlsCredentialsSupplier.get();
+      case P12_FILE ->
+          throw new UnsupportedOperationException("P12_FILE certificate mode is not supported.");
     };
   }
 
@@ -168,46 +164,28 @@ public final class CertificateSupplierModule {
   @Singleton
   @Provides
   @SelfSigned
-  static Supplier<PrivateKey> provideSelfSignedPrivateKeySupplier(SelfSignedCaCertificate ssc) {
-    return Suppliers.ofInstance(ssc.key());
-  }
-
-  @Singleton
-  @Provides
-  @SelfSigned
-  static Supplier<ImmutableList<X509Certificate>> provideSelfSignedCertificatesSupplier(
+  static Supplier<TlsCredentials> provideSelfSignedTlsCredentialsSupplier(
       SelfSignedCaCertificate ssc) {
-    return Suppliers.ofInstance(ImmutableList.of(ssc.cert()));
+    return Suppliers.ofInstance(new TlsCredentials(ssc.key(), ImmutableList.of(ssc.cert())));
   }
 
-  @Provides
-  @PemFile
-  static ImmutableList<Object> providePemObjects(@Named("pemBytes") byte[] pemBytes) {
-    PEMParser pemParser =
-        new PEMParser(new InputStreamReader(new ByteArrayInputStream(pemBytes), UTF_8));
+  private static ImmutableList<Object> parsePemObjects(byte[] pemBytes) {
     ImmutableList.Builder<Object> listBuilder = new ImmutableList.Builder<>();
-    Object obj;
     // PEMParser returns an object (private key, certificate, etc) each time readObject() is called,
     // until no more object is to be read from the file.
-    while (true) {
-      try {
-        obj = pemParser.readObject();
-        if (obj == null) {
-          break;
-        } else {
-          listBuilder.add(obj);
-        }
-      } catch (IOException e) {
-        throw new RuntimeException("Cannot parse PEM file correctly.", e);
+    try (PEMParser pemParser =
+        new PEMParser(new InputStreamReader(new ByteArrayInputStream(pemBytes), UTF_8))) {
+      Object obj;
+      while ((obj = pemParser.readObject()) != null) {
+        listBuilder.add(obj);
       }
+    } catch (IOException e) {
+      throw new RuntimeException("Cannot parse PEM file correctly.", e);
     }
     return listBuilder.build();
   }
 
-  // This binding should not be used directly. Use the supplier binding instead.
-  @Provides
-  @PemFile
-  static PrivateKey providePemPrivateKey(@PemFile ImmutableList<Object> pemObjects) {
+  private static PrivateKey extractPrivateKey(ImmutableList<Object> pemObjects) {
     JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
     Function<PEMKeyPair, PrivateKey> pkcs1PrivateKeyConverter =
         pemKeyPair -> {
@@ -239,11 +217,8 @@ public final class CertificateSupplierModule {
     return privateKeys.get(0);
   }
 
-  // This binding should not be used directly. Use the supplier binding instead.
-  @Provides
-  @PemFile
-  static ImmutableList<X509Certificate> providePemCertificates(
-      @PemFile ImmutableList<Object> pemObject) {
+  private static ImmutableList<X509Certificate> extractCertificates(
+      ImmutableList<Object> pemObjects) {
     JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider("BC");
     Function<X509CertificateHolder, X509Certificate> certificateConverter =
         certificateHolder -> {
@@ -255,7 +230,7 @@ public final class CertificateSupplierModule {
           }
         };
     ImmutableList<X509Certificate> certificates =
-        filterAndConvert(pemObject, X509CertificateHolder.class, certificateConverter);
+        filterAndConvert(pemObjects, X509CertificateHolder.class, certificateConverter);
     checkState(!certificates.isEmpty(), "No certificates found in the pem file");
     X509Certificate lastCert = null;
     for (X509Certificate cert : certificates) {
@@ -271,37 +246,20 @@ public final class CertificateSupplierModule {
     return certificates;
   }
 
+  // This binding should not be used directly. Use the supplier binding instead.
+  @Provides
+  @PemFile
+  static TlsCredentials providePemTlsCredentials(@Named("pemBytes") byte[] pemBytes) {
+    ImmutableList<Object> pemObjects = parsePemObjects(pemBytes);
+    return new TlsCredentials(extractPrivateKey(pemObjects), extractCertificates(pemObjects));
+  }
+
   @Singleton
   @Provides
   @PemFile
-  static Supplier<PrivateKey> providePemPrivateKeySupplier(
-      @PemFile Provider<PrivateKey> privateKeyProvider,
+  static Supplier<TlsCredentials> providePemTlsCredentialsSupplier(
+      @PemFile Provider<TlsCredentials> tlsCredentialsProvider,
       @Named("remoteCertCachingDuration") Duration cachingDuration) {
-    return memoizeWithExpiration(privateKeyProvider::get, cachingDuration.toSeconds(), SECONDS);
-  }
-
-  @Singleton
-  @Provides
-  @PemFile
-  static Supplier<ImmutableList<X509Certificate>> providePemCertificatesSupplier(
-      @PemFile Provider<ImmutableList<X509Certificate>> certificatesProvider,
-      @Named("remoteCertCachingDuration") Duration cachingDuration) {
-    return memoizeWithExpiration(certificatesProvider::get, cachingDuration.toSeconds(), SECONDS);
-  }
-
-  // TODO(jianglai): Implement P12 supplier or convert the file to PEM format.
-  @Singleton
-  @Provides
-  @P12File
-  static Supplier<PrivateKey> provideP12PrivateKeySupplier() {
-    return Suppliers.ofInstance(null);
-  }
-
-  // TODO(jianglai): Implement P12 supplier or convert the file to PEM format.
-  @Singleton
-  @Provides
-  @P12File
-  static Supplier<ImmutableList<X509Certificate>> provideP12CertificatesSupplier() {
-    return Suppliers.ofInstance(null);
+    return memoizeWithExpiration(tlsCredentialsProvider::get, cachingDuration);
   }
 }

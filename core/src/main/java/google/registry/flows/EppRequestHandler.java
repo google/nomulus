@@ -15,6 +15,7 @@
 package google.registry.flows;
 
 import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
+import static google.registry.model.eppoutput.Result.Code.AUTHENTICATION_ERROR_CLOSING_CONNECTION;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_AND_CLOSE;
 import static google.registry.xml.XmlTransformer.prettyPrint;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
@@ -24,6 +25,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.model.eppoutput.EppOutput;
+import google.registry.model.eppoutput.Result;
 import google.registry.request.Response;
 import google.registry.util.ProxyHttpHeaders;
 import google.registry.util.StopwatchLogger;
@@ -69,11 +71,10 @@ public class EppRequestHandler {
       // a non-OK status (400) is if we fail to muster even an EPP error response message. In that
       // case it's better to close the connection than to return garbage.
       response.setStatus(SC_OK);
-      // Per RFC 5734, a server receiving a logout command must end the EPP session and close the
-      // TCP connection. Since the app itself only gets HttpServletRequest and is not aware of TCP
-      // sessions, it simply sets the HTTP response header to indicate the connection should be
-      // closed by the proxy. Whether the EPP proxy actually terminates the connection with the
-      // client is up to its implementation.
+      // Per RFC 5734 §2, a server ending an EPP session (1500 logout or 2501 authentication error
+      // closing connection) must close the TCP connection. Since the app itself only gets
+      // HttpServletRequest and is not aware of TCP sessions, it sets the HTTP response header to
+      // indicate the connection should be closed by the proxy or integrated EPP server.
       // See: https://tools.ietf.org/html/rfc5734#section-2
       String authRegistrarId = null;
       try {
@@ -84,9 +85,12 @@ public class EppRequestHandler {
       if (authRegistrarId != null) {
         response.setHeader(ProxyHttpHeaders.LOGGED_IN_REGISTRAR, authRegistrarId);
       }
-      if (eppOutput.isResponse()
-          && eppOutput.getResponse().getResult().getCode() == SUCCESS_AND_CLOSE) {
-        response.setHeader(ProxyHttpHeaders.EPP_SESSION, "close");
+      if (eppOutput.isResponse()) {
+        Result.Code resultCode = eppOutput.getResponse().getResult().getCode();
+        if (resultCode == SUCCESS_AND_CLOSE
+            || resultCode == AUTHENTICATION_ERROR_CLOSING_CONNECTION) {
+          response.setHeader(ProxyHttpHeaders.EPP_SESSION, "close");
+        }
       }
     } catch (Exception e) {
       logger.atWarning().withCause(e).log("handleEppCommand general exception.");

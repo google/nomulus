@@ -54,6 +54,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.HttpException.NoContentException;
+import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.RequestParameters;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.CloudTasksHelper;
@@ -461,7 +462,7 @@ public class RdeUploadActionTest {
   }
 
   @Test
-  void testRunWithLock_sftpCooldownNotPassed_throws204() {
+  void testRunWithLock_sftpCooldownNotPassed_throws503() {
     RdeUploadAction action = createAction(URI.create("sftp://user:password@localhost:32323/"));
     action.sftpCooldown = Duration.ofHours(2);
     Instant stagingCursor = Instant.parse("2010-10-18T00:00:00Z");
@@ -470,8 +471,9 @@ public class RdeUploadActionTest {
         uploadCursor.minus(Duration.ofMinutes(97)); // Within the 2-hour cooldown period.
     persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     persistResource(Cursor.createScoped(RDE_UPLOAD_SFTP, sftpCursor, Tld.get("tld")));
-    NoContentException thrown =
-        assertThrows(NoContentException.class, () -> action.runWithLock(uploadCursor));
+    ServiceUnavailableException thrown =
+        assertThrows(ServiceUnavailableException.class, () -> action.runWithLock(uploadCursor));
+    assertThat(thrown.getResponseCode()).isEqualTo(503);
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
