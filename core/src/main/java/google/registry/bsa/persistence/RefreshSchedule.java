@@ -15,8 +15,14 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.base.Verify.verify;
+import static google.registry.bsa.RefreshStage.APPLY_CHANGES;
+import static google.registry.bsa.RefreshStage.CHECK_FOR_CHANGES;
+import static google.registry.bsa.RefreshStage.DONE;
+import static google.registry.bsa.RefreshStage.UPLOAD_ADDITIONS;
+import static google.registry.bsa.RefreshStage.UPLOAD_REMOVALS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableMultimap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import google.registry.bsa.RefreshStage;
 import java.time.Instant;
@@ -33,17 +39,27 @@ public record RefreshSchedule(
     RefreshStage stage,
     Instant prevRefreshTime) {
 
+  static final ImmutableMultimap<RefreshStage, RefreshStage> ALLOWED_TRANSITIONS =
+      ImmutableMultimap.<RefreshStage, RefreshStage>builder()
+          .put(CHECK_FOR_CHANGES, DONE)
+          .put(CHECK_FOR_CHANGES, APPLY_CHANGES)
+          .put(APPLY_CHANGES, UPLOAD_REMOVALS)
+          .put(UPLOAD_REMOVALS, UPLOAD_ADDITIONS)
+          .put(UPLOAD_ADDITIONS, DONE)
+          .build();
+
   /** Updates the current job to the new stage. */
   @CanIgnoreReturnValue
   public RefreshSchedule updateJobStage(RefreshStage stage) {
     return tm().transact(
             () -> {
               BsaDomainRefresh bsaRefresh = tm().loadByKey(BsaDomainRefresh.vKey(jobId()));
+              RefreshStage currentStage = bsaRefresh.getStage();
               verify(
-                  stage.compareTo(bsaRefresh.getStage()) > 0,
-                  "Invalid new stage [%s]. Must move forward from [%s]",
-                  bsaRefresh.getStage(),
-                  stage);
+                  ALLOWED_TRANSITIONS.containsEntry(currentStage, stage),
+                  "Invalid new stage [%s]. Cannot transition from [%s]",
+                  stage,
+                  currentStage);
               bsaRefresh.setStage(stage);
               tm().put(bsaRefresh);
               return create(bsaRefresh, prevRefreshTime());

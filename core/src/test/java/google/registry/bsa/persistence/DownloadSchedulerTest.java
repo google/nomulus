@@ -117,6 +117,21 @@ class DownloadSchedulerTest {
   }
 
   @Test
+  void oneInProgressJobOneCompletedJob_pastMaxNopInterval_alwaysDownloadTrue() {
+    BsaDownload completed = insertOneJobAndAdvanceClock(DONE);
+    fakeClock.advanceBy(MAX_NOP_INTERVAL);
+    BsaDownload inProgressJob = insertOneJobAndAdvanceClock(DOWNLOAD_BLOCK_LISTS);
+    fakeClock.advanceBy(Duration.ofMinutes(1));
+    Optional<DownloadSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isPresent();
+    DownloadSchedule schedule = scheduleOptional.get();
+    assertThat(schedule.jobId()).isEqualTo(inProgressJob.jobId);
+    assertThat(schedule.stage()).isEqualTo(DOWNLOAD_BLOCK_LISTS);
+    assertThat(schedule.alwaysDownload()).isTrue();
+    assertThat(schedule.latestCompleted()).hasValue(CompletedJob.create(completed));
+  }
+
+  @Test
   void doneJob_noNewSchedule() {
     insertOneJobAndAdvanceClock(DONE);
     assertThat(scheduler.schedule()).isEmpty();
@@ -134,7 +149,7 @@ class DownloadSchedulerTest {
     assertThat(schedule.latestCompleted()).isPresent();
     CompletedJob completedJob = schedule.latestCompleted().get();
     assertThat(completedJob.jobName()).isEqualTo(completed.getJobName());
-    assertThat(completedJob.checksums()).isEqualTo(completedJob.checksums());
+    assertThat(completedJob.checksums()).isEqualTo(completed.getChecksums());
   }
 
   @Test

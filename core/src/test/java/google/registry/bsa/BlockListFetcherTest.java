@@ -15,9 +15,16 @@
 package google.registry.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_CREATED;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_REQUEST_TIMEOUT;
+import static jakarta.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -28,8 +35,9 @@ import google.registry.bsa.BlockListFetcher.LazyBlockList;
 import google.registry.bsa.api.BsaCredential;
 import google.registry.bsa.api.BsaException;
 import google.registry.request.UrlConnectionService;
+import google.registry.testing.FakeClock;
+import google.registry.testing.FakeSleeper;
 import google.registry.util.Retrier;
-import google.registry.util.SystemSleeper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -38,6 +46,8 @@ import javax.net.ssl.HttpsURLConnection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -57,7 +67,7 @@ class BlockListFetcherTest {
             connectionService,
             credential,
             ImmutableMap.of("BLOCK", "https://block", "BLOCK_PLUS", "https://blockplus"),
-            new Retrier(new SystemSleeper(), 2));
+            new Retrier(new FakeSleeper(new FakeClock()), 2));
   }
 
   void setupMocks() throws Exception {
@@ -78,14 +88,30 @@ class BlockListFetcherTest {
     verify(connection, times(1)).setRequestProperty("Authorization", "Bearer authToken");
   }
 
-  @Test
-  void tryFetch_ifStatusNotOK_throwRetriable() throws Exception {
+  @ParameterizedTest
+  @ValueSource(ints = {SC_REQUEST_TIMEOUT, 429, SC_INTERNAL_SERVER_ERROR, SC_SERVICE_UNAVAILABLE})
+  void fetch_transientHttpStatus_retried(int statusCode) throws Exception {
     setupMocks();
-    when(connection.getResponseCode()).thenReturn(201);
+    when(connection.getResponseCode()).thenReturn(statusCode);
     assertThat(
-            assertThrows(BsaException.class, () -> fetcher.tryFetch(BlockListType.BLOCK))
+            assertThrows(BsaException.class, () -> fetcher.fetch(BlockListType.BLOCK))
                 .isRetriable())
         .isTrue();
+    verify(connectionService, times(2)).createConnection(any(URL.class));
+    verify(connection, times(2)).disconnect();
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {SC_CREATED, SC_BAD_REQUEST, SC_FORBIDDEN, SC_NOT_FOUND})
+  void fetch_permanentHttpStatus_notRetried(int statusCode) throws Exception {
+    setupMocks();
+    when(connection.getResponseCode()).thenReturn(statusCode);
+    assertThat(
+            assertThrows(BsaException.class, () -> fetcher.fetch(BlockListType.BLOCK))
+                .isRetriable())
+        .isFalse();
+    verify(connectionService, times(1)).createConnection(any(URL.class));
+    verify(connection, times(1)).disconnect();
   }
 
   @Test

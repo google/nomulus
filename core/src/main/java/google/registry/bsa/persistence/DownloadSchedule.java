@@ -16,12 +16,20 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verify;
+import static google.registry.bsa.DownloadStage.APPLY_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.CHECKSUMS_DO_NOT_MATCH;
+import static google.registry.bsa.DownloadStage.DONE;
+import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
 import static google.registry.bsa.DownloadStage.MAKE_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
+import static google.registry.bsa.DownloadStage.REPORT_END_OF_ORDER_PROCESSING;
+import static google.registry.bsa.DownloadStage.REPORT_START_OF_ORDER_PROCESSING;
+import static google.registry.bsa.DownloadStage.UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import google.registry.bsa.BlockListType;
 import google.registry.bsa.DownloadStage;
 import java.time.Instant;
@@ -42,68 +50,89 @@ public record DownloadSchedule(
     Optional<CompletedJob> latestCompleted,
     boolean alwaysDownload) {
 
+  static final ImmutableMultimap<DownloadStage, DownloadStage> ALLOWED_TRANSITIONS =
+      ImmutableMultimap.<DownloadStage, DownloadStage>builder()
+          .put(DOWNLOAD_BLOCK_LISTS, MAKE_ORDER_AND_LABEL_DIFF)
+          .put(DOWNLOAD_BLOCK_LISTS, NOP)
+          .put(DOWNLOAD_BLOCK_LISTS, CHECKSUMS_DO_NOT_MATCH)
+          .put(MAKE_ORDER_AND_LABEL_DIFF, APPLY_ORDER_AND_LABEL_DIFF)
+          .put(APPLY_ORDER_AND_LABEL_DIFF, REPORT_START_OF_ORDER_PROCESSING)
+          .put(REPORT_START_OF_ORDER_PROCESSING, UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS)
+          .put(UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS, REPORT_END_OF_ORDER_PROCESSING)
+          .put(REPORT_END_OF_ORDER_PROCESSING, DONE)
+          .build();
+
   /** Updates the current job to the new stage. */
-  public void updateJobStage(DownloadStage stage) {
-    tm().transact(
+  @CanIgnoreReturnValue
+  public DownloadSchedule updateJobStage(DownloadStage stage) {
+    return tm().transact(
             () -> {
               BsaDownload bsaDownload = tm().loadByKey(BsaDownload.vKey(jobId()));
+              DownloadStage currentStage = bsaDownload.getStage();
               verify(
-                  stage.compareTo(bsaDownload.getStage()) > 0,
-                  "Invalid new stage [%s]. Must move forward from [%s]",
-                  bsaDownload.getStage(),
-                  stage);
+                  ALLOWED_TRANSITIONS.containsEntry(currentStage, stage),
+                  "Invalid new stage [%s]. Cannot transition from [%s]",
+                  stage,
+                  currentStage);
+              verify(
+                  !currentStage.equals(DOWNLOAD_BLOCK_LISTS),
+                  "Must provide checksums when leaving [%s] stage",
+                  DOWNLOAD_BLOCK_LISTS);
               bsaDownload.setStage(stage);
               tm().put(bsaDownload);
+              return create(bsaDownload, latestCompleted(), alwaysDownload());
             });
   }
 
   /**
    * Updates the current job to the new stage and sets the checksums of the downloaded files.
    *
-   * <p>This method may only be invoked during the {@code DOWNLOAD} stage, and the target stage must
-   * be one of {@code MAKE_DIFF}, {@code CHECK_FOR_STALE_UNBLOCKABLES}, {@code NOP}, or {@code
-   * CHECKSUMS_NOT_MATCH}.
+   * <p>This method may only be invoked during the {@code DOWNLOAD_BLOCK_LISTS} stage, and the
+   * target stage must be one of {@code MAKE_ORDER_AND_LABEL_DIFF}, {@code NOP}, or {@code
+   * CHECKSUMS_DO_NOT_MATCH}.
    */
+  @CanIgnoreReturnValue
   public DownloadSchedule updateJobStage(
       DownloadStage stage, ImmutableMap<BlockListType, String> checksums) {
     checkArgument(
-        stage.equals(MAKE_ORDER_AND_LABEL_DIFF)
-            || stage.equals(NOP)
-            || stage.equals(CHECKSUMS_DO_NOT_MATCH),
-        "Invalid stage [%s]",
-        stage);
+        ALLOWED_TRANSITIONS.containsEntry(DOWNLOAD_BLOCK_LISTS, stage),
+        "Invalid new stage [%s]. Cannot transition from [%s]",
+        stage,
+        DOWNLOAD_BLOCK_LISTS);
     return tm().transact(
             () -> {
               BsaDownload bsaDownload = tm().loadByKey(BsaDownload.vKey(jobId()));
+              DownloadStage currentStage = bsaDownload.getStage();
               verify(
-                  bsaDownload.getStage().equals(DownloadStage.DOWNLOAD_BLOCK_LISTS),
-                  "Invalid invocation. May only invoke during the DOWNLOAD stage.");
+                  currentStage.equals(DOWNLOAD_BLOCK_LISTS),
+                  "Invalid invocation: may only update checksums during [%s] stage, found [%s]",
+                  DOWNLOAD_BLOCK_LISTS,
+                  currentStage);
               bsaDownload.setStage(stage);
               bsaDownload.setChecksums(checksums);
               tm().put(bsaDownload);
-              return create(bsaDownload);
+              return create(bsaDownload, latestCompleted(), alwaysDownload());
             });
   }
 
   static DownloadSchedule create(BsaDownload currentJob) {
-    return new DownloadSchedule(
-        currentJob.getJobId(),
-        currentJob.getCreationTime(),
-        currentJob.getJobName(),
-        currentJob.getStage(),
-        Optional.empty(),
-        /* alwaysDownload= */ true);
+    return create(currentJob, Optional.empty(), /* alwaysDownload= */ true);
   }
 
   static DownloadSchedule create(
       BsaDownload currentJob, CompletedJob latestCompleted, boolean alwaysDownload) {
+    return create(currentJob, Optional.of(latestCompleted), alwaysDownload);
+  }
+
+  private static DownloadSchedule create(
+      BsaDownload currentJob, Optional<CompletedJob> latestCompleted, boolean alwaysDownload) {
     return new DownloadSchedule(
         currentJob.getJobId(),
         currentJob.getCreationTime(),
         currentJob.getJobName(),
         currentJob.getStage(),
-        Optional.of(latestCompleted),
-        /* alwaysDownload= */ alwaysDownload);
+        latestCompleted,
+        alwaysDownload);
   }
 
   /** Information about a completed BSA download job. */

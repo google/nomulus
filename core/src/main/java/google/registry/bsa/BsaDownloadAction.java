@@ -34,6 +34,7 @@ import google.registry.bsa.BlockListFetcher.LazyBlockList;
 import google.registry.bsa.BsaDiffCreator.BsaDiff;
 import google.registry.bsa.api.BlockLabel;
 import google.registry.bsa.api.BlockOrder;
+import google.registry.bsa.api.BsaException;
 import google.registry.bsa.api.BsaReportSender;
 import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.persistence.DownloadSchedule;
@@ -106,6 +107,14 @@ public class BsaDownloadAction implements Runnable {
         logger.atInfo().log("%s.", message);
         emailSender.sendNotification(message, /* body= */ "");
       }
+    } catch (BsaException e) {
+      if (e.isRetriable()) {
+        logger.atWarning().withCause(e).log("Transient failure downloading/processing BSA data.");
+      } else {
+        logger.atSevere().withCause(e).log(
+            "Non-retriable BSA error during download; manual intervention may be required.");
+      }
+      emailSender.sendNotification("BSA download aborted", getStackTraceAsString(e));
     } catch (Throwable throwable) {
       logger.atWarning().withCause(throwable).log("Failed to download and process BSA data.");
       emailSender.sendNotification("BSA download aborted", getStackTraceAsString(throwable));
@@ -162,7 +171,8 @@ public class BsaDownloadAction implements Runnable {
             // TODO(01/15/24): add email alert.
             return null;
           }
-          schedule.updateJobStage(DownloadStage.MAKE_ORDER_AND_LABEL_DIFF, actualChecksum);
+          schedule =
+              schedule.updateJobStage(DownloadStage.MAKE_ORDER_AND_LABEL_DIFF, actualChecksum);
         }
         // Fall through
       case MAKE_ORDER_AND_LABEL_DIFF:
@@ -170,19 +180,22 @@ public class BsaDownloadAction implements Runnable {
         // TODO(weiminyu): log the diff stats
         gcsClient.writeOrderDiffs(schedule.jobName(), diff.getOrders());
         gcsClient.writeLabelDiffs(schedule.jobName(), diff.getLabels());
-        schedule.updateJobStage(DownloadStage.APPLY_ORDER_AND_LABEL_DIFF);
+        schedule = schedule.updateJobStage(DownloadStage.APPLY_ORDER_AND_LABEL_DIFF);
         // Fall through
       case APPLY_ORDER_AND_LABEL_DIFF:
+        DownloadSchedule applySchedule = schedule;
         try (Stream<BlockLabel> labels =
-            diff != null ? diff.getLabels() : gcsClient.readLabelDiffs(schedule.jobName())) {
+            diff != null ? diff.getLabels() : gcsClient.readLabelDiffs(applySchedule.jobName())) {
           Stream<ImmutableList<BlockLabel>> batches = toBatches(labels, transactionBatchSize);
           gcsClient.writeUnblockableDomains(
-              schedule.jobName(),
+              applySchedule.jobName(),
               batches
-                  .map(batch -> applyLabelDiff(batch, lazyIdnChecker.get(), schedule, clock.now()))
+                  .map(
+                      batch ->
+                          applyLabelDiff(batch, lazyIdnChecker.get(), applySchedule, clock.now()))
                   .flatMap(ImmutableList::stream));
         }
-        schedule.updateJobStage(DownloadStage.REPORT_START_OF_ORDER_PROCESSING);
+        schedule = schedule.updateJobStage(DownloadStage.REPORT_START_OF_ORDER_PROCESSING);
         // Fall through
       case REPORT_START_OF_ORDER_PROCESSING:
         try (Stream<BlockOrder> orders = gcsClient.readOrderDiffs(schedule.jobName())) {
@@ -197,7 +210,7 @@ public class BsaDownloadAction implements Runnable {
             logger.atInfo().log("No new or deleted orders in this round.");
           }
         }
-        schedule.updateJobStage(DownloadStage.UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS);
+        schedule = schedule.updateJobStage(DownloadStage.UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS);
         // Fall through
       case UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS:
         try (Stream<UnblockableDomain> unblockables =
@@ -216,7 +229,7 @@ public class BsaDownloadAction implements Runnable {
             logger.atInfo().log("No changes in the set of unblockable domains in this round.");
           }
         }
-        schedule.updateJobStage(DownloadStage.REPORT_END_OF_ORDER_PROCESSING);
+        schedule = schedule.updateJobStage(DownloadStage.REPORT_END_OF_ORDER_PROCESSING);
         // Fall through
       case REPORT_END_OF_ORDER_PROCESSING:
         try (Stream<BlockOrder> orders = gcsClient.readOrderDiffs(schedule.jobName())) {

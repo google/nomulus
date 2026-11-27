@@ -15,12 +15,15 @@
 package google.registry.bsa;
 
 import static com.google.common.base.Throwables.getStackTraceAsString;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.testing.TestLogHandler;
+import google.registry.bsa.api.BsaException;
 import google.registry.bsa.api.BsaReportSender;
 import google.registry.bsa.persistence.RefreshScheduler;
 import google.registry.groups.GmailClient;
@@ -30,6 +33,8 @@ import google.registry.util.EmailMessage;
 import jakarta.mail.internet.InternetAddress;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -94,6 +99,53 @@ public class BsaRefreshActionTest {
         .sendEmail(
             EmailMessage.create(
                 "BSA refresh aborted", getStackTraceAsString(throwable), emailRecipient));
+  }
+
+  @Test
+  void notificationSent_abortedByNonRetriableBsaException_logsSevere() {
+    TestLogHandler logHandler = new TestLogHandler();
+    Logger actionLogger = Logger.getLogger(BsaRefreshAction.class.getCanonicalName());
+    actionLogger.addHandler(logHandler);
+    try {
+      BsaException exception =
+          new BsaException("Status code: [400], error: [Bad Request]", /* retriable= */ false);
+      when(bsaLock.executeWithLock(any())).thenThrow(exception);
+      action.run();
+      assertAboutLogs()
+          .that(logHandler)
+          .hasLogAtLevelWithMessage(
+              Level.SEVERE,
+              "Non-retriable BSA error during refresh; manual intervention may be required.");
+      verify(gmailClient, times(1))
+          .sendEmail(
+              EmailMessage.create(
+                  "BSA refresh aborted", getStackTraceAsString(exception), emailRecipient));
+    } finally {
+      actionLogger.removeHandler(logHandler);
+    }
+  }
+
+  @Test
+  void notificationSent_abortedByRetriableBsaException_logsWarning() {
+    TestLogHandler logHandler = new TestLogHandler();
+    Logger actionLogger = Logger.getLogger(BsaRefreshAction.class.getCanonicalName());
+    actionLogger.addHandler(logHandler);
+    try {
+      BsaException exception =
+          new BsaException(
+              "Status code: [503], error: [Service Unavailable]", /* retriable= */ true);
+      when(bsaLock.executeWithLock(any())).thenThrow(exception);
+      action.run();
+      assertAboutLogs()
+          .that(logHandler)
+          .hasLogAtLevelWithMessage(Level.WARNING, "Transient failure refreshing BSA data.");
+      verify(gmailClient, times(1))
+          .sendEmail(
+              EmailMessage.create(
+                  "BSA refresh aborted", getStackTraceAsString(exception), emailRecipient));
+    } finally {
+      actionLogger.removeHandler(logHandler);
+    }
   }
 
   @Test

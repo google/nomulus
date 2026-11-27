@@ -20,19 +20,32 @@ import static google.registry.bsa.persistence.BsaTestingUtils.createDownloadSche
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.testing.TestLogHandler;
 import google.registry.bsa.BlockListFetcher.LazyBlockList;
+import google.registry.bsa.api.BlockOrder;
+import google.registry.bsa.api.BlockOrder.OrderType;
+import google.registry.bsa.api.BsaException;
 import google.registry.bsa.api.BsaReportSender;
 import google.registry.bsa.persistence.BsaTld;
+import google.registry.bsa.persistence.DownloadSchedule;
+import google.registry.bsa.persistence.DownloadScheduler;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.Tlds;
@@ -47,11 +60,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -73,6 +89,7 @@ class BsaDownloadFunctionalTest {
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private GcsClient gcsClient;
+  private BsaDiffCreator diffCreator;
   private BsaDownloadAction action;
   private Response response;
 
@@ -91,12 +108,13 @@ class BsaDownloadFunctionalTest {
                     tld.asBuilder().setBsaEnrollStartTime(Optional.of(START_INSTANT)).build()));
     gcsClient =
         new GcsClient(new GcsUtils(LocalStorageHelper.getOptions()), "my-bucket", "SHA-256");
+    diffCreator = spy(new BsaDiffCreator(gcsClient));
     response = new FakeResponse();
     action =
         new BsaDownloadAction(
             createDownloadScheduler(fakeClock),
             blockListFetcher,
-            new BsaDiffCreator(gcsClient),
+            diffCreator,
             bsaReportSender,
             gcsClient,
             IdnChecker::new,
@@ -140,6 +158,78 @@ class BsaDownloadFunctionalTest {
     fakeClock.advanceBy(Duration.ofDays(1));
     action.run();
     assertThat(getPersistedLabels()).containsExactly("abc");
+    try (Stream<BlockOrder> orders = gcsClient.readOrderDiffs("2024-01-02t000000.000z")) {
+      assertThat(orders).containsExactly(BlockOrder.create(3, OrderType.DELETE));
+    }
+    assertThat(tm().transact(DownloadScheduler::fetchMostRecentDownloadJobIdIfCompleted))
+        .hasValue("2024-01-02t000000.000z");
+    ArgumentCaptor<DownloadSchedule> scheduleCaptor =
+        ArgumentCaptor.forClass(DownloadSchedule.class);
+    verify(diffCreator, times(2)).createDiff(scheduleCaptor.capture(), any(IdnChecker.class));
+    DownloadSchedule secondDiffSchedule = scheduleCaptor.getAllValues().get(1);
+    assertThat(secondDiffSchedule.stage()).isEqualTo(DownloadStage.MAKE_ORDER_AND_LABEL_DIFF);
+    assertThat(secondDiffSchedule.latestCompleted()).isPresent();
+    assertThat(secondDiffSchedule.latestCompleted().get().jobName())
+        .isEqualTo("2024-01-01t000000.000z");
+  }
+
+  @Test
+  void reportSenderNonRetriable4xx_logsSevereAndDoesNotMarkDone() throws Exception {
+    TestLogHandler logHandler = new TestLogHandler();
+    Logger actionLogger = Logger.getLogger(BsaDownloadAction.class.getCanonicalName());
+    actionLogger.addHandler(logHandler);
+    try {
+      LazyBlockList blockList = mockBlockList(BlockListType.BLOCK, ImmutableList.of("abc,1"));
+      LazyBlockList blockPlusList =
+          mockBlockList(BlockListType.BLOCK_PLUS, ImmutableList.of("abc,2"));
+      mockBlockListFetcher(blockList, blockPlusList);
+      doThrow(new BsaException("Status code: [400], error: [Bad Request]", /* retriable= */ false))
+          .when(bsaReportSender)
+          .sendOrderStatusReport(anyString());
+
+      action.run();
+
+      assertAboutLogs()
+          .that(logHandler)
+          .hasLogAtLevelWithMessage(
+              Level.SEVERE,
+              "Non-retriable BSA error during download; manual intervention may be required.");
+      verify(bsaEmailSender).sendNotification(eq("BSA download aborted"), anyString());
+      assertThat(tm().transact(DownloadScheduler::fetchMostRecentDownloadJobIdIfCompleted))
+          .isEmpty();
+    } finally {
+      actionLogger.removeHandler(logHandler);
+    }
+  }
+
+  @Test
+  void reportSenderRetriable5xx_logsWarningAndDoesNotMarkDone() throws Exception {
+    TestLogHandler logHandler = new TestLogHandler();
+    Logger actionLogger = Logger.getLogger(BsaDownloadAction.class.getCanonicalName());
+    actionLogger.addHandler(logHandler);
+    try {
+      LazyBlockList blockList = mockBlockList(BlockListType.BLOCK, ImmutableList.of("abc,1"));
+      LazyBlockList blockPlusList =
+          mockBlockList(BlockListType.BLOCK_PLUS, ImmutableList.of("abc,2"));
+      mockBlockListFetcher(blockList, blockPlusList);
+      doThrow(
+              new BsaException(
+                  "Status code: [503], error: [Service Unavailable]", /* retriable= */ true))
+          .when(bsaReportSender)
+          .sendOrderStatusReport(anyString());
+
+      action.run();
+
+      assertAboutLogs()
+          .that(logHandler)
+          .hasLogAtLevelWithMessage(
+              Level.WARNING, "Transient failure downloading/processing BSA data.");
+      verify(bsaEmailSender).sendNotification(eq("BSA download aborted"), anyString());
+      assertThat(tm().transact(DownloadScheduler::fetchMostRecentDownloadJobIdIfCompleted))
+          .isEmpty();
+    } finally {
+      actionLogger.removeHandler(logHandler);
+    }
   }
 
   private ImmutableList<String> getPersistedLabels() {

@@ -22,6 +22,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import google.registry.bsa.api.BsaException;
 import google.registry.bsa.api.BsaReportSender;
 import google.registry.bsa.api.JsonSerializations;
 import google.registry.bsa.api.UnblockableDomainChange;
@@ -91,6 +92,14 @@ public class BsaRefreshAction implements Runnable {
         logger.atInfo().log("%s.", message);
         emailSender.sendNotification(message, /* body= */ "");
       }
+    } catch (BsaException e) {
+      if (e.isRetriable()) {
+        logger.atWarning().withCause(e).log("Transient failure refreshing BSA data.");
+      } else {
+        logger.atSevere().withCause(e).log(
+            "Non-retriable BSA error during refresh; manual intervention may be required.");
+      }
+      emailSender.sendNotification("BSA refresh aborted", getStackTraceAsString(e));
     } catch (Throwable throwable) {
       logger.atWarning().withCause(throwable).log("Failed to refresh BSA data.");
       emailSender.sendNotification("BSA refresh aborted", getStackTraceAsString(throwable));
@@ -129,14 +138,14 @@ public class BsaRefreshAction implements Runnable {
           return null;
         }
         gcsClient.writeRefreshChanges(schedule.jobName(), blockabilityChanges.stream());
-        schedule.updateJobStage(RefreshStage.APPLY_CHANGES);
+        schedule = schedule.updateJobStage(RefreshStage.APPLY_CHANGES);
         // Fall through
       case APPLY_CHANGES:
         try (Stream<UnblockableDomainChange> changes =
             gcsClient.readRefreshChanges(schedule.jobName())) {
           BatchedStreams.toBatches(changes, 500).forEach(refresher::applyUnblockableChanges);
         }
-        schedule.updateJobStage(RefreshStage.UPLOAD_REMOVALS);
+        schedule = schedule.updateJobStage(RefreshStage.UPLOAD_REMOVALS);
         // Fall through
       case UPLOAD_REMOVALS:
         try (Stream<UnblockableDomainChange> changes =
@@ -156,7 +165,7 @@ public class BsaRefreshAction implements Runnable {
             logger.atInfo().log("No Unblockable domains to remove.");
           }
         }
-        schedule.updateJobStage(RefreshStage.UPLOAD_ADDITIONS);
+        schedule = schedule.updateJobStage(RefreshStage.UPLOAD_ADDITIONS);
         // Fall through
       case UPLOAD_ADDITIONS:
         try (Stream<UnblockableDomainChange> changes =

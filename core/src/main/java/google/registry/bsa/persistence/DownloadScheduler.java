@@ -106,9 +106,7 @@ public final class DownloadScheduler {
                 verify(prev.getStage().equals(DONE), "Unexpectedly found two ongoing jobs.");
                 return Optional.of(
                     DownloadSchedule.create(
-                        mostRecent,
-                        CompletedJob.create(prev),
-                        isTimeAgain(mostRecent, maxNopInterval)));
+                        mostRecent, CompletedJob.create(prev), isTimeAgain(prev, maxNopInterval)));
               }
             });
   }

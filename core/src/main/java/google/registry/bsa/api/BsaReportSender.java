@@ -87,10 +87,10 @@ public class BsaReportSender {
   }
 
   Void trySendData(String urlString, String payload) {
+    HttpsURLConnection connection = null;
     try {
       URL url = new URL(urlString);
-      HttpsURLConnection connection =
-          (HttpsURLConnection) urlConnectionService.createConnection(url);
+      connection = (HttpsURLConnection) urlConnectionService.createConnection(url);
       connection.setRequestMethod(HttpMethods.POST);
       connection.setRequestProperty("Authorization", "Bearer " + credential.getAuthToken());
       UrlConnectionUtils.setPayload(connection, payload.getBytes(UTF_8), CONTENT_TYPE.toString());
@@ -98,10 +98,10 @@ public class BsaReportSender {
       if (code != SC_OK && code != SC_ACCEPTED) {
         String errorDetails = "";
         try (InputStream errorStream = connection.getErrorStream()) {
-          errorDetails = new String(ByteStreams.toByteArray(errorStream), UTF_8);
-        } catch (NullPointerException e) {
-          // No error message.
-        } catch (Exception e) {
+          if (errorStream != null) {
+            errorDetails = new String(ByteStreams.toByteArray(errorStream), UTF_8);
+          }
+        } catch (IOException e) {
           errorDetails = "Failed to retrieve error message: " + e.getMessage();
         }
         // TODO(b/318404541): sanitize errorDetails to prevent log injection attack.
@@ -109,12 +109,17 @@ public class BsaReportSender {
             String.format(
                 "Status code: [%s], error: [%s], details: [%s]",
                 code, connection.getResponseMessage(), errorDetails),
-            /* retriable= */ true);
+            BsaException.isRetriableHttpStatus(code));
       }
-      try (InputStream errorStream = connection.getInputStream()) {
-        String responseMessage = new String(ByteStreams.toByteArray(errorStream), UTF_8);
-        logger.atInfo().log("Received response: [%s]", responseMessage);
-      } catch (Exception e) {
+      try (InputStream inputStream = connection.getInputStream()) {
+        if (inputStream != null) {
+          String responseMessage =
+              new String(ByteStreams.toByteArray(inputStream), UTF_8)
+                  .replace('\r', '_')
+                  .replace('\n', '_');
+          logger.atInfo().log("Received response: [%s]", responseMessage);
+        }
+      } catch (IOException e) {
         logger.atInfo().withCause(e).log("Failed to retrieve response message.");
       }
       return null;
@@ -122,6 +127,10 @@ public class BsaReportSender {
       throw new BsaException(e, /* retriable= */ true);
     } catch (GeneralSecurityException e) {
       throw new BsaException(e, /* retriable= */ false);
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
     }
   }
 }
