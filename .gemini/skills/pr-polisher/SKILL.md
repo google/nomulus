@@ -22,7 +22,7 @@ This skill is designed to evolve. If a human code reviewer (or presubmit hook) p
 ## Workflow Execution Steps
 
 1. **Run the Automated Analysis Script**
-   Execute the packaged Python diff-checker script from the repository root. This script automatically checks commit messages, working tree status, `package-lock.json` modifications, copyright years on new files, missing tests across all tested modules, the 2-PR database schema split (Flyway scripts must not ship with Java or `db-schema.sql.generated` changes), internal-only links or paths leaking into this public repository, local `upstream/master` freshness, and a litany of anti-patterns using regex (e.g., fully-qualified names, incorrect clock injections, generic exception catching).
+   Execute the packaged Python diff-checker script from the repository root. This script automatically checks commit messages, working tree status, `package-lock.json` modifications, copyright years on new files, missing tests across all tested modules, the 2-PR database schema split (Flyway scripts must not ship with Java or `db-schema.sql.generated` changes), Valkey Protostuff-cached entity field edits, state-machine anti-patterns (`TimedTransitionProperty.fromValueMap`, ordinal `Enum.compareTo`, Angular `setTimeout`/`GlobalLoaderService`/multi-boolean state flags), internal-only links or paths leaking into this public repository, local `upstream/master` freshness, and a litany of anti-patterns using regex (e.g., fully-qualified names, incorrect clock injections, generic exception catching).
 
    ```bash
    python3 .gemini/skills/pr-polisher/scripts/check_diff.py
@@ -69,7 +69,13 @@ This skill is designed to evolve. If a human code reviewer (or presubmit hook) p
    * Its path appears in `core/src/test/resources/google/registry/module/routing.txt` (update this golden file using the instructions printed by a failing `RequestComponentTest`).
    * Scheduled actions have a matching entry in the relevant `core/src/main/java/google/registry/config/files/tasks/cloud-scheduler-tasks-*.xml` files.
 
-8. **Read ALL Existing PR Review Comments (Paginated)**
+8. **Verify State-Machine and Serialization Hygiene**
+   If the diff adds or modifies lifecycle fields (`Status`/`State`/`Stage` enums, nullable timestamps, `TimedTransitionProperty`, Netty handlers, cron/Cloud Tasks pipelines, or Angular view/edit/loading booleans):
+   * Confirm multi-step states and transitions are explicit and centralized (Java 25 `sealed` projections + transitioners, `ImmutableMultimap` transition maps, or Angular Signal discriminated unions via `@switch`) rather than scattered `if` guards, ordinal `Enum.compareTo`, or orthogonal booleans.
+   * Confirm no redundant persisted static `state` column is added to wall-clock time-projected entities (`Domain`, `Host`), and no non-`transient` field is added, removed, reordered, or retyped on Protostuff-cached entities (`EppResource`, `DomainBase`, `Domain`, `DomainTransferData`, `GracePeriod`, `DomainDsData`, `HostBase`, `Host`) without a coordinated `@Tag` or cache key-prefix migration.
+   * Confirm async pipelines have explicit failure states, return retryable HTTP codes (`503`, not `204`) when Cloud Tasks must retry, and keep external HTTP/email side effects outside DB transactions.
+
+9. **Read ALL Existing PR Review Comments (Paginated)**
    When an open PR exists, never rely on a single unpaginated `gh api` or `gh pr view` call, which silently truncates and hides inline comments. Fetch all three endpoints with pagination:
    ```bash
    gh api --paginate repos/google/nomulus/pulls/<n>/comments --jq '.[] | {path, line, user: .user.login, body}'
@@ -78,7 +84,7 @@ This skill is designed to evolve. If a human code reviewer (or presubmit hook) p
    ```
    Confirm every comment is addressed (or explicitly replied to) before declaring the PR polished.
 
-9. **Address Errors, Amend, and Re-Run (Iterative Checking)**
+10. **Address Errors, Amend, and Re-Run (Iterative Checking)**
    If any script throws an error, if scope was reduced, if the commit message was inaccurate, or if formatting changes were applied, you must stage those fixes and amend your commit:
    ```bash
    git add -u
