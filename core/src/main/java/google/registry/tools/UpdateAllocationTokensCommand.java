@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.partition;
@@ -147,16 +148,9 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   private static final Joiner JOINER = Joiner.on(", ");
 
   private ImmutableSet<AllocationToken> tokensToSave;
-  private boolean endToken = false;
 
   @Override
   public void init() {
-    if (tokenStatusTransitions != null
-        && (tokenStatusTransitions.containsValue(TokenStatus.ENDED)
-            || tokenStatusTransitions.containsValue(TokenStatus.CANCELLED))) {
-      endToken = true;
-    }
-
     GenerateAllocationTokensCommand.verifyAllRegistrarIdsExist(allowedClientIds);
     GenerateAllocationTokensCommand.verifyAllTldsExist(allowedTlds);
 
@@ -190,19 +184,36 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     return String.format("Updated %d tokens in total.", numUpdated);
   }
 
-  private AllocationToken updateToken(AllocationToken original) {
-    if (endToken && original.getTokenType().equals(TokenType.BULK_PRICING)) {
-      Long domainsInBulkPackage =
-          tm().query("SELECT COUNT(*) FROM Domain WHERE currentBulkToken = :token", Long.class)
-              .setParameter("token", original.createVKey())
-              .getSingleResult();
+  private boolean isEndingToken() {
+    return tokenStatusTransitions != null
+        && tokenStatusTransitions.values().stream().anyMatch(AllocationToken::isTerminalStatus);
+  }
 
+  private void verifyNoDomainsInBulkPackage(AllocationToken token) {
+    Long domainsInBulkPackage =
+        tm().query("SELECT COUNT(*) FROM Domain WHERE currentBulkToken = :token", Long.class)
+            .setParameter("token", token.createVKey())
+            .getSingleResult();
+    checkArgument(
+        domainsInBulkPackage == 0,
+        "Bulk token %s can not end its promotion because it still has %s domains in the promotion",
+        token.getToken(),
+        domainsInBulkPackage);
+  }
+
+  private AllocationToken updateToken(AllocationToken original) {
+    if (tokenStatusTransitions != null) {
+      TokenStatus currentStatus =
+          original.getTokenStatusTransitions().getValueAtTime(tm().getTxTime());
       checkArgument(
-          domainsInBulkPackage == 0,
-          "Bulk token %s can not end its promotion because it still has %s domains in the"
-              + " promotion",
+          !AllocationToken.isTerminalStatus(currentStatus),
+          "Cannot update tokenStatusTransitions for token %s because it is already in terminal"
+              + " status %s",
           original.getToken(),
-          domainsInBulkPackage);
+          currentStatus);
+    }
+    if (isEndingToken() && original.getTokenType().equals(TokenType.BULK_PRICING)) {
+      verifyNoDomainsInBulkPackage(original);
     }
     AllocationToken.Builder builder = original.asBuilder();
     Optional.ofNullable(allowedClientIds)
@@ -233,17 +244,27 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   }
 
   private long saveBatch(ImmutableList<AllocationToken> batch) {
+    // Re-load and re-validate inside the write transaction to close TOCTOU races between init()
+    // and execute() (e.g., domains added to a BULK_PRICING token or a token reaching a terminal
+    // state while awaiting confirmation).
+    ImmutableList<AllocationToken> updatedBatch =
+        tm()
+            .loadByKeys(batch.stream().map(AllocationToken::createVKey).collect(toImmutableList()))
+            .values()
+            .stream()
+            .map(this::updateToken)
+            .collect(toImmutableList());
     if (!dryRun) {
-      tm().putAll(batch);
+      tm().putAll(updatedBatch);
     }
     printStream.printf(
         "%s tokens: %s\n",
         dryRun ? "Would update" : "Updated",
         JOINER.join(
-            tokensToSave.stream()
+            updatedBatch.stream()
                 .map(AllocationToken::getToken)
                 .sorted()
-                .collect(toImmutableSet())));
-    return batch.size();
+                .collect(toImmutableList())));
+    return updatedBatch.size();
   }
 }

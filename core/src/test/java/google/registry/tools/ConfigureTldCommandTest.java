@@ -16,6 +16,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EntityYamlUtils.createObjectMapper;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -32,6 +33,7 @@ import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
@@ -730,5 +732,145 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(updatedTld.getCreateBillingCost(fakeClock.now())).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
     assertThat(updatedTld.getBreakglassMode()).isFalse();
+  }
+
+  @Test
+  void testFailure_invalidTldStateTransitionInYaml_gaToPdt() throws Exception {
+    String yaml =
+        loadFile(getClass(), "tld.yaml")
+            .replace(
+                "  \"1970-01-01T00:00:00.000Z\": \"GENERAL_AVAILABILITY\"",
+                """
+                  "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
+                  "2025-01-01T00:00:00.000Z": "PDT"\
+                """);
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(yaml);
+    JsonMappingException thrown =
+        assertThrows(JsonMappingException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown)
+        .hasCauseThat()
+        .hasMessageThat()
+        .isEqualTo("tldStateTransitions map cannot transition from GENERAL_AVAILABILITY to PDT.");
+  }
+
+  @Test
+  void testFailure_invalidTldStateTransitionInYaml_gaToSunrise() throws Exception {
+    String yaml =
+        loadFile(getClass(), "tld.yaml")
+            .replace(
+                "  \"1970-01-01T00:00:00.000Z\": \"GENERAL_AVAILABILITY\"",
+                """
+                  "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
+                  "2025-01-01T00:00:00.000Z": "START_DATE_SUNRISE"\
+                """);
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(yaml);
+    JsonMappingException thrown =
+        assertThrows(JsonMappingException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown)
+        .hasCauseThat()
+        .hasMessageThat()
+        .isEqualTo(
+            "tldStateTransitions map cannot transition from GENERAL_AVAILABILITY to"
+                + " START_DATE_SUNRISE.");
+  }
+
+  @Test
+  void testFailure_invalidTldStateTransitionInYaml_gaToQuietPeriodToPdt() throws Exception {
+    String yaml =
+        loadFile(getClass(), "tld.yaml")
+            .replace(
+                "  \"1970-01-01T00:00:00.000Z\": \"GENERAL_AVAILABILITY\"",
+                """
+                  "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
+                  "2025-01-01T00:00:00.000Z": "QUIET_PERIOD"
+                  "2025-02-01T00:00:00.000Z": "PDT"\
+                """);
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(yaml);
+    JsonMappingException thrown =
+        assertThrows(JsonMappingException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown)
+        .hasCauseThat()
+        .hasMessageThat()
+        .isEqualTo(
+            "tldStateTransitions map cannot transition from GENERAL_AVAILABILITY to PDT (even via"
+                + " QUIET_PERIOD).");
+  }
+
+  @Test
+  void testSuccess_validDefaultPromoTokenInYaml() throws Exception {
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("promo1")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    String yaml =
+        loadFile(getClass(), "tld.yaml")
+            .replace("defaultPromoTokens: []", "defaultPromoTokens:\n- \"promo1\"");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(yaml);
+    runCommandForced("--input=" + tldFile);
+    assertThat(Tld.get("tld").getDefaultPromoTokens()).containsExactly(defaultToken.createVKey());
+  }
+
+  @Test
+  void testFailure_defaultPromoTokenInYamlDoesNotExist() throws Exception {
+    String yaml =
+        loadFile(getClass(), "tld.yaml")
+            .replace("defaultPromoTokens: []", "defaultPromoTokens:\n- \"missingToken\"");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(yaml);
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Default promo token missingToken does not exist");
+  }
+
+  @Test
+  void testFailure_defaultPromoTokenInYamlWrongTokenType() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("singleUse")
+            .setTokenType(SINGLE_USE)
+            .setAllowedTlds(ImmutableSet.of("tld"))
+            .build());
+    String yaml =
+        loadFile(getClass(), "tld.yaml")
+            .replace("defaultPromoTokens: []", "defaultPromoTokens:\n- \"singleUse\"");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(yaml);
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Token singleUse has an invalid token type of SINGLE_USE. DefaultPromoTokens must be of"
+                + " the type DEFAULT_PROMO");
+  }
+
+  @Test
+  void testFailure_defaultPromoTokenInYamlNotValidForTld() throws Exception {
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("otherPromo")
+            .setTokenType(DEFAULT_PROMO)
+            .setAllowedTlds(ImmutableSet.of("other"))
+            .build());
+    String yaml =
+        loadFile(getClass(), "tld.yaml")
+            .replace("defaultPromoTokens: []", "defaultPromoTokens:\n- \"otherPromo\"");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(yaml);
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "The token otherPromo is not valid for this TLD. The valid TLDs for it are [other]");
   }
 }

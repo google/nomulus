@@ -39,6 +39,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.ExpiryAccessPeriodMode;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.VKey;
@@ -340,7 +341,7 @@ public class EntityYamlUtils {
         JsonParser jp, DeserializationContext context) throws IOException {
       SortedMap<String, String> valueMap =
           jp.readValueAs(new TypeReference<SortedMap<String, String>>() {});
-      return TimedTransitionProperty.fromValueMap(
+      return Tld.createTldStateTransitions(
           valueMap.keySet().stream()
               .collect(
                   toImmutableSortedMap(

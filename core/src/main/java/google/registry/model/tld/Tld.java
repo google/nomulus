@@ -40,10 +40,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.Buildable;
@@ -96,7 +96,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
@@ -170,8 +169,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   /**
-   * The states a TLD can be in at any given point in time. The ordering below is the required
-   * sequence of states (ignoring {@link #PDT} which is a pseudo-state).
+   * The states a TLD can be in at any given point in time. Valid state transitions are enforced by
+   * {@link #VALID_TLD_STATE_TRANSITIONS}.
    */
   public enum TldState {
 
@@ -186,8 +185,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     /**
      * A state in which no domain operations are permitted. Generally used between sunrise and
-     * general availability. This state is special in that it has no ordering constraints and can
-     * appear after any phase.
+     * general availability. This state may appear between or after non-predelegation phases, but
+     * cannot repeat consecutively or be used to transition backward across phases.
      */
     QUIET_PERIOD,
 
@@ -199,6 +198,109 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     /** A "fake" state for use in predelegation testing. Acts like {@link #GENERAL_AVAILABILITY}. */
     PDT
+  }
+
+  /**
+   * Valid direct transitions between {@link TldState} values.
+   *
+   * <p>TLD launch phases progress strictly forward ({@code PREDELEGATION -> PDT ->
+   * START_DATE_SUNRISE -> GENERAL_AVAILABILITY}, skipping optional intermediate phases). {@link
+   * TldState#QUIET_PERIOD} may be entered from or exit into non-predelegation phases, but cannot
+   * repeat consecutively or be used to transition backward across phases.
+   */
+  public static final ImmutableMultimap<TldState, TldState> VALID_TLD_STATE_TRANSITIONS =
+      ImmutableMultimap.<TldState, TldState>builder()
+          .putAll(
+              TldState.PREDELEGATION,
+              TldState.PDT,
+              TldState.QUIET_PERIOD,
+              TldState.START_DATE_SUNRISE,
+              TldState.GENERAL_AVAILABILITY)
+          .putAll(
+              TldState.PDT,
+              TldState.QUIET_PERIOD,
+              TldState.START_DATE_SUNRISE,
+              TldState.GENERAL_AVAILABILITY)
+          .putAll(TldState.START_DATE_SUNRISE, TldState.QUIET_PERIOD, TldState.GENERAL_AVAILABILITY)
+          .putAll(
+              TldState.QUIET_PERIOD,
+              TldState.PDT,
+              TldState.START_DATE_SUNRISE,
+              TldState.GENERAL_AVAILABILITY)
+          .putAll(TldState.GENERAL_AVAILABILITY, TldState.QUIET_PERIOD)
+          .build();
+
+  /**
+   * Creates a validated {@link TimedTransitionProperty} for {@link TldState} transitions, enforcing
+   * {@link #VALID_TLD_STATE_TRANSITIONS} on both adjacent transitions and phase progression across
+   * intervening {@link TldState#QUIET_PERIOD} entries.
+   */
+  public static TimedTransitionProperty<TldState> createTldStateTransitions(
+      ImmutableSortedMap<Instant, TldState> tldStatesMap) {
+    checkNotNull(tldStatesMap, "TLD states map cannot be null");
+    TimedTransitionProperty<TldState> transitions =
+        TimedTransitionProperty.make(
+            tldStatesMap, VALID_TLD_STATE_TRANSITIONS, "tldStateTransitions");
+    validateNonQuietPeriodProgression(tldStatesMap);
+    return transitions;
+  }
+
+  private static void validateTldStateTransitions(
+      ImmutableSortedMap<Instant, TldState> tldStatesMap) {
+    TimedTransitionProperty.validateTimedTransitionMap(
+        tldStatesMap, VALID_TLD_STATE_TRANSITIONS, "tldStateTransitions");
+    validateNonQuietPeriodProgression(tldStatesMap);
+  }
+
+  private static void validateNonQuietPeriodProgression(
+      ImmutableSortedMap<Instant, TldState> tldStatesMap) {
+    TldState previousPhase = null;
+    for (TldState state : tldStatesMap.values()) {
+      if (TldState.QUIET_PERIOD.equals(state)) {
+        continue;
+      }
+      if (previousPhase != null
+          && !VALID_TLD_STATE_TRANSITIONS.containsEntry(previousPhase, state)) {
+        throw new IllegalArgumentException(
+            String.format(
+                "tldStateTransitions map cannot transition from %s to %s (even via QUIET_PERIOD).",
+                previousPhase, state));
+      }
+      previousPhase = state;
+    }
+  }
+
+  /**
+   * Validates that every token in {@code promoTokens} exists in the database, has type {@link
+   * TokenType#DEFAULT_PROMO}, and is allowed on {@code tldStr}.
+   */
+  public static void validateDefaultPromoTokens(
+      String tldStr, List<VKey<AllocationToken>> promoTokens) {
+    if (promoTokens == null || promoTokens.isEmpty()) {
+      return;
+    }
+    tm().reTransact(
+            () -> {
+              for (VKey<AllocationToken> tokenKey : promoTokens) {
+                Optional<AllocationToken> maybeToken = tm().loadByKeyIfPresent(tokenKey);
+                checkArgument(
+                    maybeToken.isPresent(),
+                    "Default promo token %s does not exist",
+                    tokenKey.getKey());
+                AllocationToken token = maybeToken.get();
+                checkArgument(
+                    token.getTokenType().equals(TokenType.DEFAULT_PROMO),
+                    "Token %s has an invalid token type of %s. DefaultPromoTokens must be of"
+                        + " the type DEFAULT_PROMO",
+                    token.getToken(),
+                    token.getTokenType());
+                checkArgument(
+                    token.getAllowedTlds().contains(tldStr),
+                    "The token %s is not valid for this TLD. The valid TLDs for it are %s",
+                    token.getToken(),
+                    token.getAllowedTlds());
+              }
+            });
   }
 
   /** The modes an Expiry Access Period (XAP) can be in at any given point in time. */
@@ -858,6 +960,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
     // and cloned it into a new builder, to block re-building a Tld in an invalid state.
     tldStateTransitions.checkValidity();
+    validateTldStateTransitions(tldStateTransitions.toValueMap());
     createBillingCostTransitions.checkValidity();
     renewBillingCostTransitions.checkValidity();
     eapFeeSchedule.checkValidity();
@@ -915,17 +1018,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     /** Sets the TLD state to transition to the specified states at the specified times. */
     public Builder setTldStateTransitions(ImmutableSortedMap<Instant, TldState> tldStatesMap) {
-      checkNotNull(tldStatesMap, "TLD states map cannot be null");
-      // Filter out any entries with QUIET_PERIOD as the value before checking for ordering, since
-      // that phase is allowed to appear anywhere.
-      checkArgument(
-          Ordering.natural()
-              .isStrictlyOrdered(
-                  tldStatesMap.values().stream()
-                      .filter(state -> !TldState.QUIET_PERIOD.equals(state))
-                      .collect(Collectors.toList())),
-          "The TLD states are chronologically out of order");
-      getInstance().tldStateTransitions = TimedTransitionProperty.fromValueMap(tldStatesMap);
+      getInstance().tldStateTransitions = createTldStateTransitions(tldStatesMap);
       return this;
     }
 
@@ -1152,24 +1245,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setDefaultPromoTokens(ImmutableList<VKey<AllocationToken>> promoTokens) {
-      tm().transact(
-              () -> {
-                for (VKey<AllocationToken> tokenKey : promoTokens) {
-                  AllocationToken token = tm().loadByKey(tokenKey);
-                  checkArgument(
-                      token.getTokenType().equals(TokenType.DEFAULT_PROMO),
-                      "Token %s has an invalid token type of %s. DefaultPromoTokens must be of"
-                          + " the type DEFAULT_PROMO",
-                      token.getToken(),
-                      token.getTokenType());
-                  checkArgument(
-                      token.getAllowedTlds().contains(getInstance().tldStr),
-                      "The token %s is not valid for this TLD. The valid TLDs for it are %s",
-                      token.getToken(),
-                      token.getAllowedTlds());
-                }
-                getInstance().defaultPromoTokens = promoTokens;
-              });
+      validateDefaultPromoTokens(getInstance().tldStr, promoTokens);
+      getInstance().defaultPromoTokens = promoTokens;
       return this;
     }
 

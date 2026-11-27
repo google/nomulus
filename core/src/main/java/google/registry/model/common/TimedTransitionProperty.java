@@ -73,11 +73,6 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
     this.backingMap = ImmutableSortedMap.copyOfSorted(backingMap);
   }
 
-  /** Returns an empty {@link TimedTransitionProperty}. */
-  public static <V extends Serializable> TimedTransitionProperty<V> forEmptyMap() {
-    return new TimedTransitionProperty<>(ImmutableSortedMap.of());
-  }
-
   /**
    * Returns a {@link TimedTransitionProperty} that starts with the given value at {@code
    * START_INSTANT}.
@@ -99,10 +94,23 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
 
   /**
    * Returns a {@link TimedTransitionProperty} that contains the transition values and times defined
-   * in the given map.
+   * in the given map, validated against a set of allowed transitions.
    *
-   * <p>The map must contain a value for {@code START_INSTANT}. The map is also validated against a
-   * set of allowed transitions.
+   * <p>The map must start at {@code START_INSTANT}.
+   */
+  public static <V extends Serializable> TimedTransitionProperty<V> make(
+      ImmutableSortedMap<Instant, V> valueMap,
+      ImmutableMultimap<V, V> allowedTransitions,
+      String mapName) {
+    validateTimedTransitionMap(valueMap, allowedTransitions, mapName);
+    return fromValueMap(valueMap);
+  }
+
+  /**
+   * Returns a {@link TimedTransitionProperty} that contains the transition values and times defined
+   * in the given map, validated against a set of allowed transitions and a required initial value.
+   *
+   * <p>The map must start at {@code START_INSTANT} with {@code initialValue}.
    */
   public static <V extends Serializable> TimedTransitionProperty<V> make(
       ImmutableSortedMap<Instant, V> valueMap,
@@ -124,7 +132,9 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
         Ordering.natural().equals(valueMap.comparator()),
         "Timed transition value map must have transition time keys in chronological order");
     checkArgument(
-        valueMap.firstKey().equals(START_INSTANT), "%s map must start at START_INSTANT.", mapName);
+        !valueMap.isEmpty() && valueMap.firstKey().equals(START_INSTANT),
+        "%s map must start at START_INSTANT.",
+        mapName);
 
     V lastValue = null;
     for (V value : valueMap.values()) {

@@ -254,6 +254,30 @@ public class AllocationTokenTest extends EntityTestCase {
                         .build()))
         .hasMessageThat()
         .isEqualTo("BULK_PRICING tokens must have a renewal price of 0");
+
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new AllocationToken.Builder()
+                        .setToken("abc123")
+                        .setTokenType(TokenType.BULK_PRICING)
+                        .setDiscountFraction(1.0)
+                        .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
+                        .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                        .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                        .setRenewalPrice(Money.of(CurrencyUnit.USD, 0.99))
+                        .build()))
+        .hasMessageThat()
+        .isEqualTo("BULK_PRICING tokens must have a renewal price of 0");
+  }
+
+  @Test
+  void testIsTerminalStatus() {
+    assertThat(AllocationToken.isTerminalStatus(NOT_STARTED)).isFalse();
+    assertThat(AllocationToken.isTerminalStatus(VALID)).isFalse();
+    assertThat(AllocationToken.isTerminalStatus(ENDED)).isTrue();
+    assertThat(AllocationToken.isTerminalStatus(CANCELLED)).isTrue();
   }
 
   @Test
