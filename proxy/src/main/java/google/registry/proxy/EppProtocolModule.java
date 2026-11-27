@@ -21,6 +21,7 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
 import google.registry.networking.handler.SslServerInitializer;
+import google.registry.networking.module.CertificateSupplierModule.TlsCredentials;
 import google.registry.proxy.HttpsRelayProtocolModule.HttpsRelayProtocol;
 import google.registry.proxy.Protocol.BackendProtocol;
 import google.registry.proxy.Protocol.FrontendProtocol;
@@ -45,8 +46,6 @@ import jakarta.inject.Provider;
 import jakarta.inject.Qualifier;
 import jakarta.inject.Singleton;
 import java.io.IOException;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
@@ -168,11 +167,8 @@ public final class EppProtocolModule {
   @Provides
   @EppProtocol
   static SslServerInitializer<NioSocketChannel> provideSslServerInitializer(
-      SslProvider sslProvider,
-      Supplier<PrivateKey> privateKeySupplier,
-      Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
-    return new SslServerInitializer<>(
-        true, false, sslProvider, privateKeySupplier, certificatesSupplier);
+      SslProvider sslProvider, Supplier<TlsCredentials> tlsCredentialsSupplier) {
+    return new SslServerInitializer<>(true, false, sslProvider, tlsCredentialsSupplier);
   }
 
   @Provides

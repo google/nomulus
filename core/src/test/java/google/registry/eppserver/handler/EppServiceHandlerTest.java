@@ -25,34 +25,65 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableList;
+import google.registry.eppserver.handler.EppServiceHandler.Authenticated;
+import google.registry.eppserver.handler.EppServiceHandler.AwaitingTls;
+import google.registry.eppserver.handler.EppServiceHandler.Closing;
+import google.registry.eppserver.handler.EppServiceHandler.ReadyUnauthenticated;
 import google.registry.eppserver.metric.FrontendMetrics;
 import google.registry.eppserver.quota.EppServerQuotaManager;
 import google.registry.eppserver.quota.LocalConnectionLimiter;
+import google.registry.networking.handler.SslServerInitializer;
+import google.registry.networking.module.CertificateSupplierModule.TlsCredentials;
 import google.registry.request.RequestHandler;
+import google.registry.testing.FakeClock;
 import google.registry.util.FakeHttpServletRequest;
 import google.registry.util.FakeHttpServletResponse;
 import google.registry.util.ProxyHttpHeaders;
+import google.registry.util.SelfSignedCaCertificate;
 import google.registry.util.X509Utils;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.DefaultEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.channel.local.LocalAddress;
+import io.netty.channel.local.LocalChannel;
+import io.netty.channel.local.LocalServerChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslProvider;
 import io.netty.util.Attribute;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.concurrent.ScheduledFuture;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,11 +127,12 @@ class EppServiceHandlerTest {
 
     handler.requestHandler = requestHandler;
 
-    when(ctx.channel()).thenReturn(channel);
-    when(ctx.executor()).thenReturn(executor);
+    lenient().when(ctx.channel()).thenReturn(channel);
+    lenient().when(ctx.executor()).thenReturn(executor);
     lenient().when(channel.isActive()).thenReturn(true);
 
-    doAnswer(
+    lenient()
+        .doAnswer(
             invocation -> {
               Runnable runnable = invocation.getArgument(0);
               runnable.run();
@@ -448,5 +480,352 @@ class EppServiceHandlerTest {
 
     // Verify it logged error and closed connection
     verify(ctx).close();
+  }
+
+  @Test
+  void testChannelActive_missingCertPromise_closesImmediately() throws Exception {
+    when(channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY)).thenReturn(certPromiseAttr);
+    when(certPromiseAttr.get()).thenReturn(null);
+
+    handler.channelActive(ctx);
+
+    assertThat(handler.getState()).isInstanceOf(Closing.class);
+    verify(ctx).close();
+    verify(requestHandler, never()).handleRequest(any(), any());
+  }
+
+  @Test
+  void testChannelRead0_beforeTlsHandshakeCompletes_rejectsAndCloses() throws Exception {
+    certPromise = new DefaultPromise<>(ImmediateEventExecutor.INSTANCE);
+    when(channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY)).thenReturn(certPromiseAttr);
+    when(certPromiseAttr.get()).thenReturn(certPromise);
+
+    handler.channelActive(ctx);
+    assertThat(handler.getState()).isInstanceOf(AwaitingTls.class);
+
+    // Frame arrives before TLS handshake completes: must not bypass quota or invoke requestHandler.
+    ByteBuf prematureFrame = Unpooled.wrappedBuffer("<epp><command/></epp>".getBytes(UTF_8));
+    handler.channelRead0(ctx, prematureFrame);
+
+    assertThat(handler.getState()).isInstanceOf(Closing.class);
+    verify(ctx).close();
+    verify(requestHandler, never()).handleRequest(any(), any());
+    verify(commandQuotaManager, never()).acquireQuota(any());
+  }
+
+  @Test
+  void testChannelRead0_failedLoginDoesNotLatchClid() throws Exception {
+    setUpSuccessfulHandshake();
+    when(idTokenSupplier.get()).thenReturn("fake_id_token");
+    when(localConnectionLimiter.acquireRegistrar("RealRegistrar")).thenReturn(true);
+
+    AtomicInteger callCount = new AtomicInteger();
+    doAnswer(
+            invocation -> {
+              FakeHttpServletRequest req = invocation.getArgument(0);
+              FakeHttpServletResponse rsp = invocation.getArgument(1);
+              int call = callCount.incrementAndGet();
+              if (call == 1) {
+                // Failed login with spoofed clID must not receive REGISTRAR_ID header.
+                assertThat(req.getHeader(ProxyHttpHeaders.REGISTRAR_ID)).isNull();
+                rsp.getWriter().write("<epp><response><result code=\"2200\"/></response></epp>");
+              } else if (call == 2) {
+                // Second login attempt must still not carry the failed spoofed clID.
+                assertThat(req.getHeader(ProxyHttpHeaders.REGISTRAR_ID)).isNull();
+                rsp.setHeader(ProxyHttpHeaders.LOGGED_IN_REGISTRAR, "RealRegistrar");
+                rsp.setHeader("Set-Cookie", "SESSION_INFO=cmVhbA==");
+                rsp.getWriter().write("<epp><response><result code=\"1000\"/></response></epp>");
+              } else {
+                // Authenticated command carries verified registrar ID.
+                assertThat(req.getHeader(ProxyHttpHeaders.REGISTRAR_ID)).isEqualTo("RealRegistrar");
+                rsp.getWriter().write("<epp><response><result code=\"1000\"/></response></epp>");
+              }
+              return null;
+            })
+        .when(requestHandler)
+        .handleRequest(any(FakeHttpServletRequest.class), any(FakeHttpServletResponse.class));
+
+    handler.channelRead0(
+        ctx,
+        Unpooled.wrappedBuffer(
+            "<epp><command><login><clID>SpoofedRegistrar</clID></login></command></epp>"
+                .getBytes(UTF_8)));
+    assertThat(handler.getState()).isInstanceOf(ReadyUnauthenticated.class);
+
+    handler.channelRead0(
+        ctx,
+        Unpooled.wrappedBuffer(
+            "<epp><command><login><clID>RealRegistrar</clID></login></command></epp>"
+                .getBytes(UTF_8)));
+    assertThat(handler.getState()).isInstanceOf(Authenticated.class);
+
+    handler.channelRead0(
+        ctx, Unpooled.wrappedBuffer("<epp><command><check/></command></epp>".getBytes(UTF_8)));
+
+    verify(commandQuotaManager).acquireQuota("RealRegistrar");
+    verify(commandQuotaManager, never()).acquireQuota("SpoofedRegistrar");
+  }
+
+  @Test
+  void testChannelRead0_pipelinedFrameAfterLogout_droppedAndCleanupIdempotent() throws Exception {
+    setUpSuccessfulHandshake();
+    when(idTokenSupplier.get()).thenReturn("fake_id_token");
+    when(localConnectionLimiter.acquireRegistrar("RegistrarA")).thenReturn(true);
+
+    ChannelFuture mockFuture = mock(ChannelFuture.class);
+    when(ctx.writeAndFlush(any(ByteBuf.class))).thenReturn(mockFuture);
+
+    doAnswer(
+            invocation -> {
+              FakeHttpServletResponse rsp = invocation.getArgument(1);
+              rsp.setHeader(ProxyHttpHeaders.LOGGED_IN_REGISTRAR, "RegistrarA");
+              rsp.getWriter().write("<epp><response>login ok</response></epp>");
+              return null;
+            })
+        .when(requestHandler)
+        .handleRequest(any(FakeHttpServletRequest.class), any(FakeHttpServletResponse.class));
+
+    handler.channelRead0(
+        ctx, Unpooled.wrappedBuffer("<epp><command><login/></command></epp>".getBytes(UTF_8)));
+    assertThat(handler.getState()).isInstanceOf(Authenticated.class);
+
+    doAnswer(
+            invocation -> {
+              FakeHttpServletResponse rsp = invocation.getArgument(1);
+              rsp.setHeader(ProxyHttpHeaders.EPP_SESSION, "close");
+              rsp.getWriter().write("<epp><response>logout ok</response></epp>");
+              return null;
+            })
+        .when(requestHandler)
+        .handleRequest(any(FakeHttpServletRequest.class), any(FakeHttpServletResponse.class));
+
+    handler.channelRead0(
+        ctx, Unpooled.wrappedBuffer("<epp><command><logout/></command></epp>".getBytes(UTF_8)));
+    assertThat(handler.getState()).isInstanceOf(Closing.class);
+    verify(mockFuture).addListener(ChannelFutureListener.CLOSE);
+
+    // Pipelined frame after logout must be dropped without invoking requestHandler again.
+    handler.channelRead0(
+        ctx, Unpooled.wrappedBuffer("<epp><command><check/></command></epp>".getBytes(UTF_8)));
+    // 1 greeting + 1 login + 1 logout = 3 invocations total (not 4).
+    verify(requestHandler, times(3)).handleRequest(any(), any());
+
+    // Duplicate channelInactive calls must release IP and registrar exactly once.
+    handler.channelInactive(ctx);
+    handler.channelInactive(ctx);
+    verify(localConnectionLimiter, times(1)).releaseIp("192.168.1.1");
+    verify(localConnectionLimiter, times(1)).releaseRegistrar("RegistrarA");
+  }
+
+  @Test
+  void testEmbeddedChannel_alreadyCompletedCertPromise_handlesHandshakeBeforePipelinedRead()
+      throws Exception {
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create(new FakeClock());
+    String expectedCertHash = X509Utils.getCertificateHash(clientSsc.cert());
+    LocalConnectionLimiter realLimiter = new LocalConnectionLimiter(5, 5);
+    EppServiceHandler embeddedHandler =
+        new EppServiceHandler(
+            "<epp><hello/></epp>".getBytes(UTF_8),
+            metrics,
+            realLimiter,
+            commandQuotaManager,
+            () -> "fake_id_token",
+            "test-project",
+            10);
+
+    BlockingQueue<String> observedBodies = new LinkedBlockingQueue<>();
+    RequestHandler<?> embeddedRequestHandler = mock(RequestHandler.class);
+    doAnswer(
+            invocation -> {
+              FakeHttpServletRequest req = invocation.getArgument(0);
+              FakeHttpServletResponse rsp = invocation.getArgument(1);
+              assertThat(req.getHeader(ProxyHttpHeaders.CERTIFICATE_HASH))
+                  .isEqualTo(expectedCertHash);
+              assertThat(req.getHeader(ProxyHttpHeaders.IP_ADDRESS)).isEqualTo("192.0.2.10");
+              String body = new String(req.getInputStream().readAllBytes(), UTF_8);
+              observedBodies.add(body);
+              rsp.getWriter().write("<epp><response>" + body + "</response></epp>");
+              return null;
+            })
+        .when(embeddedRequestHandler)
+        .handleRequest(any(FakeHttpServletRequest.class), any(FakeHttpServletResponse.class));
+    embeddedHandler.requestHandler = embeddedRequestHandler;
+
+    // Complete certPromise BEFORE channelActive runs (simulates the businessGroup race where
+    // eventGroup finished TLS and queued a read before channelActive ran on businessGroup).
+    DefaultPromise<X509Certificate> completedPromise =
+        new DefaultPromise<>(ImmediateEventExecutor.INSTANCE);
+    completedPromise.setSuccess(clientSsc.cert());
+
+    EmbeddedChannel embeddedChannel =
+        new EmbeddedChannel(
+            new ChannelInitializer<EmbeddedChannel>() {
+              @Override
+              protected void initChannel(EmbeddedChannel ch) {
+                ch.attr(CLIENT_CERTIFICATE_PROMISE_KEY).set(completedPromise);
+                ch.attr(REMOTE_ADDRESS_KEY).set("192.0.2.10");
+                ch.pipeline().addLast(embeddedHandler);
+              }
+            });
+
+    assertThat(embeddedHandler.getState()).isInstanceOf(ReadyUnauthenticated.class);
+    embeddedChannel.writeInbound(Unpooled.wrappedBuffer("<epp><command/></epp>".getBytes(UTF_8)));
+
+    assertThat(observedBodies.poll()).isEqualTo("<epp><hello/></epp>");
+    assertThat(observedBodies.poll()).isEqualTo("<epp><command/></epp>");
+    verify(commandQuotaManager, times(2)).acquireQuota(expectedCertHash);
+    embeddedChannel.finishAndReleaseAll();
+  }
+
+  @Test
+  void testLocalChannel_fullPipelineWithBusinessGroup_tlsLoginCommandLogout() throws Exception {
+    SelfSignedCaCertificate serverSsc =
+        SelfSignedCaCertificate.create("www.example.tld", new FakeClock());
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create(new FakeClock());
+    String expectedCertHash = X509Utils.getCertificateHash(clientSsc.cert());
+
+    EventLoopGroup eventGroup = new DefaultEventLoopGroup(1);
+    EventExecutorGroup businessGroup = new DefaultEventExecutorGroup(1);
+    LocalConnectionLimiter realLimiter = new LocalConnectionLimiter(1, 1);
+    BlockingQueue<String> clientReceived = new LinkedBlockingQueue<>();
+    CountDownLatch serverClosed = new CountDownLatch(1);
+
+    EppServiceHandler localHandler =
+        new EppServiceHandler(
+            "<epp><hello/></epp>".getBytes(UTF_8),
+            metrics,
+            realLimiter,
+            commandQuotaManager,
+            () -> "fake_id_token",
+            "test-project",
+            30);
+
+    RequestHandler<?> localRequestHandler = mock(RequestHandler.class);
+    doAnswer(
+            invocation -> {
+              FakeHttpServletRequest req = invocation.getArgument(0);
+              FakeHttpServletResponse rsp = invocation.getArgument(1);
+              assertThat(req.getHeader(ProxyHttpHeaders.CERTIFICATE_HASH))
+                  .isEqualTo(expectedCertHash);
+              assertThat(req.getHeader(ProxyHttpHeaders.IP_ADDRESS)).isEqualTo("203.0.113.5");
+              String body = new String(req.getInputStream().readAllBytes(), UTF_8);
+              if (body.contains("<hello/>")) {
+                rsp.getWriter().write("<epp><greeting/></epp>");
+              } else if (body.contains("<login>")) {
+                rsp.setHeader(ProxyHttpHeaders.LOGGED_IN_REGISTRAR, "TheRegistrar");
+                rsp.setHeader("Set-Cookie", "SESSION_INFO=dGhlcmVn");
+                rsp.getWriter().write("<epp><response>login-ok</response></epp>");
+              } else if (body.contains("<logout/>")) {
+                assertThat(req.getHeader(ProxyHttpHeaders.REGISTRAR_ID)).isEqualTo("TheRegistrar");
+                assertThat(req.getHeader("Cookie")).isEqualTo("SESSION_INFO=dGhlcmVn");
+                rsp.setHeader(ProxyHttpHeaders.EPP_SESSION, "close");
+                rsp.getWriter().write("<epp><response>logout-ok</response></epp>");
+              }
+              return null;
+            })
+        .when(localRequestHandler)
+        .handleRequest(any(FakeHttpServletRequest.class), any(FakeHttpServletResponse.class));
+    localHandler.requestHandler = localRequestHandler;
+
+    SslServerInitializer<LocalChannel> sslServerInitializer =
+        new SslServerInitializer<>(
+            true,
+            false,
+            SslProvider.JDK,
+            Suppliers.ofInstance(
+                new TlsCredentials(serverSsc.key(), ImmutableList.of(serverSsc.cert()))));
+
+    LocalAddress address = new LocalAddress("EPP_SERVICE_HANDLER_FULL_PIPELINE");
+    try {
+      Channel serverChannel =
+          new ServerBootstrap()
+              .group(eventGroup)
+              .channel(LocalServerChannel.class)
+              .childHandler(
+                  new ChannelInitializer<LocalChannel>() {
+                    @Override
+                    protected void initChannel(LocalChannel ch) {
+                      ch.attr(REMOTE_ADDRESS_KEY).set("203.0.113.5");
+                      ch.pipeline()
+                          .addLast(sslServerInitializer)
+                          .addLast(new LengthFieldBasedFrameDecoder(65536, 0, 4, -4, 4))
+                          .addLast(new LengthFieldPrepender(4, true))
+                          .addLast(businessGroup, "EppServiceHandler", localHandler);
+                      ch.closeFuture().addListener(f -> serverClosed.countDown());
+                    }
+                  })
+              .bind(address)
+              .sync()
+              .channel();
+
+      Channel clientChannel =
+          new Bootstrap()
+              .group(eventGroup)
+              .channel(LocalChannel.class)
+              .handler(
+                  new ChannelInitializer<LocalChannel>() {
+                    @Override
+                    protected void initChannel(LocalChannel ch) throws Exception {
+                      ch.pipeline()
+                          .addLast(
+                              SslContextBuilder.forClient()
+                                  .trustManager(serverSsc.cert())
+                                  .keyManager(clientSsc.key(), clientSsc.cert())
+                                  .sslProvider(SslProvider.JDK)
+                                  .build()
+                                  .newHandler(ch.alloc(), "www.example.tld", 700))
+                          .addLast(new LengthFieldBasedFrameDecoder(65536, 0, 4, -4, 4))
+                          .addLast(new LengthFieldPrepender(4, true))
+                          .addLast(
+                              new ChannelInboundHandlerAdapter() {
+                                @Override
+                                public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                                  ByteBuf buf = (ByteBuf) msg;
+                                  try {
+                                    clientReceived.add(buf.toString(UTF_8));
+                                  } finally {
+                                    buf.release();
+                                  }
+                                }
+                              });
+                    }
+                  })
+              .connect(address)
+              .sync()
+              .channel();
+
+      // 1. Server automatically sends <greeting> after mTLS completes.
+      assertThat(clientReceived.poll(5, TimeUnit.SECONDS)).isEqualTo("<epp><greeting/></epp>");
+
+      // 2. Client sends <login>.
+      clientChannel
+          .writeAndFlush(
+              Unpooled.wrappedBuffer(
+                  "<epp><command><login><clID>TheRegistrar</clID></login></command></epp>"
+                      .getBytes(UTF_8)))
+          .sync();
+      assertThat(clientReceived.poll(5, TimeUnit.SECONDS))
+          .isEqualTo("<epp><response>login-ok</response></epp>");
+
+      // 3. Client sends <logout> and server closes connection.
+      clientChannel
+          .writeAndFlush(
+              Unpooled.wrappedBuffer("<epp><command><logout/></command></epp>".getBytes(UTF_8)))
+          .sync();
+      assertThat(clientReceived.poll(5, TimeUnit.SECONDS))
+          .isEqualTo("<epp><response>logout-ok</response></epp>");
+      assertThat(serverClosed.await(5, TimeUnit.SECONDS)).isTrue();
+
+      // Ensure eventGroup has queued channelInactive and businessGroup has finished releasing
+      // both IP and registrar connection slots.
+      eventGroup.submit(() -> {}).sync();
+      businessGroup.submit(() -> {}).sync();
+      assertThat(realLimiter.acquireIp("203.0.113.5")).isTrue();
+      assertThat(realLimiter.acquireRegistrar("TheRegistrar")).isTrue();
+      serverChannel.close().sync();
+    } finally {
+      eventGroup.shutdownGracefully().syncUninterruptibly();
+      businessGroup.shutdownGracefully().syncUninterruptibly();
+    }
   }
 }
