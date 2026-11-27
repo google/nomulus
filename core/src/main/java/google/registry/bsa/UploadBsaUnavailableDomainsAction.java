@@ -195,10 +195,21 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
       logger.atInfo().log(
           "Uploading unavailable domains list %s to %s with hash %s", filename, apiUrl, sha512Hash);
       try (Response uploadResponse = client.newCall(request).execute()) {
+        String responseBody =
+            uploadResponse.body() == null ? "(none)" : uploadResponse.body().string();
+        if (!uploadResponse.isSuccessful()) {
+          logger.atSevere().log(
+              "Failed to upload unavailable domains to BSA: status code %d from server: %s",
+              uploadResponse.code(), responseBody);
+          response.setStatus(SC_INTERNAL_SERVER_ERROR);
+          response.setPayload(
+              String.format(
+                  "BSA upload failed with status code %d: %s",
+                  uploadResponse.code(), responseBody));
+          return false;
+        }
         logger.atInfo().log(
-            "Received response with code %s from server: %s",
-            uploadResponse.code(),
-            uploadResponse.body() == null ? "(none)" : uploadResponse.body().string());
+            "Received response with code %s from server: %s", uploadResponse.code(), responseBody);
       }
       return true;
     } catch (IOException e) {
@@ -216,6 +227,10 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
   private ImmutableSortedSet<String> getUnavailableDomains(Instant runTime) {
     // Get list of TLDs to process.
     ImmutableSet<Tld> bsaEnabledTlds = getActivatedBsaTlds();
+    if (bsaEnabledTlds.isEmpty()) {
+      logger.atInfo().log("No activated BSA TLDs found.");
+      return ImmutableSortedSet.of();
+    }
 
     logger.atInfo().log(
         "Getting unavailable domains in TLDs: %s ...",
@@ -225,18 +240,16 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
         new ImmutableSortedSet.Builder<>(Ordering.natural());
 
     // Add domains on reserved lists to unavailable names list.
-    replicaTm()
-        .transact(
-            () -> {
-              for (Tld tld : bsaEnabledTlds) {
-                for (ReservedList reservedList : loadReservedLists(tld.getReservedListNames())) {
-                  unavailableDomains.addAll(
-                      reservedList.getReservedListEntries().keySet().stream()
-                          .map(label -> toDomain(label, tld))
-                          .collect(toImmutableSet()));
-                }
-              }
-            });
+    // Loaded outside replicaTm() because ReservedList.loadReservedLists() falls back to tm() on
+    // cache misses, which must not nest inside a replicaTm() transaction.
+    for (Tld tld : bsaEnabledTlds) {
+      for (ReservedList reservedList : loadReservedLists(tld.getReservedListNames())) {
+        unavailableDomains.addAll(
+            reservedList.getReservedListEntries().keySet().stream()
+                .map(label -> toDomain(label, tld))
+                .collect(toImmutableSet()));
+      }
+    }
 
     // Add existing domains to unavailable names list, in batches so as to not time out on replica.
     ImmutableSet<String> tldNames =

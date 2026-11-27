@@ -66,33 +66,40 @@ public class BlockListFetcher {
   }
 
   LazyBlockList tryFetch(BlockListType blockListType) {
+    HttpsURLConnection connection = null;
     try {
       URL dataUrl = new URL(blockListUrls.get(blockListType.name()));
       logger.atInfo().log("Downloading from  %s", dataUrl);
-      HttpsURLConnection connection =
-          (HttpsURLConnection) urlConnectionService.createConnection(dataUrl);
+      connection = (HttpsURLConnection) urlConnectionService.createConnection(dataUrl);
       connection.setRequestMethod(HttpMethods.GET);
       connection.setRequestProperty("Authorization", "Bearer " + credential.getAuthToken());
       int code = connection.getResponseCode();
       if (code != SC_OK) {
         String errorDetails = "";
         try (InputStream errorStream = connection.getErrorStream()) {
-          errorDetails = new String(ByteStreams.toByteArray(errorStream), UTF_8);
-        } catch (NullPointerException e) {
-          // No error message.
-        } catch (Exception e) {
+          if (errorStream != null) {
+            errorDetails = new String(ByteStreams.toByteArray(errorStream), UTF_8);
+          }
+        } catch (IOException e) {
           errorDetails = "Failed to retrieve error message: " + e.getMessage();
         }
+        connection.disconnect();
         throw new BsaException(
             String.format(
                 "Status code: [%s], error: [%s], details: [%s]",
                 code, connection.getResponseMessage(), errorDetails),
-            /* retriable= */ true);
+            BsaException.isRetriableHttpStatus(code));
       }
       return new LazyBlockList(blockListType, connection);
     } catch (IOException e) {
+      if (connection != null) {
+        connection.disconnect();
+      }
       throw new BsaException(e, /* retriable= */ true);
     } catch (GeneralSecurityException e) {
+      if (connection != null) {
+        connection.disconnect();
+      }
       throw new BsaException(e, /* retriable= */ false);
     }
   }

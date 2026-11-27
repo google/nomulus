@@ -19,8 +19,8 @@ import static google.registry.bsa.ReservedDomainsTestingUtils.addReservedDomainT
 import static google.registry.bsa.ReservedDomainsTestingUtils.addReservedListsToTld;
 import static google.registry.bsa.ReservedDomainsTestingUtils.createReservedList;
 import static google.registry.bsa.ReservedDomainsTestingUtils.removeReservedDomainFromList;
-import static google.registry.bsa.persistence.BsaTestingUtils.createDownloadScheduler;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
+import static google.registry.bsa.persistence.BsaTestingUtils.persistDownloadSchedule;
 import static google.registry.bsa.persistence.BsaTestingUtils.queryUnblockableDomains;
 import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.model.tld.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
@@ -137,7 +137,7 @@ class BsaRefreshFunctionalTest {
     persistBsaLabel("blocked1");
     persistBsaLabel("blocked2");
     // Creates a download record so that refresher will not quit immediately.
-    createDownloadScheduler(fakeClock).schedule().get().updateJobStage(DownloadStage.DONE);
+    persistDownloadSchedule(DownloadStage.DONE);
     fakeClock.advanceOneMilli();
   }
 
