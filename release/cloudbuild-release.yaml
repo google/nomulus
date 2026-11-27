@@ -1,16 +1,35 @@
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config cloudbuild-release.yaml --substitutions \
-#   TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL],_TEST_PROJECT=[_TEST_PROJECT] \
+#   TAG_NAME=[TAG],COMMIT_SHA=[COMMIT_OF_TAG],_INTERNAL_REPO_URL=[URL],_TEST_PROJECT=[_TEST_PROJECT] \
 #   ..
+# Manual runs must set COMMIT_SHA, because .gcloudignore keeps .git out of the upload and the
+# nomulus-images and proxy-images triggers need the commit to build.
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
 #
 # This pipeline prepares a release. The pipeline should be run against the Nomulus public repo on
 # GitHub. It builds the builder and base images, and hard codes the sha256 hashes of the resulting
-# images in the merged code base (internal + public), which is tagged and pushed into the release
-# repo. Actual release artifacts are built from the release repo, ensuring reproducibility.
+# images in the merged code base (internal + public). It then builds the release images through
+# the nomulus-images or proxy-images trigger of this repo at the release commit, so that their
+# build provenance records the source repo and config file, and builds the rest of a nomulus
+# release from the merged code base with cloudbuild-nomulus.yaml. Finally, it promotes and signs
+# the images and, for a nomulus release, creates the Cloud Deploy release.
 steps:
+# Fail fast without a valid COMMIT_SHA, which the image triggers need, before changing anything.
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: /bin/bash
+  env:
+    - 'COMMIT_SHA=${COMMIT_SHA}'
+  args:
+  - -c
+  - |
+    set -e
+    if [[ ! "$COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+      echo "COMMIT_SHA must be the commit of the release tag, 40 lowercase hex digits, not" \
+        "'$COMMIT_SHA'. Manual runs must set it; see release/cloudbuild-release.yaml." >&2
+      exit 1
+    fi
 # Check the out internal repo.
 - name: 'gcr.io/cloud-builders/git'
   entrypoint: /bin/bash
@@ -325,6 +344,7 @@ steps:
   env:
     - 'TAG_NAME=${TAG_NAME}'
     - 'PROJECT_ID=${PROJECT_ID}'
+    - 'COMMIT_SHA=${COMMIT_SHA}'
   args:
   - -c
   - |
@@ -332,13 +352,17 @@ steps:
     # Check for a nomulus release tag (e.g., "v1.2.3")
     if [[ "$TAG_NAME" =~ ^nomulus-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
       echo "Tag format matches a nomulus release. Triggering nomulus build..."
+      # Start the image build first, so that it runs alongside the longer nested build.
+      images_build=$(bash ./release/run_trigger_build.sh start nomulus-images "$COMMIT_SHA" "$TAG_NAME")
       gcloud builds submit . --config=release/cloudbuild-nomulus.yaml --substitutions="TAG_NAME=$TAG_NAME"
+      bash ./release/run_trigger_build.sh wait "$images_build"
       echo "Promoting and signing nomulus release artifacts..."
       bash ./release/promote_artifacts.sh "nomulus" "$TAG_NAME" "$PROJECT_ID"
     # Check for a proxy release tag (e.g., "proxy-v1.2.3")
     elif [[ "$TAG_NAME" =~ ^proxy-20[0-9]{2}[0-1][0-9][0-3][0-9]-RC[0-9]{2}$ ]]; then
       echo "Tag format matches a proxy release. Triggering proxy build..."
-      gcloud builds submit . --config=release/cloudbuild-proxy.yaml --substitutions="TAG_NAME=$TAG_NAME"
+      images_build=$(bash ./release/run_trigger_build.sh start proxy-images "$COMMIT_SHA" "$TAG_NAME")
+      bash ./release/run_trigger_build.sh wait "$images_build"
       echo "Promoting and signing proxy release artifacts..."
       bash ./release/promote_artifacts.sh "proxy" "$TAG_NAME" "$PROJECT_ID"
     else
