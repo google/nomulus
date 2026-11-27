@@ -14,7 +14,11 @@
 
 package google.registry.bsa.api;
 
+import static jakarta.servlet.http.HttpServletResponse.SC_REQUEST_TIMEOUT;
+
 public class BsaException extends RuntimeException {
+
+  private static final int SC_TOO_MANY_REQUESTS = 429;
 
   private final boolean retriable;
 
@@ -30,5 +34,16 @@ public class BsaException extends RuntimeException {
 
   public boolean isRetriable() {
     return this.retriable;
+  }
+
+  /**
+   * Returns whether an unsuccessful HTTP status code represents a transient failure that should be
+   * retried ({@code 408}, {@code 429}, or {@code 5xx}) rather than a permanent client/request error
+   * (such as {@code 400}, {@code 401}, {@code 403}, {@code 404}, or {@code 422}).
+   */
+  public static boolean isRetriableHttpStatus(int statusCode) {
+    return statusCode == SC_REQUEST_TIMEOUT
+        || statusCode == SC_TOO_MANY_REQUESTS
+        || (statusCode >= 500 && statusCode < 600);
   }
 }

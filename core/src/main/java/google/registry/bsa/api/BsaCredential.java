@@ -135,14 +135,14 @@ public class BsaCredential {
         String errorDetails;
         try {
           errorDetails = new String(getResponseBytes(connection), UTF_8);
-        } catch (Exception e) {
+        } catch (IOException e) {
           errorDetails = "Failed to retrieve error message: " + e.getMessage();
         }
         throw new BsaException(
             String.format(
                 "Status code: [%s], error: [%s], details: [%s]",
                 code, connection.getResponseMessage(), errorDetails),
-            /* retriable= */ true);
+            BsaException.isRetriableHttpStatus(code));
       }
       // TODO: catch json syntax exception
       @SuppressWarnings("unchecked")

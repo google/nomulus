@@ -15,9 +15,16 @@
 package google.registry.bsa.api;
 
 import static com.google.common.truth.Truth.assertThat;
+import static jakarta.servlet.http.HttpServletResponse.SC_ACCEPTED;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_REQUEST_TIMEOUT;
+import static jakarta.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,6 +50,8 @@ import javax.net.ssl.HttpsURLConnection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -116,12 +125,24 @@ class BsaCredentialTest {
     verify(connection, times(1)).disconnect();
   }
 
-  @Test
-  void fetchNewAuthToken_whenStatusIsNotOK_throwsRetriableException() throws Exception {
+  @ParameterizedTest
+  @ValueSource(ints = {SC_REQUEST_TIMEOUT, 429, SC_INTERNAL_SERVER_ERROR, SC_SERVICE_UNAVAILABLE})
+  void fetchNewAuthToken_transientHttpStatus_throwsRetriableException(int statusCode)
+      throws Exception {
     setupHttp();
-    when(connection.getResponseCode()).thenReturn(202);
+    when(connection.getResponseCode()).thenReturn(statusCode);
     assertThat(assertThrows(BsaException.class, () -> credential.getAuthToken()).isRetriable())
         .isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {SC_ACCEPTED, SC_BAD_REQUEST, SC_UNAUTHORIZED, SC_FORBIDDEN})
+  void fetchNewAuthToken_permanentHttpStatus_throwsNonRetriableException(int statusCode)
+      throws Exception {
+    setupHttp();
+    when(connection.getResponseCode()).thenReturn(statusCode);
+    assertThat(assertThrows(BsaException.class, () -> credential.getAuthToken()).isRetriable())
+        .isFalse();
   }
 
   @Test

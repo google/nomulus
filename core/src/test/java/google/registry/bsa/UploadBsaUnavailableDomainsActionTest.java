@@ -15,6 +15,9 @@
 package google.registry.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.setJpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.setReplicaJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -24,8 +27,14 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static google.registry.util.DateTimeUtils.minusDays;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -47,6 +56,8 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.persistence.transaction.TransactionManager.ThrowingRunnable;
 import google.registry.request.UrlConnectionService;
 import google.registry.server.Route;
 import google.registry.server.TestServer;
@@ -65,6 +76,8 @@ import java.net.InetAddress;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -165,6 +178,91 @@ public class UploadBsaUnavailableDomainsActionTest {
             + String.format("Checksum: [%s]\n%s\n", checkSum, dataSent);
     assertAboutLogs().that(logHandler).hasLogAtLevelWithMessage(Level.INFO, expectedResponse);
     verify(emailSender, times(1)).sendNotification("BSA daily upload completed successfully", "");
+    loggerToIntercept.removeHandler(logHandler);
+  }
+
+  @Test
+  void uploadToBsa_non2xxResponse_failsAndNotifiesErrors() throws Exception {
+    TestLogHandler logHandler = new TestLogHandler();
+    Logger loggerToIntercept =
+        Logger.getLogger(UploadBsaUnavailableDomainsAction.class.getCanonicalName());
+    loggerToIntercept.addHandler(logHandler);
+
+    persistActiveDomain("foobar.tld");
+
+    var testServer = startTestServer();
+    action.apiUrl = testServer.getUrl("/upload-error").toURI().toString();
+    try {
+      action.run();
+    } finally {
+      testServer.stop();
+      loggerToIntercept.removeHandler(logHandler);
+    }
+
+    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.getPayload()).contains("500");
+    assertThat(response.getPayload()).contains("upstream failure");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.SEVERE,
+            "Failed to upload unavailable domains to BSA: status code 500 from server: upstream"
+                + " failure");
+    verify(emailSender, times(1))
+        .sendNotification("BSA daily upload completed with errors", "Please see logs for details.");
+    verify(emailSender, never()).sendNotification("BSA daily upload completed successfully", "");
+  }
+
+  @Test
+  void reservedListLoad_doesNotNestInsideReplicaTransaction() throws Exception {
+    ReservedList uncachedReservedList =
+        persistReservedList("tld-uncached-reserved-list", "freshlabel,FULLY_BLOCKED");
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(uncachedReservedList).build());
+
+    JpaTransactionManager originalPrimary = tm();
+    JpaTransactionManager originalReplica = replicaTm();
+    JpaTransactionManager spiedPrimary =
+        mock(JpaTransactionManager.class, delegatesTo(originalPrimary));
+    JpaTransactionManager spiedReplica =
+        mock(JpaTransactionManager.class, delegatesTo(originalReplica));
+    AtomicBoolean nestedInReplica = new AtomicBoolean(false);
+    AtomicBoolean primaryReTransactCalled = new AtomicBoolean(false);
+    doAnswer(
+            invocation -> {
+              primaryReTransactCalled.set(true);
+              if (originalReplica.inTransaction()) {
+                nestedInReplica.set(true);
+              }
+              return originalPrimary.reTransact(invocation.<Callable<?>>getArgument(0));
+            })
+        .when(spiedPrimary)
+        .reTransact(any(Callable.class));
+
+    setJpaTm(() -> spiedPrimary);
+    setReplicaJpaTm(() -> spiedReplica);
+    try {
+      action.run();
+    } finally {
+      setJpaTm(() -> originalPrimary);
+      setReplicaJpaTm(() -> originalReplica);
+    }
+
+    assertThat(primaryReTransactCalled.get()).isTrue();
+    assertThat(nestedInReplica.get()).isFalse();
+    verify(spiedReplica, never()).transact(any(ThrowingRunnable.class));
+    BlobId existingFile = BlobId.of(BUCKET, "unavailable_domains_2024-02-02T02:02:02Z.txt");
+    String blockList = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
+    assertThat(blockList).isEqualTo("freshlabel.tld\n");
+  }
+
+  @Test
+  void noActivatedBsaTlds_sendsNoDomainsNotification() {
+    tm().transact(() -> tm().delete(BsaTld.createVkey("tld")));
+    action.run();
+    verify(emailSender, times(1))
+        .sendNotification(
+            "BSA daily upload found no domains to upload",
+            "This is unexpected. Please investigate.");
   }
 
   private TestServer startTestServer() throws Exception {
@@ -172,7 +270,9 @@ public class UploadBsaUnavailableDomainsActionTest {
         new TestServer(
             HostAndPort.fromParts(InetAddress.getLocalHost().getHostAddress(), 0),
             ImmutableMap.of(),
-            ImmutableList.of(Route.route("/upload", Servlet.class)));
+            ImmutableList.of(
+                Route.route("/upload", Servlet.class),
+                Route.route("/upload-error", ErrorServlet.class)));
     testServer.start();
     newSingleThreadExecutor()
         .execute(
@@ -237,6 +337,17 @@ public class UploadBsaUnavailableDomainsActionTest {
         return new String(ByteStreams.toByteArray(gis), UTF_8);
       } catch (IOException e) {
         throw new RuntimeException(e);
+      }
+    }
+  }
+
+  public static class ErrorServlet extends HttpServlet {
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+      resp.setStatus(SC_INTERNAL_SERVER_ERROR);
+      resp.setContentType("text/plain");
+      try (PrintWriter writer = resp.getWriter()) {
+        writer.print("upstream failure");
       }
     }
   }
