@@ -29,6 +29,10 @@ export interface IpAllowListItem {
   value: string;
 }
 
+export interface StringListItem {
+  value: string;
+}
+
 export interface Address {
   city?: string;
   countryCode?: string;
@@ -41,13 +45,22 @@ export interface SecuritySettingsBackendModel {
   clientCertificate?: string;
   failoverClientCertificate?: string;
   ipAddressAllowList?: Array<string>;
+  allowedEppClientCertificateHostnames?: Array<string>;
+  revokedClientCertificateHashes?: Array<string>;
   // TODO: @ptkach At some point we want to add a back-end support for this
   eppPasswordLastUpdated?: string;
 }
 
 export interface SecuritySettings
-  extends Omit<SecuritySettingsBackendModel, 'ipAddressAllowList'> {
+  extends Omit<
+    SecuritySettingsBackendModel,
+    | 'ipAddressAllowList'
+    | 'allowedEppClientCertificateHostnames'
+    | 'revokedClientCertificateHashes'
+  > {
   ipAddressAllowList?: Array<IpAllowListItem>;
+  allowedEppClientCertificateHostnames?: Array<StringListItem>;
+  revokedClientCertificateHashes?: Array<StringListItem>;
 }
 
 export interface RdapRegistrarFields {

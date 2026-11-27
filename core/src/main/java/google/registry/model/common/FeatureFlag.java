@@ -94,7 +94,15 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     FORBID_INSECURE_ALGORITHMS_RFC_9904(FeatureStatus.INACTIVE),
 
     /** If we're using secure random base64 encoded server TRIDs. */
-    USE_RANDOM_SERVER_TRID(FeatureStatus.INACTIVE);
+    USE_RANDOM_SERVER_TRID(FeatureStatus.INACTIVE),
+
+    /**
+     * If EPP login accepts a client certificate issued by a publicly trusted CA for one of the
+     * registrar's allowed hostnames, in addition to the pinned certificate fingerprint. Also gates
+     * the Registrar Console UI for managing allowed certificate hostnames and revoked certificate
+     * hashes.
+     */
+    ALLOW_EPP_CLIENT_CERT_HOSTNAME_AUTH(FeatureStatus.INACTIVE);
 
     private final FeatureStatus defaultStatus;
 

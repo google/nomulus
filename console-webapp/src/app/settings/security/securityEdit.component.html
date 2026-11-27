@@ -65,6 +65,105 @@
         [ngModelOptions]="{ standalone: true }"
       ></textarea>
     </mat-form-field>
+
+    @if (securityService.allowEppClientCertHostnameAuth()) {
+    <h1>Allowed EPP Client Certificate Hostnames</h1>
+    <p>
+      Allow EPP logins with a certificate issued by a publicly trusted CA whose
+      Subject Alternative Name (SAN) dNSName matches one of these exact
+      hostnames (no wildcards; Subject CN is ignored; up to 20 entries). Once
+      configured, at least one hostname must remain.
+    </p>
+    @for ( hostname of dataSource().allowedEppClientCertificateHostnames; track
+    hostname ) {
+    <div class="settings-security__edit-ip">
+      <mat-form-field appearance="outline">
+        <input
+          class="console-app__allowedHostnameValue"
+          matInput
+          [disabled]="isUpdating()"
+          type="text"
+          aria-label="Allowed EPP client certificate hostname"
+          placeholder="epp.registrar.example"
+          [(ngModel)]="hostname.value"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+      <button
+        mat-icon-button
+        class="console-app__removeHostname"
+        [attr.aria-label]="'Remove hostname entry ' + hostname.value"
+        (click)="removeHostnameEntry(hostname)"
+        [disabled]="isUpdating()"
+        type="button"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    }
+    <div>
+      <button
+        mat-button
+        [disabled]="isUpdating()"
+        color="primary"
+        (click)="createHostnameEntry()"
+        aria-label="Add new allowed certificate hostname"
+        type="button"
+      >
+        + Add Hostname
+      </button>
+    </div>
+
+    <h1>Revoked Client Certificate Hashes</h1>
+    <p>
+      Standard Base64-encoded SHA-256 hashes (without "=" padding) of
+      DER-encoded X.509 client certificates to reject at EPP login, regardless
+      of hostname or pinned fingerprint (up to 20 entries). Compute with:
+      <code
+        >openssl x509 -in cert.pem -outform DER | openssl dgst -sha256 -binary |
+        openssl base64 | tr -d '='</code
+      >
+    </p>
+    @for (hash of dataSource().revokedClientCertificateHashes; track hash) {
+    <div class="settings-security__edit-ip">
+      <mat-form-field appearance="outline">
+        <input
+          class="console-app__revokedHashValue"
+          matInput
+          [disabled]="isUpdating()"
+          type="text"
+          aria-label="Revoked client certificate hash"
+          placeholder="Standard Base64 SHA-256 hash of DER certificate"
+          [(ngModel)]="hash.value"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+      <button
+        mat-icon-button
+        class="console-app__removeRevokedHash"
+        [attr.aria-label]="'Remove revoked certificate hash ' + hash.value"
+        (click)="removeRevokedHashEntry(hash)"
+        [disabled]="isUpdating()"
+        type="button"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    }
+    <div>
+      <button
+        mat-button
+        [disabled]="isUpdating()"
+        color="primary"
+        (click)="createRevokedHashEntry()"
+        aria-label="Add new revoked certificate hash"
+        type="button"
+      >
+        + Add Revoked Certificate Hash
+      </button>
+    </div>
+    }
+
     <button
       mat-flat-button
       color="primary"

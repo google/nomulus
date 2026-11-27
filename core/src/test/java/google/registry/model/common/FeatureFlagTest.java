@@ -15,6 +15,7 @@
 package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.FeatureFlag.FeatureName.ALLOW_EPP_CLIENT_CERT_HOSTNAME_AUTH;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
@@ -225,5 +226,24 @@ public class FeatureFlagTest extends EntityTestCase {
             () -> {
               assertThat(FeatureFlag.isActiveNow(TEST_FEATURE)).isTrue();
             });
+  }
+
+  @Test
+  void testSuccess_allowEppClientCertHostnameAuthDefaultInactiveAndPersistable() {
+    Instant checkTime = Instant.parse("2026-01-01T00:00:00Z");
+    assertThat(FeatureFlag.isActiveAt(ALLOW_EPP_CLIENT_CERT_HOSTNAME_AUTH, checkTime)).isFalse();
+
+    FeatureFlag flag =
+        new FeatureFlag.Builder()
+            .setFeatureName(ALLOW_EPP_CLIENT_CERT_HOSTNAME_AUTH)
+            .setStatusMap(
+                ImmutableSortedMap.<Instant, FeatureStatus>naturalOrder()
+                    .put(START_INSTANT, INACTIVE)
+                    .put(checkTime, ACTIVE)
+                    .build())
+            .build();
+    persistResource(flag);
+    assertThat(loadByEntity(flag)).isEqualTo(flag);
+    assertThat(FeatureFlag.isActiveAt(ALLOW_EPP_CLIENT_CERT_HOSTNAME_AUTH, checkTime)).isTrue();
   }
 }
