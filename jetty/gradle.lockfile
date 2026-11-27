@@ -355,6 +355,7 @@ org.codehaus.woodstox:stax2-api:4.2.2=deploy_jar,runtimeClasspath,testRuntimeCla
 org.conscrypt:conscrypt-openjdk-uber:2.8.0=deploy_jar,runtimeClasspath,testRuntimeClasspath
 org.eclipse.angus:angus-activation:2.1.0-M1=deploy_jar,runtimeClasspath,testRuntimeClasspath
 org.eclipse.angus:jakarta.mail:2.1.0-M1=deploy_jar,runtimeClasspath,testRuntimeClasspath
+org.eclipse.jetty:jetty-home:12.1.15=jettyHome
 org.flywaydb:flyway-core:13.13.0=deploy_jar,runtimeClasspath,testRuntimeClasspath
 org.flywaydb:flyway-database-cockroachdb:13.13.0=deploy_jar,runtimeClasspath,testRuntimeClasspath
 org.flywaydb:flyway-database-postgresql:13.13.0=deploy_jar,runtimeClasspath,testRuntimeClasspath

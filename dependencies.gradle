@@ -164,6 +164,7 @@ ext {
       'org.eclipse.angus:jakarta.mail:[2.0.3,)',
       'org.eclipse.jetty.ee10:jetty-ee10-servlet:[12.0.0,)',
       'org.eclipse.jetty.ee10:jetty-ee10-webapp:[12.0.0,)',
+      'org.eclipse.jetty:jetty-home:[12.0.0,)',
       'org.eclipse.jetty:jetty-server:[12.0.0,)',
       'org.flywaydb:flyway-core:[11.0.0,)',
       'org.flywaydb:flyway-database-postgresql:[11.0.0,)',

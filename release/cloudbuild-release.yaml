@@ -75,16 +75,11 @@ steps:
     docker tag "gcr.io/${PROJECT_ID}/builder:${TAG_NAME}" "gcr.io/${PROJECT_ID}/builder:latest"
     docker push "gcr.io/${PROJECT_ID}/builder:${TAG_NAME}"
     docker push "gcr.io/${PROJECT_ID}/builder:latest"
-    docker pull jetty:12-jdk25
-    docker tag jetty:12-jdk25 "gcr.io/${PROJECT_ID}/jetty:${TAG_NAME}"
-    docker tag jetty:12-jdk25 "gcr.io/${PROJECT_ID}/jetty:latest"
-    docker push "gcr.io/${PROJECT_ID}/jetty:${TAG_NAME}"
-    docker push "gcr.io/${PROJECT_ID}/jetty:latest"
-    docker pull eclipse-temurin:25
-    docker tag eclipse-temurin:25 "gcr.io/${PROJECT_ID}/temurin:${TAG_NAME}"
-    docker tag eclipse-temurin:25 "gcr.io/${PROJECT_ID}/temurin:latest"
-    docker push "gcr.io/${PROJECT_ID}/temurin:${TAG_NAME}"
-    docker push "gcr.io/${PROJECT_ID}/temurin:latest"
+    docker pull launcher.gcr.io/google/ubuntu2404
+    docker tag launcher.gcr.io/google/ubuntu2404 "gcr.io/${PROJECT_ID}/ubuntu2404:${TAG_NAME}"
+    docker tag launcher.gcr.io/google/ubuntu2404 "gcr.io/${PROJECT_ID}/ubuntu2404:latest"
+    docker push "gcr.io/${PROJECT_ID}/ubuntu2404:${TAG_NAME}"
+    docker push "gcr.io/${PROJECT_ID}/ubuntu2404:latest"
   dir: 'release/builder/'
 # Do text replacement in the merged repo, hardcoding image digests.
 - name: 'gcr.io/cloud-builders/gcloud'
@@ -98,13 +93,10 @@ steps:
     set -e
     builder_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/builder" \
       --format='get(digest)' --filter="tags = ${TAG_NAME}")
-    jetty_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/jetty" \
+    ubuntu_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/ubuntu2404" \
       --format='get(digest)' --filter="tags = ${TAG_NAME}")
-    temurin_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/temurin" \
-      --format='get(digest)' --filter="tags = ${TAG_NAME}")
-    sed -i s%eclipse-temurin:25%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g proxy/Dockerfile
-    sed -i s%eclipse-temurin:25%gcr.io/${PROJECT_ID}/temurin@$temurin_digest%g core/Dockerfile
-    sed -i s%jetty:12-jdk25%gcr.io/${PROJECT_ID}/jetty@$jetty_digest%g jetty/Dockerfile
+    bash ./release/prepare_release_tree.sh pin-base-images "${PROJECT_ID}" \
+      --ubuntu="@$ubuntu_digest" core proxy jetty
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-proxy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-nomulus.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-deploy-gke.yaml

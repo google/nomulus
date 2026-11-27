@@ -19,6 +19,7 @@ Error Prone) so we must write them manually.
 
 import json
 import os
+import subprocess
 from typing import List, Tuple
 import sys
 import textwrap
@@ -298,6 +299,14 @@ def verify_flyway_index():
   return not success
 
 
+def verify_release_scripts():
+  """Runs unit tests for release preparation shell scripts."""
+  result = subprocess.run(
+      ['bash', 'release/prepare_release_tree_test.sh'], check=False
+  )
+  return result.returncode != 0
+
+
 def get_files():
   for root, dirnames, filenames in os.walk("."):
     for filename in filenames:
@@ -320,6 +329,7 @@ if __name__ == "__main__":
   # index is up-to-date.  It's quicker to do it here than in the unit tests:
   # when we put it here it fails fast before all of the tests are run.
   failed |= verify_flyway_index()
+  failed |= verify_release_scripts()
 
   if failed:
     sys.exit(1)

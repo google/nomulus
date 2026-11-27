@@ -27,10 +27,10 @@ steps:
   - -c
   - |
     set -e
-    temurin_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/temurin" \
+    ubuntu_digest=$(gcloud container images list-tags "gcr.io/${PROJECT_ID}/ubuntu2404" \
       --format='get(digest)' --filter="tags = ${TAG_NAME}")
     bash ./release/prepare_release_tree.sh pin-base-images "${PROJECT_ID}" \
-      --temurin="@$temurin_digest" proxy
+      --ubuntu="@$ubuntu_digest" proxy
 # Download saved Gradle distribution from GCS and install it.
 - name: 'gcr.io/${PROJECT_ID}/builder:${TAG_NAME}'
   entrypoint: ./release/install_gradle.sh
