@@ -25,4 +25,5 @@ FROM (
   FROM
     `domain-registry-alpha.gke_logs.stderr_*`
   WHERE
-    _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')
+    _TABLE_SUFFIX BETWEEN '20170901' AND '20170930'
+    AND STARTS_WITH(jsonPayload.message, "Action called for path="))

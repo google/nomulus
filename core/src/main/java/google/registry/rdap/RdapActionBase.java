@@ -21,6 +21,7 @@ import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_IMPLEMENTED;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -55,6 +56,7 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * Base RDAP action for all requests.
@@ -156,7 +158,7 @@ public abstract class RdapActionBase implements Runnable {
           pathProper.startsWith(getActionPath()),
           "%s doesn't start with %s", pathProper, getActionPath());
       String pathSearchString = pathProper.substring(getActionPath().length());
-      logger.atInfo().log("path search string: '%s'.", pathSearchString);
+      logger.atFine().log("path search string: '%s'.", pathSearchString);
 
       ReplyPayloadBase replyObject =
           getJsonObjectForResource(pathSearchString, requestMethod == Action.Method.HEAD);
@@ -170,14 +172,20 @@ public abstract class RdapActionBase implements Runnable {
       setPayload(replyObject);
       metricInformationBuilder.setStatusCode(SC_OK);
     } catch (RdapDomainAction.DomainBlockedByBsaException e) {
-      logger.atInfo().withCause(e).log("Domain blocked by BSA");
+      logger.atFine().withCause(e).log("Domain blocked by BSA");
       setErrorCodes(SC_NOT_FOUND);
       setPayload(new RdapObjectClasses.DomainBlockedByBsaErrorResponse(e.getMessage()));
     } catch (HttpException e) {
-      logger.atInfo().withCause(e).log("Error in RDAP.");
+      logger
+          .at(
+              e.getResponseCode() >= SC_INTERNAL_SERVER_ERROR
+                      && e.getResponseCode() != SC_NOT_IMPLEMENTED
+                  ? Level.SEVERE
+                  : Level.FINE)
+          .withCause(e).log("Error in RDAP.");
       setError(e.getResponseCode(), e.getResponseCodeString(), e.getMessage());
     } catch (URISyntaxException | IllegalArgumentException e) {
-      logger.atInfo().withCause(e).log("Bad request in RDAP.");
+      logger.atFine().withCause(e).log("Bad request in RDAP.");
       setError(SC_BAD_REQUEST, "Bad Request", "Not a valid " + getHumanReadableObjectTypeName());
     } catch (RuntimeException e) {
       setError(SC_INTERNAL_SERVER_ERROR, "Internal Server Error", "An error was encountered");

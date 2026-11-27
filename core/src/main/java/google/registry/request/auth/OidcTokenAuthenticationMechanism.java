@@ -92,7 +92,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
       }
       token = tokenVerifier.verify(service, rawIdToken);
     } catch (Exception e) {
-      logger.atInfo().withCause(e).log(
+      logger.atFine().withCause(e).log(
           "Failed OIDC verification attempt:\n%s",
           RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)
               ? "Raw token redacted in prod"
@@ -105,7 +105,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
     String email = (String) token.getPayload().get("email");
     if (email == null) {
-      logger.atInfo().log("No email address from the OIDC token:\n%s", token.getPayload());
+      logger.atFine().log("No email address from the OIDC token:\n%s", token.getPayload());
       return AuthResult.NOT_AUTHENTICATED;
     }
 
@@ -116,14 +116,14 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     if (serviceAccountEmails.contains(email)) {
       return AuthResult.createApp(email);
     }
-    logger.atInfo().log("No service account found for email address %s, loading the User", email);
+    logger.atFine().log("No service account found for email address %s, loading the User", email);
     Optional<User> maybeUser =
         tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(User.class, email)));
     stopwatch.tick("OidcTokenAuthenticationMechanism maybeUser loaded");
     if (maybeUser.isPresent()) {
       return AuthResult.createUser(maybeUser.get());
     }
-    logger.atInfo().log("No end user found for email address %s", email);
+    logger.atFine().log("No end user found for email address %s", email);
 
     logger.atWarning().log(
         "The email address %s is not tied to a principal with access to Nomulus", email);

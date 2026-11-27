@@ -21,6 +21,7 @@ import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;
 import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
 import static google.registry.request.auth.AuthSettings.UserPolicy.ADMIN;
 import static google.registry.request.auth.AuthSettings.UserPolicy.PUBLIC;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,13 +29,17 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.testing.TestLogHandler;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthSettings.UserPolicy;
+import google.registry.util.JdkLoggerConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
+import java.util.logging.Level;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -64,6 +69,7 @@ class RequestAuthenticatorTest {
       mock(AuthenticationMechanism.class);
   private final AuthenticationMechanism apiAuthenticationMechanism2 =
       mock(AuthenticationMechanism.class);
+  private final TestLogHandler logHandler = new TestLogHandler();
 
   private Optional<AuthResult> authorize(AuthLevel authLevel, UserPolicy userPolicy) {
     return new RequestAuthenticator(
@@ -79,8 +85,16 @@ class RequestAuthenticatorTest {
 
   @BeforeEach
   void beforeEach() {
+    JdkLoggerConfig.getConfig(RequestAuthenticator.class).addHandler(logHandler);
+    JdkLoggerConfig.getConfig(RequestAuthenticator.class).setLevel(Level.FINE);
     when(apiAuthenticationMechanism1.authenticate(req)).thenReturn(NOT_AUTHENTICATED);
     when(apiAuthenticationMechanism2.authenticate(req)).thenReturn(NOT_AUTHENTICATED);
+  }
+
+  @AfterEach
+  void afterEach() {
+    JdkLoggerConfig.getConfig(RequestAuthenticator.class).removeHandler(logHandler);
+    JdkLoggerConfig.getConfig(RequestAuthenticator.class).setLevel(null);
   }
 
   @Test
@@ -177,5 +191,67 @@ class RequestAuthenticatorTest {
     assertThat(thrown)
         .hasMessageThat()
         .contains("Actions with minimal auth level at NONE should not specify ADMIN user policy");
+  }
+
+  @Test
+  void testAuthorize_userAuth_logsAuthenticatedViaAtInfo() {
+    when(apiAuthenticationMechanism1.authenticate(req)).thenReturn(USER_PUBLIC_AUTH);
+    assertThat(authorize(USER, PUBLIC)).hasValue(USER_PUBLIC_AUTH);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "Action requires auth:");
+    assertAboutLogs().that(logHandler).hasLogAtLevelWithMessage(Level.INFO, "Authenticated via");
+  }
+
+  @Test
+  void testAuthorize_appAuth_logsAuthenticatedViaAtFine() {
+    when(apiAuthenticationMechanism1.authenticate(req)).thenReturn(APP_AUTH);
+    assertThat(authorize(APP, PUBLIC)).hasValue(APP_AUTH);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "Action requires auth:");
+    assertAboutLogs().that(logHandler).hasLogAtLevelWithMessage(Level.FINE, "Authenticated via");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
+  }
+
+  @Test
+  void testAuthorize_unauthenticatedNoneRequired_logsFineOnly() {
+    assertThat(authorize(NONE, PUBLIC)).hasValue(NOT_AUTHENTICATED);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "Action requires auth:");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "No authentication found.");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
+  }
+
+  @Test
+  void testAuthorize_unauthorized_logsWarningAndFine() {
+    assertThat(authorize(APP, PUBLIC)).isEmpty();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "Action requires auth:");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.FINE, "No authentication found.");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.WARNING, "Not authorized; no authentication found.");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
+
+    when(apiAuthenticationMechanism1.authenticate(req)).thenReturn(APP_AUTH);
+    assertThat(authorize(USER, PUBLIC)).isEmpty();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.WARNING, "Not authorized; no authenticated user.");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.INFO);
+
+    when(apiAuthenticationMechanism1.authenticate(req)).thenReturn(USER_PUBLIC_AUTH);
+    assertThat(authorize(USER, ADMIN)).isEmpty();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING, "Not authorized; user policy is ADMIN, but the user was not an admin.");
   }
 }

@@ -20,6 +20,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig;
@@ -172,6 +173,7 @@ public class RequestHandler<C> {
         .build();
     // Apply the selected Route to the component to produce an Action instance, and run it.
     boolean success = true;
+    int statusOverride = 0;
     Instant startTime = clock.now();
     try {
       route.get().instantiator().apply(component).run();
@@ -182,17 +184,23 @@ public class RequestHandler<C> {
     } catch (HttpException e) {
       e.send(rsp);
       success = false;
+      statusOverride = e.getResponseCode();
     } catch (Exception e) {
       rsp.setStatus(SC_INTERNAL_SERVER_ERROR);
       rsp.getWriter().write("Internal server error, please try again later");
       logger.atSevere().withCause(e).log("Encountered internal server error");
+      statusOverride = SC_INTERNAL_SERVER_ERROR;
     } finally {
+      int responseStatus = rsp.getStatus();
+      int status =
+          responseStatus > 0 ? responseStatus : (statusOverride > 0 ? statusOverride : SC_OK);
       requestMetrics.record(
           Duration.between(startTime, clock.now()),
           path,
           method,
           authResult.get().authLevel(),
-          success);
+          success,
+          status);
     }
   }
 }
