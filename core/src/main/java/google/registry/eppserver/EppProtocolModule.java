@@ -26,6 +26,7 @@ import google.registry.eppserver.Protocol.FrontendProtocol;
 import google.registry.eppserver.handler.EppServiceHandler;
 import google.registry.eppserver.quota.EppServerQuotaManager;
 import google.registry.networking.handler.SslServerInitializer;
+import google.registry.networking.module.CertificateSupplierModule.TlsCredentials;
 import google.registry.quota.NoopQuotaManager;
 import google.registry.quota.QuotaManager;
 import google.registry.quota.ValkeyQuotaManager;
@@ -40,8 +41,6 @@ import jakarta.inject.Provider;
 import jakarta.inject.Qualifier;
 import jakarta.inject.Singleton;
 import java.io.IOException;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.util.Optional;
 import java.util.function.Supplier;
 import redis.clients.jedis.UnifiedJedis;
@@ -130,11 +129,8 @@ public final class EppProtocolModule {
   @Provides
   @EppProtocol
   static SslServerInitializer<NioSocketChannel> provideSslServerInitializer(
-      SslProvider sslProvider,
-      Supplier<PrivateKey> privateKeySupplier,
-      Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
-    return new SslServerInitializer<>(
-        true, false, sslProvider, privateKeySupplier, certificatesSupplier);
+      SslProvider sslProvider, Supplier<TlsCredentials> tlsCredentialsSupplier) {
+    return new SslServerInitializer<>(true, false, sslProvider, tlsCredentialsSupplier);
   }
 
   @Provides

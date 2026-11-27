@@ -15,12 +15,15 @@
 package google.registry.proxy.handler;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.proxy.handler.ProxyProtocolHandler.MAX_PROXY_HEADER_LENGTH;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.TooLongFrameException;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ProxyProtocolHandler}. */
@@ -124,5 +127,71 @@ class ProxyProtocolHandlerTest {
     assertThat(channel.attr(REMOTE_ADDRESS_KEY).get()).isNull();
     assertThat(channel.pipeline().get(ProxyProtocolHandler.class)).isNull();
     assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_proxyHeaderAtExact107ByteCap() {
+    // 105-byte header + 2-byte CRLF = 107 bytes (exact HAProxy PROXY protocol v1 cap).
+    String paddedHeader =
+        "PROXY TCP6 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff "
+            + "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 65535 65535000\r\n";
+    assertThat(paddedHeader.length()).isEqualTo(MAX_PROXY_HEADER_LENGTH);
+    String message = "tls-payload";
+    assertThat(
+            channel.writeInbound(Unpooled.wrappedBuffer((paddedHeader + message).getBytes(UTF_8))))
+        .isTrue();
+    assertThat(((ByteBuf) channel.readInbound()).toString(UTF_8)).isEqualTo(message);
+    assertThat(channel.attr(REMOTE_ADDRESS_KEY).get())
+        .isEqualTo("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+    assertThat(channel.pipeline().get(ProxyProtocolHandler.class)).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_validProxyHeaderFollowedByLargePayloadOver107Bytes() {
+    header = String.format(HEADER_TEMPLATE, 4, "172.0.0.1", "255.255.255.255", "234", "123");
+    String largePayload = "X".repeat(300);
+    assertThat(
+            channel.writeInbound(Unpooled.wrappedBuffer((header + largePayload).getBytes(UTF_8))))
+        .isTrue();
+    assertThat(((ByteBuf) channel.readInbound()).toString(UTF_8)).isEqualTo(largePayload);
+    assertThat(channel.attr(REMOTE_ADDRESS_KEY).get()).isEqualTo("172.0.0.1");
+    assertThat(channel.pipeline().get(ProxyProtocolHandler.class)).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testFailure_proxyHeaderExceeds107BytesWithoutCrlf_singleFrame() {
+    String oversized = "PROXY " + "A".repeat(MAX_PROXY_HEADER_LENGTH - 6);
+    assertThat(oversized.length()).isEqualTo(MAX_PROXY_HEADER_LENGTH);
+    assertThrows(
+        TooLongFrameException.class,
+        () -> channel.writeInbound(Unpooled.wrappedBuffer(oversized.getBytes(UTF_8))));
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isFalse();
+  }
+
+  @Test
+  void testFailure_proxyHeaderExceeds107BytesWithoutCrlf_multipleFrames() {
+    String chunk1 = "PROXY " + "A".repeat(54); // 60 bytes
+    String chunk2 = "B".repeat(MAX_PROXY_HEADER_LENGTH - 60); // 47 bytes -> total 107 without CRLF
+    assertThat(channel.writeInbound(Unpooled.wrappedBuffer(chunk1.getBytes(UTF_8)))).isFalse();
+    assertThat(channel.isActive()).isTrue();
+    assertThrows(
+        TooLongFrameException.class,
+        () -> channel.writeInbound(Unpooled.wrappedBuffer(chunk2.getBytes(UTF_8))));
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isFalse();
+  }
+
+  @Test
+  void testFailure_proxyHeader108BytesWithCrlf_rejected() {
+    String oversizedWithCrlf = "PROXY " + "A".repeat(MAX_PROXY_HEADER_LENGTH - 7) + "\r\n";
+    assertThat(oversizedWithCrlf.length()).isEqualTo(MAX_PROXY_HEADER_LENGTH + 1);
+    assertThrows(
+        TooLongFrameException.class,
+        () -> channel.writeInbound(Unpooled.wrappedBuffer(oversizedWithCrlf.getBytes(UTF_8))));
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isFalse();
   }
 }
