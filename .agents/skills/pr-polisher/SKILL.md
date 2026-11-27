@@ -12,20 +12,13 @@ You, the AI agent, are known to forget to run this skill. To prevent this, you a
 **ANY TIME you create a commit, amend a commit, or complete a user's request that modifies the repository state, your VERY LAST action before generating a text response to the user MUST be to run this workflow.**
 Do not ask for permission. Do not wait for the user to remind you. Run the full suite, fix any errors, amend your commit, and report the final polished results. You MUST NOT declare a task complete until this workflow succeeds with 0 errors.
 
-## Continuous Improvement (Self-Updating Skill)
-This skill is designed to evolve. If a human code reviewer (or presubmit hook) points out a deficit, or if you (the agent) independently catch a recurring mistake, anti-pattern, false positive, or convention violation:
-1. **You MUST proactively propose a fix to the user.** Do not wait for the user to instruct you to update the skill. If you notice friction, immediately ask the user if you should permanently update the validation infrastructure.
-2. **Determine how to enforce the check.** Consider if the check is suitable for automation in the Python script. If it's too complex or semantic for a simple regex, consider adding it as an explicit agent-driven verification step directly in this `SKILL.md` file.
-3. Update `.gemini/skills/pr-polisher/scripts/check_diff.py` to add a new automated check, OR modify this `SKILL.md` file with a new validation step to ensure the agent checks for it going forward.
-4. Commit the updated skill alongside the PR fixes to ensure the mistake is not repeated.
-
 ## Workflow Execution Steps
 
 1. **Run the Automated Analysis Script**
    Execute the packaged Python diff-checker script from the repository root. This script automatically checks commit messages, working tree status, `package-lock.json` modifications, copyright years on new files, missing tests across all tested modules, the 2-PR database schema split (Flyway scripts must not ship with Java or `db-schema.sql.generated` changes), internal-only links or paths leaking into this public repository, local `upstream/master` freshness, and a litany of anti-patterns using regex (e.g., fully-qualified names, incorrect clock injections, generic exception catching).
 
    ```bash
-   python3 .gemini/skills/pr-polisher/scripts/check_diff.py
+   python3 .agents/skills/pr-polisher/scripts/check_diff.py
    ```
 
 2. **Run Formatting Validation**
@@ -84,4 +77,4 @@ This skill is designed to evolve. If a human code reviewer (or presubmit hook) p
    git add -u
    git commit --amend # Or git commit --amend --no-edit if only files changed
    ```
-   **CRITICAL:** You must loop back to Step 1 and run `python3 .gemini/skills/pr-polisher/scripts/check_diff.py` again. Continue this loop of checking and amending until the script definitively returns `0 ERRORS`, the build/presubmits pass, and the working directory is perfectly clean. Do not assume your fixes worked without re-running the check.
+   **CRITICAL:** You must loop back to Step 1 and run `python3 .agents/skills/pr-polisher/scripts/check_diff.py` again. Continue this loop of checking and amending until the script definitively returns `0 ERRORS`, the build/presubmits pass, and the working directory is perfectly clean. Do not assume your fixes worked without re-running the check.

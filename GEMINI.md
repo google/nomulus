@@ -1,13 +1,12 @@
 # Nomulus Engineering Guide for Gemini
 
-This document captures the mandates, architectural patterns, and project conventions needed to produce high-quality, idiomatic Nomulus code on the first iteration. When modifying this file, review the whole document to avoid duplicate instructions and keep it coherent.
+Core mandates, architectural patterns, and conventions for Nomulus. Review the whole file when editing to keep it coherent and non-redundant.
 
-## 🏛 Architecture Overview
-
-- **Transaction Management:** The codebase uses a custom wrapper around JPA. Always use `tm()` (from `TransactionManagerFactory`) to interact with the database.
-- **Dependency Injection:** Dagger 2 is used extensively. "cannot find symbol" errors for classes starting with `Dagger...` mean annotation processing failed; fix compilation in core models first to restore generated code.
-- **Value Types:** AutoValue and `ImmutableObject` patterns are dominant. Most models follow a `Buildable` pattern with a nested `Builder`.
-- **Temporal Logic:** The project uses `java.time` for all temporal representations. Core boundaries: `DateTimeUtils.START_INSTANT` (Unix Epoch) and `DateTimeUtils.END_INSTANT` (`Long.MAX_VALUE / 1000`).
+## Architecture Overview
+- **Transaction Management:** Custom JPA wrapper; always use `tm()` (from `TransactionManagerFactory`).
+- **Dependency Injection:** Dagger 2. `"cannot find symbol"` for `Dagger...` means annotation processing failed; fix core model compilation first (or `git checkout` a corrupted builder/component and re-apply surgically).
+- **Value Types:** AutoValue and `ImmutableObject` (`Buildable` + nested `Builder`).
+- **Temporal Logic:** `java.time` with `DateTimeUtils.START_INSTANT` (Unix Epoch) and `DateTimeUtils.END_INSTANT` (`Long.MAX_VALUE / 1000`).
 
 ## Core Mandates
 
@@ -25,7 +24,7 @@ This document captures the mandates, architectural patterns, and project convent
 - **Test Timestamps:** Prefer fixed constants (e.g., `Instant.parse("2024-03-27T10:15:30.105Z")`) over capturing `clock.now()` to avoid flakiness.
 - **Beam Pipelines:** `Clock` is serializable; pass it through the `DoFn` constructor or Dagger provider methods in the pipeline module.
 - **Command-Line Tools:** Use a package-private `@Inject Clock clock;` field in `Command` implementations and set `command.clock = fakeClock;` in the test's `@BeforeEach` (base classes like `EppToolCommandTestCase` do this for generic command types).
-- **Serialization Precision (`.000Z`):** Format `Instant`s with `DateTimeUtils.formatInstant(...)`, never `Instant.toString()` (which drops `.000Z` for whole seconds). Keep this in mind when editing `.xml`/`.yaml` test data.
+- **Serialization Precision (`.000Z`):** Format `Instant`s with statically imported `formatInstant(...)` from `DateTimeUtils`, never `Instant.toString()` (which drops `.000Z` for whole seconds). Keep this in mind when editing `.xml`/`.yaml` test data.
 
 ### 3. Dependency Injection (Dagger)
 - **Concrete Types:** Dagger `inject` methods must use explicit concrete types; generic `inject(Command)` methods do not work.
@@ -34,7 +33,7 @@ This document captures the mandates, architectural patterns, and project convent
 ### 4. Database Consistency
 - **Top-Level Transactions:** Define `tm().transact(...)` at the highest level of the call chain (Action, Command, or Flow) so all work is atomic and covered by retries.
 - **DAO Methods:** Never open transactions inside low-level DAO methods; use `tm().assertInTransaction()`.
-- **`reTransact`:** Use `tm().reTransact(...)` for utility methods or Caffeine cache loaders reachable from both transactional and non-transactional paths (it joins an existing transaction or starts a new one). Test helpers may use `tm().reTransact(tm()::getTxTime)`, but NEVER `tm().transact(() -> tm().reTransact(...))`; when exact DB time is not needed, use `clock.now()`. In production code, wrap the *caller* in a transaction instead of adding `reTransact()` around `getTxTime()`.
+- **`reTransact`:** Use `tm().reTransact(...)` for utility methods or Caffeine cache loaders reachable from both transactional and non-transactional paths (it joins an existing transaction or starts a new one). Test helpers may use `tm().reTransact(tm()::getTxTime)`, but NEVER `tm().transact(() -> tm().reTransact(...))`; when exact DB time is not needed, use a fixed static `Instant.parse(...)` constant. In production code, wrap the *caller* in a transaction instead of adding `reTransact()` around `getTxTime()`.
 - **`tm()` vs. `replicaTm()`:** Transaction state lives in a static `ThreadLocal` shared by every `JpaTransactionManagerImpl`, so a `replicaTm()` call inside a `tm()` transaction (or vice versa) is a nested transaction on the *outer* database. Finish one before starting the other.
 - **2-PR Schema Split:** Read `db/README.md` before any schema change. Never combine Flyway scripts (`db/src/main/resources/sql/flyway/V*.sql`) with Java ORM changes in one PR, because servers mid-rollout fail on unmigrated columns:
     1. **PR #1 (Schema Only):** the Flyway script, `flyway.txt` (`:db:generateFlywayIndex`), `nomulus.golden.sql` (`:nom:generate_golden_file`), and ER diagrams. **Zero `.java` or `db-schema.sql.generated` changes.**
@@ -71,10 +70,9 @@ This document captures the mandates, architectural patterns, and project convent
 - **SQL Integration:** Whenever a schema, Flyway script, or JPA entity changes, also run `./gradlew :db:test` and `./gradlew :core:sqlIntegrationTest`.
 
 ## Build Strategy
-- **Compile Before Testing:** Run `./gradlew build -x test` (or `./gradlew :core:build -x test -x :console-webapp:buildConsoleWebapp` for backend-only changes) before unit tests; tests will not run if any part of `core` fails to compile.
-- **Skip the Console Build:** Always pass `-x :console-webapp:buildConsoleWebapp` for backend-only tasks. Otherwise `:core:processResources` triggers `npmInstallDeps`, which dirties `console-webapp/package-lock.json` and can fail on host Node.js version mismatches.
-- **Package Lock:** Revert `console-webapp/package-lock.json` (`git checkout console-webapp/package-lock.json`) before committing unless you intentionally changed NPM dependencies.
-- **Formatting Failures:** Never declare success if `spotlessCheck`, `javaIncrementalFormatCheck`, or tests fail. Run `./gradlew spotlessApply` and re-run the build.
+- **Compile Before Testing:** Run `./gradlew :core:build -x test -x :console-webapp:buildConsoleWebapp` for backend-only changes (pass `-x :console-webapp:buildConsoleWebapp` so `:core:processResources` does not trigger `npmInstallDeps`, dirtying `console-webapp/package-lock.json` or failing on host Node.js version mismatches). Run `./gradlew build -x test` when `console-webapp/` is modified.
+- **Package Lock:** Revert `console-webapp/package-lock.json` (`git checkout console-webapp/package-lock.json`) before committing unless NPM dependencies intentionally changed.
+- **Formatting Failures:** Never declare success if `spotlessCheck`, `javaIncrementalFormatCheck`, or tests fail. Run `./gradlew spotlessApply javaIncrementalFormatApply` and re-verify.
 
 ## Project Dependencies
 - **Common Module:** Modules using `Clock` or other core utilities (e.g., `load-testing`) need `implementation project(':common')` in their `build.gradle`.
@@ -89,32 +87,21 @@ This document captures the mandates, architectural patterns, and project convent
 
 ## Source Control and Pull Requests
 - **Public Repository:** Never commit internal-only links, hostnames, file paths, or shortlinks. Bug-tracker references such as `b/123` are fine.
-- **One Commit Per PR:** Create a commit for the branch's work, then amend follow-up changes into it (`git commit --amend --no-edit`) so the PR stays a single, clean commit.
-- **Commit Message Style:** Subject at most 50 characters, capitalized, no trailing punctuation. The body must summarize the "what" and "why" of the entire diff, including operational justification and CLI usage examples where relevant.
-- **Completion Verification:** After every commit or amend, run `git status` and confirm `nothing to commit, working tree clean`. If changes remain, stage and amend, then re-check. Only then may you declare the task complete.
-- **Diff Review:** Review `git diff HEAD^` before finalizing. Revert formatting-only changes in files without functional updates.
-- **No Unsolicited Pushes:** NEVER run `git push` (or any remote transfer) without explicit, unambiguous authorization from the user in the immediate turn. When finished, state that the work is committed locally and ready for review.
-- **Zero-Bundling Rule:** Run every remote transfer command as its own standalone command, never chained with `&&`, `||`, or `;` alongside local staging or commit commands.
-- **Two-Step Handover:** Halt at the local commit. Report the commit SHA, `git status`, and diff verification, then ask: *"Local commit `[SHA]` is verified. Do you authorize running `git push origin [branch]` (or `--force-with-lease` when force-pushing an amended branch) to update the remote repository?"*
+- **Fresh Base:** Fetch fresh `upstream/master` (or `origin/master`) before branching so diffs are never computed against a stale base.
+- **One Commit Per PR:** Create one commit for the branch's work and amend follow-up fixes (`git commit --amend --no-edit`).
+- **Commit Message Style:** Subject at most 50 characters, capitalized, no trailing punctuation. Open the body with 2–4 plain-English sentences stating **why** the change is being made, what problem, waste, or risk exists today, and **what concrete outcome improves**—before naming classes, flags, or implementation mechanics ("what"/"how"), including operational justification and CLI usage examples where relevant.
+- **Completion Verification:** After every commit or amend, run `git status` and confirm `nothing to commit, working tree clean` before declaring work complete.
+- **Diff Review:** Review the full branch diff before finalizing and revert formatting-only edits in unrelated files.
+- **Default Push Gate:** Unless overridden by a user-level rule or an explicit user directive to open/update a PR, stop at the local commit (`git commit`), report the SHA and `git status`, and ask before running `git push`. Never chain `git push` (or any remote transfer) with `git commit` via `&&`, `||`, or `;`—run every remote transfer as a standalone command.
 - **`gh` CLI:** Use `gh` for all GitHub operations. Never expose tokens or credentials in commands.
-- **Processing PR Feedback:** Fetch ALL review comments with paginated `gh api --paginate` calls across the PR review comments, issue comments, and reviews endpoints (see the `pr-polisher` skill). Address comments surgically; if a fix significantly expands scope, report it to the user instead of implementing it. Afterwards, re-run the build and relevant tests.
-- **PR Description Sync:** After pushing an amended commit, update the PR description (`gh pr edit`) if it simply mirrored the old commit message. Inspect it first with `gh pr view --json body`, and preserve automated footer blocks such as `<!-- Reviewable:start -->...<!-- Reviewable:end -->`. Never update the remote description for changes that are only committed locally.
+- **Processing PR Feedback:** Fetch ALL review comments with paginated `gh api --paginate` calls across review comments, issue comments, and reviews (see `.agents/skills/pr-polisher/SKILL.md`). Address feedback surgically (report large scope expansions first), then re-run scoped build/tests per Build Strategy.
+- **PR Description Sync:** After pushing an amended commit, update the PR description (`gh pr edit`) if it mirrored the old commit message. Inspect `gh pr view --json body` first and preserve Reviewable footers (`<!-- Reviewable:start -->...<!-- Reviewable:end -->` and `This change is https://reviewable.io/reviews/...`). Never edit the remote PR description for local-only commits.
 
-## 🛑 CRITICAL: MANDATORY PR POLISHER EXECUTION
-You, the AI agent, have a known failure mode of forgetting to run the PR polisher. **ANY TIME you create or amend a commit, or complete a request that modifies the repository, your VERY LAST action before responding MUST be to execute the `pr-polisher` skill.** Do not ask for permission. Run the full suite (`python3 .gemini/skills/pr-polisher/scripts/check_diff.py`, `runPresubmits`, `build`, and `test`), fix any errors, amend your commit, and report the results. Do not declare a task done until the script returns 0 errors, presubmits and tests pass, and the workspace is clean. Also confirm:
+## Pre-Commit Verification
+Before responding after any commit or amend, run the `pr-polisher` skill (`.agents/skills/pr-polisher/SKILL.md`): `python3 .agents/skills/pr-polisher/scripts/check_diff.py`, `./gradlew runPresubmits`, and scoped build/tests per Build Strategy. Fix errors, amend, and confirm `0` errors and a clean `git status`.
 
-1. **Imports & FQNs:** No inline fully qualified names remain (except same-name conflicts), and all needed imports are present.
-2. **Diff Scope:** No formatting-only changes in unrelated files, and the diff size matches the approved scope.
-3. **Commit Message:** The subject fits in 50 characters and the body covers the entire diff.
-4. **Tests:** Every new method and modified branch of logic is covered (including edge cases such as negative values and leap years). Compilation alone is not a review.
-5. **Package Lock:** `console-webapp/package-lock.json` is not in the diff unless NPM dependencies intentionally changed.
-
-## 🚫 Common Pitfalls to Avoid
-- **Dagger/AutoValue Corruption:** An incorrect builder or component change breaks code generation and yields hundreds of "cannot find symbol" errors. `git checkout` the last working version of the file and re-apply changes surgically.
-- **Large-File Edits:** When editing large files with many similar signatures (e.g., `Tld.java`, `DomainBase.java`), include significant surrounding context to avoid incorrect replacements.
-
-## Efficiency and Continuous Improvement
-- **Turn Minimization:** Aim for correct code on the first iteration; iterative checkstyle or compile fixes waste context and time.
-- **Context Management:** Use sub-agents for batch refactoring or high-volume output tasks.
-- **Markdown Measurement:** When writing or wrapping Markdown, measure line lengths programmatically (e.g., `awk '{print length($0)}'`) instead of estimating.
-- **Self-Improvement:** If you hit a recurring error, a script false positive, or a workaround inferior to a native Gradle task, pause and ask the user: *"I noticed this friction. Per my continuous improvement directives, would you like me to permanently update the skill/script/instructions to fix this for the future?"*
+## Common Pitfalls & Efficiency
+- **Large-File Edits:** Include generous surrounding context when editing files with many similar signatures (e.g., `Tld.java`, `DomainBase.java`).
+- **Turn Minimization & Delegation:** Aim for checkstyle-clean code on the first pass; use sub-agents for batch refactoring or high-volume output.
+- **Markdown Measurement:** Measure Markdown line lengths programmatically (`awk '{print length($0)}'`) rather than estimating.
+- **Continuous Improvement:** When hitting recurring tool/script friction, false positives, or repeated corrections, proactively propose a targeted fix to `GEMINI.md`, `.agents/skills/`, or an automated check (asking before editing meta-files during an unrelated task).

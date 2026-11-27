@@ -18,10 +18,10 @@
 # branch that is only used for merging and is never directly worked on.
 #
 # If invoked on the master branch, this script will format the modified lines
-# relative to HEAD. Otherwise, it uses the
-# 'git merge-base --fork-point origin/master' command to find the latest
-# fork point from origin/master, and formats the modified lines between
-# the fork point and the HEAD of the current branch.
+# relative to HEAD. Otherwise, it computes the freshest merge-base against
+# upstream/master and origin/master (read-only, matching origin/master when no
+# upstream remote is configured), and formats the modified lines between that
+# fork point and HEAD.
 #
 # Background: existing code base does not conform to Google Java format. Since
 # the team wants to keep the 'blame' feature (find last modifier of a line)
@@ -88,9 +88,33 @@ function showNoncompliantFiles() {
   runGoogleJavaFormatAgainstDiffs "$forkPoint" | showFileNames "$2"
 }
 
+function findForkPoint() {
+  local originBase=""
+  local upstreamBase=""
+  if git rev-parse --verify --quiet refs/remotes/origin/master >/dev/null; then
+    originBase=$(git merge-base origin/master HEAD)
+  fi
+  if git rev-parse --verify --quiet refs/remotes/upstream/master >/dev/null; then
+    upstreamBase=$(git merge-base upstream/master HEAD)
+  fi
+  if [[ -n "$originBase" && -n "$upstreamBase" ]]; then
+    if git merge-base --is-ancestor "$upstreamBase" "$originBase"; then
+      echo "$originBase"
+    else
+      echo "$upstreamBase"
+    fi
+  elif [[ -n "$upstreamBase" ]]; then
+    echo "$upstreamBase"
+  elif [[ -n "$originBase" ]]; then
+    echo "$originBase"
+  else
+    git merge-base master HEAD
+  fi
+}
+
 function callGoogleJavaFormatDiff() {
   local forkPoint
-  forkPoint=$(git merge-base origin/master HEAD)
+  forkPoint=$(findForkPoint)
 
   local callResult
   case "$1" in

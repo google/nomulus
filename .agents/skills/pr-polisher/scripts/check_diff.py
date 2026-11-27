@@ -29,7 +29,7 @@ RESET = "\033[0m"
 errors_found = 0
 warnings_found = 0
 
-SCRIPT_PATH = ".gemini/skills/pr-polisher/scripts/check_diff.py"
+SCRIPT_PATH = ".agents/skills/pr-polisher/scripts/check_diff.py"
 
 # Modules whose src/main Java changes should be accompanied by test changes.
 TESTED_MODULES = (
@@ -66,9 +66,6 @@ def log_success(msg):
 def run_cmd(cmd):
     return subprocess.check_output(cmd, shell=True, text=True).strip()
 
-def get_diff_files():
-    return [f for f in run_cmd("git diff HEAD^ --name-only").split('\n') if f]
-
 def ref_exists(ref):
     return subprocess.run(
         ["git", "rev-parse", "--verify", "--quiet", ref],
@@ -77,21 +74,53 @@ def ref_exists(ref):
         check=False,
     ).returncode == 0
 
+def get_diff_base():
+    """Returns the read-only merge-base against the freshest master ref."""
+    upstream_ref = "refs/remotes/upstream/master"
+    origin_ref = "refs/remotes/origin/master"
+    upstream_base = (
+        run_cmd(f"git merge-base HEAD {upstream_ref}") if ref_exists(upstream_ref) else None
+    )
+    origin_base = (
+        run_cmd(f"git merge-base HEAD {origin_ref}") if ref_exists(origin_ref) else None
+    )
+
+    if upstream_base and origin_base:
+        is_upstream_ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", upstream_base, origin_base],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        ).returncode == 0
+        base = origin_base if is_upstream_ancestor else upstream_base
+    else:
+        base = upstream_base or origin_base
+
+    if base:
+        head = run_cmd("git rev-parse HEAD")
+        if base != head:
+            return base
+    if ref_exists("HEAD^"):
+        return "HEAD^"
+    return "HEAD"
+
+def get_diff_files():
+    return [f for f in run_cmd(f"git diff {get_diff_base()} --name-only").split('\n') if f]
+
 def check_single_commit():
     print("--- Checking Commit Count ---")
     try:
-        base_refs = ["^master"]
-        upstream_ref = "refs/remotes/upstream/master"
-        if (
-            subprocess.run(
-                ["git", "rev-parse", "--verify", upstream_ref],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            ).returncode
-            == 0
-        ):
-            base_refs.append("^upstream/master")
+        base_refs = [
+            f"^{ref}"
+            for ref in (
+                "refs/heads/master",
+                "refs/remotes/upstream/master",
+                "refs/remotes/origin/master",
+            )
+            if ref_exists(ref)
+        ]
+        if not base_refs:
+            return
         refs_arg = " ".join(base_refs)
         count = int(run_cmd(f"git rev-list --count HEAD {refs_arg}"))
         if count > 1:
@@ -138,7 +167,7 @@ def check_workspace_clean():
 
 def check_package_lock():
     print("\n--- Checking package-lock.json ---")
-    diff_files = run_cmd("git diff HEAD^ --name-only").split('\n')
+    diff_files = get_diff_files()
     if "console-webapp/package-lock.json" in diff_files:
         if "console-webapp/package.json" in diff_files or "dependencies.gradle" in diff_files:
             log_warning("console-webapp/package-lock.json is modified in the diff. This is expected since dependencies were updated.")
@@ -150,7 +179,7 @@ def check_package_lock():
 def check_license_headers():
     print("\n--- Checking License Headers on New Files ---")
     current_year = str(datetime.datetime.now().year)
-    added_files = run_cmd("git diff HEAD^ --name-status --diff-filter=A").split('\n')
+    added_files = run_cmd(f"git diff {get_diff_base()} --name-status --diff-filter=A").split('\n')
 
     java_header = f"// Copyright {current_year} The Nomulus Authors. All Rights Reserved."
     script_header = f"# Copyright {current_year} The Nomulus Authors. All Rights Reserved."
@@ -206,13 +235,6 @@ def check_upstream_freshness():
 def check_formatting():
     print("\n--- Checking Project Formatting ---")
     try:
-        # Keep local origin/master tracking ref in sync with upstream/master so
-        # google-java-format-git-diff.sh only checks the current branch's diff.
-        try:
-            run_cmd("git rev-parse --verify refs/remotes/upstream/master")
-            run_cmd("git update-ref refs/remotes/origin/master refs/remotes/upstream/master")
-        except Exception as e:
-            log_warning(f"Failed to fast-forward origin/master to upstream/master: {e}")
         run_cmd("./gradlew spotlessCheck javaIncrementalFormatCheck")
         log_success("All formatting checks (spotless and javaIncrementalFormat) passed.")
     except Exception as e:
@@ -223,7 +245,7 @@ def check_formatting():
 
 def check_diff_anti_patterns():
     print("\n--- Checking Code Anti-Patterns in Diff ---")
-    diff = run_cmd("git diff HEAD^ -U0")
+    diff = run_cmd(f"git diff {get_diff_base()} -U0")
     current_file = ""
 
     # Regex Patterns
@@ -294,7 +316,7 @@ def check_diff_anti_patterns():
 
             # System clocks
             if now_pattern.search(code_line):
-                log_error(f"[{current_file}] Found un-injected clock (Instant.now / System.currentTimeMillis). Inject Clock instead.")
+                log_error(f"[{current_file}] Found un-injected clock (Instant.now / System.currentTimeMillis). Inject Clock (or use a fixed Instant.parse(...) constant in tests) instead.")
 
             # Catch generic
             if catch_generic_pattern.search(code_line):
@@ -339,7 +361,7 @@ def check_diff_anti_patterns():
 
             # Instant toString
             if instant_tostring_pattern.search(code_line):
-                log_error(f"[{current_file}] Found potential Instant.toString(). Use DateTimeUtils.formatInstant(...) to preserve .000Z precision.")
+                log_error(f"[{current_file}] Found potential Instant.toString(). Statically import formatInstant(...) from DateTimeUtils to preserve .000Z precision.")
 
             # DAO transactions
             if current_file.lower().endswith('dao.java') and dao_transact_pattern.search(code_line):
@@ -359,7 +381,7 @@ def check_diff_anti_patterns():
 
 def check_internal_link_leaks():
     print("\n--- Checking for Internal Link and Path Leaks ---")
-    diff = run_cmd("git diff HEAD^ -U0")
+    diff = run_cmd(f"git diff {get_diff_base()} -U0")
     current_file = ""
     leaks_found = False
 
