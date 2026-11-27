@@ -89,12 +89,20 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   private static final ImmutableMap<String, TokenBehavior> STATIC_TOKEN_BEHAVIORS =
       ImmutableMap.of(REMOVE_BULK_PRICING, TokenBehavior.REMOVE_BULK_PRICING);
 
-  // Promotions should only move forward, and ENDED / CANCELLED are terminal states.
-  private static final ImmutableMultimap<TokenStatus, TokenStatus> VALID_TOKEN_STATUS_TRANSITIONS =
+  /**
+   * Valid transitions between {@link TokenStatus} values. Promotions should only move forward, and
+   * {@link TokenStatus#ENDED} and {@link TokenStatus#CANCELLED} are terminal states.
+   */
+  public static final ImmutableMultimap<TokenStatus, TokenStatus> VALID_TOKEN_STATUS_TRANSITIONS =
       ImmutableMultimap.<TokenStatus, TokenStatus>builder()
           .putAll(NOT_STARTED, VALID, CANCELLED)
           .putAll(VALID, ENDED, CANCELLED)
           .build();
+
+  /** Returns true if {@code status} is a terminal status with no valid outgoing transitions. */
+  public static boolean isTerminalStatus(TokenStatus status) {
+    return VALID_TOKEN_STATUS_TRANSITIONS.get(status).isEmpty();
+  }
 
   private static final ImmutableMap<String, AllocationToken> BEHAVIORAL_TOKENS =
       ImmutableMap.of(
@@ -491,7 +499,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
             getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED),
             "BULK_PRICING tokens must have renewalPriceBehavior set to SPECIFIED");
         checkArgument(
-            getInstance().renewalPrice.getAmount().intValue() == 0,
+            getInstance().renewalPrice.isZero(),
             "BULK_PRICING tokens must have a renewal price of 0");
         checkArgument(
             ImmutableSet.of(CommandName.CREATE).equals(getInstance().allowedEppActions),

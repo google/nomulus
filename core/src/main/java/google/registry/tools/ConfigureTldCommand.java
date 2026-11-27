@@ -153,6 +153,7 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkPremiumList(newTld);
     checkDnsWriters(newTld);
     checkCurrency(newTld);
+    checkDefaultPromoTokens(newTld);
     // bsaEnrollStartTime only exists in DB. Need to carry it over to the updated copy. See Tld.java
     // for more information.
     Optional<Instant> bsaEnrollTime =
@@ -246,6 +247,10 @@ public class ConfigureTldCommand extends MutatingCommand {
     SetView<String> invalidDnsWriters = Sets.difference(dnsWriters, validDnsWriterNames);
     checkArgument(
         invalidDnsWriters.isEmpty(), "Invalid DNS writer name(s) specified: %s", invalidDnsWriters);
+  }
+
+  private void checkDefaultPromoTokens(Tld newTld) {
+    Tld.validateDefaultPromoTokens(newTld.getTldStr(), newTld.getDefaultPromoTokens());
   }
 
   private void checkCurrency(Tld newTld) {

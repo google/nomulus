@@ -19,6 +19,7 @@ import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.START_INSTANT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
@@ -113,5 +114,59 @@ class TimedTransitionPropertyTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> TimedTransitionProperty.fromValueMap(ImmutableSortedMap.of(DATE_1, "1")));
+  }
+
+  @Test
+  void testSuccess_makeWithAllowedTransitionsOnly() {
+    ImmutableMultimap<String, String> allowedTransitions =
+        ImmutableMultimap.<String, String>builder().put("0", "1").put("1", "2").build();
+    ImmutableSortedMap<Instant, String> validMap =
+        ImmutableSortedMap.of(START_INSTANT, "0", DATE_1, "1", DATE_2, "2");
+    TimedTransitionProperty<String> property =
+        TimedTransitionProperty.make(validMap, allowedTransitions, "testMap");
+    assertThat(property.toValueMap()).isEqualTo(validMap);
+  }
+
+  @Test
+  void testFailure_makeRejectsInvalidTransition() {
+    ImmutableMultimap<String, String> allowedTransitions =
+        ImmutableMultimap.<String, String>builder().put("0", "1").put("1", "2").build();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                TimedTransitionProperty.make(
+                    ImmutableSortedMap.of(START_INSTANT, "0", DATE_1, "2"),
+                    allowedTransitions,
+                    "testMap"));
+    assertThat(thrown).hasMessageThat().isEqualTo("testMap map cannot transition from 0 to 2.");
+  }
+
+  @Test
+  void testFailure_makeRejectsTransitionFromTerminalState() {
+    ImmutableMultimap<String, String> allowedTransitions =
+        ImmutableMultimap.<String, String>builder().put("0", "1").build();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                TimedTransitionProperty.make(
+                    ImmutableSortedMap.of(START_INSTANT, "0", DATE_1, "1", DATE_2, "0"),
+                    allowedTransitions,
+                    "testMap"));
+    assertThat(thrown).hasMessageThat().isEqualTo("testMap map cannot transition from 1.");
+  }
+
+  @Test
+  void testFailure_makeRejectsEmptyMap() {
+    ImmutableMultimap<String, String> allowedTransitions =
+        ImmutableMultimap.<String, String>builder().put("0", "1").build();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                TimedTransitionProperty.make(
+                    ImmutableSortedMap.of(), allowedTransitions, "testMap"));
+    assertThat(thrown).hasMessageThat().isEqualTo("testMap map must start at START_INSTANT.");
   }
 }

@@ -34,7 +34,10 @@ import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
@@ -42,7 +45,9 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.testing.DatabaseHelper;
+import google.registry.tools.params.ParameterFactory;
 import java.time.Instant;
+import java.util.List;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +59,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   @BeforeEach
   void beforeEach() {
     DatabaseHelper.createTlds("tld", "example");
+    command.printStream = System.out;
   }
 
   @Test
@@ -481,6 +487,191 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .isEqualTo(
             "Bulk token token can not end its promotion because it still has 1 domains in the"
                 + " promotion");
+  }
+
+  @Test
+  void testFailure_updateStatusTransitions_cannotResurrectEndedToken() {
+    Instant now = Instant.parse("2022-09-01T00:00:00.000Z");
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("token")
+                .setTokenType(UNLIMITED_USE)
+                .setTokenStatusTransitions(
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, NOT_STARTED)
+                        .put(minusDays(now, 2), VALID)
+                        .put(minusDays(now, 1), ENDED)
+                        .build())
+                .build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--prefix",
+                    "token",
+                    "--token_status_transitions",
+                    String.format(
+                        "%s=NOT_STARTED,%s=VALID,%s=ENDED",
+                        START_INSTANT, minusDays(now, 2), plusDays(now, 1))));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Cannot update tokenStatusTransitions for token token because it is already in terminal"
+                + " status ENDED");
+    assertThat(reloadResource(token).getTokenStatusTransitions().getValueAtTime(now))
+        .isEqualTo(ENDED);
+  }
+
+  @Test
+  void testFailure_updateStatusTransitions_cannotResurrectCancelledToken() {
+    Instant now = Instant.parse("2022-09-01T00:00:00.000Z");
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("token")
+                .setTokenType(UNLIMITED_USE)
+                .setTokenStatusTransitions(
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, NOT_STARTED)
+                        .put(minusDays(now, 2), VALID)
+                        .put(minusDays(now, 1), CANCELLED)
+                        .build())
+                .build());
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--prefix",
+                    "token",
+                    "--token_status_transitions",
+                    String.format(
+                        "%s=NOT_STARTED,%s=VALID,%s=ENDED",
+                        START_INSTANT, minusDays(now, 2), plusDays(now, 1))));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Cannot update tokenStatusTransitions for token token because it is already in terminal"
+                + " status CANCELLED");
+    assertThat(reloadResource(token).getTokenStatusTransitions().getValueAtTime(now))
+        .isEqualTo(CANCELLED);
+  }
+
+  @Test
+  void testFailure_endBulkToken_toctouDomainAddedBetweenInitAndExecute() {
+    Instant now = Instant.parse("2022-09-01T00:00:00.000Z");
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("token")
+                .setTokenType(BULK_PRICING)
+                .setDiscountFraction(1.0)
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(CurrencyUnit.USD, 0))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setTokenStatusTransitions(
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, NOT_STARTED)
+                        .put(minusDays(now, 1), VALID)
+                        .build())
+                .build());
+    JCommander jcommander = new JCommander(command);
+    jcommander.addConverterFactory(new ParameterFactory());
+    jcommander.parse(
+        "--prefix",
+        "token",
+        "--token_status_transitions",
+        String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_INSTANT, minusDays(now, 1), now));
+    // init() sees zero domains in the bulk package and prepares the update.
+    command.init();
+    // Simulate a domain joining the bulk package before execute() commits the batch.
+    persistResource(
+        persistActiveDomain("example.tld")
+            .asBuilder()
+            .setCurrentBulkToken(token.createVKey())
+            .build());
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> command.execute());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Bulk token token can not end its promotion because it still has 1 domains in the"
+                + " promotion");
+    assertThat(reloadResource(token).getTokenStatusTransitions().getValueAtTime(now))
+        .isEqualTo(VALID);
+  }
+
+  @Test
+  void testFailure_updateStatusTransitions_toctouTokenEndedBetweenInitAndExecute() {
+    Instant now = Instant.parse("2022-09-01T00:00:00.000Z");
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("token")
+                .setTokenType(UNLIMITED_USE)
+                .setTokenStatusTransitions(
+                    ImmutableSortedMap.<Instant, TokenStatus>naturalOrder()
+                        .put(START_INSTANT, NOT_STARTED)
+                        .put(minusDays(now, 1), VALID)
+                        .put(plusDays(now, 1), ENDED)
+                        .build())
+                .build());
+    JCommander jcommander = new JCommander(command);
+    jcommander.addConverterFactory(new ParameterFactory());
+    jcommander.parse(
+        "--prefix",
+        "token",
+        "--token_status_transitions",
+        String.format(
+            "%s=NOT_STARTED,%s=VALID,%s=ENDED",
+            START_INSTANT, minusDays(now, 1), plusDays(now, 5)));
+    // init() runs while the token is still VALID.
+    command.init();
+    // Advance the clock past the original ENDED transition before execute() commits.
+    fakeClock.setTo(plusDays(now, 2));
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> command.execute());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Cannot update tokenStatusTransitions for token token because it is already in terminal"
+                + " status ENDED");
+    assertThat(reloadResource(token).getTokenStatusTransitions().getValueAtTime(plusDays(now, 2)))
+        .isEqualTo(ENDED);
+  }
+
+  @Test
+  void testSuccess_saveBatchLogsOnlyCurrentBatch() throws Exception {
+    ImmutableSet.Builder<String> expectedTokens = ImmutableSet.builder();
+    for (int i = 0; i < 25; i++) {
+      String tokenStr = String.format("batchToken%02d", i);
+      expectedTokens.add(tokenStr);
+      persistResource(
+          new AllocationToken.Builder()
+              .setToken(tokenStr)
+              .setTokenType(SINGLE_USE)
+              .setAllowedTlds(ImmutableSet.of("tld"))
+              .build());
+    }
+    runCommandForced("--prefix", "batchToken", "--allowed_tlds", "example");
+    ImmutableList<String> updatedLines =
+        getStdoutAsLines().stream()
+            .filter(line -> line.startsWith("Updated tokens: "))
+            .collect(ImmutableList.toImmutableList());
+    assertThat(updatedLines).hasSize(2);
+    List<String> firstBatch =
+        Splitter.on(", ").splitToList(updatedLines.get(0).substring("Updated tokens: ".length()));
+    List<String> secondBatch =
+        Splitter.on(", ").splitToList(updatedLines.get(1).substring("Updated tokens: ".length()));
+    assertThat(firstBatch).hasSize(20);
+    assertThat(secondBatch).hasSize(5);
+    assertThat(firstBatch).containsNoneIn(secondBatch);
+    ImmutableSet<String> loggedTokens =
+        ImmutableSet.<String>builder().addAll(firstBatch).addAll(secondBatch).build();
+    assertThat(loggedTokens).containsExactlyElementsIn(expectedTokens.build());
   }
 
   @Test

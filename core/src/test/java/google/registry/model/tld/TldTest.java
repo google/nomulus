@@ -21,6 +21,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Tld.TldState.PDT;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
@@ -42,6 +43,7 @@ import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -564,30 +566,219 @@ public final class TldTest extends EntityTestCase {
 
   @Test
   void testFailure_tldStatesOutOfOrder() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            Tld.get("tld")
-                .asBuilder()
-                .setTldStateTransitions(
-                    ImmutableSortedMap.of(
-                        fakeClock.now(), GENERAL_AVAILABILITY,
-                        plusMonths(fakeClock.now(), 1), START_DATE_SUNRISE))
-                .build());
+    Instant t1 = Instant.parse("2025-01-01T00:00:00.000Z");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setTldStateTransitions(
+                        ImmutableSortedMap.of(
+                            START_INSTANT, GENERAL_AVAILABILITY, t1, START_DATE_SUNRISE))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "tldStateTransitions map cannot transition from GENERAL_AVAILABILITY to"
+                + " START_DATE_SUNRISE.");
   }
 
   @Test
   void testFailure_duplicateTldState() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            Tld.get("tld")
-                .asBuilder()
-                .setTldStateTransitions(
-                    ImmutableSortedMap.of(
-                        fakeClock.now(), START_DATE_SUNRISE,
-                        plusMonths(fakeClock.now(), 1), START_DATE_SUNRISE))
-                .build());
+    Instant t1 = Instant.parse("2025-01-01T00:00:00.000Z");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setTldStateTransitions(
+                        ImmutableSortedMap.of(
+                            START_INSTANT, START_DATE_SUNRISE, t1, START_DATE_SUNRISE))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "tldStateTransitions map cannot transition from START_DATE_SUNRISE to"
+                + " START_DATE_SUNRISE.");
+  }
+
+  @Test
+  void testFailure_tldStateTransition_gaToPdt() {
+    Instant t1 = Instant.parse("2025-01-01T00:00:00.000Z");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setTldStateTransitions(
+                        ImmutableSortedMap.of(START_INSTANT, GENERAL_AVAILABILITY, t1, PDT))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("tldStateTransitions map cannot transition from GENERAL_AVAILABILITY to PDT.");
+  }
+
+  @Test
+  void testFailure_tldStateTransition_sunriseToPdt() {
+    Instant t1 = Instant.parse("2025-01-01T00:00:00.000Z");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setTldStateTransitions(
+                        ImmutableSortedMap.of(START_INSTANT, START_DATE_SUNRISE, t1, PDT))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("tldStateTransitions map cannot transition from START_DATE_SUNRISE to PDT.");
+  }
+
+  @Test
+  void testFailure_tldStateTransition_backwardViaQuietPeriod() {
+    Instant t1 = Instant.parse("2025-01-01T00:00:00.000Z");
+    Instant t2 = Instant.parse("2025-02-01T00:00:00.000Z");
+    IllegalArgumentException gaToPdt =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setTldStateTransitions(
+                        ImmutableSortedMap.of(
+                            START_INSTANT, GENERAL_AVAILABILITY, t1, QUIET_PERIOD, t2, PDT))
+                    .build());
+    assertThat(gaToPdt)
+        .hasMessageThat()
+        .isEqualTo(
+            "tldStateTransitions map cannot transition from GENERAL_AVAILABILITY to PDT (even via"
+                + " QUIET_PERIOD).");
+
+    IllegalArgumentException gaToSunrise =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setTldStateTransitions(
+                        ImmutableSortedMap.of(
+                            START_INSTANT,
+                            GENERAL_AVAILABILITY,
+                            t1,
+                            QUIET_PERIOD,
+                            t2,
+                            START_DATE_SUNRISE))
+                    .build());
+    assertThat(gaToSunrise)
+        .hasMessageThat()
+        .isEqualTo(
+            "tldStateTransitions map cannot transition from GENERAL_AVAILABILITY to"
+                + " START_DATE_SUNRISE (even via QUIET_PERIOD).");
+
+    IllegalArgumentException gaToGa =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setTldStateTransitions(
+                        ImmutableSortedMap.of(
+                            START_INSTANT,
+                            GENERAL_AVAILABILITY,
+                            t1,
+                            QUIET_PERIOD,
+                            t2,
+                            GENERAL_AVAILABILITY))
+                    .build());
+    assertThat(gaToGa)
+        .hasMessageThat()
+        .isEqualTo(
+            "tldStateTransitions map cannot transition from GENERAL_AVAILABILITY to"
+                + " GENERAL_AVAILABILITY (even via QUIET_PERIOD).");
+  }
+
+  @Test
+  void testFailure_tldStateTransition_consecutiveQuietPeriods() {
+    Instant t1 = Instant.parse("2025-01-01T00:00:00.000Z");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setTldStateTransitions(
+                        ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD, t1, QUIET_PERIOD))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("tldStateTransitions map cannot transition from QUIET_PERIOD to QUIET_PERIOD.");
+  }
+
+  @Test
+  void testFailure_tldStateTransition_quietPeriodToPredelegation() {
+    Instant t1 = Instant.parse("2025-01-01T00:00:00.000Z");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setTldStateTransitions(
+                        ImmutableSortedMap.of(START_INSTANT, QUIET_PERIOD, t1, PREDELEGATION))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("tldStateTransitions map cannot transition from QUIET_PERIOD to PREDELEGATION.");
+  }
+
+  @Test
+  void testSuccess_tldStateTransition_fullForwardLifecycleWithPdtAndQuietPeriods() {
+    Instant t1 = Instant.parse("2025-01-01T00:00:00.000Z");
+    Instant t2 = Instant.parse("2025-02-01T00:00:00.000Z");
+    Instant t3 = Instant.parse("2025-03-01T00:00:00.000Z");
+    Instant t4 = Instant.parse("2025-04-01T00:00:00.000Z");
+    Instant t5 = Instant.parse("2025-05-01T00:00:00.000Z");
+    Instant t6 = Instant.parse("2025-06-01T00:00:00.000Z");
+    Tld tld =
+        Tld.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(
+                ImmutableSortedMap.<Instant, TldState>naturalOrder()
+                    .put(START_INSTANT, PREDELEGATION)
+                    .put(t1, QUIET_PERIOD)
+                    .put(t2, PDT)
+                    .put(t3, START_DATE_SUNRISE)
+                    .put(t4, QUIET_PERIOD)
+                    .put(t5, GENERAL_AVAILABILITY)
+                    .put(t6, QUIET_PERIOD)
+                    .build())
+            .build();
+    assertThat(tld.isPdt(t2)).isTrue();
+    assertThat(tld.getTldState(t5)).isEqualTo(GENERAL_AVAILABILITY);
+    assertThat(tld.getTldState(t6)).isEqualTo(QUIET_PERIOD);
+  }
+
+  @Test
+  void testFailure_yamlToTld_invalidTldStateTransition() throws Exception {
+    String invalidYaml =
+        loadFile(getClass(), "tld.yaml")
+            .replace(
+                "  \"1970-01-01T00:00:00.000Z\": \"GENERAL_AVAILABILITY\"",
+                """
+                  "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
+                  "2025-01-01T00:00:00.000Z": "PDT"\
+                """);
+    ObjectMapper mapper = createObjectMapper();
+    JsonMappingException thrown =
+        assertThrows(JsonMappingException.class, () -> mapper.readValue(invalidYaml, Tld.class));
+    assertThat(thrown)
+        .hasCauseThat()
+        .hasMessageThat()
+        .isEqualTo("tldStateTransitions map cannot transition from GENERAL_AVAILABILITY to PDT.");
   }
 
   @Test
@@ -894,5 +1085,20 @@ public final class TldTest extends EntityTestCase {
     assertThat(thrown.getMessage())
         .isEqualTo(
             "The token abc123 is not valid for this TLD. The valid TLDs for it are [example]");
+  }
+
+  @Test
+  void testFailure_setDefaultPromoTokensNonExistent() {
+    Tld registry = Tld.get("tld");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                registry
+                    .asBuilder()
+                    .setDefaultPromoTokens(
+                        ImmutableList.of(VKey.create(AllocationToken.class, "missing")))
+                    .build());
+    assertThat(thrown).hasMessageThat().isEqualTo("Default promo token missing does not exist");
   }
 }
