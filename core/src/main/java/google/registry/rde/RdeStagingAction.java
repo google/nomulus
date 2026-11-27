@@ -63,6 +63,8 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -266,64 +268,75 @@ public final class RdeStagingAction implements Runnable {
     }
     ValidationMode validationMode = lenient ? LENIENT : STRICT;
     ImmutableList.Builder<String> jobNameBuilder = new ImmutableList.Builder<>();
-    pendings.values().stream()
-        .collect(toImmutableSetMultimap(PendingDeposit::watermark, identity()))
-        .asMap()
-        .forEach(
-            (watermark, pendingDeposits) -> {
-              try {
-                LaunchFlexTemplateParameter parameter =
-                    new LaunchFlexTemplateParameter()
-                        .setJobName(
-                            createJobName(
-                                String.format(
-                                    "rde-%s", LOWERCASE_TIMESTAMP_FORMATTER.format(watermark)),
-                                clock))
-                        .setContainerSpecGcsPath(
-                            String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
-                        .setParameters(
-                            new ImmutableMap.Builder<String, String>()
-                                .put(
-                                    "pendings",
-                                    RdePipeline.encodePendingDeposits(
-                                        ImmutableSet.copyOf(pendingDeposits)))
-                                .put("validationMode", validationMode.name())
-                                .put("rdeStagingBucket", rdeBucket)
-                                .put(
-                                    "stagingKey",
-                                    BaseEncoding.base64Url().omitPadding().encode(stagingKeyBytes))
-                                .put("registryEnvironment", RegistryEnvironment.get().name())
-                                .put("workerMachineType", machineType)
-                                .put("numWorkers", String.valueOf(numWorkers))
-                                // TODO (jianglai): Investigate turning off public IPs (for which
-                                // there is a quota) in order to increase the total number of
-                                // workers allowed (also under quota).
-                                // See:
-                                // https://cloud.google.com/dataflow/docs/guides/routes-firewall
-                                .put("usePublicIps", "true")
-                                .build());
-                LaunchFlexTemplateResponse launchResponse =
-                    dataflow
-                        .projects()
-                        .locations()
-                        .flexTemplates()
-                        .launch(
-                            projectId,
-                            jobRegion,
-                            new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
-                        .execute();
-                logger.atInfo().log(
-                    "Launched RDE staging Dataflow job: %s", launchResponse.getJob().getId());
-                jobNameBuilder.add(launchResponse.getJob().getId());
-              } catch (IOException e) {
-                logger.atWarning().withCause(e).log("Pipeline Launch failed");
-                response.setStatus(SC_INTERNAL_SERVER_ERROR);
-                response.setPayload(String.format("Pipeline launch failed: %s", e.getMessage()));
-              }
-            });
+    ImmutableList.Builder<String> errorMessageBuilder = new ImmutableList.Builder<>();
+    for (Map.Entry<Instant, Collection<PendingDeposit>> entry :
+        pendings.values().stream()
+            .collect(toImmutableSetMultimap(PendingDeposit::watermark, identity()))
+            .asMap()
+            .entrySet()) {
+      Instant watermark = entry.getKey();
+      Collection<PendingDeposit> pendingDeposits = entry.getValue();
+      try {
+        LaunchFlexTemplateParameter parameter =
+            new LaunchFlexTemplateParameter()
+                .setJobName(
+                    createJobName(
+                        String.format("rde-%s", LOWERCASE_TIMESTAMP_FORMATTER.format(watermark)),
+                        clock))
+                .setContainerSpecGcsPath(
+                    String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
+                .setParameters(
+                    new ImmutableMap.Builder<String, String>()
+                        .put(
+                            "pendings",
+                            RdePipeline.encodePendingDeposits(ImmutableSet.copyOf(pendingDeposits)))
+                        .put("validationMode", validationMode.name())
+                        .put("rdeStagingBucket", rdeBucket)
+                        .put(
+                            "stagingKey",
+                            BaseEncoding.base64Url().omitPadding().encode(stagingKeyBytes))
+                        .put("registryEnvironment", RegistryEnvironment.get().name())
+                        .put("workerMachineType", machineType)
+                        .put("numWorkers", String.valueOf(numWorkers))
+                        // TODO (jianglai): Investigate turning off public IPs (for which
+                        // there is a quota) in order to increase the total number of
+                        // workers allowed (also under quota).
+                        // See:
+                        // https://cloud.google.com/dataflow/docs/guides/routes-firewall
+                        .put("usePublicIps", "true")
+                        .build());
+        LaunchFlexTemplateResponse launchResponse =
+            dataflow
+                .projects()
+                .locations()
+                .flexTemplates()
+                .launch(
+                    projectId,
+                    jobRegion,
+                    new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
+                .execute();
+        logger.atInfo().log(
+            "Launched RDE staging Dataflow job: %s", launchResponse.getJob().getId());
+        jobNameBuilder.add(launchResponse.getJob().getId());
+      } catch (IOException e) {
+        logger.atWarning().withCause(e).log("Pipeline Launch failed");
+        errorMessageBuilder.add(String.format("Pipeline launch failed: %s", e.getMessage()));
+      }
+    }
+    ImmutableList<String> errorMessages = errorMessageBuilder.build();
+    ImmutableList<String> jobNames = jobNameBuilder.build();
+    if (!errorMessages.isEmpty()) {
+      response.setStatus(SC_INTERNAL_SERVER_ERROR);
+      String errorPayload = Joiner.on("; ").join(errorMessages);
+      if (!jobNames.isEmpty()) {
+        errorPayload =
+            String.format("%s (launched: %s)", errorPayload, Joiner.on(", ").join(jobNames));
+      }
+      response.setPayload(errorPayload);
+      return;
+    }
     response.setStatus(SC_OK);
-    response.setPayload(
-        String.format("Launched RDE pipeline: %s", Joiner.on(", ").join(jobNameBuilder.build())));
+    response.setPayload(String.format("Launched RDE pipeline: %s", Joiner.on(", ").join(jobNames)));
   }
 
   private ImmutableSetMultimap<String, PendingDeposit> getStandardPendingDeposits() {

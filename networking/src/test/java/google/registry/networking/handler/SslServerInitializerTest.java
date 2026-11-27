@@ -25,6 +25,7 @@ import static google.registry.util.DateTimeUtils.plusDays;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import google.registry.networking.module.CertificateSupplierModule.TlsCredentials;
 import google.registry.testing.FakeClock;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.channel.ChannelHandler;
@@ -34,6 +35,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
@@ -47,6 +49,7 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
@@ -100,8 +103,7 @@ class SslServerInitializerTest {
         requireClientCert,
         validateClientCert,
         sslProvider,
-        Suppliers.ofInstance(privateKey),
-        Suppliers.ofInstance(ImmutableList.copyOf(certificates)));
+        Suppliers.ofInstance(new TlsCredentials(privateKey, ImmutableList.copyOf(certificates))));
   }
 
   private ChannelHandler getClientHandler(
@@ -156,8 +158,7 @@ class SslServerInitializerTest {
             true,
             false,
             sslProvider,
-            Suppliers.ofInstance(ssc.key()),
-            Suppliers.ofInstance(ImmutableList.of(ssc.cert())));
+            Suppliers.ofInstance(new TlsCredentials(ssc.key(), ImmutableList.of(ssc.cert()))));
     EmbeddedChannel channel = new EmbeddedChannel();
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslServerInitializer);
@@ -166,6 +167,34 @@ class SslServerInitializerTest {
     SslHandler sslHandler = (SslHandler) firstHandler;
     assertThat(sslHandler.engine().getNeedClientAuth()).isTrue();
     assertThat(channel.isActive()).isTrue();
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_cachesSslContextAndRebuildsOnAtomicRotation(SslProvider sslProvider)
+      throws Exception {
+    SelfSignedCaCertificate ssc1 = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
+    SelfSignedCaCertificate ssc2 = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
+    AtomicReference<TlsCredentials> credentialsRef =
+        new AtomicReference<>(new TlsCredentials(ssc1.key(), ImmutableList.of(ssc1.cert())));
+    SslServerInitializer<EmbeddedChannel> initializer =
+        new SslServerInitializer<>(true, false, sslProvider, credentialsRef::get);
+
+    EmbeddedChannel channel1 = new EmbeddedChannel(initializer);
+    SslContext firstContext = initializer.getOrBuildSslContext();
+    EmbeddedChannel channel2 = new EmbeddedChannel(initializer);
+    SslContext reusedContext = initializer.getOrBuildSslContext();
+    assertThat(reusedContext).isSameInstanceAs(firstContext);
+
+    credentialsRef.set(new TlsCredentials(ssc2.key(), ImmutableList.of(ssc2.cert())));
+    EmbeddedChannel channel3 = new EmbeddedChannel(initializer);
+    SslContext rotatedContext = initializer.getOrBuildSslContext();
+    assertThat(rotatedContext).isNotSameInstanceAs(firstContext);
+    assertThat(initializer.getOrBuildSslContext()).isSameInstanceAs(rotatedContext);
+
+    channel1.finishAndReleaseAll();
+    channel2.finishAndReleaseAll();
+    channel3.finishAndReleaseAll();
   }
 
   @ParameterizedTest
@@ -231,8 +260,8 @@ class SslServerInitializerTest {
             true,
             true,
             sslProvider,
-            Suppliers.ofInstance(serverSsc.key()),
-            Suppliers.ofInstance(ImmutableList.of(serverSsc.cert()))));
+            Suppliers.ofInstance(
+                new TlsCredentials(serverSsc.key(), ImmutableList.of(serverSsc.cert())))));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
             "CLIENT", minusDays(Instant.now(), 2), plusDays(Instant.now(), 1));

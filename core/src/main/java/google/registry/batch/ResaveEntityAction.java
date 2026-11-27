@@ -83,10 +83,12 @@ public class ResaveEntityAction implements Runnable {
                     resourceKey);
                 return;
               }
-              tm().put(entity.get().cloneProjectedAtTime(tm().getTxTime()));
-              if (!resaveTimes.isEmpty()) {
+              Instant now = tm().getTxTime();
+              tm().put(entity.get().cloneProjectedAtTime(now));
+              ImmutableSortedSet<Instant> remainingResaveTimes = resaveTimes.tailSet(now, false);
+              if (!remainingResaveTimes.isEmpty()) {
                 asyncTaskEnqueuer.enqueueAsyncResave(
-                    VKey.createEppVKeyFromString(resourceKey), requestedTime, resaveTimes);
+                    VKey.createEppVKeyFromString(resourceKey), now, remainingResaveTimes);
               }
             });
     response.setPayload("Entity re-saved.");

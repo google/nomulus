@@ -51,6 +51,7 @@ import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.Action;
 import google.registry.request.HttpException.NoContentException;
+import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
@@ -162,7 +163,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
             .orElse(START_INSTANT);
     Duration timeSinceLastSftp = Duration.between(sftpCursorTime, clock.now());
     if (timeSinceLastSftp.compareTo(sftpCooldown) < 0) {
-      throw new NoContentException(
+      throw new ServiceUnavailableException(
           String.format(
               "Waiting on %d minute SFTP cooldown for TLD %s to send %s upload; "
                   + "last upload attempt was at %s (%d minutes ago)",

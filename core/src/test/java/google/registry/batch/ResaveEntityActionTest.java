@@ -55,12 +55,13 @@ import org.mockito.quality.Strictness;
 @ExtendWith(MockitoExtension.class)
 public class ResaveEntityActionTest {
 
+  private final FakeClock clock = new FakeClock(Instant.parse("2016-02-11T10:00:00Z"));
+
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @Mock private Response response;
-  private final FakeClock clock = new FakeClock(Instant.parse("2016-02-11T10:00:00Z"));
   private AsyncTaskEnqueuer asyncTaskEnqueuer;
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper(clock);
 
@@ -106,29 +107,31 @@ public class ResaveEntityActionTest {
 
   @Test
   void test_domainPendingDeletion_isResavedAndReenqueued() {
+    Instant deletionRequestedTime = Instant.parse("2016-02-11T10:00:00Z");
+    Instant day30 = plusDays(deletionRequestedTime, 30);
+    Instant day35 = plusDays(deletionRequestedTime, 35);
     Domain newDomain = newDomain("domain.tld");
     Domain domain =
         persistResource(
             newDomain
                 .asBuilder()
-                .setDeletionTime(plusDays(clock.now(), 35))
+                .setDeletionTime(day35)
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
                 .setGracePeriods(
                     ImmutableSet.of(
                         GracePeriod.createWithoutBillingEvent(
                             GracePeriodStatus.REDEMPTION,
                             newDomain.getRepoId(),
-                            plusDays(clock.now(), 30),
+                            day30,
                             "TheRegistrar")))
                 .build());
     clock.advanceBy(Duration.ofDays(30));
-    Instant requestedTime = clock.now();
 
     assertThat(domain.getGracePeriods()).isNotEmpty();
-    runAction(
-        domain.createVKey().stringify(),
-        requestedTime,
-        ImmutableSortedSet.of(plusDays(requestedTime, 5)));
+    // Pass the original Day-0 requestedTime (as DomainDeleteFlow does); ResaveEntityAction must
+    // compute the next hop relative to the current transaction time (Day 30), not Day 0, so the
+    // Day-35 final purge (5d away, <= 30d MAX_ASYNC_ETA) is enqueued rather than silently dropped.
+    runAction(domain.createVKey().stringify(), deletionRequestedTime, ImmutableSortedSet.of(day35));
     Domain resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getGracePeriods()).isEmpty();
 
@@ -140,8 +143,36 @@ public class ResaveEntityActionTest {
             .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, resavedDomain.createVKey().stringify())
-            .param(PARAM_REQUESTED_TIME, requestedTime.toString())
-            .scheduleTime(plusDays(clock.now(), 5)));
+            .param(PARAM_REQUESTED_TIME, day30.toString())
+            .scheduleTime(day35));
+  }
+
+  @Test
+  void test_domainPendingDeletion_executedPastLastResaveTime_doesNotFailOrReenqueue() {
+    Instant deletionRequestedTime = Instant.parse("2016-02-11T10:00:00Z");
+    Instant day30 = plusDays(deletionRequestedTime, 30);
+    Instant day35 = plusDays(deletionRequestedTime, 35);
+    Domain newDomain = newDomain("late.tld");
+    Domain domain =
+        persistResource(
+            newDomain
+                .asBuilder()
+                .setDeletionTime(day35)
+                .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+                .setGracePeriods(
+                    ImmutableSet.of(
+                        GracePeriod.createWithoutBillingEvent(
+                            GracePeriodStatus.REDEMPTION,
+                            newDomain.getRepoId(),
+                            day30,
+                            "TheRegistrar")))
+                .build());
+    clock.advanceBy(Duration.ofDays(36));
+
+    runAction(domain.createVKey().stringify(), deletionRequestedTime, ImmutableSortedSet.of(day35));
+    Domain resavedDomain = loadByEntity(domain);
+    assertThat(resavedDomain.getGracePeriods()).isEmpty();
+    cloudTasksHelper.assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
   @Test

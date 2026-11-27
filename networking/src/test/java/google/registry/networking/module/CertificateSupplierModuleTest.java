@@ -20,12 +20,12 @@ import static google.registry.networking.handler.SslInitializerTestUtils.signKey
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.common.collect.ImmutableList;
 import dagger.BindsInstance;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.networking.module.CertificateSupplierModule.Mode;
+import google.registry.networking.module.CertificateSupplierModule.TlsCredentials;
 import google.registry.testing.FakeClock;
 import google.registry.util.Clock;
 import google.registry.util.SelfSignedCaCertificate;
@@ -38,6 +38,7 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +60,17 @@ class CertificateSupplierModuleTest {
         .build();
   }
 
+  private static byte[] encodePem(Object... objects) throws Exception {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    try (JcaPEMWriter pemWriter =
+        new JcaPEMWriter(new OutputStreamWriter(byteArrayOutputStream, UTF_8))) {
+      for (Object object : objects) {
+        pemWriter.writeObject(object);
+      }
+    }
+    return byteArrayOutputStream.toByteArray();
+  }
+
   @BeforeEach
   void beforeEach() throws Exception {
     ssc = SelfSignedCaCertificate.create(new FakeClock());
@@ -70,15 +82,104 @@ class CertificateSupplierModuleTest {
   @Test
   void testSuccess() throws Exception {
     component = createComponentForPem(cert, ssc.cert(), key);
-    assertThat(component.privateKeySupplier().get()).isEqualTo(key);
-    assertThat(component.certificatesSupplier().get()).containsExactly(cert, ssc.cert()).inOrder();
+    TlsCredentials credentials = component.tlsCredentialsSupplier().get();
+    assertThat(credentials.privateKey()).isEqualTo(key);
+    assertThat(credentials.certificates()).containsExactly(cert, ssc.cert()).inOrder();
   }
 
   @Test
   void testSuccess_certificateChainNotContinuous() throws Exception {
     component = createComponentForPem(cert, key, ssc.cert());
-    assertThat(component.privateKeySupplier().get()).isEqualTo(key);
-    assertThat(component.certificatesSupplier().get()).containsExactly(cert, ssc.cert()).inOrder();
+    TlsCredentials credentials = component.tlsCredentialsSupplier().get();
+    assertThat(credentials.privateKey()).isEqualTo(key);
+    assertThat(credentials.certificates()).containsExactly(cert, ssc.cert()).inOrder();
+  }
+
+  @Test
+  void testSuccess_selfSignedMode() throws Exception {
+    component =
+        DaggerCertificateSupplierModuleTest_TestComponent.builder()
+            .certificateModule(CertificateModule.createCertificateModuleForPem())
+            .useMode(Mode.SELF_SIGNED)
+            .build();
+    TlsCredentials credentials = component.tlsCredentialsSupplier().get();
+    assertThat(credentials.privateKey()).isNotNull();
+    assertThat(credentials.certificates()).hasSize(1);
+  }
+
+  @Test
+  void testFailure_p12ModeUnsupported() throws Exception {
+    component =
+        DaggerCertificateSupplierModuleTest_TestComponent.builder()
+            .certificateModule(
+                CertificateModule.createCertificateModuleForPem(cert, ssc.cert(), key))
+            .useMode(Mode.P12_FILE)
+            .build();
+    UnsupportedOperationException thrown =
+        assertThrows(UnsupportedOperationException.class, () -> component.tlsCredentialsSupplier());
+    assertThat(thrown).hasMessageThat().contains("P12_FILE");
+  }
+
+  @Test
+  void testSuccess_singleFetchCachesAtomically() throws Exception {
+    KeyPair rotatedKeyPair = getKeyPair();
+    PrivateKey rotatedKey = rotatedKeyPair.getPrivate();
+    X509Certificate rotatedCert = signKeyPair(ssc, rotatedKeyPair, "rotated.tld");
+
+    byte[] firstPem = encodePem(cert, ssc.cert(), key);
+    byte[] secondPem = encodePem(rotatedCert, ssc.cert(), rotatedKey);
+    AtomicInteger fetchCount = new AtomicInteger();
+
+    component =
+        DaggerCertificateSupplierModuleTest_TestComponent.builder()
+            .certificateModule(
+                new CertificateModule(
+                    () -> fetchCount.getAndIncrement() == 0 ? firstPem : secondPem,
+                    Duration.ofDays(1)))
+            .useMode(Mode.PEM_FILE)
+            .build();
+
+    TlsCredentials first = component.tlsCredentialsSupplier().get();
+    TlsCredentials second = component.tlsCredentialsSupplier().get();
+    assertThat(fetchCount.get()).isEqualTo(1);
+    assertThat(first).isSameInstanceAs(second);
+    assertThat(first.privateKey()).isEqualTo(key);
+    assertThat(first.certificates()).containsExactly(cert, ssc.cert()).inOrder();
+  }
+
+  @Test
+  void testSuccess_atomicRotationAfterExpiration() throws Exception {
+    KeyPair rotatedKeyPair = getKeyPair();
+    PrivateKey rotatedKey = rotatedKeyPair.getPrivate();
+    X509Certificate rotatedCert = signKeyPair(ssc, rotatedKeyPair, "rotated.tld");
+
+    byte[] firstPem = encodePem(cert, ssc.cert(), key);
+    byte[] secondPem = encodePem(rotatedCert, ssc.cert(), rotatedKey);
+    AtomicInteger fetchCount = new AtomicInteger();
+
+    component =
+        DaggerCertificateSupplierModuleTest_TestComponent.builder()
+            .certificateModule(
+                new CertificateModule(
+                    () -> fetchCount.getAndIncrement() == 0 ? firstPem : secondPem,
+                    Duration.ofNanos(1)))
+            .useMode(Mode.PEM_FILE)
+            .build();
+
+    Supplier<TlsCredentials> supplier = component.tlsCredentialsSupplier();
+    TlsCredentials first = supplier.get();
+    assertThat(first.privateKey()).isEqualTo(key);
+    assertThat(first.certificates()).containsExactly(cert, ssc.cert()).inOrder();
+
+    long before = System.nanoTime();
+    while (System.nanoTime() - before <= 1L) {
+      // Spin briefly until the 1ns expiration window elapses without sleeping.
+    }
+
+    TlsCredentials rotated = supplier.get();
+    assertThat(fetchCount.get()).isEqualTo(2);
+    assertThat(rotated.privateKey()).isEqualTo(rotatedKey);
+    assertThat(rotated.certificates()).containsExactly(rotatedCert, ssc.cert()).inOrder();
   }
 
   @Test
@@ -86,7 +187,7 @@ class CertificateSupplierModuleTest {
   void testFailure_noPrivateKey() throws Exception {
     component = createComponentForPem(cert, ssc.cert());
     IllegalStateException thrown =
-        assertThrows(IllegalStateException.class, () -> component.privateKeySupplier().get());
+        assertThrows(IllegalStateException.class, () -> component.tlsCredentialsSupplier().get());
     assertThat(thrown).hasMessageThat().contains("0 keys are found");
   }
 
@@ -95,7 +196,7 @@ class CertificateSupplierModuleTest {
   void testFailure_twoPrivateKeys() throws Exception {
     component = createComponentForPem(cert, ssc.cert(), key, ssc.key());
     IllegalStateException thrown =
-        assertThrows(IllegalStateException.class, () -> component.privateKeySupplier().get());
+        assertThrows(IllegalStateException.class, () -> component.tlsCredentialsSupplier().get());
     assertThat(thrown).hasMessageThat().contains("2 keys are found");
   }
 
@@ -104,7 +205,7 @@ class CertificateSupplierModuleTest {
   void testFailure_certificatesOutOfOrder() throws Exception {
     component = createComponentForPem(ssc.cert(), cert, key);
     IllegalStateException thrown =
-        assertThrows(IllegalStateException.class, () -> component.certificatesSupplier().get());
+        assertThrows(IllegalStateException.class, () -> component.tlsCredentialsSupplier().get());
     assertThat(thrown).hasMessageThat().contains("is not signed by");
   }
 
@@ -113,41 +214,36 @@ class CertificateSupplierModuleTest {
   void testFailure_noCertificates() throws Exception {
     component = createComponentForPem(key);
     IllegalStateException thrown =
-        assertThrows(IllegalStateException.class, () -> component.certificatesSupplier().get());
+        assertThrows(IllegalStateException.class, () -> component.tlsCredentialsSupplier().get());
     assertThat(thrown).hasMessageThat().contains("No certificates");
   }
 
   @Module
   static class CertificateModule {
 
-    private final byte[] pemBytes;
+    private final Supplier<byte[]> pemBytesSupplier;
+    private final Duration cachingDuration;
 
-    private CertificateModule(byte[] pemBytes) {
-      this.pemBytes = pemBytes.clone();
+    private CertificateModule(Supplier<byte[]> pemBytesSupplier, Duration cachingDuration) {
+      this.pemBytesSupplier = pemBytesSupplier;
+      this.cachingDuration = cachingDuration;
     }
 
     static CertificateModule createCertificateModuleForPem(Object... objects) throws Exception {
-      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-      try (JcaPEMWriter pemWriter =
-          new JcaPEMWriter(new OutputStreamWriter(byteArrayOutputStream, UTF_8))) {
-        for (Object object : objects) {
-          pemWriter.writeObject(object);
-        }
-      }
-      return new CertificateModule(byteArrayOutputStream.toByteArray());
+      byte[] encoded = encodePem(objects);
+      return new CertificateModule(encoded::clone, Duration.ofDays(1));
     }
 
     @Provides
     @Named("pemBytes")
     byte[] providePemBytes() {
-      return pemBytes.clone();
+      return pemBytesSupplier.get().clone();
     }
 
     @Provides
     @Named("remoteCertCachingDuration")
     Duration provideCachingDuration() {
-      // Make the supplier always return the save value for test to save time.
-      return Duration.ofDays(1);
+      return cachingDuration;
     }
 
     @Provides
@@ -157,19 +253,16 @@ class CertificateSupplierModuleTest {
   }
 
   /**
-   * Test component that exposes the certificates and private key.
+   * Test component that exposes the atomic TLS credentials supplier.
    *
    * <p>Depending on what {@link Mode} is provided to the component, it will return certificates and
-   * private key extracted from the correspondonig format. Self-signed mode is not tested as they
-   * are only used in tests.
+   * private key extracted from the corresponding format.
    */
   @Singleton
   @Component(modules = {CertificateSupplierModule.class, CertificateModule.class})
   interface TestComponent {
 
-    Supplier<PrivateKey> privateKeySupplier();
-
-    Supplier<ImmutableList<X509Certificate>> certificatesSupplier();
+    Supplier<TlsCredentials> tlsCredentialsSupplier();
 
     @Component.Builder
     interface Builder {
