@@ -3,32 +3,44 @@
   cdkTrapFocus
   [cdkTrapFocusAutoCapture]="true"
 >
-  @if(isEditing()) {
-  <h1 class="console-app__title">Editing {{ userDetails().emailAddress }}</h1>
+  @if (userDetails(); as user) { @if (isEditing()) {
+  <h1 class="console-app__title">Editing {{ user.emailAddress }}</h1>
   <mat-divider></mat-divider>
   <div class="console-app__user-details-controls">
     <button
       mat-icon-button
       aria-label="Back to view user"
+      [disabled]="isLoading()"
       (click)="isEditing.set(false)"
     >
       <mat-icon>arrow_back</mat-icon>
     </button>
   </div>
+  @if (isLoading()) {
+  <p>
+    <mat-progress-bar mode="query"></mat-progress-bar>
+  </p>
+  }
   <app-user-edit-form
-    [user]="userDetails()"
+    [user]="user"
+    [disabled]="isLoading()"
     (onEditComplete)="saveEdit($event)"
   />
-  } @else { @if(isNewUser) {
+  } @else { @if (isNewlyCreated()) {
   <h1 class="console-app__title">
-    {{ userDetails().emailAddress + " successfully created" }}
+    {{ user.emailAddress + " successfully created" }}
   </h1>
   } @else {
   <h1 class="console-app__title">User details</h1>
   }
   <mat-divider></mat-divider>
   <div class="console-app__user-details-controls">
-    <button mat-icon-button aria-label="Back to users list" (click)="goBack()">
+    <button
+      mat-icon-button
+      aria-label="Back to users list"
+      [disabled]="isLoading()"
+      (click)="goBack()"
+    >
       <mat-icon>arrow_back</mat-icon>
     </button>
     <div class="spacer"></div>
@@ -36,6 +48,7 @@
       mat-flat-button
       color="primary"
       aria-label="Edit User"
+      [disabled]="isLoading()"
       (click)="isEditing.set(true)"
     >
       <mat-icon>edit</mat-icon>
@@ -50,7 +63,7 @@
       <mat-icon>delete</mat-icon>
     </button>
   </div>
-  @if (isNewUser) {
+  @if (isNewlyCreated()) {
   <div class="console-app__user-details-save-password">
     <mat-icon>priority_high</mat-icon>
     Please save the password. For your security, we do not store passwords in a
@@ -71,26 +84,24 @@
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">User email</span>
-          <span class="console-app__list-value">{{
-            userDetails().emailAddress
-          }}</span>
+          <span class="console-app__list-value">{{ user.emailAddress }}</span>
         </mat-list-item>
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">User role</span>
           <span class="console-app__list-value">{{
-            roleToDescription(userDetails().role)
+            roleToDescription(user.role)
           }}</span>
         </mat-list-item>
-        @if (userDetails().registryLockEmailAddress) {
+        @if (user.registryLockEmailAddress) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">Registry Lock email</span>
           <span class="console-app__list-value">{{
-            userDetails().registryLockEmailAddress
+            user.registryLockEmailAddress
           }}</span>
         </mat-list-item>
-        } @if (userDetails().password) {
+        } @if (user.password) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">Password</span>
@@ -98,17 +109,17 @@
             class="console-app__list-value console-app__user-details-password"
           >
             <input
-              [type]="isPasswordVisible ? 'text' : 'password'"
-              [value]="userDetails().password"
+              [type]="isPasswordVisible() ? 'text' : 'password'"
+              [value]="user.password"
               aria-label="Password field"
               readonly
             />
             <button
               mat-button
               aria-hidden="true"
-              (click)="isPasswordVisible = !isPasswordVisible"
+              (click)="togglePasswordVisibility()"
             >
-              {{ isPasswordVisible ? "Hide" : "View" }} password
+              {{ isPasswordVisible() ? "Hide" : "View" }} password
             </button>
           </span>
         </mat-list-item>
@@ -116,5 +127,5 @@
       </mat-list>
     </mat-card-content>
   </mat-card>
-  }
+  } }
 </div>

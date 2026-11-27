@@ -17,19 +17,29 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
   Component,
+  computed,
+  DestroyRef,
   effect,
+  inject,
   Inject,
-  OnDestroy,
-  OnInit,
   signal,
   untracked,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { PageEvent } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
-import { debounceTime, filter, Subject, Subscription, take } from 'rxjs';
+import {
+  debounceTime,
+  startWith,
+  Subject,
+  Subscription,
+  switchMap,
+  take,
+  takeUntil,
+} from 'rxjs';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { SelectedRegistrarWrapper } from '../shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
@@ -79,7 +89,7 @@ interface DomainData {
 })
 export class ResponseDialogComponent {
   constructor(
-    public dialogRef: MatDialogRef<ReasonDialogComponent>,
+    public dialogRef: MatDialogRef<ResponseDialogComponent>,
     @Inject(MAT_DIALOG_DATA)
     public data: { title: string; content: string[] }
   ) {}
@@ -148,8 +158,9 @@ export class ReasonDialogComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CdkColumnDef],
 })
-export class DomainListComponent implements OnInit, OnDestroy {
+export class DomainListComponent {
   public static PATH = 'domain-list';
+  private static readonly DEFAULT_PAGE_SIZE = 50;
   private static SUSPENDED_STATUSES = [
     'SERVER_RENEW_PROHIBITED',
     'SERVER_TRANSFER_PROHIBITED',
@@ -158,7 +169,7 @@ export class DomainListComponent implements OnInit, OnDestroy {
     'SERVER_HOLD',
   ];
   private readonly DEBOUNCE_MS = 500;
-  isAllSelected = false;
+  private readonly destroyRef = inject(DestroyRef);
 
   displayedColumns: string[] = [
     'select',
@@ -171,21 +182,50 @@ export class DomainListComponent implements OnInit, OnDestroy {
   ];
 
   dataSource: MatTableDataSource<Domain> = new MatTableDataSource();
-  selection = new SelectionModel<Domain>(true, [], undefined, this.isChecked());
-  isLoading = signal(true);
+  selection = new SelectionModel<Domain>(
+    true,
+    [],
+    undefined,
+    (o1: Domain, o2: Domain) =>
+      Boolean(o1.domainName) && o1.domainName === o2.domainName
+  );
+  isLoading = signal(false);
 
   searchTermSubject = new Subject<string>();
-  searchTerm?: string;
+  searchTerm = signal('');
+  activeSearchTerm = signal('');
 
-  pageNumber?: number;
-  resultsPerPage = 50;
-  totalResults = signal<number | undefined>(0);
+  pageNumber = signal(0);
+  resultsPerPage = signal(DomainListComponent.DEFAULT_PAGE_SIZE);
+  totalResults = signal<number | undefined>(undefined);
 
-  reason: string = '';
+  selectedDomains = signal<Domain[]>([]);
+  readonly selectedDomainNames = computed(
+    () => new Set(this.selectedDomains().map((d) => d.domainName))
+  );
+  readonly isAllSelected = computed(() => {
+    const rows = this.domainListService.domainsList();
+    const selectedNames = this.selectedDomainNames();
+    return (
+      rows.length > 0 &&
+      selectedNames.size === rows.length &&
+      rows.every((row) => selectedNames.has(row.domainName))
+    );
+  });
+  readonly isSomeSelected = computed(
+    () => this.selectedDomains().length > 0 && !this.isAllSelected()
+  );
+  readonly isEmptyRegistrar = computed(
+    () =>
+      !this.isLoading() && this.totalResults() === 0 && !this.activeSearchTerm()
+  );
 
   operationResult = signal<DomainData | undefined>(undefined);
+  private readonly registrarChanged$ = new Subject<void>();
   private domainsSubscription?: Subscription;
   private locksSubscription?: Subscription;
+  private bulkActionSubscription?: Subscription;
+  private activeDialogRef?: MatDialogRef<ReasonDialogComponent>;
 
   constructor(
     protected domainListService: DomainListService,
@@ -194,6 +234,31 @@ export class DomainListComponent implements OnInit, OnDestroy {
     private _snackBar: MatSnackBar,
     private dialog: MatDialog
   ) {
+    this.selection.changed
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.selectedDomains.set([...this.selection.selected]));
+
+    // Don't spam the server unnecessarily while the user is typing;
+    // reset debounce whenever the active registrar changes.
+    this.registrarChanged$
+      .pipe(
+        startWith(undefined),
+        switchMap(() =>
+          this.searchTermSubject.pipe(debounceTime(this.DEBOUNCE_MS))
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((searchTermValue) => {
+        if (!this.registrarService.registrarId()) {
+          return;
+        }
+        this.selection.clear();
+        this.operationResult.set(undefined);
+        this.activeSearchTerm.set(searchTermValue);
+        this.resetPaginationForReload(true);
+        this.reloadData();
+      });
+
     effect(() => {
       const registrarId = this.registrarService.registrarId();
       untracked(() => {
@@ -211,32 +276,21 @@ export class DomainListComponent implements OnInit, OnDestroy {
    * and service state so stale data cannot bleed across registrars.
    */
   private resetStateForRegistrarChange() {
-    this.domainsSubscription?.unsubscribe();
-    this.locksSubscription?.unsubscribe();
+    this.registrarChanged$.next();
+    this.activeDialogRef?.close?.();
+    this.activeDialogRef = undefined;
     this.isLoading.set(false);
-    this.pageNumber = 0;
-    this.totalResults.set(0);
+    this.searchTerm.set('');
+    this.activeSearchTerm.set('');
+    this.pageNumber.set(0);
+    this.resultsPerPage.set(DomainListComponent.DEFAULT_PAGE_SIZE);
+    this.totalResults.set(undefined);
     this.selection.clear();
-    this.isAllSelected = false;
+    this.selectedDomains.set([]);
     this.operationResult.set(undefined);
     this.dataSource.data = [];
     this.domainListService.resetState();
     this.registryLockService.domainsLocks.set([]);
-  }
-
-  ngOnInit() {
-    // Don't spam the server unnecessarily while the user is typing
-    this.searchTermSubject
-      .pipe(debounceTime(this.DEBOUNCE_MS))
-      .subscribe((searchTermValue) => {
-        this.reloadData();
-      });
-  }
-
-  ngOnDestroy() {
-    this.searchTermSubject.complete();
-    this.domainsSubscription?.unsubscribe();
-    this.locksSubscription?.unsubscribe();
   }
 
   openRegistryLock(domainName: string) {
@@ -248,6 +302,10 @@ export class DomainListComponent implements OnInit, OnDestroy {
     this.locksSubscription?.unsubscribe();
     this.locksSubscription = this.registryLockService
       .retrieveLocks()
+      .pipe(
+        takeUntil(this.registrarChanged$),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
         error: (err: HttpErrorResponse) => {
           if (err.status !== HttpStatusCode.Forbidden) {
@@ -269,10 +327,14 @@ export class DomainListComponent implements OnInit, OnDestroy {
     this.isLoading.set(true);
     this.domainsSubscription = this.domainListService
       .retrieveDomains(
-        this.pageNumber,
-        this.resultsPerPage,
+        this.pageNumber(),
+        this.resultsPerPage(),
         this.totalResults(),
-        this.searchTerm
+        this.activeSearchTerm() || undefined
+      )
+      .pipe(
+        takeUntil(this.registrarChanged$),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         error: (err: HttpErrorResponse) => {
@@ -281,51 +343,44 @@ export class DomainListComponent implements OnInit, OnDestroy {
         },
         next: (domainListResult) => {
           this.dataSource.data = this.domainListService.domainsList();
-          this.totalResults.set((domainListResult || {}).totalResults || 0);
+          this.totalResults.set(domainListResult?.totalResults || 0);
           this.isLoading.set(false);
         },
       });
   }
 
-  sendInput() {
-    this.searchTermSubject.next(this.searchTerm!);
+  onSearchInput(searchTerm: string) {
+    this.searchTerm.set(searchTerm);
+    this.searchTermSubject.next(searchTerm);
   }
 
   onPageChange(event: PageEvent) {
-    this.pageNumber = event.pageIndex;
-    this.resultsPerPage = event.pageSize;
+    this.pageNumber.set(event.pageIndex);
+    this.resultsPerPage.set(event.pageSize);
     this.selection.clear();
     this.reloadData();
   }
 
+  isRowSelected(row: Domain): boolean {
+    return this.selectedDomainNames().has(row.domainName);
+  }
+
   toggleAllRows() {
-    if (this.isAllSelected) {
+    if (this.isAllSelected()) {
       this.selection.clear();
-      this.isAllSelected = false;
       return;
     }
 
     this.selection.select(...this.dataSource.data);
-    this.isAllSelected = true;
   }
 
   checkboxLabel(row?: Domain): string {
     if (!row) {
-      return `${this.isAllSelected ? 'deselect' : 'select'} all`;
+      return `${this.isAllSelected() ? 'deselect' : 'select'} all`;
     }
-    return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${
+    return `${this.isRowSelected(row) ? 'deselect' : 'select'} row ${
       row.domainName
     }`;
-  }
-
-  private isChecked(): ((o1: Domain, o2: Domain) => boolean) | undefined {
-    return (o1: Domain, o2: Domain) => {
-      if (!o1.domainName || !o2.domainName) {
-        return false;
-      }
-
-      return this.isAllSelected || o1.domainName === o2.domainName;
-    };
   }
 
   getElementIdForBulkDelete() {
@@ -348,16 +403,59 @@ export class DomainListComponent implements OnInit, OnDestroy {
     );
   }
 
+  private resetPaginationForReload(resetPageNumber = false) {
+    this.domainListService.clearPaginationCursor();
+    if (resetPageNumber) {
+      this.pageNumber.set(0);
+    }
+    this.totalResults.set(undefined);
+  }
+
+  private openReasonDialog(
+    operation: Operation,
+    onReason: (reason: string) => void
+  ) {
+    this.activeDialogRef?.close?.();
+    const dialogRef = this.dialog.open(ReasonDialogComponent, {
+      data: { operation },
+    });
+    this.activeDialogRef = dialogRef;
+    dialogRef
+      .afterClosed()
+      .pipe(
+        take(1),
+        takeUntil(this.registrarChanged$),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((reason) => {
+        if (this.activeDialogRef === dialogRef) {
+          this.activeDialogRef = undefined;
+        }
+        if (reason) {
+          onReason(reason);
+        }
+      });
+  }
+
   sendDeleteRequest(reason: string) {
+    const domains = this.selection.selected.map((d) => d.domainName);
+    if (domains.length === 0) {
+      return;
+    }
+    this.bulkActionSubscription?.unsubscribe();
     this.isLoading.set(true);
-    this.domainListService
+    this.bulkActionSubscription = this.domainListService
       .bulkDomainAction(
-        this.selection.selected.map((d) => d.domainName),
+        domains,
         reason,
         this.registrarService.registrarId(),
         BULK_ACTION_NAME.DELETE
       )
-      .pipe(take(1))
+      .pipe(
+        take(1),
+        takeUntil(this.registrarChanged$),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
         next: (result: DomainData) => {
           this.isLoading.set(false);
@@ -379,6 +477,7 @@ export class DomainListComponent implements OnInit, OnDestroy {
           });
           this.selection.clear();
           this.operationResult.set(result);
+          this.resetPaginationForReload(true);
           this.reloadData();
         },
         error: (err: HttpErrorResponse) => {
@@ -389,19 +488,12 @@ export class DomainListComponent implements OnInit, OnDestroy {
   }
 
   deleteSelectedDomains() {
-    const dialogRef = this.dialog.open(ReasonDialogComponent, {
-      data: {
-        operation: Operation.deleting,
-      },
-    });
-
-    dialogRef
-      .afterClosed()
-      .pipe(
-        take(1),
-        filter((reason) => !!reason)
-      )
-      .subscribe(this.sendDeleteRequest.bind(this));
+    if (this.selectedDomains().length === 0) {
+      return;
+    }
+    this.openReasonDialog(Operation.deleting, (reason) =>
+      this.sendDeleteRequest(reason)
+    );
   }
 
   sendSuspendUnsuspendRequest(
@@ -409,21 +501,28 @@ export class DomainListComponent implements OnInit, OnDestroy {
     reason: string,
     actionName: BULK_ACTION_NAME
   ) {
+    this.bulkActionSubscription?.unsubscribe();
     this.isLoading.set(true);
-    this.domainListService
+    this.bulkActionSubscription = this.domainListService
       .bulkDomainAction(
         [domainName],
         reason,
         this.registrarService.registrarId(),
         actionName
       )
-      .pipe(take(1))
+      .pipe(
+        take(1),
+        takeUntil(this.registrarChanged$),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
         next: (result: DomainData) => {
           this.isLoading.set(false);
-          if (result[domainName].responseCode.toString().startsWith('2')) {
-            this._snackBar.open(result[domainName].message);
+          const domainResult = result?.[domainName];
+          if (domainResult?.responseCode.toString().startsWith('2')) {
+            this._snackBar.open(domainResult.message);
           } else {
+            this.resetPaginationForReload();
             this.reloadData();
           }
         },
@@ -433,47 +532,24 @@ export class DomainListComponent implements OnInit, OnDestroy {
         },
       });
   }
-  onSuspendClick(domainName: string) {
-    const dialogRef = this.dialog.open(ReasonDialogComponent, {
-      data: {
-        operation: Operation.suspending,
-      },
-    });
 
-    dialogRef
-      .afterClosed()
-      .pipe(
-        take(1),
-        filter((reason) => !!reason)
+  onSuspendClick(domainName: string) {
+    this.openReasonDialog(Operation.suspending, (reason) =>
+      this.sendSuspendUnsuspendRequest(
+        domainName,
+        reason,
+        BULK_ACTION_NAME.SUSPEND
       )
-      .subscribe((reason) => {
-        this.sendSuspendUnsuspendRequest(
-          domainName,
-          reason,
-          BULK_ACTION_NAME.SUSPEND
-        );
-      });
+    );
   }
 
   onUnsuspendClick(domainName: string) {
-    const dialogRef = this.dialog.open(ReasonDialogComponent, {
-      data: {
-        operation: Operation.unsuspending,
-      },
-    });
-
-    dialogRef
-      .afterClosed()
-      .pipe(
-        take(1),
-        filter((reason) => !!reason)
+    this.openReasonDialog(Operation.unsuspending, (reason) =>
+      this.sendSuspendUnsuspendRequest(
+        domainName,
+        reason,
+        BULK_ACTION_NAME.UNSUSPEND
       )
-      .subscribe((reason) => {
-        this.sendSuspendUnsuspendRequest(
-          domainName,
-          reason,
-          BULK_ACTION_NAME.UNSUSPEND
-        );
-      });
+    );
   }
 }

@@ -15,6 +15,7 @@
           minlength="3"
           maxlength="3"
           [required]="true"
+          [disabled]="disabled()"
           [(ngModel)]="user().emailAddress"
           [ngModelOptions]="{ standalone: true }"
         />
@@ -30,7 +31,11 @@
             >help_outline</mat-icon
           ></mat-label
         >
-        <mat-select [(ngModel)]="user().role" name="userRole">
+        <mat-select
+          [(ngModel)]="user().role"
+          [disabled]="disabled()"
+          name="userRole"
+        >
           <mat-option value="TECH_CONTACT">Editor</mat-option>
           <mat-option value="ACCOUNT_MANAGER">Viewer</mat-option>
         </mat-select>
@@ -39,19 +44,22 @@
     <button
       mat-flat-button
       color="primary"
-      aria-label="Save user"
       type="submit"
       aria-label="Save changes to the user"
+      [disabled]="disabled()"
     >
       Save
     </button>
   </form>
+  @if (!isNew() && user().registryLockEmailAddress) {
   <button
     mat-flat-button
     color="primary"
     aria-label="Reset registry lock password"
+    [disabled]="disabled()"
     (click)="requestRegistryLockPasswordReset()"
   >
     Reset registry lock password
   </button>
+  }
 </div>

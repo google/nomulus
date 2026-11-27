@@ -20,33 +20,34 @@ import {
   provideHttpClient,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
+import { PageEvent } from '@angular/material/paginator';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { of, Subject, tap, throwError } from 'rxjs';
 import { MaterialModule } from '../material.module';
+import { RegistrarService } from '../registrar/registrar.service';
+import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
 import { BackendService } from '../shared/services/backend.service';
 import {
   DomainListComponent,
   ReasonDialogComponent,
   ResponseDialogComponent,
 } from './domainList.component';
-import { FormsModule } from '@angular/forms';
 import {
   BULK_ACTION_NAME,
   Domain,
   DomainListResult,
   DomainListService,
 } from './domainList.service';
-import { DomainLocksResult, RegistryLockService } from './registryLock.service';
-import { RegistrarService } from '../registrar/registrar.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatDialog } from '@angular/material/dialog';
-import { signal } from '@angular/core';
-import { of, Subject, tap, throwError } from 'rxjs';
-import { PageEvent } from '@angular/material/paginator';
 import { RegistryLockComponent } from './registryLock.component';
-import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import { DomainLocksResult, RegistryLockService } from './registryLock.service';
 
 describe('DomainListComponent', () => {
   let component: DomainListComponent;
   let fixture: ComponentFixture<DomainListComponent>;
+  let backendService: BackendService;
   let domainListService: DomainListService;
   let registryLockService: RegistryLockService;
   let registrarIdSignal: ReturnType<typeof signal<string>>;
@@ -97,6 +98,7 @@ describe('DomainListComponent', () => {
       ],
     }).compileComponents();
 
+    backendService = TestBed.inject(BackendService);
     domainListService = TestBed.inject(DomainListService);
     registryLockService = TestBed.inject(RegistryLockService);
 
@@ -105,6 +107,7 @@ describe('DomainListComponent', () => {
       return of(registryLockService.domainsLocks());
     });
     vi.spyOn(domainListService, 'retrieveDomains').mockImplementation(() => {
+      domainListService.checkpointTime = '2024-06-01T00:00:00Z';
       domainListService.domainsList.set([activeDomain, suspendedDomain]);
       return of({
         checkpointTime: '2024-06-01T00:00:00Z',
@@ -122,6 +125,7 @@ describe('DomainListComponent', () => {
       .spyOn(fixture.debugElement.injector.get(MatDialog), 'open')
       .mockReturnValue({
         afterClosed: () => of('admin policy reason'),
+        close: vi.fn(),
       } as any);
     fixture.detectChanges();
   });
@@ -135,7 +139,7 @@ describe('DomainListComponent', () => {
     expect(domainListService.retrieveDomains).toHaveBeenCalledWith(
       0,
       50,
-      0,
+      undefined,
       undefined
     );
     expect(component.dataSource.data).toEqual([activeDomain, suspendedDomain]);
@@ -177,27 +181,97 @@ describe('DomainListComponent', () => {
     expect(component.isDomainUnsuspendable(suspendedDomain)).toBe(true);
   });
 
-  it('should toggle all rows selection and compute checkbox labels', () => {
+  it('should toggle all rows without poisoning SelectionModel.compareWith on individual deselection', () => {
     expect(component.checkboxLabel()).toBe('select all');
     expect(component.checkboxLabel(activeDomain)).toBe(
       'select row example.tld'
     );
 
     component.toggleAllRows();
-    expect(component.isAllSelected).toBe(true);
+    expect(component.isAllSelected()).toBe(true);
+    expect(component.isSomeSelected()).toBe(false);
     expect(component.selection.selected).toHaveLength(2);
     expect(component.checkboxLabel()).toBe('deselect all');
     expect(component.checkboxLabel(activeDomain)).toBe(
       'deselect row example.tld'
     );
 
+    // Deselecting one row after select-all must leave the other row selected
+    // and transition header checkbox to indeterminate (isAllSelected = false).
+    component.selection.toggle(activeDomain);
+    expect(component.isAllSelected()).toBe(false);
+    expect(component.isSomeSelected()).toBe(true);
+    expect(component.selection.selected).toEqual([suspendedDomain]);
+    expect(component.isRowSelected(activeDomain)).toBe(false);
+    expect(component.isRowSelected(suspendedDomain)).toBe(true);
+
+    // Re-selecting the remaining row restores isAllSelected = true.
+    component.selection.toggle(activeDomain);
+    expect(component.isAllSelected()).toBe(true);
+    expect(component.isSomeSelected()).toBe(false);
+
     component.toggleAllRows();
-    expect(component.isAllSelected).toBe(false);
+    expect(component.isAllSelected()).toBe(false);
     expect(component.selection.selected).toHaveLength(0);
   });
 
-  it('should update pagination, clear selection, and reload domains on page change', () => {
-    component.selection.select(activeDomain);
+  it('should keep the search input mounted when a filtered search returns 0 results', () => {
+    vi.useFakeTimers();
+    vi.spyOn(domainListService, 'retrieveDomains').mockImplementationOnce(
+      () => {
+        domainListService.domainsList.set([]);
+        return of({
+          checkpointTime: '2024-06-02T00:00:00Z',
+          domains: [],
+          totalResults: 0,
+        });
+      }
+    );
+
+    component.onSearchInput('no-match');
+    vi.advanceTimersByTime(500);
+    fixture.detectChanges();
+
+    expect(component.totalResults()).toBe(0);
+    expect(component.isEmptyRegistrar()).toBe(false);
+    expect(
+      fixture.nativeElement.querySelector('input[type="search"]')
+    ).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('.console-app__empty-domains')
+    ).toBeNull();
+
+    // Clearing the filter before debounce fires must still keep the search input mounted.
+    component.onSearchInput('');
+    fixture.detectChanges();
+    expect(component.isEmptyRegistrar()).toBe(false);
+    expect(
+      fixture.nativeElement.querySelector('input[type="search"]')
+    ).not.toBeNull();
+
+    // Once the unfiltered query runs and returns 0 domains, show the empty registrar view.
+    vi.spyOn(domainListService, 'retrieveDomains').mockImplementationOnce(
+      () => {
+        domainListService.domainsList.set([]);
+        return of({
+          checkpointTime: '2024-06-03T00:00:00Z',
+          domains: [],
+          totalResults: 0,
+        });
+      }
+    );
+    vi.advanceTimersByTime(500);
+    fixture.detectChanges();
+    expect(component.isEmptyRegistrar()).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector('.console-app__empty-domains')
+    ).not.toBeNull();
+  });
+
+  it('should update pagination, clear selection, and reset isAllSelected on page change', () => {
+    component.toggleAllRows();
+    expect(component.isAllSelected()).toBe(true);
+
     const pageEvent: PageEvent = {
       pageIndex: 2,
       pageSize: 25,
@@ -206,9 +280,10 @@ describe('DomainListComponent', () => {
 
     component.onPageChange(pageEvent);
 
-    expect(component.pageNumber).toBe(2);
-    expect(component.resultsPerPage).toBe(25);
+    expect(component.pageNumber()).toBe(2);
+    expect(component.resultsPerPage()).toBe(25);
     expect(component.selection.selected).toHaveLength(0);
+    expect(component.isAllSelected()).toBe(false);
     expect(domainListService.retrieveDomains).toHaveBeenLastCalledWith(
       2,
       25,
@@ -217,17 +292,63 @@ describe('DomainListComponent', () => {
     );
   });
 
-  it('should debounce search input before reloading domains', () => {
+  it('should debounce search input and reset stale pageNumber, checkpointTime, totalResults, and selection', () => {
     vi.useFakeTimers();
+    component.onPageChange({ pageIndex: 3, pageSize: 25, length: 200 });
+    component.toggleAllRows();
+    domainListService.checkpointTime = '2024-06-01T00:00:00Z';
+
     const retrieveSpy = vi.spyOn(domainListService, 'retrieveDomains');
+    const clearCursorSpy = vi.spyOn(domainListService, 'clearPaginationCursor');
     retrieveSpy.mockClear();
 
-    component.searchTerm = 'example';
-    component.sendInput();
+    component.onSearchInput('example');
     expect(retrieveSpy).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(500);
-    expect(retrieveSpy).toHaveBeenCalledWith(0, 50, 2, 'example');
+    expect(clearCursorSpy).toHaveBeenCalled();
+    expect(component.pageNumber()).toBe(0);
+    expect(component.selection.selected).toHaveLength(0);
+    expect(component.isAllSelected()).toBe(false);
+    expect(retrieveSpy).toHaveBeenCalledWith(0, 25, undefined, 'example');
+  });
+
+  it('should clear stale checkpointTime in DomainListService when searchTerm changes', () => {
+    const getDomainsSpy = vi
+      .spyOn(backendService, 'getDomains')
+      .mockReturnValue(
+        of({
+          checkpointTime: '2024-06-01T00:00:00Z',
+          domains: [activeDomain],
+          totalResults: 1,
+        })
+      );
+    (domainListService.retrieveDomains as any).mockRestore();
+
+    domainListService.retrieveDomains(0, 50, undefined, undefined).subscribe();
+    expect(domainListService.checkpointTime).toBe('2024-06-01T00:00:00Z');
+
+    // Same search term keeps checkpointTime for stable pagination
+    domainListService.retrieveDomains(1, 50, 1, undefined).subscribe();
+    expect(getDomainsSpy).toHaveBeenLastCalledWith(
+      'reg-1',
+      '2024-06-01T00:00:00Z',
+      1,
+      50,
+      1,
+      undefined
+    );
+
+    // Changing searchTerm clears stale checkpointTime before calling backend
+    domainListService.retrieveDomains(0, 50, undefined, 'example').subscribe();
+    expect(getDomainsSpy).toHaveBeenLastCalledWith(
+      'reg-1',
+      undefined,
+      0,
+      50,
+      undefined,
+      'example'
+    );
   });
 
   it('should open registry lock view for selected domain', () => {
@@ -247,7 +368,7 @@ describe('DomainListComponent', () => {
     );
   });
 
-  it('should execute bulk delete via ReasonDialog and display ResponseDialog summary', () => {
+  it('should execute bulk delete via ReasonDialog, display ResponseDialog, and reset selection and pagination cursor', () => {
     const bulkResult = {
       'example.tld': { message: 'Deleted', responseCode: '1000' },
       'suspended.tld': { message: 'In use', responseCode: '2304' },
@@ -255,8 +376,15 @@ describe('DomainListComponent', () => {
     const bulkSpy = vi
       .spyOn(domainListService, 'bulkDomainAction')
       .mockReturnValue(of(bulkResult));
+    const retrieveSpy = vi.spyOn(domainListService, 'retrieveDomains');
+    const clearCursorSpy = vi.spyOn(domainListService, 'clearPaginationCursor');
+    retrieveSpy.mockClear();
 
-    component.selection.select(activeDomain, suspendedDomain);
+    component.onPageChange({ pageIndex: 2, pageSize: 50, length: 150 });
+    retrieveSpy.mockClear();
+    clearCursorSpy.mockClear();
+
+    component.toggleAllRows();
     component.deleteSelectedDomains();
 
     expect(dialogOpenSpy).toHaveBeenCalledWith(ReasonDialogComponent, {
@@ -278,6 +406,10 @@ describe('DomainListComponent', () => {
         ],
       },
     });
+    expect(component.isAllSelected()).toBe(false);
+    expect(component.selection.selected).toHaveLength(0);
+    expect(clearCursorSpy).toHaveBeenCalled();
+    expect(retrieveSpy).toHaveBeenCalledWith(0, 50, undefined, undefined);
     expect(component.getOperationMessage('suspended.tld')).toBe('In use');
     expect(component.getOperationMessage('other.tld')).toBe('');
   });
@@ -317,8 +449,78 @@ describe('DomainListComponent', () => {
     expect(snackBarOpenSpy).toHaveBeenCalledWith('Cannot unsuspend');
   });
 
+  it('should cancel in-flight bulk mutations and pending search debounce when switching registrars', () => {
+    vi.useFakeTimers();
+    const pendingBulkDelete$ = new Subject<Record<string, any>>();
+    vi.spyOn(domainListService, 'bulkDomainAction').mockReturnValueOnce(
+      pendingBulkDelete$.asObservable()
+    );
+
+    component.selection.select(activeDomain);
+    component.deleteSelectedDomains();
+    expect(component.isLoading()).toBe(true);
+    expect(pendingBulkDelete$.observed).toBe(true);
+
+    // Queue a debounced search before switching registrar
+    component.onSearchInput('stale-search');
+
+    const pendingReg2Domains$ = new Subject<DomainListResult>();
+    const retrieveSpy = vi
+      .spyOn(domainListService, 'retrieveDomains')
+      .mockReturnValueOnce(pendingReg2Domains$.asObservable());
+    dialogOpenSpy.mockClear();
+    snackBarOpenSpy.mockClear();
+
+    registrarIdSignal.set('reg-2');
+    TestBed.flushEffects();
+
+    // Old bulk delete subscription must be cancelled immediately via takeUntil
+    expect(pendingBulkDelete$.observed).toBe(false);
+    expect(component.searchTerm()).toBe('');
+    expect(component.activeSearchTerm()).toBe('');
+
+    // Late emission from cancelled reg-1 delete must NOT open ResponseDialog,
+    // write operationResult, or clear reg-2's loading state.
+    pendingBulkDelete$.next({
+      'example.tld': { message: 'Deleted', responseCode: '1000' },
+    });
+    pendingBulkDelete$.complete();
+
+    expect(dialogOpenSpy).not.toHaveBeenCalled();
+    expect(snackBarOpenSpy).not.toHaveBeenCalled();
+    expect(component.operationResult()).toBeUndefined();
+    expect(component.isLoading()).toBe(true);
+
+    // Advancing past debounce must NOT trigger the cancelled reg-1 search on reg-2
+    const callsAfterSwitch = retrieveSpy.mock.calls.length;
+    vi.advanceTimersByTime(500);
+    expect(retrieveSpy.mock.calls.length).toBe(callsAfterSwitch);
+  });
+
+  it('should close an open ReasonDialog and ignore late reason emissions on registrar switch', () => {
+    const dialogCloseSpy = vi.fn();
+    const afterClosed$ = new Subject<string | undefined>();
+    dialogOpenSpy.mockReturnValueOnce({
+      afterClosed: () => afterClosed$.asObservable(),
+      close: dialogCloseSpy,
+    } as any);
+    const bulkSpy = vi.spyOn(domainListService, 'bulkDomainAction');
+
+    component.onSuspendClick('example.tld');
+    expect(afterClosed$.observed).toBe(true);
+
+    registrarIdSignal.set('reg-2');
+    TestBed.flushEffects();
+
+    expect(dialogCloseSpy).toHaveBeenCalled();
+    expect(afterClosed$.observed).toBe(false);
+    afterClosed$.next('stale reason');
+    afterClosed$.complete();
+    expect(bulkSpy).not.toHaveBeenCalled();
+  });
+
   it('should reset stale domain, selection, and lock state when switching registrars', () => {
-    component.pageNumber = 2;
+    component.onPageChange({ pageIndex: 2, pageSize: 50, length: 200 });
     component.toggleAllRows();
     component.operationResult.set({
       'example.tld': { message: 'Deleted', responseCode: '1000' },
@@ -330,8 +532,9 @@ describe('DomainListComponent', () => {
     const pendingLocksReg2$ = new Subject<DomainLocksResult[]>();
     const pendingDomainsReg3$ = new Subject<DomainListResult>();
     const pendingLocksReg3$ = new Subject<DomainLocksResult[]>();
-    const retrieveDomainsSpy = vi
-      .spyOn(domainListService, 'retrieveDomains')
+    const retrieveDomainsSpy = vi.spyOn(domainListService, 'retrieveDomains');
+    retrieveDomainsSpy.mockClear();
+    retrieveDomainsSpy
       .mockReturnValueOnce(
         pendingDomainsReg2$.pipe(
           tap((res) => {
@@ -341,8 +544,9 @@ describe('DomainListComponent', () => {
         )
       )
       .mockReturnValueOnce(pendingDomainsReg3$.asObservable());
-    const retrieveLocksSpy = vi
-      .spyOn(registryLockService, 'retrieveLocks')
+    const retrieveLocksSpy = vi.spyOn(registryLockService, 'retrieveLocks');
+    retrieveLocksSpy.mockClear();
+    retrieveLocksSpy
       .mockReturnValueOnce(
         pendingLocksReg2$.pipe(
           tap((locks) => registryLockService.domainsLocks.set(locks))
@@ -353,10 +557,10 @@ describe('DomainListComponent', () => {
     registrarIdSignal.set('reg-2');
     TestBed.flushEffects();
 
-    expect(component.pageNumber).toBe(0);
-    expect(component.totalResults()).toBe(0);
+    expect(component.pageNumber()).toBe(0);
+    expect(component.totalResults()).toBeUndefined();
     expect(component.selection.selected).toEqual([]);
-    expect(component.isAllSelected).toBe(false);
+    expect(component.isAllSelected()).toBe(false);
     expect(component.operationResult()).toBeUndefined();
     expect(component.dataSource.data).toEqual([]);
     expect(domainListService.checkpointTime).toBeUndefined();
@@ -364,8 +568,8 @@ describe('DomainListComponent', () => {
     expect(domainListService.activeActionComponent()).toBeNull();
     expect(domainListService.domainsList()).toEqual([]);
     expect(registryLockService.domainsLocks()).toEqual([]);
-    expect(retrieveDomainsSpy).toHaveBeenCalledTimes(2);
-    expect(retrieveLocksSpy).toHaveBeenCalledTimes(2);
+    expect(retrieveDomainsSpy).toHaveBeenCalledTimes(1);
+    expect(retrieveLocksSpy).toHaveBeenCalledTimes(1);
     expect(pendingDomainsReg2$.observed).toBe(true);
     expect(pendingLocksReg2$.observed).toBe(true);
 
@@ -373,8 +577,8 @@ describe('DomainListComponent', () => {
     registrarIdSignal.set('reg-3');
     TestBed.flushEffects();
 
-    expect(retrieveDomainsSpy).toHaveBeenCalledTimes(3);
-    expect(retrieveLocksSpy).toHaveBeenCalledTimes(3);
+    expect(retrieveDomainsSpy).toHaveBeenCalledTimes(2);
+    expect(retrieveLocksSpy).toHaveBeenCalledTimes(2);
     expect(pendingDomainsReg2$.observed).toBe(false);
     expect(pendingLocksReg2$.observed).toBe(false);
 
@@ -398,7 +602,7 @@ describe('DomainListComponent', () => {
 
     expect(component.isLoading()).toBe(true);
     expect(component.dataSource.data).toEqual([]);
-    expect(component.totalResults()).toBe(0);
+    expect(component.totalResults()).toBeUndefined();
 
     pendingDomainsReg3$.complete();
     pendingLocksReg3$.complete();

@@ -12,7 +12,7 @@
       </ng-container>
     </div>
 
-    @if (!isLoading() && totalResults() == 0) {
+    @if (isEmptyRegistrar()) {
     <div class="console-app__empty-domains">
       <h1>
         <mat-icon class="console-app__empty-domains-icon secondary-text"
@@ -84,8 +84,8 @@
             <input
               type="search"
               matInput
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="sendInput()"
+              [ngModel]="searchTerm()"
+              (ngModelChange)="onSearchInput($event)"
               #input
             />
           </mat-form-field>
@@ -93,16 +93,16 @@
           <div
             class="console-app__domains-selection"
             [elementId]="getElementIdForBulkDelete()"
-            [ngClass]="{ active: selection.hasValue() }"
+            [ngClass]="{ active: selectedDomains().length > 0 }"
           >
             <div class="console-app__domains-selection-text">
-              {{ selection.selected.length }} Selected
+              {{ selectedDomains().length }} Selected
             </div>
             <div class="console-app__domains-selection-actions">
               <button
                 mat-flat-button
                 aria-label="Delete Selected Domains"
-                [attr.aria-hidden]="!selection.hasValue()"
+                [attr.aria-hidden]="selectedDomains().length === 0"
                 (click)="deleteSelectedDomains()"
               >
                 Delete Selected Domains
@@ -112,16 +112,15 @@
 
           <mat-table
             [dataSource]="dataSource"
-            class="mat-elevation-z0"
-            class="console-app__domains-table"
+            class="mat-elevation-z0 console-app__domains-table"
           >
             <!-- Checkbox Column -->
             <ng-container matColumnDef="select">
               <mat-header-cell *matHeaderCellDef>
                 <mat-checkbox
                   (change)="$event ? toggleAllRows() : null"
-                  [checked]="selection.hasValue() && isAllSelected"
-                  [indeterminate]="selection.hasValue() && !isAllSelected"
+                  [checked]="isAllSelected()"
+                  [indeterminate]="isSomeSelected()"
                   [aria-label]="checkboxLabel()"
                   [elementId]="getElementIdForBulkDelete()"
                 >
@@ -131,7 +130,7 @@
                 <mat-checkbox
                   (click)="$event.stopPropagation()"
                   (change)="$event ? selection.toggle(row) : null"
-                  [checked]="selection.isSelected(row)"
+                  [checked]="isRowSelected(row)"
                   [aria-label]="checkboxLabel(row)"
                   [elementId]="getElementIdForBulkDelete()"
                 >
@@ -210,13 +209,15 @@
 
             <!-- Row shown when there is no matching data. -->
             <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell" colspan="6">No domains found</td>
+              <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+                No domains found
+              </td>
             </tr>
           </mat-table>
           <mat-paginator
-            [length]="totalResults()"
-            [pageIndex]="pageNumber"
-            [pageSize]="resultsPerPage"
+            [length]="totalResults() ?? 0"
+            [pageIndex]="pageNumber()"
+            [pageSize]="resultsPerPage()"
             [pageSizeOptions]="[10, 25, 50, 100, 500]"
             (page)="onPageChange($event)"
             aria-label="Select page of domain results"

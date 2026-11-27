@@ -12,92 +12,111 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   computed,
+  DestroyRef,
+  inject,
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { UsersService, roleToDescription, User } from './users.service';
-import { FormsModule } from '@angular/forms';
 import { UserEditFormComponent } from './userEditForm.component';
 
 @Component({
   selector: 'app-user-edit',
   templateUrl: './userDetails.component.html',
   styleUrls: ['./userDetails.component.scss'],
-  imports: [FormsModule, MaterialModule, UserEditFormComponent],
+  imports: [MaterialModule, UserEditFormComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [],
 })
 export class UserDetailsComponent {
-  isEditing = signal(false);
-  isPasswordVisible = false;
-  isNewUser = false;
-  isLoading = signal(false);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly isEditing = signal(false);
+  readonly isLoading = signal(false);
+  readonly isPasswordVisible = signal(false);
 
-  userDetails = computed(() => {
-    return this.usersService
-      .users()
-      .filter(
-        (u) => u.emailAddress === this.usersService.currentlyOpenUserEmail()
-      )[0];
+  private readonly detailState = computed(() => {
+    const state = this.usersService.viewState();
+    return state.kind === 'detail' ? state : null;
+  });
+
+  readonly isNewlyCreated = computed(
+    () => this.detailState()?.isNewlyCreated ?? false
+  );
+
+  readonly userDetails = computed<User | undefined>(() => {
+    const detail = this.detailState();
+    return detail
+      ? this.usersService.users().find((u) => u.emailAddress === detail.email)
+      : undefined;
   });
 
   constructor(
     protected registrarService: RegistrarService,
     protected usersService: UsersService,
     private _snackBar: MatSnackBar
-  ) {
-    if (this.usersService.isNewUser) {
-      this.isNewUser = true;
-      this.usersService.isNewUser = false;
-    }
-  }
+  ) {}
 
   roleToDescription(role: string) {
     return roleToDescription(role);
   }
 
+  togglePasswordVisibility() {
+    this.isPasswordVisible.update((visible) => !visible);
+  }
+
   deleteUser() {
-    if (
-      confirm(
-        'This will permanently delete the user ' +
-          this.userDetails().emailAddress
-      )
-    ) {
+    const user = this.userDetails();
+    if (!user || this.isLoading()) {
+      return;
+    }
+    if (confirm('This will permanently delete the user ' + user.emailAddress)) {
       this.isLoading.set(true);
-      this.usersService.deleteUser(this.userDetails()).subscribe({
-        error: (err) => {
-          this._snackBar.open(err.error || err.message);
-          this.isLoading.set(false);
-        },
-        complete: () => {
-          this.isLoading.set(false);
-          this.goBack();
-        },
-      });
+      this.usersService
+        .deleteUser(user)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.isLoading.set(false);
+            this.goBack();
+          },
+          error: (err: HttpErrorResponse) => {
+            this._snackBar.open(err.error || err.message);
+            this.isLoading.set(false);
+          },
+        });
     }
   }
 
   goBack() {
-    this.usersService.currentlyOpenUserEmail.set('');
+    this.usersService.returnToList();
   }
 
   saveEdit(user: User) {
+    if (this.isLoading()) {
+      return;
+    }
     this.isLoading.set(true);
-    this.usersService.updateUser(user).subscribe({
-      error: (err) => {
-        this._snackBar.open(err.error || err.message);
-        this.isLoading.set(false);
-      },
-      complete: () => {
-        this.isLoading.set(false);
-        this.isEditing.set(false);
-      },
-    });
+    this.usersService
+      .updateUser(user)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.isLoading.set(false);
+          this.isEditing.set(false);
+          this.usersService.openUserDetails(user.emailAddress, false);
+        },
+        error: (err: HttpErrorResponse) => {
+          this._snackBar.open(err.error || err.message);
+          this.isLoading.set(false);
+        },
+      });
   }
 }

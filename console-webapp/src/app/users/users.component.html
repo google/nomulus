@@ -1,26 +1,42 @@
 <app-selected-registrar-wrapper>
-  @if(isLoading()) {
+  @let state = usersService.viewState(); @switch (state.kind) { @case
+  ('loading') {
   <div class="console-app__users-spinner">
     <mat-spinner />
   </div>
-  } @else if(selectingExistingUser()) {
+  } @case ('error') {
+  <div class="console-app__users">
+    <div class="console-app__users-header">
+      <h1 class="console-app__title" forceFocus>Users</h1>
+    </div>
+    <p>{{ state.message }}</p>
+    <button mat-flat-button color="primary" (click)="loadUsers()">Retry</button>
+  </div>
+  } @case ('add-existing') {
   <div class="console-app__users" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
     <h1 class="console-app__title">Add existing user</h1>
     <p>
       <button
         mat-icon-button
         aria-label="Back to users list"
-        (click)="selectingExistingUser.set(false)"
+        [disabled]="state.submitting"
+        (click)="backToList()"
       >
         <mat-icon>arrow_back</mat-icon>
       </button>
     </p>
+    @if (state.submitting) {
+    <p>
+      <mat-progress-bar mode="query"></mat-progress-bar>
+    </p>
+    }
     <h1>Select registrar from which to add a new user</h1>
     <p>
       <mat-form-field appearance="outline">
         <mat-label>Registrar</mat-label>
         <mat-select
-          [(ngModel)]="selectedRegistrarId"
+          [value]="state.sourceRegistrarId"
+          [disabled]="state.submitting"
           name="selectedRegistrarId"
           (selectionChange)="onRegistrarSelectionChange($event)"
         >
@@ -32,9 +48,13 @@
         </mat-select>
       </mat-form-field>
     </p>
-    @if(usersSelection().length) {
+    @switch (state.candidates.status) { @case ('loading') {
+    <p>
+      <mat-progress-bar mode="query"></mat-progress-bar>
+    </p>
+    } @case ('loaded') { @if (state.candidates.data.length) {
     <app-users-list
-      [users]="usersSelection()"
+      [users]="state.candidates.data"
       (onSelect)="existingUserSelected($event)"
     />
     <p class="console-app__users-add-existing">
@@ -43,26 +63,30 @@
         color="primary"
         aria-label="Add user"
         (click)="submitExistingUser()"
-        [disabled]="!selectedExistingUser"
+        [disabled]="!state.selectedUser || state.submitting"
       >
         Add user
       </button>
       <button
         mat-stroked-button
         aria-label="Cancel adding existing user"
-        (click)="selectingExistingUser.set(false)"
+        [disabled]="state.submitting"
+        (click)="backToList()"
       >
         Cancel
       </button>
     </p>
-    }
+    } @else {
+    <p>No users found for this registrar.</p>
+    } } @case ('error') {
+    <p>{{ state.candidates.message }}</p>
+    } @case ('idle') {} }
   </div>
-  } @else if(usersService.currentlyOpenUserEmail()) {
+  } @case ('detail') {
   <div cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
     <app-user-edit></app-user-edit>
   </div>
-
-  } @else if(isNew) {
+  } @case ('create-new') {
   <div cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
     <h1 class="console-app__title">New User Form</h1>
     <div class="spacer"></div>
@@ -70,17 +94,24 @@
       <button
         mat-icon-button
         aria-label="Back to users list"
-        (click)="isNew = false"
+        [disabled]="state.saving"
+        (click)="backToList()"
       >
         <mat-icon>arrow_back</mat-icon>
       </button>
     </p>
+    @if (state.saving) {
+    <p>
+      <mat-progress-bar mode="query"></mat-progress-bar>
+    </p>
+    }
     <app-user-edit-form
       [isNew]="true"
+      [disabled]="state.saving"
       (onEditComplete)="createNewUser($event)"
     />
   </div>
-  } @else {
+  } @case ('list') {
   <div class="console-app__users">
     <div class="console-app__users-header">
       <h1 class="console-app__title" forceFocus>Users</h1>
@@ -90,13 +121,13 @@
           class="console-app__users-header-add"
           mat-stroked-button
           (click)="addExistingUser()"
-          aria-label="Create new user"
+          aria-label="Add existing user"
           color="primary"
         >
           <mat-icon>add</mat-icon>
           Add existing user
         </button>
-        <button mat-flat-button (click)="isNew = true" color="primary">
+        <button mat-flat-button (click)="openCreateNew()" color="primary">
           Create New User
         </button>
       </div>
@@ -106,5 +137,5 @@
       (onSelect)="openDetails($event)"
     />
   </div>
-  }
+  } }
 </app-selected-registrar-wrapper>

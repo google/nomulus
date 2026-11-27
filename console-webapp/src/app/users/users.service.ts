@@ -17,6 +17,12 @@ import { switchMap, tap } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
 import { BackendService } from '../shared/services/backend.service';
 
+export type AsyncState<T> =
+  | { readonly status: 'idle' }
+  | { readonly status: 'loading' }
+  | { readonly status: 'loaded'; readonly data: T }
+  | { readonly status: 'error'; readonly message: string };
+
 export const roleToDescription = (role: string) => {
   if (!role) return 'N/A';
   else if (role === 'ACCOUNT_MANAGER') {
@@ -36,11 +42,33 @@ export interface User {
   registryLockEmailAddress?: string;
 }
 
+/**
+ * Explicit UI state machine for the Users Management feature.
+ * Replaces orthogonal booleans (`isNew`, `selectingExistingUser`, `isNewUser`)
+ * and sentinel email strings so illegal combinations cannot be represented.
+ */
+export type UsersViewState =
+  | { readonly kind: 'loading' }
+  | { readonly kind: 'error'; readonly message: string }
+  | { readonly kind: 'list' }
+  | { readonly kind: 'create-new'; readonly saving: boolean }
+  | {
+      readonly kind: 'add-existing';
+      readonly sourceRegistrarId: string;
+      readonly candidates: AsyncState<User[]>;
+      readonly selectedUser: User | null;
+      readonly submitting: boolean;
+    }
+  | {
+      readonly kind: 'detail';
+      readonly email: string;
+      readonly isNewlyCreated: boolean;
+    };
+
 @Injectable()
 export class UsersService {
-  users = signal<User[]>([]);
-  currentlyOpenUserEmail = signal<string>('');
-  isNewUser: boolean = false;
+  readonly users = signal<User[]>([]);
+  readonly viewState = signal<UsersViewState>({ kind: 'list' });
 
   constructor(
     private backendService: BackendService,
@@ -49,47 +77,63 @@ export class UsersService {
 
   resetState() {
     this.users.set([]);
-    this.currentlyOpenUserEmail.set('');
-    this.isNewUser = false;
+    this.viewState.set({ kind: 'list' });
+  }
+
+  returnToList() {
+    this.viewState.set({ kind: 'list' });
+  }
+
+  openUserDetails(emailAddress: string, isNewlyCreated = false) {
+    this.viewState.set({
+      kind: 'detail',
+      email: emailAddress,
+      isNewlyCreated,
+    });
   }
 
   fetchUsersForRegistrar(registrarId: string) {
     return this.backendService.getUsers(registrarId);
   }
 
-  fetchUsers() {
-    return this.backendService
-      .getUsers(this.registrarService.registrarId())
-      .pipe(
-        tap((users: User[]) => {
-          this.users.set(users);
-        })
-      );
+  fetchUsers(registrarId = this.registrarService.registrarId()) {
+    return this.backendService.getUsers(registrarId).pipe(
+      tap((users: User[]) => {
+        this.users.set(users);
+      })
+    );
   }
 
-  createOrAddNewUser(user: User) {
+  createNewUser(user: User) {
     return this.backendService
       .createUser(this.registrarService.registrarId(), user)
       .pipe(
         tap((newUser: User) => {
           if (newUser) {
-            this.users.set([...this.users(), newUser]);
-            this.currentlyOpenUserEmail.set(newUser.emailAddress);
-            this.isNewUser = true;
+            this.users.update((existing) => [...existing, newUser]);
           }
         })
       );
   }
 
+  addExistingUser(user: User) {
+    return this.backendService.createUser(
+      this.registrarService.registrarId(),
+      user
+    );
+  }
+
   deleteUser(user: User) {
+    const registrarId = this.registrarService.registrarId();
     return this.backendService
-      .deleteUser(this.registrarService.registrarId(), user)
-      .pipe(switchMap((_) => this.fetchUsers()));
+      .deleteUser(registrarId, user)
+      .pipe(switchMap(() => this.fetchUsers(registrarId)));
   }
 
   updateUser(updatedUser: User) {
+    const registrarId = this.registrarService.registrarId();
     return this.backendService
-      .updateUser(this.registrarService.registrarId(), updatedUser)
-      .pipe(switchMap((_) => this.fetchUsers()));
+      .updateUser(registrarId, updatedUser)
+      .pipe(switchMap(() => this.fetchUsers(registrarId)));
   }
 }
