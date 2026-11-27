@@ -38,6 +38,30 @@ TESTED_MODULES = (
 FLYWAY_SCRIPT_PATTERN = re.compile(r'^db/src/main/resources/sql/flyway/V[^/]*\.sql$')
 JPA_ENTITY_PATTERN = re.compile(r'^\s*@(Entity|Embeddable|MappedSuperclass)\b', re.MULTILINE)
 
+# Entities and embedded types serialized to Valkey via Protostuff RuntimeSchema
+# without @Tag annotations (SimplifiedJedisClient). Changing non-transient field
+# layouts breaks N/N+1 rolling upgrades unless @Tag or cache key prefixes migrate first.
+PROTOSTUFF_CACHED_FILES = frozenset((
+    "core/src/main/java/google/registry/model/EppResource.java",
+    "core/src/main/java/google/registry/model/domain/Domain.java",
+    "core/src/main/java/google/registry/model/domain/DomainBase.java",
+    "core/src/main/java/google/registry/model/domain/GracePeriod.java",
+    "core/src/main/java/google/registry/model/domain/secdns/DomainDsData.java",
+    "core/src/main/java/google/registry/model/host/Host.java",
+    "core/src/main/java/google/registry/model/host/HostBase.java",
+    "core/src/main/java/google/registry/model/transfer/DomainTransferData.java",
+))
+PROTOSTUFF_FIELD_PATTERN = re.compile(
+    r'^  (?:(?:private|protected|public|final)\s+)*'
+    r'(?!return\b|class\b|interface\b|enum\b|record\b|void\b|new\b|throw\b|case\b|default\b|else\b|import\b|package\b)'
+    r'[A-Za-z_][A-Za-z0-9_<>, ?\[\].]*\s+[a-z][A-Za-z0-9_]*\s*(?:=|;)'
+)
+PROTOSTUFF_SKIP_MODIFIER_PATTERN = re.compile(r'\b(?:static|transient)\b')
+TIMED_TRANSITION_FROM_VALUE_MAP_EXEMPT = frozenset((
+    "core/src/main/java/google/registry/model/common/TimedTransitionProperty.java",
+    "core/src/main/java/google/registry/persistence/converter/TimedTransitionBaseUserType.java",
+))
+
 # Internal-only references that must never land in this public repository.
 # Buganizer references (b/123, http://b/123) are allowed and do not match.
 INTERNAL_LEAK_PATTERNS = (
@@ -248,8 +272,20 @@ def check_diff_anti_patterns():
     retransact_txtime_pattern = re.compile(r'tm\(\)\.reTransact\(\s*(?:\(\)\s*->\s*)?tm\(\)(?:\.|::)get(?:Transaction|Tx)Time\(\)?\s*\)')
     inject_command_pattern = re.compile(r'inject\(Command\s+[a-zA-Z0-9_]+\)')
     clock_now_pattern = re.compile(r'clock\.now\(\)')
+    timed_transition_from_map_pattern = re.compile(
+        r'TimedTransitionProperty\.(?:<[^>]+>)?fromValueMap\(')
+    state_compareto_pattern = re.compile(
+        r'\b[a-zA-Z0-9_]*(?:Stage|State|Status)\b\s*\.compareTo\('
+        r'|\b(?:stage|state|status)\s*\.compareTo\(')
+    angular_set_timeout_pattern = re.compile(r'\bsetTimeout\s*\(')
+    angular_global_loader_pattern = re.compile(r'\bGlobalLoaderService\b')
+    angular_bool_flag_pattern = re.compile(
+        r'^\s*(?:(?:private|protected|public|readonly)\s+)*'
+        r'(?:is|in|has|show)[A-Z][a-zA-Z0-9]*\s*(?::\s*boolean)?\s*=\s*'
+        r'(?:true|false|signal\s*(?:<boolean>)?\s*\(\s*(?:true|false)\s*\))')
 
     suppress_count = 0
+    angular_bool_flags_by_file = {}
 
     for line in diff.split('\n'):
         if line.startswith('+++ b/'):
@@ -259,13 +295,14 @@ def check_diff_anti_patterns():
 
         if line.startswith('+') and not line.startswith('+++'):
             code_line = line[1:]
+            stripped = code_line.strip()
 
             # Trailing whitespace
             if trailing_space_pattern.search(code_line):
                 log_error(f"[{current_file}] Found trailing whitespace.")
 
             # Skip regex definitions in this script from triggering false positives
-            if 're.compile' not in code_line:
+            if current_file != SCRIPT_PATH and 're.compile' not in code_line:
                 # Debug prints
                 if debug_print_pattern.search(code_line):
                     log_error(f"[{current_file}] Found leftover debug print or stack trace (System. out. println / printStackTrace).")
@@ -273,6 +310,25 @@ def check_diff_anti_patterns():
                 # TODOs / FIXMEs
                 if todo_pattern.search(code_line):
                     log_warning(f"[{current_file}] Found new T" "ODO or F" "IXME. Ensure this is intentional before completing the PR.")
+
+            # Angular frontend state-machine hygiene (console-webapp non-test .ts)
+            if (current_file.startswith('console-webapp/src/app/')
+                    and current_file.endswith('.ts')
+                    and not current_file.endswith('.spec.ts')
+                    and not stripped.startswith('//')
+                    and not stripped.startswith('*')):
+                if angular_set_timeout_pattern.search(code_line):
+                    log_warning(
+                        f"[{current_file}] Found setTimeout() in Angular app code. Under zoneless"
+                        " OnPush, prefer Signals or RxJS timers (timeout/timer + takeUntilDestroyed).")
+                if angular_global_loader_pattern.search(code_line):
+                    log_warning(
+                        f"[{current_file}] Added GlobalLoaderService usage. Prefer Signal"
+                        " discriminated unions with RxJS timeout()/switchMap/takeUntilDestroyed"
+                        " over detached global loader timers.")
+                if angular_bool_flag_pattern.search(code_line):
+                    angular_bool_flags_by_file[current_file] = (
+                        angular_bool_flags_by_file.get(current_file, 0) + 1)
 
             if not current_file.endswith('.java'):
                 continue
@@ -357,6 +413,28 @@ def check_diff_anti_patterns():
             if 'src/test/' in current_file and clock_now_pattern.search(code_line):
                 log_warning(f"[{current_file}] Prefer using a fixed, static constant Instant over capturing clock.now() in tests to prevent flakiness.")
 
+            # State-machine anti-patterns in production Java code
+            if ('src/main/' in current_file
+                    and not stripped.startswith('//')
+                    and not stripped.startswith('*')):
+                if (current_file not in TIMED_TRANSITION_FROM_VALUE_MAP_EXEMPT
+                        and timed_transition_from_map_pattern.search(code_line)):
+                    log_warning(
+                        f"[{current_file}] Found TimedTransitionProperty.fromValueMap(...). For"
+                        " stateful enums (TldState, TokenStatus, FeatureFlag), enforce a transition"
+                        " map rather than bypassing transition validation.")
+                if state_compareto_pattern.search(code_line):
+                    log_warning(
+                        f"[{current_file}] Found compareTo() on a state/stage/status enum or"
+                        " variable. Ordinal comparison allows illegal transitions; use an explicit"
+                        " ImmutableMultimap/transition table instead.")
+
+    for ts_file, flag_count in sorted(angular_bool_flags_by_file.items()):
+        if flag_count >= 3:
+            log_warning(
+                f"[{ts_file}] Added {flag_count} boolean UI-state flags. Prefer a single Signal"
+                " discriminated union rendered via @switch so impossible UI states are unrepresentable.")
+
 def check_internal_link_leaks():
     print("\n--- Checking for Internal Link and Path Leaks ---")
     diff = run_cmd("git diff HEAD^ -U0")
@@ -392,6 +470,41 @@ def is_jpa_entity(path):
     except FileNotFoundError:
         # Deleted files cannot be inspected.
         return False
+
+def check_protostuff_cached_entities():
+    print("\n--- Checking Protostuff-Cached Entities (Valkey Compatibility) ---")
+    diff = run_cmd("git diff HEAD^ -U0")
+    current_file = ""
+    flagged_files = set()
+
+    for line in diff.split('\n'):
+        if line.startswith('+++ '):
+            current_file = line[6:] if line.startswith('+++ b/') else ""
+            continue
+        if current_file not in PROTOSTUFF_CACHED_FILES or current_file in flagged_files:
+            continue
+        if (line.startswith('+') and not line.startswith('+++')) or (
+            line.startswith('-') and not line.startswith('---')
+        ):
+            code_line = line[1:]
+            stripped = code_line.strip()
+            if (not stripped or stripped.startswith('//')
+                    or stripped.startswith('*')
+                    or stripped.startswith('/*')
+                    or stripped.startswith('@')):
+                continue
+            if (not PROTOSTUFF_SKIP_MODIFIER_PATTERN.search(code_line)
+                    and PROTOSTUFF_FIELD_PATTERN.match(code_line)
+                    and '(' not in code_line.split('=')[0]):
+                flagged_files.add(current_file)
+                log_warning(
+                    f"[{current_file}] Modified a potential non-transient field on a Valkey"
+                    " Protostuff-cached entity (no @Tag annotations). Adding, removing, reordering,"
+                    " or retyping fields breaks N/N+1 rolling upgrades in SimplifiedJedisClient;"
+                    " never persist static state columns on time-projected Domain/Host entities.")
+
+    if not flagged_files:
+        log_success("No non-transient field changes detected on Protostuff-cached entities.")
 
 def check_db_schema_split():
     print("\n--- Checking Database Schema Changes ---")
@@ -438,6 +551,7 @@ def main():
     check_license_headers()
     check_missing_tests()
     check_db_schema_split()
+    check_protostuff_cached_entities()
     check_upstream_freshness()
     check_formatting()
     check_package_lock()
