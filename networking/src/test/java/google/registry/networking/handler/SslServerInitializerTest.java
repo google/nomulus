@@ -14,20 +14,35 @@
 
 package google.registry.networking.handler;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.networking.handler.SslInitializerTestUtils.createTrustManager;
+import static google.registry.networking.handler.SslInitializerTestUtils.getEcKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.getKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.setUpSslChannel;
+import static google.registry.networking.handler.SslInitializerTestUtils.signIntermediateCa;
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
+import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPairWithEku;
+import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPairWithSans;
 import static google.registry.networking.handler.SslInitializerTestUtils.verifySslException;
+import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY;
+import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_HOSTNAMES_KEY;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
+import static google.registry.networking.handler.SslServerInitializer.formatFailureReasonForLog;
+import static google.registry.networking.handler.SslServerInitializer.formatHostnamesForLog;
 import static google.registry.util.DateTimeUtils.minusDays;
 import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.X509Utils.getCertificateHash;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import google.registry.testing.FakeClock;
 import google.registry.util.SelfSignedCaCertificate;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -47,12 +62,25 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.X509TrustManager;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -76,6 +104,43 @@ class SslServerInitializerTest {
 
   /** Fake port to test if the SSL engine gets the correct peer port. */
   private static final int SSL_PORT = 12345;
+
+  private static final Instant LONG_VALID_FROM = Instant.EPOCH;
+  private static final Instant LONG_VALID_TO = Instant.parse("2100-01-01T00:00:00Z");
+
+  private static SelfSignedCaCertificate sharedServerSsc;
+  private static SelfSignedCaCertificate sharedRootCa;
+  private static X509TrustManager sharedTrustManager;
+  private static KeyPair sharedIntermediateKeyPair;
+  private static X509Certificate sharedIntermediateCa;
+  private static SelfSignedCaCertificate sharedUntrustedCa;
+  private static KeyPair sharedClientKeyPair;
+  private static SelfSignedCaCertificate sharedEcRootCa;
+  private static X509TrustManager sharedEcTrustManager;
+  private static KeyPair sharedEcClientKeyPair;
+
+  @BeforeAll
+  static void setUpSharedFixtures() throws Exception {
+    sharedServerSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
+    sharedRootCa = SelfSignedCaCertificate.create("root-ca.tld", LONG_VALID_FROM, LONG_VALID_TO);
+    sharedTrustManager = createTrustManager(sharedRootCa.cert());
+    sharedIntermediateKeyPair = getKeyPair();
+    sharedIntermediateCa =
+        signIntermediateCa(
+            sharedRootCa,
+            sharedIntermediateKeyPair,
+            "intermediate-ca.tld",
+            LONG_VALID_FROM,
+            LONG_VALID_TO);
+    sharedUntrustedCa =
+        SelfSignedCaCertificate.create("untrusted-ca.tld", LONG_VALID_FROM, LONG_VALID_TO);
+    sharedClientKeyPair = getKeyPair();
+    sharedEcRootCa =
+        SelfSignedCaCertificate.create(
+            getEcKeyPair(), "ec-root-ca.tld", LONG_VALID_FROM, LONG_VALID_TO);
+    sharedEcTrustManager = createTrustManager(sharedEcRootCa.cert());
+    sharedEcClientKeyPair = getEcKeyPair();
+  }
 
   @RegisterExtension NettyExtension nettyExtension = new NettyExtension();
 
@@ -108,7 +173,7 @@ class SslServerInitializerTest {
       SslProvider sslProvider,
       X509Certificate trustedCertificate,
       PrivateKey privateKey,
-      X509Certificate certificate,
+      X509Certificate[] certificates,
       String protocol,
       List<String> cipher) {
     return new ChannelInitializer<LocalChannel>() {
@@ -122,8 +187,8 @@ class SslServerInitializerTest {
         if (protocol != null) {
           sslContextBuilder.protocols(protocol);
         }
-        if (privateKey != null && certificate != null) {
-          sslContextBuilder.keyManager(privateKey, certificate);
+        if (privateKey != null && certificates != null && certificates.length > 0) {
+          sslContextBuilder.keyManager(privateKey, certificates);
         }
         SslHandler sslHandler =
             sslContextBuilder.build().newHandler(ch.alloc(), SSL_HOST, SSL_PORT);
@@ -143,8 +208,32 @@ class SslServerInitializerTest {
       SslProvider sslProvider,
       X509Certificate trustedCertificate,
       PrivateKey privateKey,
+      X509Certificate certificate,
+      String protocol,
+      List<String> cipher) {
+    return getClientHandler(
+        sslProvider,
+        trustedCertificate,
+        privateKey,
+        certificate == null ? null : new X509Certificate[] {certificate},
+        protocol,
+        cipher);
+  }
+
+  private ChannelHandler getClientHandler(
+      SslProvider sslProvider,
+      X509Certificate trustedCertificate,
+      PrivateKey privateKey,
       X509Certificate certificate) {
     return getClientHandler(sslProvider, trustedCertificate, privateKey, certificate, null, null);
+  }
+
+  private ChannelHandler getClientHandlerWithChain(
+      SslProvider sslProvider,
+      X509Certificate trustedCertificate,
+      PrivateKey privateKey,
+      X509Certificate... certificates) {
+    return getClientHandler(sslProvider, trustedCertificate, privateKey, certificates, null, null);
   }
 
   @ParameterizedTest
@@ -217,6 +306,9 @@ class SslServerInitializerTest {
         nettyExtension.getServerChannel(),
         channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
         SSLHandshakeException.class);
+    Channel serverChannel = nettyExtension.getServerChannel();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isNull();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get()).isNull();
   }
 
   @ParameterizedTest
@@ -349,6 +441,9 @@ class SslServerInitializerTest {
     // SslSession for the server channel, and vice versa.
     assertThat(sslSession.getLocalCertificates()).isNull();
     assertThat(sslSession.getPeerCertificates()).asList().containsExactly(serverSsc.cert());
+    Channel serverChannel = nettyExtension.getServerChannel();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isNull();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get()).isNull();
   }
 
   @ParameterizedTest
@@ -437,6 +532,477 @@ class SslServerInitializerTest {
     nettyExtension.assertThatClientRootCause().hasMessageThat().contains(SSL_HOST);
     nettyExtension.assertThatServerRootCause().isInstanceOf(SSLException.class);
     assertThat(nettyExtension.getClientChannel().isActive()).isFalse();
+  }
+
+  private Channel connectMutualTls(
+      String addressPrefix,
+      SslProvider sslProvider,
+      boolean validateClientCert,
+      Optional<X509TrustManager> trustManager,
+      PrivateKey clientKey,
+      X509Certificate... clientChain)
+      throws Exception {
+    return connectMutualTls(
+        addressPrefix,
+        sslProvider,
+        new SslServerInitializer<LocalChannel>(
+            true,
+            validateClientCert,
+            sslProvider,
+            Suppliers.ofInstance(sharedServerSsc.key()),
+            Suppliers.ofInstance(ImmutableList.of(sharedServerSsc.cert())),
+            trustManager),
+        null,
+        clientKey,
+        clientChain);
+  }
+
+  private Channel connectMutualTls(
+      String addressPrefix,
+      SslProvider sslProvider,
+      SslServerInitializer<LocalChannel> serverInitializer,
+      ChannelHandler extraServerHandler,
+      PrivateKey clientKey,
+      X509Certificate... clientChain)
+      throws Exception {
+    LocalAddress localAddress = new LocalAddress(addressPrefix + "_" + sslProvider);
+    if (extraServerHandler != null) {
+      nettyExtension.setUpServer(localAddress, serverInitializer, extraServerHandler);
+    } else {
+      nettyExtension.setUpServer(localAddress, serverInitializer);
+    }
+    nettyExtension.setUpClient(
+        localAddress,
+        getClientHandlerWithChain(sslProvider, sharedServerSsc.cert(), clientKey, clientChain));
+    setUpSslChannel(nettyExtension.getClientChannel(), sharedServerSsc.cert());
+    nettyExtension.assertThatMessagesWork();
+    return nettyExtension.getServerChannel();
+  }
+
+  private static Handler captureSslInfoLogs(List<String> loggedMessages, String expectedCertHash) {
+    Handler handler =
+        new Handler() {
+          @Override
+          public void publish(LogRecord record) {
+            if (record.getMessage() != null
+                && record.getMessage().contains("--SSL Information--")
+                && record.getMessage().contains("Client Certificate Hash: " + expectedCertHash)) {
+              loggedMessages.add(record.getMessage());
+            }
+          }
+
+          @Override
+          public void flush() {}
+
+          @Override
+          public void close() {}
+        };
+    Logger.getLogger(SslServerInitializer.class.getName()).addHandler(handler);
+    return handler;
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_clientCertSignedByTrustedCaWithDnsSans(SslProvider sslProvider)
+      throws Exception {
+    X509Certificate clientCert =
+        signKeyPairWithSans(
+            sharedRootCa,
+            sharedClientKeyPair,
+            "Ignored.CommonName.TLD",
+            "EPP1.Example.TLD.",
+            "epp1.example.tld",
+            "*.Sub.Example.TLD",
+            "epp2.example.tld");
+
+    AtomicReference<Boolean> validatedInListener = new AtomicReference<>();
+    AtomicReference<ImmutableList<String>> hostnamesInListener = new AtomicReference<>();
+    CountDownLatch listenerFired = new CountDownLatch(1);
+    ChannelHandler promiseObserver =
+        new ChannelInboundHandlerAdapter() {
+          @Override
+          public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            ctx.channel()
+                .attr(CLIENT_CERTIFICATE_PROMISE_KEY)
+                .get()
+                .addListener(
+                    future -> {
+                      validatedInListener.set(
+                          ctx.channel().attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get());
+                      hostnamesInListener.set(
+                          ctx.channel().attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get());
+                      listenerFired.countDown();
+                    });
+            super.channelActive(ctx);
+          }
+        };
+
+    List<String> sslInfoLogs = new CopyOnWriteArrayList<>();
+    Handler logHandler = captureSslInfoLogs(sslInfoLogs, getCertificateHash(clientCert));
+    try {
+      Channel serverChannel =
+          connectMutualTls(
+              "TRUSTED_CA_WITH_SANS",
+              sslProvider,
+              new SslServerInitializer<LocalChannel>(
+                  true,
+                  true,
+                  sslProvider,
+                  Suppliers.ofInstance(sharedServerSsc.key()),
+                  Suppliers.ofInstance(ImmutableList.of(sharedServerSsc.cert())),
+                  Optional.of(sharedTrustManager)),
+              promiseObserver,
+              sharedClientKeyPair.getPrivate(),
+              clientCert);
+
+      assertThat(serverChannel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get())
+          .isEqualTo(clientCert);
+      assertThat(listenerFired.await(10, TimeUnit.SECONDS)).isTrue();
+      assertThat(validatedInListener.get()).isTrue();
+      assertThat(hostnamesInListener.get())
+          .containsExactly("epp1.example.tld", "epp2.example.tld")
+          .inOrder();
+      assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isTrue();
+      assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get())
+          .containsExactly("epp1.example.tld", "epp2.example.tld")
+          .inOrder();
+      assertThat(sslInfoLogs).hasSize(1);
+      assertThat(sslInfoLogs.get(0)).contains("Client Certificate Chain Validated: true");
+      assertThat(sslInfoLogs.get(0)).contains("Client Certificate Chain Failure Reason: none");
+      assertThat(sslInfoLogs.get(0))
+          .contains("Client Certificate Hostnames: [epp1.example.tld, epp2.example.tld]");
+    } finally {
+      Logger.getLogger(SslServerInitializer.class.getName()).removeHandler(logHandler);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_clientCertThreeTierChainWithIntermediateCa(SslProvider sslProvider)
+      throws Exception {
+    X509Certificate clientCert =
+        signKeyPair(
+            sharedIntermediateKeyPair.getPrivate(),
+            sharedIntermediateCa,
+            sharedClientKeyPair,
+            "Ignored.CN.TLD",
+            LONG_VALID_FROM,
+            LONG_VALID_TO,
+            "epp.three-tier.example");
+
+    Channel serverChannel =
+        connectMutualTls(
+            "THREE_TIER_CHAIN",
+            sslProvider,
+            false,
+            Optional.of(sharedTrustManager),
+            sharedClientKeyPair.getPrivate(),
+            clientCert,
+            sharedIntermediateCa);
+
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get())
+        .isEqualTo(clientCert);
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isTrue();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get())
+        .containsExactly("epp.three-tier.example");
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_missingIntermediateCa_chainValidatedFalseAndEmptyHostnames(
+      SslProvider sslProvider) throws Exception {
+    X509Certificate clientCert =
+        signKeyPair(
+            sharedIntermediateKeyPair.getPrivate(),
+            sharedIntermediateCa,
+            sharedClientKeyPair,
+            "epp.missing-inter.example",
+            LONG_VALID_FROM,
+            LONG_VALID_TO,
+            "epp.missing-inter.example");
+
+    // Client sends leaf only, omitting the required intermediate CA.
+    Channel serverChannel =
+        connectMutualTls(
+            "MISSING_INTERMEDIATE_CA",
+            sslProvider,
+            true,
+            Optional.of(sharedTrustManager),
+            sharedClientKeyPair.getPrivate(),
+            clientCert);
+
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get())
+        .isEqualTo(clientCert);
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isFalse();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get()).isEmpty();
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_untrustedClientCert_stillSucceedsHandshakeWithEmptyHostnames(
+      SslProvider sslProvider) throws Exception {
+    // Use the public 5-arg constructor (default JVM truststore) with an untrusted non-CA leaf so
+    // handshake stays open for legacy fingerprint-pinned certs while chain validation fails.
+    X509Certificate untrustedLeafCert =
+        signKeyPairWithSans(
+            sharedUntrustedCa, sharedClientKeyPair, "EPP.Untrusted.TLD", "epp.untrusted.tld");
+
+    List<String> sslInfoLogs = new CopyOnWriteArrayList<>();
+    Handler logHandler = captureSslInfoLogs(sslInfoLogs, getCertificateHash(untrustedLeafCert));
+    try {
+      Channel serverChannel =
+          connectMutualTls(
+              "UNTRUSTED_CLIENT_EMPTY_HOSTNAMES",
+              sslProvider,
+              new SslServerInitializer<LocalChannel>(
+                  true,
+                  true,
+                  sslProvider,
+                  Suppliers.ofInstance(sharedServerSsc.key()),
+                  Suppliers.ofInstance(ImmutableList.of(sharedServerSsc.cert()))),
+              null,
+              sharedClientKeyPair.getPrivate(),
+              untrustedLeafCert);
+
+      assertThat(serverChannel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get())
+          .isEqualTo(untrustedLeafCert);
+      assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isFalse();
+      assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get()).isEmpty();
+      assertThat(sslInfoLogs).hasSize(1);
+      assertThat(sslInfoLogs.get(0)).contains("Client Certificate Chain Validated: false");
+      assertThat(sslInfoLogs.get(0)).contains("PKIX path building failed");
+      assertThat(sslInfoLogs.get(0)).contains("Client Certificate Hostnames: []");
+    } finally {
+      Logger.getLogger(SslServerInitializer.class.getName()).removeHandler(logHandler);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_ecdsaClientCertSignedByTrustedCa(SslProvider sslProvider) throws Exception {
+    X509Certificate ecClientCert =
+        signKeyPairWithSans(
+            sharedEcRootCa, sharedEcClientKeyPair, "ignored.cn.example", "epp.ecdsa.example");
+
+    Channel serverChannel =
+        connectMutualTls(
+            "ECDSA_TRUSTED_CA",
+            sslProvider,
+            false,
+            Optional.of(sharedEcTrustManager),
+            sharedEcClientKeyPair.getPrivate(),
+            ecClientCert);
+
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get())
+        .isEqualTo(ecClientCert);
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isTrue();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get())
+        .containsExactly("epp.ecdsa.example");
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_expiredClientCertWhenValidationDisabled_chainValidatedFalse(
+      SslProvider sslProvider) throws Exception {
+    X509Certificate expiredClientCert =
+        signKeyPair(
+            sharedRootCa,
+            sharedClientKeyPair,
+            "epp.expired.example",
+            Instant.parse("2000-01-01T00:00:00Z"),
+            Instant.parse("2000-01-02T00:00:00Z"),
+            "epp.expired.example");
+
+    Channel serverChannel =
+        connectMutualTls(
+            "EXPIRED_CLIENT_NO_VALIDATE",
+            sslProvider,
+            false,
+            Optional.of(sharedTrustManager),
+            sharedClientKeyPair.getPrivate(),
+            expiredClientCert);
+
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get())
+        .isEqualTo(expiredClientCert);
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isFalse();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get()).isEmpty();
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testFailure_expiredTrustedClientCertWhenValidationEnabled_doesNotSetChainAttributes(
+      SslProvider sslProvider) throws Exception {
+    X509Certificate expiredClientCert =
+        signKeyPair(
+            sharedRootCa,
+            sharedClientKeyPair,
+            "epp.expired.example",
+            Instant.parse("2000-01-01T00:00:00Z"),
+            Instant.parse("2000-01-02T00:00:00Z"),
+            "epp.expired.example");
+    LocalAddress localAddress = new LocalAddress("EXPIRED_TRUSTED_VALIDATE_" + sslProvider);
+
+    nettyExtension.setUpServer(
+        localAddress,
+        new SslServerInitializer<LocalChannel>(
+            true,
+            true,
+            sslProvider,
+            Suppliers.ofInstance(sharedServerSsc.key()),
+            Suppliers.ofInstance(ImmutableList.of(sharedServerSsc.cert())),
+            Optional.of(sharedTrustManager)));
+    nettyExtension.setUpClient(
+        localAddress,
+        getClientHandler(
+            sslProvider,
+            sharedServerSsc.cert(),
+            sharedClientKeyPair.getPrivate(),
+            expiredClientCert));
+
+    Channel serverChannel = nettyExtension.getServerChannel();
+    verifySslException(
+        serverChannel,
+        channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
+        CertificateExpiredException.class);
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isNull();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get()).isNull();
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_serverAuthOnlyClientCert_chainValidatedTrueAndExtractsHostnames(
+      SslProvider sslProvider) throws Exception {
+    X509Certificate serverAuthLeaf =
+        signKeyPairWithEku(
+            sharedRootCa,
+            sharedClientKeyPair,
+            "ignored.cn.example",
+            KeyPurposeId.id_kp_serverAuth,
+            "epp.serverauth.example");
+
+    Channel serverChannel =
+        connectMutualTls(
+            "SERVER_AUTH_ONLY_EKU",
+            sslProvider,
+            true,
+            Optional.of(sharedTrustManager),
+            sharedClientKeyPair.getPrivate(),
+            serverAuthLeaf);
+
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get())
+        .isEqualTo(serverAuthLeaf);
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isTrue();
+    assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get())
+        .containsExactly("epp.serverauth.example");
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_clientAuthOnlyClientCert_handshakeSucceedsWithChainValidatedFalse(
+      SslProvider sslProvider) throws Exception {
+    X509Certificate clientAuthLeaf =
+        signKeyPairWithEku(
+            sharedRootCa,
+            sharedClientKeyPair,
+            "epp.clientauth.example",
+            KeyPurposeId.id_kp_clientAuth,
+            "epp.clientauth.example");
+
+    List<String> sslInfoLogs = new CopyOnWriteArrayList<>();
+    Handler logHandler = captureSslInfoLogs(sslInfoLogs, getCertificateHash(clientAuthLeaf));
+    try {
+      Channel serverChannel =
+          connectMutualTls(
+              "CLIENT_AUTH_ONLY_EKU",
+              sslProvider,
+              true,
+              Optional.of(sharedTrustManager),
+              sharedClientKeyPair.getPrivate(),
+              clientAuthLeaf);
+
+      assertThat(serverChannel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get())
+          .isEqualTo(clientAuthLeaf);
+      assertThat(serverChannel.attr(CLIENT_CERTIFICATE_CHAIN_VALIDATED_KEY).get()).isFalse();
+      assertThat(serverChannel.attr(CLIENT_CERTIFICATE_HOSTNAMES_KEY).get()).isEmpty();
+      assertThat(sslInfoLogs).hasSize(1);
+      assertThat(sslInfoLogs.get(0)).contains("Client Certificate Chain Validated: false");
+      assertThat(sslInfoLogs.get(0)).contains("Extended key usage");
+      assertThat(sslInfoLogs.get(0)).contains("Client Certificate Hostnames: []");
+    } finally {
+      Logger.getLogger(SslServerInitializer.class.getName()).removeHandler(logHandler);
+    }
+  }
+
+  @Test
+  void testFailure_validateClientCertWithoutRequireClientCert_throws() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new SslServerInitializer<LocalChannel>(
+                false,
+                true,
+                SslProvider.JDK,
+                Suppliers.ofInstance(sharedServerSsc.key()),
+                Suppliers.ofInstance(ImmutableList.of(sharedServerSsc.cert()))));
+  }
+
+  @Test
+  void testFailure_missingTrustManagerWhenClientCertRequired_throws() {
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            new SslServerInitializer<LocalChannel>(
+                true,
+                false,
+                SslProvider.JDK,
+                Suppliers.ofInstance(sharedServerSsc.key()),
+                Suppliers.ofInstance(ImmutableList.of(sharedServerSsc.cert())),
+                null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new SslServerInitializer<LocalChannel>(
+                true,
+                false,
+                SslProvider.JDK,
+                Suppliers.ofInstance(sharedServerSsc.key()),
+                Suppliers.ofInstance(ImmutableList.of(sharedServerSsc.cert())),
+                Optional.empty()));
+  }
+
+  @Test
+  void testFormatHostnamesForLog_boundsOutput() {
+    assertThrows(NullPointerException.class, () -> formatHostnamesForLog(null));
+    assertThat(formatHostnamesForLog(ImmutableList.of())).isEqualTo("[]");
+    ImmutableList<String> tenHosts =
+        IntStream.range(0, 10).mapToObj(i -> "h" + i + ".example.tld").collect(toImmutableList());
+    assertThat(formatHostnamesForLog(tenHosts)).isEqualTo(tenHosts.toString());
+
+    ImmutableList<String> elevenHosts =
+        IntStream.range(0, 11).mapToObj(i -> "h" + i + ".example.tld").collect(toImmutableList());
+    assertThat(formatHostnamesForLog(elevenHosts))
+        .isEqualTo(
+            "[h0.example.tld, h1.example.tld, h2.example.tld, h3.example.tld, h4.example.tld,"
+                + " h5.example.tld, h6.example.tld, h7.example.tld, h8.example.tld,"
+                + " h9.example.tld, ... (11 total)]");
+  }
+
+  @Test
+  void testFormatFailureReasonForLog_sanitizesAndBoundsOutput() {
+    assertThrows(NullPointerException.class, () -> formatFailureReasonForLog(null));
+    assertThat(formatFailureReasonForLog(Optional.empty())).isEqualTo("none");
+    assertThat(formatFailureReasonForLog(Optional.of("CertPathValidatorException: untrusted")))
+        .isEqualTo("CertPathValidatorException: untrusted");
+    assertThat(formatFailureReasonForLog(Optional.of("line1\r\nline2\nline3\rline4")))
+        .isEqualTo("line1  line2 line3 line4");
+
+    String exactLimit = "a".repeat(512);
+    assertThat(formatFailureReasonForLog(Optional.of(exactLimit))).isEqualTo(exactLimit);
+
+    String overLimit = "a".repeat(600);
+    String formatted = formatFailureReasonForLog(Optional.of(overLimit));
+    assertThat(formatted).hasLength(512);
+    assertThat(formatted).isEqualTo("a".repeat(509) + "...");
   }
 
   /** Returns true if v1 is larger or equals to v2. */

@@ -105,6 +105,7 @@ public final class TestUtils {
         .set("content-type", "application/epp+xml")
         .set("accept", "application/epp+xml")
         .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
+        .set(ProxyHttpHeaders.CERTIFICATE_CHAIN_VALIDATED, "false")
         .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress)
         .set(ProxyHttpHeaders.FALLBACK_IP_ADDRESS, clientAddress);
     if (cookies.length != 0) {
